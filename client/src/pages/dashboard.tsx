@@ -252,6 +252,9 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+          {/* AI Credit Analysis */}
+          <AICreditAnalysis userId={userId} />
+
           {/* Credit Building Recommendations */}
           <Card>
             <CardHeader>

@@ -97,6 +97,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate AI-powered personalized dispute letter
+  // AI-powered credit letter templates
+  app.post("/api/generate-credit-letter", async (req, res) => {
+    try {
+      const { letterType, userInfo, issueDetails } = req.body;
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ 
+          message: "OpenAI API key not configured. Please add your API key to generate personalized letters." 
+        });
+      }
+
+      const OpenAI = require('openai');
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      let prompt = "";
+      
+      switch (letterType) {
+        case "goodwill":
+          prompt = `Generate a professional goodwill letter for the following situation:
+          
+Creditor: ${issueDetails.creditor}
+Issue: ${issueDetails.description}
+User's situation: ${userInfo.situation || 'requesting goodwill consideration'}
+
+Create a compelling goodwill letter that:
+1. Takes responsibility for the issue
+2. Explains circumstances that led to the problem
+3. Demonstrates current financial responsibility
+4. Requests removal as a gesture of goodwill
+5. Maintains a respectful, professional tone
+
+Format as a complete business letter ready to send.`;
+          break;
+          
+        case "validation":
+          prompt = `Generate a debt validation letter for:
+          
+Creditor: ${issueDetails.creditor}
+Account: ${issueDetails.description}
+Amount: ${issueDetails.amount || 'Unknown'}
+
+Create a professional debt validation request that:
+1. Requests proof of debt ownership
+2. Asks for original creditor information
+3. Demands account verification
+4. Cites relevant consumer protection laws
+5. Sets clear timeline for response
+
+Format as a complete business letter ready to send.`;
+          break;
+          
+        case "cease_and_desist":
+          prompt = `Generate a cease and desist letter for:
+          
+Creditor: ${issueDetails.creditor}
+Issue: Unwanted communication/harassment
+User situation: ${userInfo.situation || 'requesting cessation of contact'}
+
+Create a firm but professional cease and desist letter that:
+1. Demands immediate cessation of all contact
+2. Cites FDCPA violations if applicable
+3. Threatens legal action if contact continues
+4. Specifies acceptable forms of communication
+5. Documents the harassment pattern
+
+Format as a complete business letter ready to send.`;
+          break;
+          
+        default:
+          return res.status(400).json({ message: "Invalid letter type" });
+      }
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert credit repair specialist with extensive knowledge of consumer protection laws including FCRA, FDCPA, and TCPA. Generate professional, legally sound letters that protect consumer rights."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7
+      });
+
+      const letterContent = response.choices[0].message.content;
+      
+      res.json({ letterContent });
+    } catch (error) {
+      console.error("Error generating credit letter:", error);
+      res.status(500).json({ message: "Failed to generate credit letter" });
+    }
+  });
+
   app.post("/api/disputes/generate-letter", async (req, res) => {
     try {
       const { issueId, bureau, issueType, description, creditor, amount, dateAdded, impact } = req.body;
