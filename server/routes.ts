@@ -96,97 +96,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generate dispute letter
+  // Generate AI-powered personalized dispute letter
   app.post("/api/disputes/generate-letter", async (req, res) => {
     try {
-      const { issueId, bureau, issueType, description, creditor } = req.body;
+      const { issueId, bureau, issueType, description, creditor, amount, dateAdded, impact } = req.body;
       
-      // Generate dispute letter content based on issue type
-      let letterContent = "";
-      
-      switch (issueType) {
-        case "COLLECTION":
-          letterContent = `Dear ${bureau} Credit Bureau,
-
-I am writing to formally dispute the following item on my credit report:
-
-Creditor: ${creditor}
-Description: ${description}
-
-I believe this item is inaccurate for the following reasons:
-- This debt does not belong to me
-- The amount is incorrect
-- This account has been paid in full
-- This item is beyond the statute of limitations
-
-I am requesting that you investigate this matter and remove this item from my credit report as it is negatively impacting my credit score.
-
-Please provide me with written verification of this debt or remove it from my credit report within 30 days as required by the Fair Credit Reporting Act.
-
-Sincerely,
-[Your Name]
-[Date]`;
-          break;
-          
-        case "LATE_PAYMENT":
-          letterContent = `Dear ${bureau} Credit Bureau,
-
-I am writing to dispute the late payment reported by ${creditor} on my credit report.
-
-Description: ${description}
-
-I believe this late payment is inaccurate because:
-- The payment was made on time
-- There was a processing error by the creditor
-- I was never notified of the late payment
-- This was due to circumstances beyond my control
-
-I request that you investigate this matter and remove this late payment from my credit report as it is unfairly impacting my credit score.
-
-Please provide verification or remove this item within 30 days.
-
-Sincerely,
-[Your Name]
-[Date]`;
-          break;
-          
-        case "INQUIRY":
-          letterContent = `Dear ${bureau} Credit Bureau,
-
-I am disputing the following hard inquiry on my credit report:
-
-Creditor: ${creditor}
-Description: ${description}
-
-I did not authorize this inquiry and believe it was made without my permission. Hard inquiries should only be made with my explicit consent.
-
-Please investigate this unauthorized inquiry and remove it from my credit report immediately.
-
-Sincerely,
-[Your Name]
-[Date]`;
-          break;
-          
-        default:
-          letterContent = `Dear ${bureau} Credit Bureau,
-
-I am writing to dispute the following item on my credit report:
-
-Creditor: ${creditor}
-Description: ${description}
-
-I believe this item is inaccurate and request that you investigate and remove it from my credit report.
-
-Please provide verification or remove this item within 30 days as required by law.
-
-Sincerely,
-[Your Name]
-[Date]`;
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ 
+          message: "OpenAI API key not configured. Please add your API key to generate personalized dispute letters." 
+        });
       }
+
+      const OpenAI = require('openai');
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      // Create a detailed prompt for personalized dispute letter generation
+      const prompt = `You are a professional credit repair specialist. Generate a personalized, professional dispute letter for the following credit issue:
+
+Issue Type: ${issueType}
+Creditor: ${creditor}
+Description: ${description}
+Amount: ${amount ? `$${amount}` : 'Not specified'}
+Date Added: ${new Date(dateAdded).toLocaleDateString()}
+Credit Score Impact: ${impact} points
+Credit Bureau: ${bureau}
+
+Generate a compelling, legally sound dispute letter that:
+1. Follows FCRA (Fair Credit Reporting Act) guidelines
+2. Uses specific language appropriate for ${issueType} disputes
+3. Includes relevant consumer rights
+4. Provides multiple dispute reasons that apply to this specific situation
+5. Maintains a professional but firm tone
+6. Includes proper legal citations where appropriate
+
+The letter should be personalized based on the specific details provided and include strategic arguments that credit bureaus commonly accept for ${issueType} disputes.
+
+Format the response as a complete business letter ready to send.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert credit repair specialist with extensive knowledge of FCRA laws and successful dispute strategies. Generate professional, personalized dispute letters that maximize the chance of successful removal."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7
+      });
+
+      const letterContent = response.choices[0].message.content;
       
       res.json({ letterContent });
     } catch (error) {
-      res.status(500).json({ message: "Failed to generate dispute letter" });
+      console.error("Error generating AI dispute letter:", error);
+      res.status(500).json({ message: "Failed to generate personalized dispute letter" });
     }
   });
 
@@ -271,6 +239,94 @@ Sincerely,
       res.json(updatedAction);
     } catch (error) {
       res.status(500).json({ message: "Failed to update credit building action" });
+    }
+  });
+
+  // AI Credit Analysis
+  app.post("/api/ai-credit-analysis", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ 
+          message: "OpenAI API key not configured. Please add your API key for AI credit analysis." 
+        });
+      }
+
+      // Get user's complete credit profile
+      const creditReport = await storage.getCreditReport(userId);
+      const creditIssues = await storage.getCreditIssues(userId);
+      const creditGoal = await storage.getCreditGoal(userId);
+      
+      if (!creditReport) {
+        return res.status(404).json({ message: "Credit report not found" });
+      }
+
+      const OpenAI = require('openai');
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const analysisPrompt = `Analyze this complete credit profile and provide personalized recommendations:
+
+Current Credit Score: ${creditReport.creditScore}
+Credit Rating: ${creditReport.creditRating}
+Utilization Rate: ${(creditReport.utilizationRate * 100).toFixed(1)}%
+Account Age: ${creditReport.accountAge} months
+Target Score: ${creditGoal?.targetScore || 'Not set'}
+
+Credit Issues:
+${creditIssues.map(issue => `- ${issue.type}: ${issue.description} (Impact: ${issue.impact} points, Creditor: ${issue.creditor}${issue.amount ? `, Amount: $${issue.amount}` : ''})`).join('\n')}
+
+Provide a comprehensive analysis including:
+1. Priority issues to address first
+2. Specific dispute strategies for each negative item
+3. Credit building recommendations
+4. Timeline for improvement
+5. Estimated score improvement potential
+
+Respond in JSON format with the following structure:
+{
+  "analysis": "Overall credit profile analysis",
+  "priorityIssues": ["issue1", "issue2"],
+  "recommendations": [
+    {
+      "action": "specific action",
+      "priority": "HIGH/MEDIUM/LOW",
+      "timeframe": "timeline",
+      "expectedImpact": "score points",
+      "steps": ["step1", "step2"]
+    }
+  ],
+  "disputeStrategy": {
+    "collections": "strategy for collections",
+    "latePayments": "strategy for late payments", 
+    "inquiries": "strategy for inquiries"
+  },
+  "scoreProjection": "3-6 month outlook"
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert credit repair specialist and financial advisor. Analyze credit profiles and provide actionable, legally compliant advice based on FCRA guidelines."
+          },
+          {
+            role: "user",
+            content: analysisPrompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 1500,
+        temperature: 0.3
+      });
+
+      const analysis = JSON.parse(response.choices[0].message.content);
+      
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error generating AI credit analysis:", error);
+      res.status(500).json({ message: "Failed to generate AI credit analysis" });
     }
   });
 

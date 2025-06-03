@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { CreditScoreCircle } from "@/components/credit-score-circle";
 import { DisputeLetterModal } from "@/components/dispute-letter-modal";
 import { CreditSimulatorModal } from "@/components/credit-simulator-modal";
+import { AICreditAnalysis } from "@/components/ai-credit-analysis";
 import { formatCurrency, formatRelativeDate, getIssueTypeColor, getIssueTypeIcon, getDisputeStatusColor } from "@/lib/utils";
 import type { User, CreditReport, CreditIssue, Dispute, CreditGoal, EducationalContent, CreditBuildingAction } from "@shared/schema";
 

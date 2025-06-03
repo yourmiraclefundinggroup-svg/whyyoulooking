@@ -25,16 +25,16 @@ export function Navigation() {
             <nav className="hidden md:ml-8 md:flex md:space-x-8">
               {navItems.map((item) => (
                 <Link key={item.href} href={item.href}>
-                  <a
+                  <span
                     className={cn(
-                      "px-1 pb-4 text-sm font-medium border-b-2 transition-colors",
+                      "px-1 pb-4 text-sm font-medium border-b-2 transition-colors cursor-pointer",
                       location === item.href
                         ? "trust-blue border-blue-600"
                         : "text-gray-500 hover:text-gray-700 border-transparent"
                     )}
                   >
                     {item.label}
-                  </a>
+                  </span>
                 </Link>
               ))}
             </nav>

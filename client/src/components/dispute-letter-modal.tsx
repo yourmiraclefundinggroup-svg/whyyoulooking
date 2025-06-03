@@ -21,7 +21,7 @@ export function DisputeLetterModal({ open, onOpenChange, issue }: DisputeLetterM
   const { toast } = useToast();
 
   const generateLetterMutation = useMutation({
-    mutationFn: async (data: { issueId: number; bureau: string; issueType: string; description: string; creditor: string }) => {
+    mutationFn: async (data: { issueId: number; bureau: string; issueType: string; description: string; creditor: string; amount?: number | null; dateAdded: Date; impact: number }) => {
       const response = await apiRequest("POST", "/api/disputes/generate-letter", data);
       return response.json();
     },
@@ -69,6 +69,9 @@ export function DisputeLetterModal({ open, onOpenChange, issue }: DisputeLetterM
       issueType: issue.type,
       description: issue.description,
       creditor: issue.creditor,
+      amount: issue.amount,
+      dateAdded: issue.dateAdded,
+      impact: issue.impact,
     });
   };
 
@@ -122,8 +125,9 @@ export function DisputeLetterModal({ open, onOpenChange, issue }: DisputeLetterM
               <Button 
                 onClick={handleGenerateLetter}
                 disabled={!bureau || generateLetterMutation.isPending}
+                className="bg-trust-blue hover:bg-blue-700"
               >
-                {generateLetterMutation.isPending ? "Generating..." : "Generate Letter"}
+                {generateLetterMutation.isPending ? "Generating AI Letter..." : "Generate AI Letter"}
               </Button>
             </div>
 
