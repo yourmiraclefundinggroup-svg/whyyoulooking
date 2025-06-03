@@ -9,6 +9,8 @@ import {
   type EducationalContent, type InsertEducationalContent,
   type CreditBuildingAction, type InsertCreditBuildingAction
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -46,6 +48,151 @@ export interface IStorage {
   getCreditBuildingActions(userId: number): Promise<CreditBuildingAction[]>;
   createCreditBuildingAction(action: InsertCreditBuildingAction): Promise<CreditBuildingAction>;
   updateCreditBuildingAction(id: number, updates: Partial<CreditBuildingAction>): Promise<CreditBuildingAction | undefined>;
+}
+
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getCreditReport(userId: number): Promise<CreditReport | undefined> {
+    const [report] = await db.select().from(creditReports).where(eq(creditReports.userId, userId));
+    return report || undefined;
+  }
+
+  async createCreditReport(insertReport: InsertCreditReport): Promise<CreditReport> {
+    const [report] = await db
+      .insert(creditReports)
+      .values(insertReport)
+      .returning();
+    return report;
+  }
+
+  async updateCreditReport(userId: number, updates: Partial<CreditReport>): Promise<CreditReport | undefined> {
+    const [updatedReport] = await db
+      .update(creditReports)
+      .set({ ...updates, lastUpdated: new Date() })
+      .where(eq(creditReports.userId, userId))
+      .returning();
+    return updatedReport || undefined;
+  }
+
+  async getCreditIssues(userId: number): Promise<CreditIssue[]> {
+    return await db.select().from(creditIssues).where(eq(creditIssues.userId, userId));
+  }
+
+  async getCreditIssue(id: number): Promise<CreditIssue | undefined> {
+    const [issue] = await db.select().from(creditIssues).where(eq(creditIssues.id, id));
+    return issue || undefined;
+  }
+
+  async createCreditIssue(insertIssue: InsertCreditIssue): Promise<CreditIssue> {
+    const [issue] = await db
+      .insert(creditIssues)
+      .values(insertIssue)
+      .returning();
+    return issue;
+  }
+
+  async updateCreditIssue(id: number, updates: Partial<CreditIssue>): Promise<CreditIssue | undefined> {
+    const [updatedIssue] = await db
+      .update(creditIssues)
+      .set(updates)
+      .where(eq(creditIssues.id, id))
+      .returning();
+    return updatedIssue || undefined;
+  }
+
+  async getDisputes(userId: number): Promise<Dispute[]> {
+    return await db.select().from(disputes).where(eq(disputes.userId, userId));
+  }
+
+  async getDispute(id: number): Promise<Dispute | undefined> {
+    const [dispute] = await db.select().from(disputes).where(eq(disputes.id, id));
+    return dispute || undefined;
+  }
+
+  async createDispute(insertDispute: InsertDispute): Promise<Dispute> {
+    const [dispute] = await db
+      .insert(disputes)
+      .values(insertDispute)
+      .returning();
+    return dispute;
+  }
+
+  async updateDispute(id: number, updates: Partial<Dispute>): Promise<Dispute | undefined> {
+    const [updatedDispute] = await db
+      .update(disputes)
+      .set(updates)
+      .where(eq(disputes.id, id))
+      .returning();
+    return updatedDispute || undefined;
+  }
+
+  async getCreditGoal(userId: number): Promise<CreditGoal | undefined> {
+    const [goal] = await db.select().from(creditGoals).where(eq(creditGoals.userId, userId));
+    return goal || undefined;
+  }
+
+  async createCreditGoal(insertGoal: InsertCreditGoal): Promise<CreditGoal> {
+    const [goal] = await db
+      .insert(creditGoals)
+      .values(insertGoal)
+      .returning();
+    return goal;
+  }
+
+  async updateCreditGoal(userId: number, updates: Partial<CreditGoal>): Promise<CreditGoal | undefined> {
+    const [updatedGoal] = await db
+      .update(creditGoals)
+      .set(updates)
+      .where(eq(creditGoals.userId, userId))
+      .returning();
+    return updatedGoal || undefined;
+  }
+
+  async getEducationalContent(): Promise<EducationalContent[]> {
+    return await db.select().from(educationalContent);
+  }
+
+  async getEducationalContentByCategory(category: string): Promise<EducationalContent[]> {
+    return await db.select().from(educationalContent).where(eq(educationalContent.category, category));
+  }
+
+  async getCreditBuildingActions(userId: number): Promise<CreditBuildingAction[]> {
+    return await db.select().from(creditBuildingActions).where(eq(creditBuildingActions.userId, userId));
+  }
+
+  async createCreditBuildingAction(insertAction: InsertCreditBuildingAction): Promise<CreditBuildingAction> {
+    const [action] = await db
+      .insert(creditBuildingActions)
+      .values(insertAction)
+      .returning();
+    return action;
+  }
+
+  async updateCreditBuildingAction(id: number, updates: Partial<CreditBuildingAction>): Promise<CreditBuildingAction | undefined> {
+    const [updatedAction] = await db
+      .update(creditBuildingActions)
+      .set(updates)
+      .where(eq(creditBuildingActions.id, id))
+      .returning();
+    return updatedAction || undefined;
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -370,4 +517,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
