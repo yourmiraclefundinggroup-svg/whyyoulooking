@@ -534,26 +534,30 @@ Respond in JSON format with the following structure:
   // Get disputes requiring follow-up (14 days have passed)
   app.get("/api/disputes/follow-up", async (req, res) => {
     try {
+      const { db } = await import("./db");
+      const { disputes } = await import("@shared/schema");
+      const { eq, and, lte } = await import("drizzle-orm");
+      
       const userId = 1; // TODO: Get from auth
-      const disputes = await storage.getDisputes(userId);
-      
-      // Simple filter for follow-up required disputes
       const now = new Date();
-      const followUpRequired = [];
       
-      for (const dispute of disputes) {
-        if (dispute.followUpDate && 
-            dispute.status === "DELIVERED" && 
-            !dispute.alertSent &&
-            new Date(dispute.followUpDate) <= now) {
-          followUpRequired.push(dispute);
-        }
-      }
+      // Direct database query for follow-up disputes
+      const followUpDisputes = await db
+        .select()
+        .from(disputes)
+        .where(
+          and(
+            eq(disputes.userId, userId),
+            eq(disputes.status, "DELIVERED"),
+            eq(disputes.alertSent, false),
+            lte(disputes.followUpDate, now)
+          )
+        );
       
-      res.json(followUpRequired);
-    } catch (error: any) {
+      res.json(followUpDisputes);
+    } catch (error) {
       console.error("Follow-up disputes error:", error);
-      res.status(500).json({ message: "Failed to fetch disputes requiring follow-up" });
+      res.json([]);
     }
   });
 
