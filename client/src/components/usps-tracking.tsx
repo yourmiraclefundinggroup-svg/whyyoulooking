@@ -144,25 +144,25 @@ export function USPSTracking({ dispute }: USPSTrackingProps) {
   const daysRemaining = getDaysRemaining();
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Package className="h-5 w-5" />
-          USPS Certified Mail Tracking
+    <Card className="w-full">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Package className="h-4 w-4" />
+          USPS Tracking
         </CardTitle>
-        <CardDescription>
-          Track delivery status and 14-day follow-up countdown
+        <CardDescription className="text-sm">
+          Track delivery and 14-day countdown
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {getStatusIcon(dispute.status)}
-          <Badge variant={getStatusColor(dispute.status)}>
+          <Badge variant={getStatusColor(dispute.status)} className="text-xs">
             {dispute.status.replace("_", " ")}
           </Badge>
           {daysRemaining !== null && (
-            <Badge variant={daysRemaining <= 0 ? "destructive" : "outline"}>
-              {daysRemaining <= 0 ? "Follow-up Required" : `${daysRemaining} days remaining`}
+            <Badge variant={daysRemaining <= 0 ? "destructive" : "outline"} className="text-xs">
+              {daysRemaining <= 0 ? "Follow-up Required" : `${daysRemaining} days left`}
             </Badge>
           )}
         </div>
@@ -170,17 +170,19 @@ export function USPSTracking({ dispute }: USPSTrackingProps) {
         {!dispute.uspsTrackingNumber ? (
           <div className="space-y-3">
             <Label htmlFor="tracking-number">USPS Tracking Number</Label>
-            <div className="flex gap-2">
+            <div className="space-y-2">
               <Input
                 id="tracking-number"
                 placeholder="Enter USPS tracking number"
                 value={trackingNumber}
                 onChange={(e) => setTrackingNumber(e.target.value)}
-                className="flex-1"
+                className="w-full"
               />
               <Button 
                 onClick={handleAddTracking}
                 disabled={addTrackingMutation.isPending}
+                className="w-full sm:w-auto"
+                size="sm"
               >
                 {addTrackingMutation.isPending ? "Adding..." : "Add Tracking"}
               </Button>

@@ -65,7 +65,7 @@ export default function CreditRepair() {
   const disputedIssues = creditIssues.filter(issue => issue.status === 'DISPUTED');
   const resolvedIssues = creditIssues.filter(issue => issue.status === 'RESOLVED');
 
-  const pendingDisputes = disputes.filter(dispute => dispute.status === 'PENDING');
+  const pendingDisputes = disputes.filter(dispute => dispute.status === 'PENDING' || dispute.status === 'SENT' || dispute.status === 'DELIVERED');
   const resolvedDisputes = disputes.filter(dispute => dispute.status === 'RESOLVED');
 
   if (issuesLoading || disputesLoading) {
