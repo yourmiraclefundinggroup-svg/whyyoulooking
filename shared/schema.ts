@@ -38,11 +38,15 @@ export const disputes = pgTable("disputes", {
   userId: integer("user_id").notNull(),
   issueId: integer("issue_id").notNull(),
   bureau: text("bureau").notNull(), // EQUIFAX, EXPERIAN, TRANSUNION
-  status: text("status").notNull().default("PENDING"), // PENDING, RESOLVED, REJECTED
+  status: text("status").notNull().default("PENDING"), // PENDING, SENT, DELIVERED, RESOLVED, REJECTED, FOLLOW_UP_REQUIRED
   dateSent: timestamp("date_sent").defaultNow().notNull(),
   expectedResponse: timestamp("expected_response").notNull(),
   actualResponse: timestamp("actual_response"),
   letterContent: text("letter_content").notNull(),
+  uspsTrackingNumber: text("usps_tracking_number"),
+  deliveryDate: timestamp("delivery_date"),
+  followUpDate: timestamp("follow_up_date"), // 14 days after delivery
+  alertSent: boolean("alert_sent").default(false)
 });
 
 export const creditGoals = pgTable("credit_goals", {

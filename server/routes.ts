@@ -474,6 +474,103 @@ Respond in JSON format with the following structure:
     }
   });
 
+  // USPS Tracking Routes
+  
+  // Add USPS tracking number to dispute
+  app.patch("/api/disputes/:id/tracking", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { trackingNumber } = req.body;
+      
+      if (!trackingNumber) {
+        return res.status(400).json({ error: "Tracking number is required" });
+      }
+      
+      const dispute = await storage.updateDispute(id, { 
+        uspsTrackingNumber: trackingNumber,
+        status: "SENT"
+      });
+      
+      if (!dispute) {
+        return res.status(404).json({ error: "Dispute not found" });
+      }
+      
+      res.json(dispute);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update delivery status
+  app.patch("/api/disputes/:id/delivery", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { deliveryDate } = req.body;
+      
+      if (!deliveryDate) {
+        return res.status(400).json({ error: "Delivery date is required" });
+      }
+      
+      const delivery = new Date(deliveryDate);
+      const followUp = new Date(delivery);
+      followUp.setDate(followUp.getDate() + 14); // Add 14 days
+      
+      const dispute = await storage.updateDispute(id, { 
+        deliveryDate: delivery,
+        followUpDate: followUp,
+        status: "DELIVERED"
+      });
+      
+      if (!dispute) {
+        return res.status(404).json({ error: "Dispute not found" });
+      }
+      
+      res.json(dispute);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get disputes requiring follow-up (14 days have passed)
+  app.get("/api/disputes/follow-up", async (req, res) => {
+    try {
+      const userId = 1; // TODO: Get from auth
+      const disputes = await storage.getDisputes(userId);
+      
+      const now = new Date();
+      const followUpRequired = disputes.filter(dispute => 
+        dispute.followUpDate && 
+        dispute.followUpDate <= now && 
+        dispute.status === "DELIVERED" &&
+        !dispute.alertSent
+      );
+      
+      res.json(followUpRequired);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Mark follow-up alert as sent
+  app.patch("/api/disputes/:id/alert-sent", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      const dispute = await storage.updateDispute(id, { 
+        alertSent: true,
+        status: "FOLLOW_UP_REQUIRED"
+      });
+      
+      if (!dispute) {
+        return res.status(404).json({ error: "Dispute not found" });
+      }
+      
+      res.json(dispute);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
