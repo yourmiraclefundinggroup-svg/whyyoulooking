@@ -537,18 +537,18 @@ Respond in JSON format with the following structure:
       const userId = 1; // TODO: Get from auth
       const disputes = await storage.getDisputes(userId);
       
+      // Simple filter for follow-up required disputes
       const now = new Date();
-      const followUpRequired = disputes.filter(dispute => {
-        // Check if dispute has follow-up date and it has passed
-        if (!dispute.followUpDate) return false;
-        
-        const followUpDate = new Date(dispute.followUpDate);
-        const daysPassed = followUpDate <= now;
-        
-        return daysPassed && 
-               dispute.status === "DELIVERED" &&
-               !dispute.alertSent;
-      });
+      const followUpRequired = [];
+      
+      for (const dispute of disputes) {
+        if (dispute.followUpDate && 
+            dispute.status === "DELIVERED" && 
+            !dispute.alertSent &&
+            new Date(dispute.followUpDate) <= now) {
+          followUpRequired.push(dispute);
+        }
+      }
       
       res.json(followUpRequired);
     } catch (error: any) {
