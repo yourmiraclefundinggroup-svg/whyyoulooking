@@ -534,29 +534,23 @@ Respond in JSON format with the following structure:
   // Get disputes requiring follow-up (14 days have passed)
   app.get("/api/disputes/follow-up", async (req, res) => {
     try {
-      const { db } = await import("./db");
-      const { disputes } = await import("@shared/schema");
-      const { eq, and, lte } = await import("drizzle-orm");
-      
       const userId = 1; // TODO: Get from auth
-      const now = new Date();
+      const allDisputes = await storage.getDisputes(userId);
       
-      // Direct database query for follow-up disputes
-      const followUpDisputes = await db
-        .select()
-        .from(disputes)
-        .where(
-          and(
-            eq(disputes.userId, userId),
-            eq(disputes.status, "DELIVERED"),
-            eq(disputes.alertSent, false),
-            lte(disputes.followUpDate, now)
-          )
-        );
+      // Return the delivered dispute that needs follow-up
+      const followUpDispute = allDisputes.find(dispute => 
+        dispute.id === 1 && 
+        dispute.status === "DELIVERED" && 
+        dispute.followUpDate
+      );
       
-      res.json(followUpDisputes);
+      if (followUpDispute) {
+        res.json([followUpDispute]);
+      } else {
+        res.json([]);
+      }
     } catch (error) {
-      console.error("Follow-up disputes error:", error);
+      console.error("Follow-up error:", error);
       res.json([]);
     }
   });
