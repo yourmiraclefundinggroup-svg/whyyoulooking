@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DisputeLetterModal } from "@/components/dispute-letter-modal";
+import { USPSTracking } from "@/components/usps-tracking";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatRelativeDate, getIssueTypeColor, getIssueTypeIcon, getDisputeStatusColor } from "@/lib/utils";
@@ -284,27 +285,29 @@ export default function CreditRepair() {
                 {pendingDisputes.map((dispute) => {
                   const issue = creditIssues.find(i => i.id === dispute.issueId);
                   return (
-                    <div
-                      key={dispute.id}
-                      className={`flex items-start space-x-4 p-4 rounded-lg border ${getDisputeStatusColor(dispute.status)}`}
-                    >
-                      <div className="flex-shrink-0">
-                        <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse mt-2"></div>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium text-blue-900">
-                          {dispute.bureau} - {issue?.title}
-                        </h4>
-                        <p className="text-sm text-blue-700">
-                          {issue?.description}
-                        </p>
-                        <div className="flex items-center space-x-4 mt-2 text-xs text-blue-600">
-                          <span>Sent: {formatRelativeDate(dispute.dateSent)}</span>
-                          <span>Expected Response: {formatRelativeDate(dispute.expectedResponse)}</span>
-                          <span>Bureau: {dispute.bureau}</span>
+                    <div key={dispute.id} className="space-y-4">
+                      <div
+                        className={`flex items-start space-x-4 p-4 rounded-lg border ${getDisputeStatusColor(dispute.status)}`}
+                      >
+                        <div className="flex-shrink-0">
+                          <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse mt-2"></div>
                         </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-blue-900">
+                            {dispute.bureau} - {issue?.title}
+                          </h4>
+                          <p className="text-sm text-blue-700">
+                            {issue?.description}
+                          </p>
+                          <div className="flex items-center space-x-4 mt-2 text-xs text-blue-600">
+                            <span>Sent: {formatRelativeDate(dispute.dateSent)}</span>
+                            <span>Expected Response: {formatRelativeDate(dispute.expectedResponse)}</span>
+                            <span>Bureau: {dispute.bureau}</span>
+                          </div>
+                        </div>
+                        <Badge className="bg-blue-600">{dispute.status}</Badge>
                       </div>
-                      <Badge className="bg-blue-600">Pending</Badge>
+                      <USPSTracking dispute={dispute} />
                     </div>
                   );
                 })}

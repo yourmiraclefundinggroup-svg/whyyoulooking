@@ -538,16 +538,22 @@ Respond in JSON format with the following structure:
       const disputes = await storage.getDisputes(userId);
       
       const now = new Date();
-      const followUpRequired = disputes.filter(dispute => 
-        dispute.followUpDate && 
-        dispute.followUpDate <= now && 
-        dispute.status === "DELIVERED" &&
-        !dispute.alertSent
-      );
+      const followUpRequired = disputes.filter(dispute => {
+        // Check if dispute has follow-up date and it has passed
+        if (!dispute.followUpDate) return false;
+        
+        const followUpDate = new Date(dispute.followUpDate);
+        const daysPassed = followUpDate <= now;
+        
+        return daysPassed && 
+               dispute.status === "DELIVERED" &&
+               !dispute.alertSent;
+      });
       
       res.json(followUpRequired);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      console.error("Follow-up disputes error:", error);
+      res.status(500).json({ message: "Failed to fetch disputes requiring follow-up" });
     }
   });
 
