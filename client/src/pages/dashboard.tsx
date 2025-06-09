@@ -7,6 +7,7 @@ import { CreditScoreCircle } from "@/components/credit-score-circle";
 import { DisputeLetterModal } from "@/components/dispute-letter-modal";
 import { CreditSimulatorModal } from "@/components/credit-simulator-modal";
 import { AICreditAnalysis } from "@/components/ai-credit-analysis";
+import { FollowUpAlerts } from "@/components/follow-up-alerts";
 import { formatCurrency, formatRelativeDate, getIssueTypeColor, getIssueTypeIcon, getDisputeStatusColor } from "@/lib/utils";
 import type { User, CreditReport, CreditIssue, Dispute, CreditGoal, EducationalContent, CreditBuildingAction } from "@shared/schema";
 
@@ -156,6 +157,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content Area */}
         <div className="lg:col-span-2 space-y-8">
+          {/* Follow-up Alerts - High Priority */}
+          <FollowUpAlerts />
           {/* Credit Report Analysis */}
           <Card>
             <CardHeader>

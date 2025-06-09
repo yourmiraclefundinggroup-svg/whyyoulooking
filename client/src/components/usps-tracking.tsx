@@ -27,11 +27,13 @@ export function USPSTracking({ dispute }: USPSTrackingProps) {
 
   const addTrackingMutation = useMutation({
     mutationFn: async (data: { trackingNumber: string }) => {
-      return apiRequest(`/api/disputes/${dispute.id}/tracking`, {
+      const response = await fetch(`/api/disputes/${dispute.id}/tracking`, {
         method: "PATCH",
         body: JSON.stringify(data),
         headers: { "Content-Type": "application/json" }
       });
+      if (!response.ok) throw new Error(await response.text());
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/disputes"] });
@@ -51,11 +53,13 @@ export function USPSTracking({ dispute }: USPSTrackingProps) {
 
   const updateDeliveryMutation = useMutation({
     mutationFn: async (data: { deliveryDate: string }) => {
-      return apiRequest(`/api/disputes/${dispute.id}/delivery`, {
+      const response = await fetch(`/api/disputes/${dispute.id}/delivery`, {
         method: "PATCH",
         body: JSON.stringify(data),
         headers: { "Content-Type": "application/json" }
       });
+      if (!response.ok) throw new Error(await response.text());
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/disputes"] });

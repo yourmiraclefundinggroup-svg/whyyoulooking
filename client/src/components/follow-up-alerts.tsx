@@ -12,16 +12,18 @@ export function FollowUpAlerts() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: followUpDisputes = [], isLoading } = useQuery({
+  const { data: followUpDisputes = [], isLoading } = useQuery<Dispute[]>({
     queryKey: ["/api/disputes/follow-up"],
     refetchInterval: 60000 // Check every minute
   });
 
   const markAlertSentMutation = useMutation({
     mutationFn: async (disputeId: number) => {
-      return apiRequest(`/api/disputes/${disputeId}/alert-sent`, {
+      const response = await fetch(`/api/disputes/${disputeId}/alert-sent`, {
         method: "PATCH"
       });
+      if (!response.ok) throw new Error(await response.text());
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/disputes"] });
@@ -85,7 +87,7 @@ export function FollowUpAlerts() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {followUpDisputes.map((dispute: Dispute) => {
+        {(followUpDisputes as Dispute[]).map((dispute: Dispute) => {
           const daysPastDue = dispute.followUpDate 
             ? Math.floor((new Date().getTime() - new Date(dispute.followUpDate).getTime()) / (1000 * 60 * 60 * 24))
             : 0;
