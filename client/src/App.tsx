@@ -15,7 +15,8 @@ function Router() {
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <Switch>
-        <Route path="/" component={Dashboard} />
+        <Route path="/" component={CreditRepair} />
+        <Route path="/dashboard" component={Dashboard} />
         <Route path="/credit-repair" component={CreditRepair} />
         <Route path="/credit-building" component={CreditBuilding} />
         <Route path="/education" component={Education} />
