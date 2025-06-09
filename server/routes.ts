@@ -34,6 +34,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Credit Issues
+  app.get("/api/credit-issues", async (req, res) => {
+    try {
+      // Default to user ID 1 for this demo
+      const userId = 1;
+      const issues = await storage.getCreditIssues(userId);
+      res.json(issues);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch credit issues" });
+    }
+  });
+
   app.get("/api/credit-issues/:userId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
@@ -59,6 +70,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Disputes
+  app.get("/api/disputes", async (req, res) => {
+    try {
+      // Default to user ID 1 for this demo
+      const userId = 1;
+      const disputes = await storage.getDisputes(userId);
+      res.json(disputes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch disputes" });
+    }
+  });
+
   app.get("/api/disputes/:userId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
