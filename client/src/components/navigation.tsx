@@ -8,7 +8,7 @@ import { useUserContext } from "@/hooks/use-user-context";
 export function Navigation() {
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, isClientViewer, isAdmin, canAccessCreditBuilding, canAccessEducation } = useUserContext();
+  const { user, isClientViewer, isAdmin, canAccessCreditBuilding, canAccessEducation, logout } = useUserContext();
 
   // Filter navigation based on user access level
   const navItems = [
@@ -68,6 +68,14 @@ export function Navigation() {
             <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
               <i className="fas fa-user text-gray-600"></i>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={logout}
+              className="hidden sm:flex"
+            >
+              Sign Out
+            </Button>
             {/* Mobile menu button */}
             <Button
               variant="ghost"

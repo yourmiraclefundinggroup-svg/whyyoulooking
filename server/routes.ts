@@ -703,6 +703,59 @@ Respond in JSON format with the following structure:
     }
   });
 
+  // Authentication Routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password, loginType } = req.body;
+      
+      // Demo authentication - in production, use proper password hashing
+      const demoCredentials = {
+        "admin@creditfixpro.com": { password: "admin123", accessLevel: "ADMIN", id: 1 },
+        "client@example.com": { password: "client123", accessLevel: "CLIENT_VIEWER", id: 2 }
+      };
+      
+      const userCreds = demoCredentials[email as keyof typeof demoCredentials];
+      
+      if (!userCreds || userCreds.password !== password) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      // Check if login type matches user access level
+      if (loginType === "admin" && userCreds.accessLevel !== "ADMIN") {
+        return res.status(403).json({ message: "Access denied - Admin portal requires admin privileges" });
+      }
+      
+      if (loginType === "client" && userCreds.accessLevel === "ADMIN") {
+        return res.status(403).json({ message: "Use admin portal for admin access" });
+      }
+      
+      // Get full user data
+      const user = await storage.getUser(userCreds.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Generate simple token (in production, use JWT)
+      const token = `token_${user.id}_${Date.now()}`;
+      
+      res.json({
+        user,
+        token,
+        message: "Login successful"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", async (req, res) => {
+    try {
+      res.json({ message: "Logout successful" });
+    } catch (error) {
+      res.status(500).json({ message: "Logout failed" });
+    }
+  });
+
   // Access Code Validation
   app.post("/api/validate-access", async (req, res) => {
     try {

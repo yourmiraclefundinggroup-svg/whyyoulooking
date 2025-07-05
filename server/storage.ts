@@ -267,20 +267,40 @@ export class MemStorage implements IStorage {
   }
 
   private seedData() {
-    // Create a sample user
-    const user: User = {
+    // Create admin user
+    const adminUser: User = {
       id: 1,
-      firstName: "Sarah",
-      lastName: "Johnson",
-      email: "sarah.johnson@example.com",
+      firstName: "Admin",
+      lastName: "User",
+      email: "admin@creditfixpro.com",
+      accessLevel: "ADMIN",
+      isTestUser: false,
+      testingNotes: null,
       createdAt: new Date()
     };
-    this.users.set(1, user);
+    this.users.set(1, adminUser);
 
-    // Create sample credit report
+    // Create demo client user
+    const clientUser: User = {
+      id: 2,
+      firstName: "Sarah",
+      lastName: "Johnson",
+      email: "client@example.com",
+      accessLevel: "CLIENT_VIEWER",
+      isTestUser: false,
+      testingNotes: "Demo client account for testing client portal",
+      createdAt: new Date()
+    };
+    this.users.set(2, clientUser);
+    this.currentId = 3;
+
+    // Use client user for sample data
+    const user: User = clientUser;
+
+    // Create sample credit report for client user (ID 2)
     const creditReport: CreditReport = {
       id: 1,
-      userId: 1,
+      userId: 2,
       creditScore: 658,
       creditRating: "FAIR",
       lastUpdated: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago

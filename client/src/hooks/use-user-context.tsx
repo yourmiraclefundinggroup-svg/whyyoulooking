@@ -12,16 +12,35 @@ interface UserContextType {
   canAccessCreditBuilding: boolean;
   canAccessEducation: boolean;
   setCurrentUserId: (userId: number) => void;
+  logout: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [currentUserId, setCurrentUserId] = useState(1); // Default to user 1
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+
+  // Check for stored authentication on mount
+  useEffect(() => {
+    const storedUserId = localStorage.getItem("user_id");
+    const authToken = localStorage.getItem("auth_token");
+    
+    if (storedUserId && authToken) {
+      setCurrentUserId(parseInt(storedUserId));
+    }
+  }, []);
 
   const { data: user } = useQuery<User>({
     queryKey: ['/api/users', currentUserId],
+    enabled: !!currentUserId,
   });
+
+  const logout = () => {
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("auth_token");
+    setCurrentUserId(null);
+    window.location.href = "/login";
+  };
 
   const isAdmin = user?.accessLevel === 'ADMIN';
   const isBetaTester = user?.accessLevel === 'BETA_TESTER';
@@ -43,6 +62,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     canAccessCreditBuilding,
     canAccessEducation,
     setCurrentUserId,
+    logout,
   };
 
   return (
