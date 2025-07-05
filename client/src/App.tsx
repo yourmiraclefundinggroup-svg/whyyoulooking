@@ -18,7 +18,7 @@ function Router() {
       <BetaAccessBanner />
       <Navigation />
       <Switch>
-        <Route path="/" component={CreditRepair} />
+        <Route path="/" component={Dashboard} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/credit-repair" component={CreditRepair} />
         <Route path="/credit-building" component={CreditBuilding} />

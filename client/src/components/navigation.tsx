@@ -9,7 +9,7 @@ export function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { href: "/", label: "Dashboard" },
+    { href: "/dashboard", label: "Dashboard" },
     { href: "/credit-repair", label: "Credit Repair" },
     { href: "/credit-building", label: "Credit Building" },
     { href: "/education", label: "Education" },
