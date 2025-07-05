@@ -33,12 +33,14 @@ export default function Login() {
       localStorage.setItem("auth_token", data.token);
       localStorage.setItem("user_id", data.user.id.toString());
       
-      // Force page redirect for mobile compatibility
-      if (data.user.accessLevel === "ADMIN") {
-        window.location.href = "/admin-portal";
-      } else {
-        window.location.href = "/dashboard";
-      }
+      // Use setTimeout to ensure state is set before redirect
+      setTimeout(() => {
+        if (data.user.accessLevel === "ADMIN") {
+          window.location.replace("/admin-portal");
+        } else {
+          window.location.replace("/dashboard");
+        }
+      }, 100);
     },
     onError: (error: any) => {
       console.error("Login failed:", error);
