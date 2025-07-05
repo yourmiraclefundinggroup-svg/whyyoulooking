@@ -9,6 +9,9 @@ import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DisputeLetterModal } from "@/components/dispute-letter-modal";
+import { AICreditAnalysis } from "@/components/ai-credit-analysis";
+import { CreditSimulatorModal } from "@/components/credit-simulator-modal";
 import { User, CreditReport, CreditIssue, Dispute } from "@shared/schema";
 import { Users, FileText, AlertTriangle, Send, Settings } from "lucide-react";
 
@@ -17,6 +20,8 @@ export default function AdminPortal() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [disputeModalOpen, setDisputeModalOpen] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState<CreditIssue | undefined>();
 
   // Redirect non-admin users
   if (!isAdmin) {
@@ -314,17 +319,121 @@ export default function AdminPortal() {
           </TabsContent>
 
           <TabsContent value="disputes" className="space-y-6">
+            {/* AI-Powered Dispute Management */}
             <Card>
               <CardHeader>
-                <CardTitle>Dispute Management Center</CardTitle>
+                <CardTitle className="flex items-center">
+                  <Send className="w-5 h-5 text-blue-600 mr-3" />
+                  AI-Powered Dispute Management
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 mb-4">
-                  Manage all client disputes from this central location.
+                <p className="text-gray-600 mb-6">
+                  Use AI to generate professional dispute letters and manage client disputes efficiently.
                 </p>
-                <Button disabled>
-                  Coming Soon - Advanced Dispute Tools
-                </Button>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* AI Credit Analysis */}
+                  <Card className="border-blue-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center">
+                        <i className="fas fa-robot text-blue-600 mr-2"></i>
+                        AI Credit Analysis
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Get AI-powered analysis and recommendations for any client's credit profile.
+                      </p>
+                      {selectedClient ? (
+                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
+                          <AICreditAnalysis userId={selectedClient.id} />
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-gray-500">
+                          Select a client to view AI analysis
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Credit Score Simulator */}
+                  <Card className="border-green-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center">
+                        <i className="fas fa-calculator text-green-600 mr-2"></i>
+                        Credit Score Simulator
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Simulate potential credit score improvements for client presentations.
+                      </p>
+                      {selectedClient && clientCreditReport ? (
+                        <CreditSimulatorModal 
+                          open={false} 
+                          onOpenChange={() => {}} 
+                          currentScore={clientCreditReport.creditScore} 
+                        />
+                      ) : (
+                        <div className="text-center py-4 text-gray-500">
+                          Select a client to simulate credit improvements
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Dispute Letter Generation */}
+                <Card className="mt-6 border-purple-200">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center">
+                      <i className="fas fa-file-text text-purple-600 mr-2"></i>
+                      AI Dispute Letter Generator
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Generate professional, legally compliant dispute letters using AI. Select a client and their credit issues to create targeted dispute letters.
+                    </p>
+                    {selectedClient && clientIssues.length > 0 ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {clientIssues.map((issue) => (
+                            <Card key={issue.id} className="border-gray-200">
+                              <CardContent className="p-4">
+                                <h4 className="font-medium text-gray-900 mb-2">{issue.title}</h4>
+                                <p className="text-sm text-gray-600 mb-3">{issue.creditor}</p>
+                                <Button 
+                                  size="sm" 
+                                  className="w-full"
+                                  onClick={() => {
+                                    // Open dispute modal for this issue
+                                    setSelectedIssue(issue);
+                                    setDisputeModalOpen(true);
+                                  }}
+                                >
+                                  <i className="fas fa-magic mr-2"></i>
+                                  Generate AI Letter
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    ) : selectedClient ? (
+                      <div className="text-center py-6 text-gray-500">
+                        <i className="fas fa-check-circle text-green-500 text-3xl mb-2"></i>
+                        <p>No active credit issues for this client</p>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-gray-500">
+                        <i className="fas fa-user-plus text-gray-400 text-3xl mb-2"></i>
+                        <p>Select a client to generate dispute letters</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </CardContent>
             </Card>
           </TabsContent>
@@ -345,6 +454,12 @@ export default function AdminPortal() {
             </Card>
           </TabsContent>
         </Tabs>
+        
+        <DisputeLetterModal
+          open={disputeModalOpen}
+          onOpenChange={setDisputeModalOpen}
+          issue={selectedIssue}
+        />
       </div>
     </div>
   );
