@@ -81,129 +81,132 @@ export default function CreditRepair() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Credit Repair</h1>
-        <p className="mt-2 text-gray-600">
-          Identify and dispute negative items on your credit report to improve your credit score.
+    <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+      {/* Header - More compact for mobile */}
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Credit Repair</h1>
+        <p className="mt-1 text-sm sm:text-base text-gray-600">
+          Dispute negative items to improve your credit score.
         </p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      {/* Summary Cards - Better mobile grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-exclamation-triangle text-red-600 text-sm"></i>
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-exclamation-triangle text-red-600 text-xs sm:text-sm"></i>
                 </div>
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Active Issues</p>
-                <p className="text-2xl font-bold text-red-600">{activeIssues.length}</p>
+              <div className="ml-2 sm:ml-3">
+                <p className="text-xs sm:text-sm font-medium text-gray-900">Active Issues</p>
+                <p className="text-lg sm:text-2xl font-bold text-red-600">{activeIssues.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-gavel text-yellow-600 text-sm"></i>
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-gavel text-yellow-600 text-xs sm:text-sm"></i>
                 </div>
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Disputed</p>
-                <p className="text-2xl font-bold text-yellow-600">{disputedIssues.length}</p>
+              <div className="ml-2 sm:ml-3">
+                <p className="text-xs sm:text-sm font-medium text-gray-900">Disputed</p>
+                <p className="text-lg sm:text-2xl font-bold text-yellow-600">{disputedIssues.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-check-circle text-green-600 text-sm"></i>
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-check-circle text-green-600 text-xs sm:text-sm"></i>
                 </div>
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Resolved</p>
-                <p className="text-2xl font-bold text-green-600">{resolvedIssues.length}</p>
+              <div className="ml-2 sm:ml-3">
+                <p className="text-xs sm:text-sm font-medium text-gray-900">Resolved</p>
+                <p className="text-lg sm:text-2xl font-bold text-green-600">{resolvedIssues.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-clock text-blue-600 text-sm"></i>
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <i className="fas fa-clock text-blue-600 text-xs sm:text-sm"></i>
                 </div>
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Pending Disputes</p>
-                <p className="text-2xl font-bold text-blue-600">{pendingDisputes.length}</p>
+              <div className="ml-2 sm:ml-3">
+                <p className="text-xs sm:text-sm font-medium text-gray-900">Pending</p>
+                <p className="text-lg sm:text-2xl font-bold text-blue-600">{pendingDisputes.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="issues" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="issues">Credit Issues</TabsTrigger>
-          <TabsTrigger value="disputes">Dispute Management</TabsTrigger>
+      <Tabs defaultValue="issues" className="space-y-4 sm:space-y-6">
+        <TabsList className="grid w-full grid-cols-2 h-9 sm:h-10">
+          <TabsTrigger value="issues" className="text-sm">Credit Issues</TabsTrigger>
+          <TabsTrigger value="disputes" className="text-sm">Disputes</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="issues" className="space-y-6">
+        <TabsContent value="issues" className="space-y-4 sm:space-y-6">
           {/* Active Issues */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="flex items-center justify-between text-base sm:text-lg">
                 <span>Active Credit Issues</span>
-                <Badge variant="destructive">{activeIssues.length} Issues</Badge>
+                <Badge variant="destructive" className="text-xs">{activeIssues.length} Issues</Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="pt-0">
+              <div className="space-y-3 sm:space-y-4">
                 {activeIssues.map((issue) => (
                   <div
                     key={issue.id}
-                    className={`flex items-start space-x-4 p-4 rounded-lg border ${getIssueTypeColor(issue.type)}`}
+                    className={`flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 rounded-lg border ${getIssueTypeColor(issue.type)}`}
                   >
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
-                        <i className={`${getIssueTypeIcon(issue.type)} text-white text-sm`}></i>
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900">{issue.title}</h4>
-                          <p className="text-sm text-gray-600">{issue.description}</p>
-                          <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                            <span>Creditor: {issue.creditor}</span>
-                            {issue.amount && <span>Amount: {formatCurrency(issue.amount)}</span>}
-                            <span>Impact: {issue.impact} points</span>
-                            <span>Added: {formatRelativeDate(issue.dateAdded)}</span>
-                          </div>
+                    <div className="flex items-start space-x-3 sm:space-x-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+                          <i className={`${getIssueTypeIcon(issue.type)} text-white text-sm`}></i>
                         </div>
-                        <Badge variant="outline" className="ml-2">
-                          {issue.type}
-                        </Badge>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="text-sm font-medium text-gray-900 truncate">{issue.title}</h4>
+                            <p className="text-sm text-gray-600 mt-1">{issue.description}</p>
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-gray-500">
+                              <span>Creditor: {issue.creditor}</span>
+                              {issue.amount && <span>Amount: {formatCurrency(issue.amount)}</span>}
+                              <span>Impact: {issue.impact} points</span>
+                              <span className="hidden sm:inline">Added: {formatRelativeDate(issue.dateAdded)}</span>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            {issue.type}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex flex-col space-y-2">
+                    <div className="flex flex-row sm:flex-col space-x-2 sm:space-x-0 sm:space-y-2 flex-shrink-0">
                       <Button
                         size="sm"
-                        className="bg-red-600 hover:bg-red-700 text-white"
+                        className="bg-red-600 hover:bg-red-700 text-white flex-1 sm:flex-none text-xs"
                         onClick={() => handleDispute(issue)}
                       >
                         Dispute
@@ -211,6 +214,7 @@ export default function CreditRepair() {
                       <Button
                         size="sm"
                         variant="outline"
+                        className="flex-1 sm:flex-none text-xs"
                         onClick={() => handleMarkResolved(issue)}
                         disabled={updateIssueMutation.isPending}
                       >
@@ -220,10 +224,10 @@ export default function CreditRepair() {
                   </div>
                 ))}
                 {activeIssues.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">
-                    <i className="fas fa-check-circle text-green-600 text-4xl mb-4"></i>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Issues</h3>
-                    <p className="text-gray-600">
+                  <div className="text-center py-8 sm:py-12 text-gray-500">
+                    <i className="fas fa-check-circle text-green-600 text-3xl sm:text-4xl mb-3 sm:mb-4"></i>
+                    <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No Active Issues</h3>
+                    <p className="text-sm sm:text-base text-gray-600">
                       Great! You don't have any active credit issues to address.
                     </p>
                   </div>
