@@ -78,8 +78,15 @@ Format as a complete business letter with proper addressing and closing.`;
       });
 
       return response.choices[0].message.content || "Failed to generate dispute letter";
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating dispute letter:", error);
+      
+      // If API quota exceeded, provide a demo dispute letter for testing
+      if (error.status === 429 || error.message?.includes('quota') || error.code === 'insufficient_quota') {
+        console.log("AI Service: API quota exceeded, providing demo dispute letter");
+        return this.generateDemoDisputeLetter(params);
+      }
+      
       throw new Error("Failed to generate dispute letter with AI");
     }
   }
@@ -239,6 +246,216 @@ Base calculations on industry standards:
       console.error("Error simulating credit improvement:", error);
       throw new Error("Failed to simulate credit improvement with AI");
     }
+  }
+
+  private generateDemoDisputeLetter(params: DisputeLetterParams): string {
+    const { issueType, creditor, amount, description, bureau, dateAdded, impact } = params;
+    const currentDate = new Date().toLocaleDateString();
+    
+    const templates = {
+      COLLECTION: `${currentDate}
+
+${bureau} Credit Bureau
+Consumer Dispute Department
+[Bureau Address]
+
+RE: Formal Dispute - ${creditor} Collection Account
+Account Reference: [Account Number]
+
+Dear Credit Bureau,
+
+I am writing to formally dispute the following item on my credit report:
+
+Creditor: ${creditor}
+Account Type: Collection Account
+${amount ? `Amount: $${amount.toLocaleString()}` : ''}
+Date Reported: ${dateAdded.toLocaleDateString()}
+
+I am disputing this item for the following reasons:
+
+1. INACCURATE INFORMATION: The information reported by ${creditor} contains inaccuracies that negatively impact my creditworthiness.
+
+2. LACK OF VERIFICATION: I have not received proper verification of this debt, including proof of the original creditor relationship and complete payment history.
+
+3. VIOLATION OF FAIR CREDIT REPORTING ACT: This item may violate provisions of the FCRA regarding accuracy and completeness of credit information.
+
+Under the Fair Credit Reporting Act (15 USC 1681), you are required to investigate and verify the accuracy of all disputed information. I request that you:
+
+• Immediately investigate this disputed item
+• Provide complete verification from ${creditor}
+• Remove this item if verification cannot be provided
+• Send me an updated credit report reflecting any changes
+
+If ${creditor} cannot provide complete verification including:
+- Original creditor information and assignment chain
+- Complete payment history and account statements  
+- Signed agreement or contract
+- Proof of legal authority to collect
+
+Then this item must be removed from my credit report immediately.
+
+I look forward to your prompt response within 30 days as required by law.
+
+Sincerely,
+
+[Your Signature]
+[Your Printed Name]
+[Your Address]
+[Your Phone Number]
+
+Enclosures: Copy of ID, Proof of Address`,
+
+      LATE_PAYMENT: `${currentDate}
+
+${bureau} Credit Bureau
+Consumer Dispute Department
+[Bureau Address]
+
+RE: Formal Dispute - ${creditor} Late Payment Entry
+Account Reference: [Account Number]
+
+Dear Credit Bureau,
+
+I am writing to formally dispute the following late payment entry on my credit report:
+
+Creditor: ${creditor}
+Account Type: ${description}
+Date of Late Payment: ${dateAdded.toLocaleDateString()}
+
+DISPUTE GROUNDS:
+
+1. INACCURATE PAYMENT HISTORY: The late payment entry reported by ${creditor} is inaccurate and does not reflect my actual payment history.
+
+2. TIMING DISCREPANCY: The reported late payment date may not align with actual payment posting dates and grace periods.
+
+3. LACK OF PROPER NOTIFICATION: I was not provided adequate notice of any late payment status that would justify this negative reporting.
+
+Under the Fair Credit Reporting Act, I am requesting:
+
+• Complete investigation of this disputed late payment
+• Verification from ${creditor} including detailed payment records
+• Correction or removal if accuracy cannot be verified
+• Updated credit report reflecting changes
+
+${creditor} must provide complete documentation showing:
+- Exact payment due dates and grace periods
+- Payment posting dates and methods
+- Any correspondence regarding late payment status
+- Account terms and conditions regarding late payments
+
+If complete verification cannot be provided, this late payment entry must be removed immediately.
+
+I request your investigation be completed within 30 days and that I receive written notification of the results.
+
+Sincerely,
+
+[Your Signature]
+[Your Printed Name]
+[Your Address]
+[Your Phone Number]
+
+Enclosures: Copy of ID, Proof of Address`,
+
+      INQUIRY: `${currentDate}
+
+${bureau} Credit Bureau
+Consumer Dispute Department
+[Bureau Address]
+
+RE: Formal Dispute - Unauthorized Hard Inquiry
+Inquiry from: ${creditor}
+
+Dear Credit Bureau,
+
+I am writing to dispute the following hard inquiry on my credit report:
+
+Creditor/Company: ${creditor}
+Date of Inquiry: ${dateAdded.toLocaleDateString()}
+Type: Hard Credit Inquiry
+
+DISPUTE REASON:
+
+I did not authorize ${creditor} to perform a hard credit inquiry on my credit report. This unauthorized inquiry is negatively impacting my credit score and violates the Fair Credit Reporting Act.
+
+REQUIRED VERIFICATION:
+
+Under the FCRA, hard inquiries require my explicit written consent. I request that you contact ${creditor} and require them to provide:
+
+• Written authorization with my signature permitting this inquiry
+• Documentation of legitimate business need for credit inquiry  
+• Proof of my application or request for credit services
+• Complete records of our business relationship
+
+If ${creditor} cannot provide documented proof that I authorized this hard credit inquiry, it must be removed from my credit report immediately.
+
+FCRA VIOLATION:
+
+This unauthorized inquiry violates 15 USC 1681b which requires "permissible purpose" for credit inquiries. Without my consent, this inquiry is:
+- Unauthorized and potentially fraudulent
+- Damaging to my credit score
+- In violation of consumer protection laws
+
+I request immediate investigation and removal of this unauthorized inquiry within 30 days.
+
+Sincerely,
+
+[Your Signature]
+[Your Printed Name]
+[Your Address]
+[Your Phone Number]
+
+Enclosures: Copy of ID, Proof of Address`,
+
+      CHARGE_OFF: `${currentDate}
+
+${bureau} Credit Bureau
+Consumer Dispute Department
+[Bureau Address]
+
+RE: Formal Dispute - ${creditor} Charge-Off Account
+Account Reference: [Account Number]
+
+Dear Credit Bureau,
+
+I am writing to formally dispute the charge-off account reported by ${creditor}:
+
+Original Creditor: ${creditor}
+Account Type: Charge-Off
+${amount ? `Amount: $${amount.toLocaleString()}` : ''}
+Date of Charge-Off: ${dateAdded.toLocaleDateString()}
+
+DISPUTE GROUNDS:
+
+1. INACCURATE ACCOUNT STATUS: The charge-off status reported by ${creditor} may be inaccurate or improperly reported.
+
+2. ACCOUNT VERIFICATION: I require complete verification of this account including all payment history and account management records.
+
+3. REPORTING VIOLATIONS: This item may violate FCRA provisions regarding accurate reporting of account status and payment history.
+
+VERIFICATION REQUIREMENTS:
+
+Please contact ${creditor} and require complete documentation including:
+- Original account agreement and terms
+- Complete payment history showing all transactions
+- Documentation supporting charge-off decision
+- Account statements and correspondence
+- Proof of debt ownership and legal standing
+
+Under 15 USC 1681i of the Fair Credit Reporting Act, you must investigate all disputed information and verify its accuracy. If ${creditor} cannot provide complete verification of this charge-off account, it must be removed from my credit report.
+
+The investigation must be completed within 30 days, and I request written notification of all findings and any changes made to my credit report.
+
+Sincerely,
+
+[Your Signature]
+[Your Printed Name]
+[Your Address]
+[Your Phone Number]
+
+Enclosures: Copy of ID, Proof of Address`
+    };
+
+    return templates[issueType as keyof typeof templates] || templates.COLLECTION;
   }
 }
 

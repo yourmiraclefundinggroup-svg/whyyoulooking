@@ -439,29 +439,52 @@ export class MemStorage implements IStorage {
     ];
     issues.forEach(issue => this.creditIssues.set(issue.id, issue));
 
-    // Create sample disputes
+    // Create sample disputes with USPS tracking data
     const disputesData: Dispute[] = [
       {
         id: 1,
-        userId: 1,
+        userId: 2, // Sarah Johnson
         issueId: 1,
         bureau: "EQUIFAX",
         status: "PENDING",
-        dateSent: new Date("2024-03-15"),
-        expectedResponse: new Date("2024-04-14"),
+        dateSent: new Date("2024-12-20"),
+        expectedResponse: new Date("2025-01-19"),
         actualResponse: null,
-        letterContent: "Dispute letter content for collection account..."
+        letterContent: "Dispute letter for ABC Medical Center collection account...",
+        uspsTrackingNumber: "9400109699937865678123",
+        deliveryDate: new Date("2024-12-23"),
+        followUpDate: new Date("2025-01-06"),
+        alertSent: false
       },
       {
         id: 2,
-        userId: 1,
+        userId: 2, // Sarah Johnson  
         issueId: 2,
         bureau: "EXPERIAN",
-        status: "RESOLVED",
-        dateSent: new Date("2024-02-20"),
-        expectedResponse: new Date("2024-03-21"),
-        actualResponse: new Date("2024-03-10"),
-        letterContent: "Dispute letter content for late payment..."
+        status: "SENT",
+        dateSent: new Date("2024-12-18"),
+        expectedResponse: new Date("2024-01-17"),
+        actualResponse: null,
+        letterContent: "Dispute letter for Chase Bank late payment...",
+        uspsTrackingNumber: "9400109699937865678124",
+        deliveryDate: null,
+        followUpDate: null,
+        alertSent: false
+      },
+      {
+        id: 3,
+        userId: 3, // Michael Thompson
+        issueId: 3,
+        bureau: "TRANSUNION",
+        status: "PENDING", 
+        dateSent: new Date("2024-12-10"),
+        expectedResponse: new Date("2025-01-09"),
+        actualResponse: null,
+        letterContent: "Dispute letter for Capital One charge-off...",
+        uspsTrackingNumber: "9400109699937865678125",
+        deliveryDate: new Date("2024-12-13"),
+        followUpDate: new Date("2024-12-27"),
+        alertSent: true
       }
     ];
     disputesData.forEach(dispute => this.disputes.set(dispute.id, dispute));

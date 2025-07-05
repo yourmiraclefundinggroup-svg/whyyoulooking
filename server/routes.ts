@@ -399,9 +399,11 @@ Format the response as a complete business letter ready to send.`;
 
   // AI Credit Analysis
   app.post("/api/ai-credit-analysis", async (req, res) => {
+    const { userId } = req.body;
+    let creditReport: any = null;
+    let creditIssues: any[] = [];
+    
     try {
-      const { userId } = req.body;
-      
       if (!process.env.OPENAI_API_KEY) {
         return res.status(400).json({ 
           message: "OpenAI API key not configured. Please add your API key for AI credit analysis." 
@@ -409,8 +411,8 @@ Format the response as a complete business letter ready to send.`;
       }
 
       // Get user's complete credit profile
-      const creditReport = await storage.getCreditReport(userId);
-      const creditIssues = await storage.getCreditIssues(userId);
+      creditReport = await storage.getCreditReport(userId);
+      creditIssues = await storage.getCreditIssues(userId);
       const creditGoal = await storage.getCreditGoal(userId);
       
       if (!creditReport) {
@@ -425,9 +427,22 @@ Format the response as a complete business letter ready to send.`;
       // Check if this is a quota error and provide demo analysis
       if (error.status === 429 || error.message?.includes('quota') || error.code === 'insufficient_quota') {
         console.log("Route handler: API quota exceeded, providing demo analysis");
+        
+        // If we don't have creditReport yet, try to get it for the demo
+        if (!creditReport) {
+          try {
+            creditReport = await storage.getCreditReport(userId);
+            creditIssues = await storage.getCreditIssues(userId);
+          } catch (e) {
+            // Fallback if we can't get the data
+            creditReport = { creditScore: 650 };
+            creditIssues = [];
+          }
+        }
+        
         const demoAnalysis = {
           analysis: `Your current credit score of ${creditReport.creditScore} shows ${creditReport.creditScore >= 650 ? 'good' : 'fair'} credit health. With ${creditIssues.length} negative items identified, we can improve your score by approximately ${Math.min(creditIssues.length * 15, 100)} points through strategic dispute processes.`,
-          priorityIssues: creditIssues.slice(0, 3).map(issue => `${issue.type}: ${issue.creditor} (${Math.abs(issue.impact)} point impact)`),
+          priorityIssues: creditIssues.slice(0, 3).map((issue: any) => `${issue.type}: ${issue.creditor} (${Math.abs(issue.impact)} point impact)`),
           recommendations: [
             {
               action: "Dispute highest impact negative items first",
@@ -443,9 +458,9 @@ Format the response as a complete business letter ready to send.`;
             }
           ],
           disputeStrategy: {
-            collections: creditIssues.some(issue => issue.type === 'COLLECTION') ? "Challenge collections accounts for accuracy and validation. Request proof of debt ownership and original creditor information." : undefined,
-            latePayments: creditIssues.some(issue => issue.type === 'LATE_PAYMENT') ? "Dispute late payment entries older than 2 years. Negotiate goodwill deletions with original creditors for recent payments." : undefined,
-            inquiries: creditIssues.some(issue => issue.type === 'INQUIRY') ? "Remove unauthorized hard inquiries and dispute any inquiries older than 2 years or from unknown creditors." : undefined
+            collections: creditIssues.some((issue: any) => issue.type === 'COLLECTION') ? "Challenge collections accounts for accuracy and validation. Request proof of debt ownership and original creditor information." : undefined,
+            latePayments: creditIssues.some((issue: any) => issue.type === 'LATE_PAYMENT') ? "Dispute late payment entries older than 2 years. Negotiate goodwill deletions with original creditors for recent payments." : undefined,
+            inquiries: creditIssues.some((issue: any) => issue.type === 'INQUIRY') ? "Remove unauthorized hard inquiries and dispute any inquiries older than 2 years or from unknown creditors." : undefined
           },
           scoreProjection: `With proper dispute management, expect a ${Math.min(creditIssues.length * 12, 80)}-point improvement over 3-6 months, bringing your score to approximately ${Math.min(creditReport.creditScore + Math.min(creditIssues.length * 12, 80), 850)}.`
         };
@@ -755,8 +770,14 @@ Format the response as a complete business letter ready to send.`;
 
   // AI Dispute Letter Generation
   app.post("/api/generate-dispute-letter", async (req, res) => {
+    const { issueType, creditor, amount, description, bureau, dateAdded, impact } = req.body;
+    
     try {
-      const { issueType, creditor, amount, description, bureau, dateAdded, impact } = req.body;
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ 
+          message: "OpenAI API key not configured. Please add your API key for AI dispute letter generation." 
+        });
+      }
       
       const letterContent = await aiService.generateDisputeLetter({
         issueType,
@@ -769,12 +790,251 @@ Format the response as a complete business letter ready to send.`;
       });
 
       res.json({ letterContent });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating dispute letter:", error);
+      
+      // Check if this is a quota error and provide demo letter
+      if (error.status === 429 || error.message?.includes('quota') || error.code === 'insufficient_quota') {
+        console.log("Route handler: API quota exceeded, providing demo dispute letter");
+        
+        const currentDate = new Date().toLocaleDateString();
+        const demoLetter = generateDemoDisputeLetter({
+          issueType,
+          creditor,
+          amount,
+          description,
+          bureau,
+          dateAdded: new Date(dateAdded),
+          impact,
+          currentDate
+        });
+        
+        return res.json({ letterContent: demoLetter });
+      }
+      
       res.status(500).json({ message: "Failed to generate dispute letter" });
     }
   });
 
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// Demo dispute letter generator for when OpenAI API quota is exceeded
+function generateDemoDisputeLetter(params: {
+  issueType: string;
+  creditor: string;
+  amount?: number;
+  description: string;
+  bureau: string;
+  dateAdded: Date;
+  impact: number;
+  currentDate: string;
+}): string {
+  const { issueType, creditor, amount, description, bureau, dateAdded, currentDate } = params;
+  
+  const templates = {
+    COLLECTION: `${currentDate}
+
+${bureau} Credit Bureau
+Consumer Dispute Department
+[Bureau Address]
+
+RE: Formal Dispute - ${creditor} Collection Account
+Account Reference: [Account Number]
+
+Dear Credit Bureau,
+
+I am writing to formally dispute the following item on my credit report:
+
+Creditor: ${creditor}
+Account Type: Collection Account
+${amount ? `Amount: $${amount.toLocaleString()}` : ''}
+Date Reported: ${dateAdded.toLocaleDateString()}
+
+I am disputing this item for the following reasons:
+
+1. INACCURATE INFORMATION: The information reported by ${creditor} contains inaccuracies that negatively impact my creditworthiness.
+
+2. LACK OF VERIFICATION: I have not received proper verification of this debt, including proof of the original creditor relationship and complete payment history.
+
+3. VIOLATION OF FAIR CREDIT REPORTING ACT: This item may violate provisions of the FCRA regarding accuracy and completeness of credit information.
+
+Under the Fair Credit Reporting Act (15 USC 1681), you are required to investigate and verify the accuracy of all disputed information. I request that you:
+
+• Immediately investigate this disputed item
+• Provide complete verification from ${creditor}
+• Remove this item if verification cannot be provided
+• Send me an updated credit report reflecting any changes
+
+If ${creditor} cannot provide complete verification including:
+- Original creditor information and assignment chain
+- Complete payment history and account statements  
+- Signed agreement or contract
+- Proof of legal authority to collect
+
+Then this item must be removed from my credit report immediately.
+
+I look forward to your prompt response within 30 days as required by law.
+
+Sincerely,
+
+[Your Signature]
+[Your Printed Name]
+[Your Address]
+[Your Phone Number]
+
+Enclosures: Copy of ID, Proof of Address`,
+
+    LATE_PAYMENT: `${currentDate}
+
+${bureau} Credit Bureau
+Consumer Dispute Department
+[Bureau Address]
+
+RE: Formal Dispute - ${creditor} Late Payment Entry
+Account Reference: [Account Number]
+
+Dear Credit Bureau,
+
+I am writing to formally dispute the following late payment entry on my credit report:
+
+Creditor: ${creditor}
+Account Type: ${description}
+Date of Late Payment: ${dateAdded.toLocaleDateString()}
+
+DISPUTE GROUNDS:
+
+1. INACCURATE PAYMENT HISTORY: The late payment entry reported by ${creditor} is inaccurate and does not reflect my actual payment history.
+
+2. TIMING DISCREPANCY: The reported late payment date may not align with actual payment posting dates and grace periods.
+
+3. LACK OF PROPER NOTIFICATION: I was not provided adequate notice of any late payment status that would justify this negative reporting.
+
+Under the Fair Credit Reporting Act, I am requesting:
+
+• Complete investigation of this disputed late payment
+• Verification from ${creditor} including detailed payment records
+• Correction or removal if accuracy cannot be verified
+• Updated credit report reflecting changes
+
+${creditor} must provide complete documentation showing:
+- Exact payment due dates and grace periods
+- Payment posting dates and methods
+- Any correspondence regarding late payment status
+- Account terms and conditions regarding late payments
+
+If complete verification cannot be provided, this late payment entry must be removed immediately.
+
+I request your investigation be completed within 30 days and that I receive written notification of the results.
+
+Sincerely,
+
+[Your Signature]
+[Your Printed Name]
+[Your Address]
+[Your Phone Number]
+
+Enclosures: Copy of ID, Proof of Address`,
+
+    INQUIRY: `${currentDate}
+
+${bureau} Credit Bureau
+Consumer Dispute Department
+[Bureau Address]
+
+RE: Formal Dispute - Unauthorized Hard Inquiry
+Inquiry from: ${creditor}
+
+Dear Credit Bureau,
+
+I am writing to dispute the following hard inquiry on my credit report:
+
+Creditor/Company: ${creditor}
+Date of Inquiry: ${dateAdded.toLocaleDateString()}
+Type: Hard Credit Inquiry
+
+DISPUTE REASON:
+
+I did not authorize ${creditor} to perform a hard credit inquiry on my credit report. This unauthorized inquiry is negatively impacting my credit score and violates the Fair Credit Reporting Act.
+
+REQUIRED VERIFICATION:
+
+Under the FCRA, hard inquiries require my explicit written consent. I request that you contact ${creditor} and require them to provide:
+
+• Written authorization with my signature permitting this inquiry
+• Documentation of legitimate business need for credit inquiry  
+• Proof of my application or request for credit services
+• Complete records of our business relationship
+
+If ${creditor} cannot provide documented proof that I authorized this hard credit inquiry, it must be removed from my credit report immediately.
+
+FCRA VIOLATION:
+
+This unauthorized inquiry violates 15 USC 1681b which requires "permissible purpose" for credit inquiries. Without my consent, this inquiry is:
+- Unauthorized and potentially fraudulent
+- Damaging to my credit score
+- In violation of consumer protection laws
+
+I request immediate investigation and removal of this unauthorized inquiry within 30 days.
+
+Sincerely,
+
+[Your Signature]
+[Your Printed Name]
+[Your Address]
+[Your Phone Number]
+
+Enclosures: Copy of ID, Proof of Address`,
+
+    CHARGE_OFF: `${currentDate}
+
+${bureau} Credit Bureau
+Consumer Dispute Department
+[Bureau Address]
+
+RE: Formal Dispute - ${creditor} Charge-Off Account
+Account Reference: [Account Number]
+
+Dear Credit Bureau,
+
+I am writing to formally dispute the charge-off account reported by ${creditor}:
+
+Original Creditor: ${creditor}
+Account Type: Charge-Off
+${amount ? `Amount: $${amount.toLocaleString()}` : ''}
+Date of Charge-Off: ${dateAdded.toLocaleDateString()}
+
+DISPUTE GROUNDS:
+
+1. INACCURATE ACCOUNT STATUS: The charge-off status reported by ${creditor} may be inaccurate or improperly reported.
+
+2. ACCOUNT VERIFICATION: I require complete verification of this account including all payment history and account management records.
+
+3. REPORTING VIOLATIONS: This item may violate FCRA provisions regarding accurate reporting of account status and payment history.
+
+VERIFICATION REQUIREMENTS:
+
+Please contact ${creditor} and require complete documentation including:
+- Original account agreement and terms
+- Complete payment history showing all transactions
+- Documentation supporting charge-off decision
+- Account statements and correspondence
+- Proof of debt ownership and legal standing
+
+Under 15 USC 1681i of the Fair Credit Reporting Act, you must investigate all disputed information and verify its accuracy. If ${creditor} cannot provide complete verification of this charge-off account, it must be removed from my credit report.
+
+The investigation must be completed within 30 days, and I request written notification of all findings and any changes made to my credit report.
+
+Sincerely,
+
+[Your Signature]
+[Your Printed Name]
+[Your Address]
+[Your Phone Number]
+
+Enclosures: Copy of ID, Proof of Address`
+  };
+
+  return templates[issueType as keyof typeof templates] || templates.COLLECTION;
 }

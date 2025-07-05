@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DisputeLetterModal } from "@/components/dispute-letter-modal";
 import { AICreditAnalysis } from "@/components/ai-credit-analysis";
 import { CreditSimulatorModal } from "@/components/credit-simulator-modal";
+import { AdminUSPSTracking } from "@/components/admin-usps-tracking";
+import { FollowUpAlerts } from "@/components/follow-up-alerts";
 import { User, CreditReport, CreditIssue, Dispute } from "@shared/schema";
 import { Users, FileText, AlertTriangle, Send, Settings } from "lucide-react";
 
@@ -364,6 +366,12 @@ export default function AdminPortal() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* USPS Tracking Section */}
+                <AdminUSPSTracking userId={selectedClient.id} />
+
+                {/* Follow-up Alerts */}
+                <FollowUpAlerts />
 
                 {/* AI Tools Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
