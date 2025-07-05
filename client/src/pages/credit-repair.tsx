@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DisputeLetterModal } from "@/components/dispute-letter-modal";
 import { USPSTracking } from "@/components/usps-tracking";
+import { AICreditAnalysis } from "@/components/ai-credit-analysis";
+import { CreditSimulatorModal } from "@/components/credit-simulator-modal";
 import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -170,9 +172,10 @@ export default function CreditRepair() {
       </div>
 
       <Tabs defaultValue="issues" className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-2 h-9 sm:h-10">
+        <TabsList className="grid w-full grid-cols-3 h-9 sm:h-10">
           <TabsTrigger value="issues" className="text-sm">Credit Issues</TabsTrigger>
           <TabsTrigger value="disputes" className="text-sm">Disputes</TabsTrigger>
+          <TabsTrigger value="ai-tools" className="text-sm">AI Tools</TabsTrigger>
         </TabsList>
 
         <TabsContent value="issues" className="space-y-4 sm:space-y-6">
@@ -392,6 +395,50 @@ export default function CreditRepair() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="ai-tools" className="space-y-6">
+          {/* AI Credit Analysis */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <i className="fas fa-robot text-blue-600 mr-3"></i>
+                AI Credit Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Get personalized AI-powered recommendations for your credit repair strategy.
+                </p>
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
+                  <AICreditAnalysis userId={userId} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Credit Score Simulator */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <i className="fas fa-calculator text-green-600 mr-3"></i>
+                Credit Score Simulator
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Simulate how different actions could impact your credit score.
+                </p>
+                <CreditSimulatorModal 
+                  open={false} 
+                  onOpenChange={() => {}} 
+                  currentScore={650} 
+                />
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

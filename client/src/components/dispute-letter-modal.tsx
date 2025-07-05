@@ -21,17 +21,21 @@ export function DisputeLetterModal({ open, onOpenChange, issue }: DisputeLetterM
   const { toast } = useToast();
 
   const generateLetterMutation = useMutation({
-    mutationFn: async (data: { issueId: number; bureau: string; issueType: string; description: string; creditor: string; amount?: number | null; dateAdded: Date; impact: number }) => {
-      const response = await apiRequest("POST", "/api/disputes/generate-letter", data);
+    mutationFn: async (data: { issueType: string; description: string; creditor: string; amount?: number | null; dateAdded: Date; impact: number; bureau: string }) => {
+      const response = await apiRequest("POST", "/api/generate-dispute-letter", data);
       return response.json();
     },
     onSuccess: (data) => {
       setLetterContent(data.letterContent);
+      toast({
+        title: "Success",
+        description: "AI dispute letter generated successfully",
+      });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to generate dispute letter",
+        description: "Failed to generate dispute letter with AI",
         variant: "destructive",
       });
     },
@@ -64,14 +68,13 @@ export function DisputeLetterModal({ open, onOpenChange, issue }: DisputeLetterM
     if (!issue || !bureau) return;
 
     generateLetterMutation.mutate({
-      issueId: issue.id,
-      bureau,
       issueType: issue.type,
       description: issue.description,
       creditor: issue.creditor,
       amount: issue.amount,
       dateAdded: issue.dateAdded,
       impact: issue.impact,
+      bureau,
     });
   };
 

@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { aiService } from "./ai-service";
 import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -769,6 +770,28 @@ Respond in JSON format with the following structure:
       res.json(access);
     } catch (error) {
       res.status(500).json({ message: "Failed to validate access code" });
+    }
+  });
+
+  // AI Dispute Letter Generation
+  app.post("/api/generate-dispute-letter", async (req, res) => {
+    try {
+      const { issueType, creditor, amount, description, bureau, dateAdded, impact } = req.body;
+      
+      const letterContent = await aiService.generateDisputeLetter({
+        issueType,
+        creditor,
+        amount,
+        description,
+        bureau,
+        dateAdded: new Date(dateAdded),
+        impact
+      });
+
+      res.json({ letterContent });
+    } catch (error) {
+      console.error("Error generating dispute letter:", error);
+      res.status(500).json({ message: "Failed to generate dispute letter" });
     }
   });
 
