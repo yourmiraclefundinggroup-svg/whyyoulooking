@@ -20,11 +20,11 @@ export default function Login() {
 
   const loginMutation = useMutation({
     mutationFn: async ({ email, password, type }: { email: string; password: string; type: string }) => {
-      const response = await apiRequest("POST", "/api/auth/login", JSON.stringify({
+      const response = await apiRequest("POST", "/api/auth/login", {
         email,
         password,
         loginType: type
-      }));
+      });
       return response.json();
     },
     onSuccess: (data) => {
@@ -42,6 +42,11 @@ export default function Login() {
     },
     onError: (error: any) => {
       console.error("Login failed:", error);
+      console.error("Error details:", {
+        message: error.message,
+        status: error.status,
+        response: error.response
+      });
     },
   });
 
