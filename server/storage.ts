@@ -280,8 +280,8 @@ export class MemStorage implements IStorage {
     };
     this.users.set(1, adminUser);
 
-    // Create demo client user
-    const clientUser: User = {
+    // Create demo client users
+    const clientUser1: User = {
       id: 2,
       firstName: "Sarah",
       lastName: "Johnson",
@@ -291,31 +291,80 @@ export class MemStorage implements IStorage {
       testingNotes: "Demo client account for testing client portal",
       createdAt: new Date()
     };
-    this.users.set(2, clientUser);
-    this.currentId = 3;
+    this.users.set(2, clientUser1);
 
-    // Use client user for sample data
-    const user: User = clientUser;
+    const clientUser2: User = {
+      id: 3,
+      firstName: "Michael",
+      lastName: "Davis",
+      email: "michael.davis@email.com",
+      accessLevel: "CLIENT_VIEWER",
+      isTestUser: false,
+      testingNotes: "Second demo client - different credit situation",
+      createdAt: new Date()
+    };
+    this.users.set(3, clientUser2);
 
-    // Create sample credit report for client user (ID 2)
-    const creditReport: CreditReport = {
+    const clientUser3: User = {
+      id: 4,
+      firstName: "Jennifer",
+      lastName: "Martinez",
+      email: "jennifer.martinez@email.com",
+      accessLevel: "CLIENT_VIEWER",
+      isTestUser: false,
+      testingNotes: "Third demo client - high score client",
+      createdAt: new Date()
+    };
+    this.users.set(4, clientUser3);
+    
+    this.currentId = 5;
+
+    // Create separate credit reports for each client
+    
+    // Sarah Johnson (ID 2) - Fair credit with collections
+    const creditReport1: CreditReport = {
       id: 1,
       userId: 2,
       creditScore: 658,
       creditRating: "FAIR",
-      lastUpdated: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+      lastUpdated: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
       utilizationRate: 0.65,
       accountAge: 18
     };
-    this.creditReports.set(1, creditReport);
+    this.creditReports.set(1, creditReport1);
 
-    // Create sample credit issues
+    // Michael Davis (ID 3) - Poor credit with multiple issues
+    const creditReport2: CreditReport = {
+      id: 2,
+      userId: 3,
+      creditScore: 542,
+      creditRating: "POOR",
+      lastUpdated: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      utilizationRate: 0.89,
+      accountAge: 8
+    };
+    this.creditReports.set(2, creditReport2);
+
+    // Jennifer Martinez (ID 4) - Good credit, minor optimization needed
+    const creditReport3: CreditReport = {
+      id: 3,
+      userId: 4,
+      creditScore: 734,
+      creditRating: "GOOD",
+      lastUpdated: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      utilizationRate: 0.23,
+      accountAge: 25
+    };
+    this.creditReports.set(3, creditReport3);
+
+    // Create credit issues for each client
     const issues: CreditIssue[] = [
+      // Sarah Johnson (ID 2) issues
       {
         id: 1,
-        userId: 1,
+        userId: 2,
         type: "COLLECTION",
-        title: "Collection Account",
+        title: "Medical Collection",
         description: "Medical collection from ABC Medical Center - $1,247",
         amount: 1247,
         impact: -45,
@@ -325,7 +374,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: 2,
-        userId: 1,
+        userId: 2,
         type: "LATE_PAYMENT",
         title: "Late Payment",
         description: "Chase Credit Card - 30 days late payment",
@@ -335,9 +384,47 @@ export class MemStorage implements IStorage {
         status: "ACTIVE",
         creditor: "Chase Bank"
       },
+      // Michael Davis (ID 3) issues - more severe
       {
         id: 3,
-        userId: 1,
+        userId: 3,
+        type: "COLLECTION",
+        title: "Credit Card Collection",
+        description: "Capital One charge-off collection - $3,892",
+        amount: 3892,
+        impact: -78,
+        dateAdded: new Date("2022-08-20"),
+        status: "ACTIVE",
+        creditor: "Capital One"
+      },
+      {
+        id: 4,
+        userId: 3,
+        type: "COLLECTION",
+        title: "Utility Collection",
+        description: "Electric utility collection - $456",
+        amount: 456,
+        impact: -35,
+        dateAdded: new Date("2023-11-05"),
+        status: "ACTIVE",
+        creditor: "City Electric Co"
+      },
+      {
+        id: 5,
+        userId: 3,
+        type: "LATE_PAYMENT",
+        title: "Multiple Late Payments",
+        description: "Bank of America - 90+ days late",
+        amount: null,
+        impact: -65,
+        dateAdded: new Date("2023-06-10"),
+        status: "ACTIVE",
+        creditor: "Bank of America"
+      },
+      // Jennifer Martinez (ID 4) issues - minor
+      {
+        id: 6,
+        userId: 4,
         type: "INQUIRY",
         title: "Hard Inquiry",
         description: "Auto loan inquiry from Wells Fargo",

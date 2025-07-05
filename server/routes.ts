@@ -711,7 +711,9 @@ Respond in JSON format with the following structure:
       // Demo authentication - in production, use proper password hashing
       const demoCredentials = {
         "admin@creditfixpro.com": { password: "admin123", accessLevel: "ADMIN", id: 1 },
-        "client@example.com": { password: "client123", accessLevel: "CLIENT_VIEWER", id: 2 }
+        "client@example.com": { password: "client123", accessLevel: "CLIENT_VIEWER", id: 2 },
+        "michael.davis@email.com": { password: "client123", accessLevel: "CLIENT_VIEWER", id: 3 },
+        "jennifer.martinez@email.com": { password: "client123", accessLevel: "CLIENT_VIEWER", id: 4 }
       };
       
       const userCreds = demoCredentials[email as keyof typeof demoCredentials];
