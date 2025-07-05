@@ -7,6 +7,15 @@ import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Users
+  app.get("/api/users", async (req, res) => {
+    try {
+      const users = await storage.getTestUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
   app.get("/api/users/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

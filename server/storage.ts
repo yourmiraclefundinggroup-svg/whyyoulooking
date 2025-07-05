@@ -260,6 +260,8 @@ export class MemStorage implements IStorage {
   private creditGoals: Map<number, CreditGoal> = new Map();
   private educationalContent: Map<number, EducationalContent> = new Map();
   private creditBuildingActions: Map<number, CreditBuildingAction> = new Map();
+  private testingFeedback: Map<number, TestingFeedback> = new Map();
+  private betaAccess: Map<number, BetaAccess> = new Map();
   private currentId: number = 1;
 
   constructor() {
@@ -678,6 +680,51 @@ export class MemStorage implements IStorage {
     const updatedAction = { ...action, ...updates };
     this.creditBuildingActions.set(id, updatedAction);
     return updatedAction;
+  }
+
+  async getTestingFeedback(): Promise<TestingFeedback[]> {
+    return Array.from(this.testingFeedback.values());
+  }
+
+  async createTestingFeedback(feedback: InsertTestingFeedback): Promise<TestingFeedback> {
+    const newFeedback: TestingFeedback = {
+      ...feedback,
+      id: this.currentId++,
+      createdAt: new Date()
+    };
+    this.testingFeedback.set(newFeedback.id, newFeedback);
+    return newFeedback;
+  }
+
+  async getBetaAccess(): Promise<BetaAccess[]> {
+    return Array.from(this.betaAccess.values());
+  }
+
+  async createBetaAccess(access: InsertBetaAccess): Promise<BetaAccess> {
+    const newAccess: BetaAccess = {
+      ...access,
+      id: this.currentId++,
+      createdAt: new Date()
+    };
+    this.betaAccess.set(newAccess.id, newAccess);
+    return newAccess;
+  }
+
+  async validateAccessCode(code: string): Promise<BetaAccess | undefined> {
+    return Array.from(this.betaAccess.values()).find(access => access.accessCode === code);
+  }
+
+  async getTestUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async updateUserAccess(userId: number, accessLevel: string): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, accessLevel };
+    this.users.set(userId, updatedUser);
+    return updatedUser;
   }
 }
 
