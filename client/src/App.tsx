@@ -43,6 +43,7 @@ function Router() {
         <Route path="/education" component={Education} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/admin-portal" component={AdminPortal} />
+        <Route path="/admin-portal/:section" component={AdminPortal} />
         <Route path="/login" component={Login} />
         <Route component={NotFound} />
       </Switch>

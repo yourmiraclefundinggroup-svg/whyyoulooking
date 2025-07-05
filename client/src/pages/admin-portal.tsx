@@ -293,7 +293,7 @@ function ClientManagementPage({
                 <Input
                   id="firstName"
                   value={newClient.firstName}
-                  onChange={(e) => setNewClient(prev => ({ ...prev, firstName: e.target.value }))}
+                  onChange={(e) => setNewClient((prev: any) => ({ ...prev, firstName: e.target.value }))}
                   placeholder="John"
                   required
                 />
@@ -303,7 +303,7 @@ function ClientManagementPage({
                 <Input
                   id="lastName"
                   value={newClient.lastName}
-                  onChange={(e) => setNewClient(prev => ({ ...prev, lastName: e.target.value }))}
+                  onChange={(e) => setNewClient((prev: any) => ({ ...prev, lastName: e.target.value }))}
                   placeholder="Doe"
                   required
                 />
@@ -314,7 +314,7 @@ function ClientManagementPage({
                   id="email"
                   type="email"
                   value={newClient.email}
-                  onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
+                  onChange={(e) => setNewClient((prev: any) => ({ ...prev, email: e.target.value }))}
                   placeholder="john.doe@example.com"
                   required
                 />

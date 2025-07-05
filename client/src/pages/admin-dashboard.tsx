@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatDate, formatRelativeDate } from "@/lib/utils";
+import { useUserContext } from "@/hooks/use-user-context";
 import { AlertCircle, Users, TestTube, MessageSquare, Plus, Key, UserPlus, Eye, Trash2 } from "lucide-react";
 import type { User, TestingFeedback, BetaAccess, InsertBetaAccess, InsertUser } from "@shared/schema";
 
