@@ -15,7 +15,7 @@ import { CreditSimulatorModal } from "@/components/credit-simulator-modal";
 import { AdminUSPSTracking } from "@/components/admin-usps-tracking";
 import { FollowUpAlerts } from "@/components/follow-up-alerts";
 import { User, CreditReport, CreditIssue, Dispute } from "@shared/schema";
-import { Users, FileText, AlertTriangle, Send, Settings, Menu, X, TrendingUp, Shield } from "lucide-react";
+import { Users, FileText, AlertTriangle, Send, Settings, Menu, X, TrendingUp, Shield, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AdminPortal() {
@@ -159,32 +159,35 @@ export default function AdminPortal() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen bg-slate-100">
+      {/* Admin Header */}
+      <header className="bg-slate-800 shadow-lg border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <Link href="/admin-portal">
                   <div className="flex items-center cursor-pointer">
-                    <Shield className="h-8 w-8 text-blue-600 mr-2" />
-                    <h1 className="text-xl md:text-2xl font-bold text-blue-600">CreditFix Pro Admin</h1>
+                    <Shield className="h-8 w-8 text-orange-400 mr-3" />
+                    <div>
+                      <h1 className="text-xl md:text-2xl font-bold text-white">CreditFix Pro</h1>
+                      <p className="text-xs text-orange-300 font-medium">ADMIN PORTAL</p>
+                    </div>
                   </div>
                 </Link>
               </div>
               {/* Desktop Navigation */}
-              <nav className="hidden md:ml-8 md:flex md:space-x-8">
+              <nav className="hidden md:ml-10 md:flex md:space-x-8">
                 {adminNavItems.map((item) => {
                   const Icon = item.icon;
                   return (
                     <Link key={item.href} href={item.href}>
                       <span
                         className={cn(
-                          "px-1 pb-4 text-sm font-medium border-b-2 transition-colors cursor-pointer flex items-center gap-1",
+                          "px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer flex items-center gap-2",
                           location === item.href
-                            ? "text-blue-600 border-blue-600"
-                            : "text-gray-500 hover:text-gray-700 border-transparent"
+                            ? "bg-orange-500 text-white shadow-md"
+                            : "text-slate-300 hover:text-white hover:bg-slate-700"
                         )}
                       >
                         <Icon className="h-4 w-4" />
@@ -196,13 +199,25 @@ export default function AdminPortal() {
               </nav>
             </div>
             
-            {/* User Menu */}
+            {/* Admin User Menu */}
             <div className="flex items-center gap-4">
-              <div className="hidden md:flex items-center text-sm text-gray-700">
-                <span className="font-medium">{user?.firstName} {user?.lastName}</span>
-                <Badge variant="secondary" className="ml-2">Admin</Badge>
+              <div className="hidden md:flex items-center text-sm">
+                <div className="text-right mr-3">
+                  <div className="font-medium text-white">{user?.firstName} {user?.lastName}</div>
+                  <div className="text-xs text-orange-300">Administrator</div>
+                </div>
+                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-medium text-sm">
+                    {user?.firstName?.[0]}{user?.lastName?.[0]}
+                  </span>
+                </div>
               </div>
-              <Button variant="outline" size="sm" onClick={logout}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={logout}
+                className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+              >
                 Logout
               </Button>
               
@@ -212,6 +227,7 @@ export default function AdminPortal() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="text-slate-300 hover:text-white hover:bg-slate-700"
                 >
                   {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                 </Button>
@@ -223,17 +239,17 @@ export default function AdminPortal() {
         {/* Mobile menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-slate-700 border-t border-slate-600">
               {adminNavItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link key={item.href} href={item.href}>
                     <span
                       className={cn(
-                        "flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium cursor-pointer",
+                        "flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium cursor-pointer",
                         location === item.href
-                          ? "bg-blue-100 text-blue-600"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                          ? "bg-orange-500 text-white"
+                          : "text-slate-300 hover:bg-slate-600 hover:text-white"
                       )}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
@@ -248,8 +264,8 @@ export default function AdminPortal() {
         )}
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      {/* Main Admin Content */}
+      <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           {renderPageContent()}
         </div>
@@ -272,21 +288,35 @@ function ClientManagementPage({
   handleCreateClient, createClientMutation 
 }: any) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Client Management</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Manage client accounts and access their credit repair tools.
-        </p>
+    <div className="space-y-8">
+      <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+              <Users className="h-7 w-7 text-orange-500" />
+              Client Management
+            </h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Manage client accounts and access their credit repair tools.
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-orange-600">{clientUsers.length}</div>
+            <div className="text-sm text-slate-600">Active Clients</div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Create New Client */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Add New Client</CardTitle>
+        <Card className="border-slate-200 shadow-sm">
+          <CardHeader className="bg-slate-50 border-b border-slate-200">
+            <CardTitle className="text-slate-800 flex items-center gap-2">
+              <Users className="h-5 w-5 text-orange-500" />
+              Add New Client
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <form onSubmit={handleCreateClient} className="space-y-4">
               <div>
                 <Label htmlFor="firstName">First Name</Label>
