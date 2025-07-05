@@ -28,15 +28,23 @@ export default function Login() {
       return response.json();
     },
     onSuccess: (data) => {
+      console.log("Login successful, received data:", data);
       setCurrentUserId(data.user.id);
       // Store authentication in localStorage
       localStorage.setItem("auth_token", data.token);
       localStorage.setItem("user_id", data.user.id.toString());
       
+      console.log("Stored in localStorage:", {
+        token: localStorage.getItem("auth_token"),
+        userId: localStorage.getItem("user_id")
+      });
+      
       // Redirect based on user type
       if (data.user.accessLevel === "ADMIN") {
+        console.log("Redirecting to admin portal");
         setLocation("/admin-portal");
       } else {
+        console.log("Redirecting to dashboard");
         setLocation("/dashboard");
       }
     },
