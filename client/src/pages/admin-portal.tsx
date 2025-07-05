@@ -184,27 +184,35 @@ export default function AdminPortal() {
                 <CardContent>
                   <div className="space-y-3">
                     {clientUsers.map((client) => (
-                      <div
+                      <Button
                         key={client.id}
-                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                        variant={selectedClientId === client.id ? "default" : "outline"}
+                        className={`w-full p-4 h-auto justify-start ${
                           selectedClientId === client.id
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                            ? 'border-blue-500 bg-blue-600 text-white'
+                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
                         }`}
                         onClick={() => setSelectedClientId(client.id)}
                       >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-medium text-gray-900">
+                        <div className="flex items-center justify-between w-full">
+                          <div className="text-left">
+                            <h3 className={`font-medium ${selectedClientId === client.id ? 'text-white' : 'text-gray-900'}`}>
                               {client.firstName} {client.lastName}
                             </h3>
-                            <p className="text-sm text-gray-600">{client.email}</p>
+                            <p className={`text-sm ${selectedClientId === client.id ? 'text-blue-100' : 'text-gray-600'}`}>
+                              {client.email}
+                            </p>
                           </div>
-                          <Badge variant="secondary">
-                            {client.accessLevel === "CLIENT_VIEWER" ? "Client" : client.accessLevel}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={selectedClientId === client.id ? "secondary" : "outline"}>
+                              Client
+                            </Badge>
+                            {selectedClientId === client.id && (
+                              <i className="fas fa-check-circle text-white"></i>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      </Button>
                     ))}
                   </div>
                 </CardContent>
@@ -319,20 +327,46 @@ export default function AdminPortal() {
           </TabsContent>
 
           <TabsContent value="disputes" className="space-y-6">
-            {/* AI-Powered Dispute Management */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Send className="w-5 h-5 text-blue-600 mr-3" />
-                  AI-Powered Dispute Management
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-6">
-                  Use AI to generate professional dispute letters and manage client disputes efficiently.
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Client Selection Status */}
+            {!selectedClient ? (
+              <Card className="border-yellow-200 bg-yellow-50">
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <i className="fas fa-arrow-left text-yellow-600 text-2xl mb-3"></i>
+                    <h3 className="text-lg font-medium text-yellow-800 mb-2">Select a Client First</h3>
+                    <p className="text-yellow-700">
+                      Go to the Client Management tab and click on a client to access their AI dispute tools.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Selected Client Header */}
+                <Card className="border-blue-200 bg-blue-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <i className="fas fa-user-circle text-blue-600 text-2xl mr-3"></i>
+                        <div>
+                          <h3 className="text-lg font-medium text-blue-900">
+                            {selectedClient.firstName} {selectedClient.lastName}
+                          </h3>
+                          <p className="text-sm text-blue-700">{selectedClient.email}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {clientCreditReport?.creditScore || '---'}
+                        </div>
+                        <p className="text-sm text-blue-700">Credit Score</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* AI Tools Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* AI Credit Analysis */}
                   <Card className="border-blue-200">
                     <CardHeader>
@@ -343,17 +377,11 @@ export default function AdminPortal() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-gray-600 mb-4">
-                        Get AI-powered analysis and recommendations for any client's credit profile.
+                        AI-powered analysis and personalized recommendations for this client's credit profile.
                       </p>
-                      {selectedClient ? (
-                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
-                          <AICreditAnalysis userId={selectedClient.id} />
-                        </div>
-                      ) : (
-                        <div className="text-center py-4 text-gray-500">
-                          Select a client to view AI analysis
-                        </div>
-                      )}
+                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
+                        <AICreditAnalysis userId={selectedClient.id} />
+                      </div>
                     </CardContent>
                   </Card>
 
@@ -369,15 +397,22 @@ export default function AdminPortal() {
                       <p className="text-sm text-gray-600 mb-4">
                         Simulate potential credit score improvements for client presentations.
                       </p>
-                      {selectedClient && clientCreditReport ? (
-                        <CreditSimulatorModal 
-                          open={false} 
-                          onOpenChange={() => {}} 
-                          currentScore={clientCreditReport.creditScore} 
-                        />
+                      {clientCreditReport ? (
+                        <div className="text-center">
+                          <Button 
+                            variant="outline" 
+                            className="w-full"
+                            onClick={() => {
+                              // This would open the simulator modal
+                            }}
+                          >
+                            <i className="fas fa-chart-line mr-2"></i>
+                            Run Score Simulation
+                          </Button>
+                        </div>
                       ) : (
                         <div className="text-center py-4 text-gray-500">
-                          Select a client to simulate credit improvements
+                          No credit report available
                         </div>
                       )}
                     </CardContent>
@@ -385,7 +420,7 @@ export default function AdminPortal() {
                 </div>
 
                 {/* Dispute Letter Generation */}
-                <Card className="mt-6 border-purple-200">
+                <Card className="border-purple-200">
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center">
                       <i className="fas fa-file-text text-purple-600 mr-2"></i>
@@ -393,22 +428,34 @@ export default function AdminPortal() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Generate professional, legally compliant dispute letters using AI. Select a client and their credit issues to create targeted dispute letters.
+                    <p className="text-sm text-gray-600 mb-6">
+                      Generate professional, legally compliant dispute letters using AI for each credit issue.
                     </p>
-                    {selectedClient && clientIssues.length > 0 ? (
+                    
+                    {clientIssues.length > 0 ? (
                       <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                           {clientIssues.map((issue) => (
-                            <Card key={issue.id} className="border-gray-200">
+                            <Card key={issue.id} className="border-gray-200 hover:border-purple-300 transition-colors">
                               <CardContent className="p-4">
-                                <h4 className="font-medium text-gray-900 mb-2">{issue.title}</h4>
-                                <p className="text-sm text-gray-600 mb-3">{issue.creditor}</p>
+                                <div className="flex items-start justify-between mb-3">
+                                  <div className="flex-1">
+                                    <h4 className="font-medium text-gray-900 mb-1">{issue.title}</h4>
+                                    <p className="text-sm text-gray-600">{issue.creditor}</p>
+                                    {issue.amount && (
+                                      <p className="text-sm font-medium text-red-600">
+                                        ${issue.amount.toLocaleString()}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <Badge variant="outline" className="text-xs">
+                                    -{Math.abs(issue.impact)} pts
+                                  </Badge>
+                                </div>
                                 <Button 
                                   size="sm" 
                                   className="w-full"
                                   onClick={() => {
-                                    // Open dispute modal for this issue
                                     setSelectedIssue(issue);
                                     setDisputeModalOpen(true);
                                   }}
@@ -421,21 +468,17 @@ export default function AdminPortal() {
                           ))}
                         </div>
                       </div>
-                    ) : selectedClient ? (
-                      <div className="text-center py-6 text-gray-500">
-                        <i className="fas fa-check-circle text-green-500 text-3xl mb-2"></i>
-                        <p>No active credit issues for this client</p>
-                      </div>
                     ) : (
-                      <div className="text-center py-6 text-gray-500">
-                        <i className="fas fa-user-plus text-gray-400 text-3xl mb-2"></i>
-                        <p>Select a client to generate dispute letters</p>
+                      <div className="text-center py-8">
+                        <i className="fas fa-check-circle text-green-500 text-4xl mb-3"></i>
+                        <h3 className="text-lg font-medium text-green-700 mb-2">Excellent Credit Profile!</h3>
+                        <p className="text-green-600">This client has no active credit issues to dispute.</p>
                       </div>
                     )}
                   </CardContent>
                 </Card>
-              </CardContent>
-            </Card>
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
