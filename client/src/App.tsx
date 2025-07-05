@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -16,17 +16,27 @@ import NotFound from "@/pages/not-found";
 
 function Router() {
   const { user } = useUserContext();
+  const [location] = useLocation();
 
   // Show login if no user is authenticated
   if (!user) {
     return <Login />;
   }
 
+  // Auto-redirect users to their correct portal if they're on the root page
+  if (user && location === "/") {
+    if (user.accessLevel === "ADMIN") {
+      return <AdminPortal />;
+    } else {
+      return <Dashboard />;
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <Switch>
-        <Route path="/" component={Dashboard} />
+        <Route path="/" component={() => user?.accessLevel === "ADMIN" ? <AdminPortal /> : <Dashboard />} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/credit-repair" component={CreditRepair} />
         <Route path="/credit-building" component={CreditBuilding} />

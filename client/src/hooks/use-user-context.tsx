@@ -30,7 +30,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const { data: user } = useQuery<User>({
+  const { data: user, isLoading } = useQuery<User>({
     queryKey: ['/api/users', currentUserId],
     enabled: !!currentUserId,
   });

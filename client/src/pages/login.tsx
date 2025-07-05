@@ -28,19 +28,15 @@ export default function Login() {
       return response.json();
     },
     onSuccess: (data) => {
-      setCurrentUserId(data.user.id);
-      // Store authentication in localStorage
+      // Store authentication in localStorage first
       localStorage.setItem("auth_token", data.token);
       localStorage.setItem("user_id", data.user.id.toString());
       
-      // Use setTimeout to ensure state is set before redirect
-      setTimeout(() => {
-        if (data.user.accessLevel === "ADMIN") {
-          window.location.replace("/admin-portal");
-        } else {
-          window.location.replace("/dashboard");
-        }
-      }, 100);
+      // Set user context
+      setCurrentUserId(data.user.id);
+      
+      // Redirect to root and let App.tsx handle routing to correct portal
+      window.location.href = "/";
     },
     onError: (error: any) => {
       console.error("Login failed:", error);
