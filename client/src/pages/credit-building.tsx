@@ -183,8 +183,9 @@ export default function CreditBuilding() {
       </Card>
 
       <Tabs defaultValue="recommended" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="recommended">Recommended Actions</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="recommended">Actions</TabsTrigger>
+          <TabsTrigger value="services">Services</TabsTrigger>
           <TabsTrigger value="in-progress">In Progress</TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
         </TabsList>
@@ -285,6 +286,223 @@ export default function CreditBuilding() {
                     </p>
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="services" className="space-y-6">
+          {/* Credit Building Services & Tools */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Recommended Credit Building Services</span>
+                <Badge variant="secondary">External Partners</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                
+                {/* Secured Credit Cards Section */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Secured Credit Cards</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    {/* Kova */}
+                    <div className="p-4 border border-blue-200 rounded-lg bg-blue-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-blue-900">Kova</h4>
+                        <Badge variant="outline" className="bg-blue-100 text-blue-800">Recommended</Badge>
+                      </div>
+                      <p className="text-sm text-blue-700 mb-3">
+                        Build credit with no deposit required. Kova reports to all three credit bureaus and offers credit building tools.
+                      </p>
+                      <div className="text-xs text-blue-600 mb-4 space-y-1">
+                        <div>✓ No security deposit required</div>
+                        <div>✓ Reports to all 3 bureaus</div>
+                        <div>✓ Credit monitoring included</div>
+                        <div>✓ Mobile app with insights</div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                        onClick={() => window.open('https://www.getkova.com', '_blank')}
+                      >
+                        Visit Kova →
+                      </Button>
+                    </div>
+
+                    {/* Discover it Secured */}
+                    <div className="p-4 border border-green-200 rounded-lg bg-green-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-green-900">Discover it® Secured</h4>
+                        <Badge variant="outline" className="bg-green-100 text-green-800">Popular</Badge>
+                      </div>
+                      <p className="text-sm text-green-700 mb-3">
+                        Earn cash back while building credit. Your security deposit becomes your credit limit.
+                      </p>
+                      <div className="text-xs text-green-600 mb-4 space-y-1">
+                        <div>✓ Earn 2% cash back on gas & restaurants</div>
+                        <div>✓ 1% on all other purchases</div>
+                        <div>✓ No annual fee</div>
+                        <div>✓ Automatic reviews for credit line increases</div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        className="w-full bg-green-600 hover:bg-green-700"
+                        onClick={() => window.open('https://www.discover.com/credit-cards/secured/', '_blank')}
+                      >
+                        Learn More →
+                      </Button>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Credit Monitoring & Building Tools */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Credit Monitoring & Building Tools</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    
+                    {/* Credit Karma */}
+                    <div className="p-4 border border-purple-200 rounded-lg bg-purple-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-purple-900">Credit Karma</h4>
+                        <Badge variant="outline" className="bg-purple-100 text-purple-800">Free</Badge>
+                      </div>
+                      <p className="text-sm text-purple-700 mb-3">
+                        Free credit scores, monitoring, and personalized recommendations for improving your credit.
+                      </p>
+                      <div className="text-xs text-purple-600 mb-4 space-y-1">
+                        <div>✓ Free credit scores from 2 bureaus</div>
+                        <div>✓ Credit monitoring alerts</div>
+                        <div>✓ Personalized recommendations</div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        className="w-full bg-purple-600 hover:bg-purple-700"
+                        onClick={() => window.open('https://www.creditkarma.com', '_blank')}
+                      >
+                        Visit Credit Karma →
+                      </Button>
+                    </div>
+
+                    {/* Experian Boost */}
+                    <div className="p-4 border border-orange-200 rounded-lg bg-orange-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-orange-900">Experian Boost™</h4>
+                        <Badge variant="outline" className="bg-orange-100 text-orange-800">Instant Impact</Badge>
+                      </div>
+                      <p className="text-sm text-orange-700 mb-3">
+                        Get credit for paying utilities, phone, and streaming services. Potential instant score increase.
+                      </p>
+                      <div className="text-xs text-orange-600 mb-4 space-y-1">
+                        <div>✓ Count utility payments toward credit</div>
+                        <div>✓ Potential instant score boost</div>
+                        <div>✓ Free to use</div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        className="w-full bg-orange-600 hover:bg-orange-700"
+                        onClick={() => window.open('https://www.experian.com/consumer-products/credit-score-boost.html', '_blank')}
+                      >
+                        Try Experian Boost →
+                      </Button>
+                    </div>
+
+                    {/* Self Credit Builder */}
+                    <div className="p-4 border border-indigo-200 rounded-lg bg-indigo-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-indigo-900">Self Credit Builder</h4>
+                        <Badge variant="outline" className="bg-indigo-100 text-indigo-800">Build + Save</Badge>
+                      </div>
+                      <p className="text-sm text-indigo-700 mb-3">
+                        Build credit while saving money. Make payments to yourself that are reported to credit bureaus.
+                      </p>
+                      <div className="text-xs text-indigo-600 mb-4 space-y-1">
+                        <div>✓ Reports to all 3 credit bureaus</div>
+                        <div>✓ Build savings while building credit</div>
+                        <div>✓ No credit check to get started</div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        className="w-full bg-indigo-600 hover:bg-indigo-700"
+                        onClick={() => window.open('https://www.self.inc/credit-builder-account/', '_blank')}
+                      >
+                        Learn About Self →
+                      </Button>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Authorized User Services */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Authorized User Services</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    <div className="p-4 border border-teal-200 rounded-lg bg-teal-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-teal-900">Tradeline Supply Company</h4>
+                        <Badge variant="outline" className="bg-teal-100 text-teal-800">Professional</Badge>
+                      </div>
+                      <p className="text-sm text-teal-700 mb-3">
+                        Professional authorized user tradeline services to help boost credit scores quickly.
+                      </p>
+                      <div className="text-xs text-teal-600 mb-4 space-y-1">
+                        <div>✓ Professional tradeline marketplace</div>
+                        <div>✓ Potential for significant score increases</div>
+                        <div>✓ Various price points available</div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        className="w-full bg-teal-600 hover:bg-teal-700"
+                        onClick={() => window.open('https://www.tradeline.com', '_blank')}
+                      >
+                        Explore Tradelines →
+                      </Button>
+                    </div>
+
+                    <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-gray-900">Family & Friends</h4>
+                        <Badge variant="outline" className="bg-gray-100 text-gray-800">Free Option</Badge>
+                      </div>
+                      <p className="text-sm text-gray-700 mb-3">
+                        Ask trusted family or friends to add you as an authorized user on their well-managed accounts.
+                      </p>
+                      <div className="text-xs text-gray-600 mb-4 space-y-1">
+                        <div>✓ Free if you know someone willing</div>
+                        <div>✓ Can significantly boost scores</div>
+                        <div>✓ Benefits from their payment history</div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="w-full"
+                        disabled
+                      >
+                        Ask Family/Friends
+                      </Button>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Disclaimer */}
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
+                  <div className="flex items-start">
+                    <i className="fas fa-info-circle text-yellow-600 text-sm mt-0.5 mr-3"></i>
+                    <div>
+                      <h4 className="text-sm font-medium text-yellow-900 mb-1">Important Disclaimer</h4>
+                      <p className="text-xs text-yellow-700">
+                        These are external services not affiliated with our platform. Always research thoroughly and read terms before applying. 
+                        Credit building takes time and responsible financial habits. Results may vary based on individual circumstances.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </CardContent>
           </Card>
