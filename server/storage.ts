@@ -1,13 +1,15 @@
 import { 
   users, creditReports, creditIssues, disputes, creditGoals, 
-  educationalContent, creditBuildingActions,
+  educationalContent, creditBuildingActions, testingFeedback, betaAccess,
   type User, type InsertUser,
   type CreditReport, type InsertCreditReport,
   type CreditIssue, type InsertCreditIssue,
   type Dispute, type InsertDispute,
   type CreditGoal, type InsertCreditGoal,
   type EducationalContent, type InsertEducationalContent,
-  type CreditBuildingAction, type InsertCreditBuildingAction
+  type CreditBuildingAction, type InsertCreditBuildingAction,
+  type TestingFeedback, type InsertTestingFeedback,
+  type BetaAccess, type InsertBetaAccess
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -48,6 +50,19 @@ export interface IStorage {
   getCreditBuildingActions(userId: number): Promise<CreditBuildingAction[]>;
   createCreditBuildingAction(action: InsertCreditBuildingAction): Promise<CreditBuildingAction>;
   updateCreditBuildingAction(id: number, updates: Partial<CreditBuildingAction>): Promise<CreditBuildingAction | undefined>;
+
+  // Testing Feedback
+  getTestingFeedback(): Promise<TestingFeedback[]>;
+  createTestingFeedback(feedback: InsertTestingFeedback): Promise<TestingFeedback>;
+
+  // Beta Access
+  getBetaAccess(): Promise<BetaAccess[]>;
+  createBetaAccess(access: InsertBetaAccess): Promise<BetaAccess>;
+  validateAccessCode(code: string): Promise<BetaAccess | undefined>;
+
+  // Admin Users
+  getTestUsers(): Promise<User[]>;
+  updateUserAccess(userId: number, accessLevel: string): Promise<User | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -192,6 +207,48 @@ export class DatabaseStorage implements IStorage {
       .where(eq(creditBuildingActions.id, id))
       .returning();
     return updatedAction || undefined;
+  }
+
+  async getTestingFeedback(): Promise<TestingFeedback[]> {
+    return await db.select().from(testingFeedback).orderBy(testingFeedback.createdAt);
+  }
+
+  async createTestingFeedback(insertFeedback: InsertTestingFeedback): Promise<TestingFeedback> {
+    const [feedback] = await db
+      .insert(testingFeedback)
+      .values(insertFeedback)
+      .returning();
+    return feedback;
+  }
+
+  async getBetaAccess(): Promise<BetaAccess[]> {
+    return await db.select().from(betaAccess).orderBy(betaAccess.createdAt);
+  }
+
+  async createBetaAccess(insertAccess: InsertBetaAccess): Promise<BetaAccess> {
+    const [access] = await db
+      .insert(betaAccess)
+      .values(insertAccess)
+      .returning();
+    return access;
+  }
+
+  async validateAccessCode(code: string): Promise<BetaAccess | undefined> {
+    const [access] = await db.select().from(betaAccess).where(eq(betaAccess.accessCode, code));
+    return access || undefined;
+  }
+
+  async getTestUsers(): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.isTestUser, true));
+  }
+
+  async updateUserAccess(userId: number, accessLevel: string): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ accessLevel })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser || undefined;
   }
 }
 

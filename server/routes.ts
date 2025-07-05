@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertDisputeSchema, insertCreditGoalSchema } from "@shared/schema";
+import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -594,6 +594,89 @@ Respond in JSON format with the following structure:
       res.json(dispute);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Testing Feedback Routes
+  app.post("/api/feedback", async (req, res) => {
+    try {
+      const validatedData = insertTestingFeedbackSchema.parse(req.body);
+      const feedback = await storage.createTestingFeedback(validatedData);
+      res.status(201).json(feedback);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid feedback data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create feedback" });
+    }
+  });
+
+  // Admin Routes
+  app.get("/api/admin/test-users", async (req, res) => {
+    try {
+      const testUsers = await storage.getTestUsers();
+      res.json(testUsers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch test users" });
+    }
+  });
+
+  app.get("/api/admin/feedback", async (req, res) => {
+    try {
+      const feedback = await storage.getTestingFeedback();
+      res.json(feedback);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch feedback" });
+    }
+  });
+
+  app.get("/api/admin/beta-access", async (req, res) => {
+    try {
+      const betaAccess = await storage.getBetaAccess();
+      res.json(betaAccess);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch beta access" });
+    }
+  });
+
+  app.post("/api/admin/beta-access", async (req, res) => {
+    try {
+      const validatedData = insertBetaAccessSchema.parse(req.body);
+      const access = await storage.createBetaAccess(validatedData);
+      res.status(201).json(access);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid access data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create access code" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { accessLevel } = req.body;
+      const updatedUser = await storage.updateUserAccess(id, accessLevel);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user access" });
+    }
+  });
+
+  // Access Code Validation
+  app.post("/api/validate-access", async (req, res) => {
+    try {
+      const { accessCode } = req.body;
+      const access = await storage.validateAccessCode(accessCode);
+      if (!access) {
+        return res.status(404).json({ message: "Invalid access code" });
+      }
+      res.json(access);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to validate access code" });
     }
   });
 

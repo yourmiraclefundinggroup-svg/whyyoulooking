@@ -7,6 +7,9 @@ export const users = pgTable("users", {
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email").notNull().unique(),
+  accessLevel: text("access_level").notNull().default("STANDARD"), // STANDARD, BETA_TESTER, ADMIN
+  isTestUser: boolean("is_test_user").default(false),
+  testingNotes: text("testing_notes"), // Notes about their testing feedback
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -80,6 +83,26 @@ export const creditBuildingActions = pgTable("credit_building_actions", {
   priority: text("priority").notNull(), // HIGH, MEDIUM, LOW
 });
 
+export const testingFeedback = pgTable("testing_feedback", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  feature: text("feature").notNull(), // Which feature they're testing
+  rating: integer("rating").notNull(), // 1-5 stars
+  feedback: text("feedback").notNull(),
+  bugReport: text("bug_report"), // If they found bugs
+  suggestions: text("suggestions"), // Feature suggestions
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const betaAccess = pgTable("beta_access", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  accessCode: text("access_code").notNull().unique(), // Special codes for your clients
+  features: text("features").array().notNull(), // Which features they can access
+  expiresAt: timestamp("expires_at"), // Optional expiration
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertCreditReportSchema = createInsertSchema(creditReports).omit({ id: true, lastUpdated: true });
@@ -88,6 +111,8 @@ export const insertDisputeSchema = createInsertSchema(disputes).omit({ id: true,
 export const insertCreditGoalSchema = createInsertSchema(creditGoals).omit({ id: true, createdAt: true });
 export const insertEducationalContentSchema = createInsertSchema(educationalContent).omit({ id: true });
 export const insertCreditBuildingActionSchema = createInsertSchema(creditBuildingActions).omit({ id: true });
+export const insertTestingFeedbackSchema = createInsertSchema(testingFeedback).omit({ id: true, createdAt: true });
+export const insertBetaAccessSchema = createInsertSchema(betaAccess).omit({ id: true, createdAt: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -104,3 +129,7 @@ export type EducationalContent = typeof educationalContent.$inferSelect;
 export type InsertEducationalContent = z.infer<typeof insertEducationalContentSchema>;
 export type CreditBuildingAction = typeof creditBuildingActions.$inferSelect;
 export type InsertCreditBuildingAction = z.infer<typeof insertCreditBuildingActionSchema>;
+export type TestingFeedback = typeof testingFeedback.$inferSelect;
+export type InsertTestingFeedback = z.infer<typeof insertTestingFeedbackSchema>;
+export type BetaAccess = typeof betaAccess.$inferSelect;
+export type InsertBetaAccess = z.infer<typeof insertBetaAccessSchema>;
