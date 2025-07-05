@@ -441,25 +441,26 @@ export default function CreditBuilding() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Authorized User Services</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     
-                    <div className="p-4 border border-teal-200 rounded-lg bg-teal-50">
+                    <div className="p-4 border border-blue-200 rounded-lg bg-blue-50">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold text-teal-900">Tradeline Supply Company</h4>
-                        <Badge variant="outline" className="bg-teal-100 text-teal-800">Professional</Badge>
+                        <h4 className="font-semibold text-blue-900">CreditFix Pro Tradelines</h4>
+                        <Badge variant="outline" className="bg-blue-100 text-blue-800">Our Service</Badge>
                       </div>
-                      <p className="text-sm text-teal-700 mb-3">
-                        Professional authorized user tradeline services to help boost credit scores quickly.
+                      <p className="text-sm text-blue-700 mb-3">
+                        Get access to our curated selection of high-quality tradelines with personalized recommendations and support.
                       </p>
-                      <div className="text-xs text-teal-600 mb-4 space-y-1">
-                        <div>✓ Professional tradeline marketplace</div>
-                        <div>✓ Potential for significant score increases</div>
-                        <div>✓ Various price points available</div>
+                      <div className="text-xs text-blue-600 mb-4 space-y-1">
+                        <div>✓ Hand-selected quality tradelines</div>
+                        <div>✓ Personalized recommendations</div>
+                        <div>✓ Full customer support included</div>
+                        <div>✓ Competitive pricing with guarantees</div>
                       </div>
                       <Button 
                         size="sm" 
-                        className="w-full bg-teal-600 hover:bg-teal-700"
-                        onClick={() => window.open('https://www.tradeline.com', '_blank')}
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                        onClick={() => window.open('mailto:tradelines@creditfixpro.com?subject=Tradeline Inquiry&body=Hi, I would like to learn more about your available tradelines and pricing. Please contact me with more information.', '_blank')}
                       >
-                        Explore Tradelines →
+                        Contact Us for Tradelines →
                       </Button>
                     </div>
 
