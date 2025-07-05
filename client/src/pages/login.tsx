@@ -35,7 +35,7 @@ export default function Login() {
       
       // Redirect based on user type
       if (data.user.accessLevel === "ADMIN") {
-        setLocation("/admin");
+        setLocation("/admin-portal");
       } else {
         setLocation("/dashboard");
       }
