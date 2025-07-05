@@ -28,12 +28,21 @@ export default function Login() {
       return response.json();
     },
     onSuccess: (data) => {
+      console.log("Login successful, response data:", data);
+      
       // Store authentication in localStorage first
       localStorage.setItem("auth_token", data.token);
       localStorage.setItem("user_id", data.user.id.toString());
       
+      console.log("Stored in localStorage:", {
+        token: localStorage.getItem("auth_token"),
+        userId: localStorage.getItem("user_id")
+      });
+      
       // Set user context
       setCurrentUserId(data.user.id);
+      
+      console.log("About to redirect to /");
       
       // Redirect to root and let App.tsx handle routing to correct portal
       window.location.href = "/";

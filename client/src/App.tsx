@@ -18,8 +18,11 @@ function Router() {
   const { user } = useUserContext();
   const [location] = useLocation();
 
+  console.log("Router state:", { user, location });
+
   // Show login if no user is authenticated
   if (!user) {
+    console.log("No user found, showing login");
     return <Login />;
   }
 
