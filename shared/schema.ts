@@ -7,7 +7,7 @@ export const users = pgTable("users", {
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email").notNull().unique(),
-  accessLevel: text("access_level").notNull().default("STANDARD"), // STANDARD, BETA_TESTER, ADMIN
+  accessLevel: text("access_level").notNull().default("STANDARD"), // STANDARD, CLIENT_VIEWER, BETA_TESTER, ADMIN
   isTestUser: boolean("is_test_user").default(false),
   testingNotes: text("testing_notes"), // Notes about their testing feedback
   createdAt: timestamp("created_at").defaultNow().notNull(),

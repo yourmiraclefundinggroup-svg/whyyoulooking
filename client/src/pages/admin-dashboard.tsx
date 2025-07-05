@@ -29,8 +29,8 @@ function ClientProfileForm() {
         firstName: clientData.firstName,
         lastName: clientData.lastName,
         email: clientData.email,
-        accessLevel: "STANDARD",
-        isTestUser: true,
+        accessLevel: "CLIENT_VIEWER",
+        isTestUser: false,
         testingNotes: clientData.testingNotes,
       }));
       
@@ -154,14 +154,17 @@ function ClientProfileList() {
     queryKey: ['/api/admin/client-profiles'],
   });
 
+  const { setCurrentUserId } = useUserContext();
+
   const switchToProfileMutation = useMutation({
     mutationFn: async (userId: number) => {
-      // This would switch the current session to view this client's data
-      // For now, we'll just show an alert with the user ID
+      // Switch the current user context to this client
+      setCurrentUserId(userId);
       return userId;
     },
     onSuccess: (userId) => {
-      alert(`Switching to client profile ID: ${userId}\n\nYou can now test all features as this client. Use the main navigation to access Dashboard, Credit Repair, etc.`);
+      // Show success message and refresh the page components
+      window.location.reload(); // Simple way to refresh all components with new user context
     },
   });
 
@@ -187,8 +190,8 @@ function ClientProfileList() {
                   <p className="text-xs text-blue-600 mt-1">{profile.testingNotes}</p>
                 )}
               </div>
-              <Badge variant={profile.isTestUser ? "outline" : "default"}>
-                {profile.isTestUser ? "Test Profile" : "Regular User"}
+              <Badge variant={profile.accessLevel === "CLIENT_VIEWER" ? "outline" : "default"}>
+                {profile.accessLevel === "CLIENT_VIEWER" ? "Client Profile" : profile.accessLevel}
               </Badge>
             </div>
           </div>

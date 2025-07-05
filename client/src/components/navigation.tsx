@@ -3,16 +3,20 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
+import { useUserContext } from "@/hooks/use-user-context";
 
 export function Navigation() {
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, isClientViewer, isAdmin, canAccessCreditBuilding, canAccessEducation } = useUserContext();
 
+  // Filter navigation based on user access level
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/credit-repair", label: "Credit Repair" },
-    { href: "/credit-building", label: "Credit Building" },
-    { href: "/education", label: "Education" },
+    ...(canAccessCreditBuilding ? [{ href: "/credit-building", label: "Credit Building" }] : []),
+    ...(canAccessEducation ? [{ href: "/education", label: "Education" }] : []),
+    ...(isAdmin ? [{ href: "/admin", label: "Admin" }] : []),
   ];
 
   return (
@@ -45,9 +49,22 @@ export function Navigation() {
           </div>
           
           <div className="flex items-center space-x-4">
-            <Button className="hidden sm:block bg-trust-blue hover:bg-blue-700 text-xs sm:text-sm">
-              Upgrade Plan
-            </Button>
+            {/* User Indicator */}
+            <div className="hidden sm:flex items-center space-x-2 text-sm">
+              <div className="text-gray-700">
+                {user ? `${user.firstName} ${user.lastName}` : 'Loading...'}
+              </div>
+              {isClientViewer && (
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                  Client View
+                </span>
+              )}
+              {isAdmin && (
+                <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                  Admin
+                </span>
+              )}
+            </div>
             <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
               <i className="fas fa-user text-gray-600"></i>
             </div>

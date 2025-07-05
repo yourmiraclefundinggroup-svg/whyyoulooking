@@ -641,8 +641,8 @@ Respond in JSON format with the following structure:
   app.get("/api/admin/client-profiles", async (req, res) => {
     try {
       const testUsers = await storage.getTestUsers();
-      // Filter to only return users marked as test users (client profiles)
-      const clientProfiles = testUsers.filter((user: any) => user.isTestUser === true);
+      // Filter to only return users with CLIENT_VIEWER access level
+      const clientProfiles = testUsers.filter((user: any) => user.accessLevel === 'CLIENT_VIEWER');
       res.json(clientProfiles);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch client profiles" });

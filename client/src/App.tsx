@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navigation } from "@/components/navigation";
-import { BetaFeedback, BetaAccessBanner } from "@/components/beta-feedback";
+import { UserProvider } from "@/hooks/use-user-context";
 import Dashboard from "@/pages/dashboard";
 import CreditRepair from "@/pages/credit-repair";
 import CreditBuilding from "@/pages/credit-building";
@@ -15,7 +15,6 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <BetaAccessBanner />
       <Navigation />
       <Switch>
         <Route path="/" component={Dashboard} />
@@ -26,7 +25,6 @@ function Router() {
         <Route path="/admin" component={AdminDashboard} />
         <Route component={NotFound} />
       </Switch>
-      <BetaFeedback />
     </div>
   );
 }
@@ -34,10 +32,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <UserProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </UserProvider>
     </QueryClientProvider>
   );
 }

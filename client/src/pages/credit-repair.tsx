@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DisputeLetterModal } from "@/components/dispute-letter-modal";
 import { USPSTracking } from "@/components/usps-tracking";
+import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatRelativeDate, getIssueTypeColor, getIssueTypeIcon, getDisputeStatusColor } from "@/lib/utils";
@@ -16,9 +17,10 @@ export default function CreditRepair() {
   const [selectedIssue, setSelectedIssue] = useState<CreditIssue | undefined>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, canCreateDisputes, isClientViewer } = useUserContext();
 
-  // Hardcoded user ID for demo
-  const userId = 1;
+  // Use current user ID from context or default to 1
+  const userId = user?.id || 1;
 
   const { data: creditIssues = [], isLoading: issuesLoading } = useQuery<CreditIssue[]>({
     queryKey: ['/api/credit-issues', userId],
@@ -85,9 +87,19 @@ export default function CreditRepair() {
       {/* Header - More compact for mobile */}
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Credit Repair</h1>
-        <p className="mt-1 text-sm sm:text-base text-gray-600">
-          Dispute negative items to improve your credit score.
-        </p>
+        {isClientViewer ? (
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <i className="fas fa-eye mr-2"></i>
+              <strong>Client View:</strong> This shows the work being done on your credit file. 
+              You can view dispute progress and tracking but cannot create new disputes.
+            </p>
+          </div>
+        ) : (
+          <p className="mt-1 text-sm sm:text-base text-gray-600">
+            Dispute negative items to improve your credit score.
+          </p>
+        )}
       </div>
 
       {/* Summary Cards - Better mobile grid */}
@@ -204,22 +216,30 @@ export default function CreditRepair() {
                       </div>
                     </div>
                     <div className="flex flex-row sm:flex-col space-x-2 sm:space-x-0 sm:space-y-2 flex-shrink-0">
-                      <Button
-                        size="sm"
-                        className="bg-red-600 hover:bg-red-700 text-white flex-1 sm:flex-none text-xs"
-                        onClick={() => handleDispute(issue)}
-                      >
-                        Dispute
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1 sm:flex-none text-xs"
-                        onClick={() => handleMarkResolved(issue)}
-                        disabled={updateIssueMutation.isPending}
-                      >
-                        Mark Resolved
-                      </Button>
+                      {canCreateDisputes ? (
+                        <>
+                          <Button
+                            size="sm"
+                            className="bg-red-600 hover:bg-red-700 text-white flex-1 sm:flex-none text-xs"
+                            onClick={() => handleDispute(issue)}
+                          >
+                            Dispute
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 sm:flex-none text-xs"
+                            onClick={() => handleMarkResolved(issue)}
+                            disabled={updateIssueMutation.isPending}
+                          >
+                            Mark Resolved
+                          </Button>
+                        </>
+                      ) : (
+                        <div className="text-xs text-gray-500 text-center p-2">
+                          View Only
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
