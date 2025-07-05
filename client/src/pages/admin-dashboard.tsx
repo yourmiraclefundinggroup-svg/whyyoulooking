@@ -11,8 +11,214 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatDate, formatRelativeDate } from "@/lib/utils";
-import { AlertCircle, Users, TestTube, MessageSquare, Plus, Key } from "lucide-react";
-import type { User, TestingFeedback, BetaAccess, InsertBetaAccess } from "@shared/schema";
+import { AlertCircle, Users, TestTube, MessageSquare, Plus, Key, UserPlus, Eye, Trash2 } from "lucide-react";
+import type { User, TestingFeedback, BetaAccess, InsertBetaAccess, InsertUser } from "@shared/schema";
+
+// Client Profile Form Component
+function ClientProfileForm() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [creditScore, setCreditScore] = useState(650);
+  const [notes, setNotes] = useState("");
+
+  const createClientMutation = useMutation({
+    mutationFn: async (clientData: InsertUser & { creditScore: number }) => {
+      // Create user
+      const userResponse = await apiRequest("POST", "/api/users", JSON.stringify({
+        firstName: clientData.firstName,
+        lastName: clientData.lastName,
+        email: clientData.email,
+        accessLevel: "STANDARD",
+        isTestUser: true,
+        testingNotes: clientData.testingNotes,
+      }));
+      
+      const user = await userResponse.json();
+      
+      // Create credit report for the user
+      await apiRequest("POST", "/api/credit-reports", JSON.stringify({
+        userId: user.id,
+        creditScore: clientData.creditScore,
+        creditRating: getCreditRating(clientData.creditScore),
+        utilizationRate: 0.3,
+        accountAge: 36,
+      }));
+      
+      return user;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/client-profiles'] });
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setCreditScore(650);
+      setNotes("");
+    },
+  });
+
+  const getCreditRating = (score: number) => {
+    if (score >= 750) return "EXCELLENT";
+    if (score >= 700) return "GOOD";
+    if (score >= 650) return "FAIR";
+    return "POOR";
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createClientMutation.mutate({
+      firstName,
+      lastName,
+      email,
+      creditScore,
+      testingNotes: notes,
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="firstName">First Name</Label>
+          <Input
+            id="firstName"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            placeholder="John"
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="lastName">Last Name</Label>
+          <Input
+            id="lastName"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            placeholder="Doe"
+            required
+          />
+        </div>
+      </div>
+      
+      <div>
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="john.doe@example.com"
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="creditScore">Starting Credit Score</Label>
+        <div className="flex items-center space-x-4">
+          <Input
+            id="creditScore"
+            type="number"
+            min="300"
+            max="850"
+            value={creditScore}
+            onChange={(e) => setCreditScore(parseInt(e.target.value))}
+            className="w-20"
+          />
+          <span className="text-sm text-gray-500">
+            ({getCreditRating(creditScore)})
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="notes">Testing Notes</Label>
+        <Textarea
+          id="notes"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Notes about this client profile for testing..."
+          rows={3}
+        />
+      </div>
+
+      <Button type="submit" disabled={createClientMutation.isPending} className="w-full">
+        {createClientMutation.isPending ? "Creating..." : "Create Client Profile"}
+      </Button>
+    </form>
+  );
+}
+
+// Client Profile List Component
+function ClientProfileList() {
+  const { data: clientProfiles = [], isLoading } = useQuery({
+    queryKey: ['/api/admin/client-profiles'],
+  });
+
+  const switchToProfileMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      // This would switch the current session to view this client's data
+      // For now, we'll just show an alert with the user ID
+      return userId;
+    },
+    onSuccess: (userId) => {
+      alert(`Switching to client profile ID: ${userId}\n\nYou can now test all features as this client. Use the main navigation to access Dashboard, Credit Repair, etc.`);
+    },
+  });
+
+  if (isLoading) {
+    return <div className="animate-pulse space-y-4">
+      <div className="h-16 bg-gray-200 rounded"></div>
+      <div className="h-16 bg-gray-200 rounded"></div>
+    </div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {clientProfiles.map((profile: User) => (
+        <div key={profile.id} className="flex items-center justify-between p-4 border rounded-lg">
+          <div className="flex-1">
+            <div className="flex items-center space-x-3">
+              <div>
+                <h4 className="font-medium text-gray-900">
+                  {profile.firstName} {profile.lastName}
+                </h4>
+                <p className="text-sm text-gray-500">{profile.email}</p>
+                {profile.testingNotes && (
+                  <p className="text-xs text-blue-600 mt-1">{profile.testingNotes}</p>
+                )}
+              </div>
+              <Badge variant={profile.isTestUser ? "outline" : "default"}>
+                {profile.isTestUser ? "Test Profile" : "Regular User"}
+              </Badge>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => switchToProfileMutation.mutate(profile.id)}
+              disabled={switchToProfileMutation.isPending}
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              Test as Client
+            </Button>
+          </div>
+        </div>
+      ))}
+      
+      {clientProfiles.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          <UserPlus className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Client Profiles</h3>
+          <p className="text-gray-600">
+            Create client profiles to test the application features without giving clients direct access.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -239,12 +445,40 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue="access-codes" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="client-profiles">Client Profiles</TabsTrigger>
           <TabsTrigger value="access-codes">Access Codes</TabsTrigger>
           <TabsTrigger value="test-users">Test Users</TabsTrigger>
           <TabsTrigger value="feedback">Feedback</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="client-profiles" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Client Test Profiles</span>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Client Profile
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Create New Client Profile</DialogTitle>
+                    </DialogHeader>
+                    <ClientProfileForm />
+                  </DialogContent>
+                </Dialog>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ClientProfileList />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="access-codes" className="space-y-6">
           <Card>

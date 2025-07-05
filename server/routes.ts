@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema } from "@shared/schema";
+import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -19,7 +19,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/users", async (req, res) => {
+    try {
+      const validatedData = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(validatedData);
+      res.status(201).json(user);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid user data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
   // Credit Reports
+  app.post("/api/credit-reports", async (req, res) => {
+    try {
+      const validatedData = insertCreditReportSchema.parse(req.body);
+      const report = await storage.createCreditReport(validatedData);
+      res.status(201).json(report);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid credit report data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create credit report" });
+    }
+  });
+
   app.get("/api/credit-reports/:userId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
@@ -612,6 +638,17 @@ Respond in JSON format with the following structure:
   });
 
   // Admin Routes
+  app.get("/api/admin/client-profiles", async (req, res) => {
+    try {
+      const testUsers = await storage.getTestUsers();
+      // Filter to only return users marked as test users (client profiles)
+      const clientProfiles = testUsers.filter((user: any) => user.isTestUser === true);
+      res.json(clientProfiles);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch client profiles" });
+    }
+  });
+
   app.get("/api/admin/test-users", async (req, res) => {
     try {
       const testUsers = await storage.getTestUsers();
