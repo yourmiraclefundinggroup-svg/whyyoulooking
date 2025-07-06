@@ -25,15 +25,9 @@ function Router() {
 
   // Auto-redirect users to their correct portal if they're on the root page
   if (user && location === "/") {
-    console.log("User data in App.tsx:", user);
-    console.log("User access level:", user.accessLevel);
-    console.log("Is admin check:", user.accessLevel === "ADMIN");
-    
     if (user.accessLevel === "ADMIN") {
-      console.log("Redirecting to AdminPortal");
       return <AdminPortal />;
     } else {
-      console.log("Redirecting to Dashboard");
       return <Dashboard />;
     }
   }

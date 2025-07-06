@@ -123,6 +123,12 @@ Preferred communication style: Simple, everyday language.
 ## Changelog
 
 Changelog:
+- July 06, 2025. **CRITICAL FIX: Authentication System Fixed**
+  - ✅ Fixed client portal authentication routing - switched from MemStorage to DatabaseStorage
+  - ✅ Sarah Johnson (CLIENT_VIEWER) now properly routes to client portal instead of admin portal
+  - ✅ Mobile tab navigation made horizontally scrollable with proper spacing
+  - ✅ Removed admin-only features from client view (dispute creation buttons)
+  - ✅ Updated login credentials display to match actual authentication system
 - July 06, 2025. **MAJOR UPDATE: Complete Credit Repair & Business Credit Platform**
   - ✅ Real-Time Bureau Response Analysis AI (Admin Portal) - Full OpenAI integration with confidence scoring
   - ✅ Credit Utilization Optimizer (Client Portal) - AI-powered credit card optimization with alerts
