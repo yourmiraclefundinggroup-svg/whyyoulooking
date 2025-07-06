@@ -203,10 +203,19 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="chat" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="chat">Secure Chat</TabsTrigger>
-          <TabsTrigger value="documents">Document Vault</TabsTrigger>
-          <TabsTrigger value="upload">Upload Documents</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 h-auto gap-1 p-1">
+          <TabsTrigger value="chat" className="text-xs sm:text-sm px-2 py-2 min-w-0">
+            <span className="hidden sm:inline">Secure Chat</span>
+            <span className="sm:hidden">Chat</span>
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="text-xs sm:text-sm px-2 py-2 min-w-0">
+            <span className="hidden sm:inline">Document Vault</span>
+            <span className="sm:hidden">Documents</span>
+          </TabsTrigger>
+          <TabsTrigger value="upload" className="text-xs sm:text-sm px-2 py-2 min-w-0">
+            <span className="hidden sm:inline">Upload Documents</span>
+            <span className="sm:hidden">Upload</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="chat" className="space-y-4">
