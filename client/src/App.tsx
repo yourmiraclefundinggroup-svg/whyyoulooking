@@ -28,15 +28,15 @@ function Router() {
     if (user.accessLevel === "ADMIN") {
       return <AdminPortal />;
     } else {
-      return <Dashboard />;
+      return <CreditRepair />;
     }
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navigation />
+      {user?.accessLevel === "ADMIN" && <Navigation />}
       <Switch>
-        <Route path="/" component={() => user?.accessLevel === "ADMIN" ? <AdminPortal /> : <Dashboard />} />
+        <Route path="/" component={() => user?.accessLevel === "ADMIN" ? <AdminPortal /> : <CreditRepair />} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/credit-repair" component={CreditRepair} />
         <Route path="/credit-building" component={CreditBuilding} />
