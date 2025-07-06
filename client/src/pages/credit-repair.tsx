@@ -14,11 +14,15 @@ import { LoanReadinessAssessment } from "@/components/loan-readiness-assessment"
 import { CreditMixOptimizer } from "@/components/credit-mix-optimizer";
 import { IdentityTheftRecovery } from "@/components/identity-theft-recovery";
 import { RentUtilityOptimizer } from "@/components/rent-utility-optimizer";
+import { BankAccountIntegration } from "@/components/bank-account-integration";
+import { TaxSoftwareIntegration } from "@/components/tax-software-integration";
+import { EmploymentVerification } from "@/components/employment-verification";
 import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatRelativeDate, getIssueTypeColor, getIssueTypeIcon, getDisputeStatusColor } from "@/lib/utils";
 import type { CreditIssue, Dispute } from "@shared/schema";
+import { Shield } from "lucide-react";
 
 export default function CreditRepair() {
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
@@ -178,16 +182,17 @@ export default function CreditRepair() {
       </div>
 
       <Tabs defaultValue="issues" className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-9 h-9 sm:h-10 text-xs">
-          <TabsTrigger value="issues" className="text-xs">Issues</TabsTrigger>
-          <TabsTrigger value="disputes" className="text-xs">Disputes</TabsTrigger>
-          <TabsTrigger value="monitoring" className="text-xs">Monitoring</TabsTrigger>
-          <TabsTrigger value="utilization" className="text-xs">Utilization</TabsTrigger>
-          <TabsTrigger value="loan-readiness" className="text-xs">Loan Ready</TabsTrigger>
-          <TabsTrigger value="credit-mix" className="text-xs">Mix</TabsTrigger>
-          <TabsTrigger value="identity-theft" className="text-xs">ID Theft</TabsTrigger>
-          <TabsTrigger value="rent-utility" className="text-xs">Rent/Util</TabsTrigger>
-          <TabsTrigger value="ai-tools" className="text-xs">AI Tools</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-10 h-9 sm:h-10 text-xs overflow-x-auto">
+          <TabsTrigger value="issues" className="text-xs min-w-0">Issues</TabsTrigger>
+          <TabsTrigger value="disputes" className="text-xs min-w-0">Disputes</TabsTrigger>
+          <TabsTrigger value="monitoring" className="text-xs min-w-0">Monitor</TabsTrigger>
+          <TabsTrigger value="utilization" className="text-xs min-w-0">Utilization</TabsTrigger>
+          <TabsTrigger value="loan-readiness" className="text-xs min-w-0">Loan</TabsTrigger>
+          <TabsTrigger value="credit-mix" className="text-xs min-w-0">Mix</TabsTrigger>
+          <TabsTrigger value="identity-theft" className="text-xs min-w-0">ID Theft</TabsTrigger>
+          <TabsTrigger value="rent-utility" className="text-xs min-w-0">Rent</TabsTrigger>
+          <TabsTrigger value="integrations" className="text-xs min-w-0">Verify</TabsTrigger>
+          <TabsTrigger value="ai-tools" className="text-xs min-w-0">AI Tools</TabsTrigger>
         </TabsList>
 
         <TabsContent value="issues" className="space-y-4 sm:space-y-6">
@@ -431,6 +436,43 @@ export default function CreditRepair() {
 
         <TabsContent value="rent-utility" className="space-y-6">
           <RentUtilityOptimizer userId={userId} />
+        </TabsContent>
+
+        <TabsContent value="integrations" className="space-y-6">
+          <div className="grid grid-cols-1 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Secure Financial Verification
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-4">
+                  Connect your financial accounts to strengthen loan applications and improve credit qualification
+                </p>
+                <Tabs defaultValue="bank-accounts" className="space-y-4">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="bank-accounts">Bank Accounts</TabsTrigger>
+                    <TabsTrigger value="tax-software">Tax Software</TabsTrigger>
+                    <TabsTrigger value="employment">Employment</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="bank-accounts">
+                    <BankAccountIntegration userId={userId} />
+                  </TabsContent>
+                  
+                  <TabsContent value="tax-software">
+                    <TaxSoftwareIntegration userId={userId} />
+                  </TabsContent>
+                  
+                  <TabsContent value="employment">
+                    <EmploymentVerification userId={userId} />
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="ai-tools" className="space-y-6">
