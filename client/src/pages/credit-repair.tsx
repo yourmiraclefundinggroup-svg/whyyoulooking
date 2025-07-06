@@ -17,6 +17,8 @@ import { RentUtilityOptimizer } from "@/components/rent-utility-optimizer";
 import { BankAccountIntegration } from "@/components/bank-account-integration";
 import { TaxSoftwareIntegration } from "@/components/tax-software-integration";
 import { EmploymentVerification } from "@/components/employment-verification";
+import { BusinessCreditPortal } from "@/components/business-credit-portal";
+import { SecureChat } from "@/components/secure-chat";
 import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -182,7 +184,7 @@ export default function CreditRepair() {
       </div>
 
       <Tabs defaultValue="issues" className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-10 h-9 sm:h-10 text-xs overflow-x-auto">
+        <TabsList className="grid w-full grid-cols-12 h-9 sm:h-10 text-xs overflow-x-auto">
           <TabsTrigger value="issues" className="text-xs min-w-0">Issues</TabsTrigger>
           <TabsTrigger value="disputes" className="text-xs min-w-0">Disputes</TabsTrigger>
           <TabsTrigger value="monitoring" className="text-xs min-w-0">Monitor</TabsTrigger>
@@ -192,6 +194,8 @@ export default function CreditRepair() {
           <TabsTrigger value="identity-theft" className="text-xs min-w-0">ID Theft</TabsTrigger>
           <TabsTrigger value="rent-utility" className="text-xs min-w-0">Rent</TabsTrigger>
           <TabsTrigger value="integrations" className="text-xs min-w-0">Verify</TabsTrigger>
+          <TabsTrigger value="business-credit" className="text-xs min-w-0">Business</TabsTrigger>
+          <TabsTrigger value="chat" className="text-xs min-w-0">Chat</TabsTrigger>
           <TabsTrigger value="ai-tools" className="text-xs min-w-0">AI Tools</TabsTrigger>
         </TabsList>
 
@@ -473,6 +477,14 @@ export default function CreditRepair() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="business-credit" className="space-y-6">
+          <BusinessCreditPortal userId={userId} />
+        </TabsContent>
+
+        <TabsContent value="chat" className="space-y-6">
+          <SecureChat userId={userId} userType="client" />
         </TabsContent>
 
         <TabsContent value="ai-tools" className="space-y-6">

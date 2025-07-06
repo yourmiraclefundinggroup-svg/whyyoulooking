@@ -1,0 +1,464 @@
+import { useState, useRef, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MessageCircle, Upload, FileText, Shield, User, UserCheck, Clock, Paperclip, Send, Download, Eye, Lock } from "lucide-react";
+
+interface SecureChatProps {
+  userId: number;
+  userType: "client" | "admin";
+}
+
+export function SecureChat({ userId, userType }: SecureChatProps) {
+  const [message, setMessage] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const queryClient = useQueryClient();
+
+  const { data: messages, isLoading } = useQuery({
+    queryKey: [`/api/chat/messages/${userId}`],
+    enabled: !!userId,
+    refetchInterval: 5000 // Refresh every 5 seconds for real-time feel
+  });
+
+  const { data: documents } = useQuery({
+    queryKey: [`/api/chat/documents/${userId}`],
+    enabled: !!userId
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (data: { message: string; files?: File[] }) => {
+      const formData = new FormData();
+      formData.append('userId', userId.toString());
+      formData.append('message', data.message);
+      formData.append('senderType', userType);
+      
+      if (data.files) {
+        data.files.forEach(file => {
+          formData.append('files', file);
+        });
+      }
+
+      return await fetch('/api/chat/send', {
+        method: 'POST',
+        body: formData
+      }).then(res => res.json());
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/chat/messages/${userId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/chat/documents/${userId}`] });
+      setMessage("");
+      setSelectedFiles([]);
+    }
+  });
+
+  const handleSendMessage = () => {
+    if (message.trim() || selectedFiles.length > 0) {
+      sendMessageMutation.mutate({ message, files: selectedFiles });
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setSelectedFiles(prev => [...prev, ...files]);
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Demo messages data
+  const demoMessages = messages || [
+    {
+      id: 1,
+      senderId: userType === "client" ? userId : 1,
+      senderType: "admin",
+      senderName: "Credit Specialist",
+      message: "Hi! I've reviewed your credit report and have some recommendations. Could you please upload your recent bank statements?",
+      timestamp: "2024-01-06T15:30:00Z",
+      hasAttachments: false,
+      isRead: true
+    },
+    {
+      id: 2,
+      senderId: userType === "client" ? userId : 1,
+      senderType: userType === "client" ? "client" : "admin",
+      senderName: userType === "client" ? "You" : "John Doe",
+      message: "Sure! I'll upload the bank statements now. Also, I received a response from Experian - should I upload that too?",
+      timestamp: "2024-01-06T15:35:00Z",
+      hasAttachments: false,
+      isRead: true
+    },
+    {
+      id: 3,
+      senderId: userType === "client" ? userId : 1,
+      senderType: "admin",
+      senderName: "Credit Specialist",
+      message: "Yes, absolutely! Please upload the Experian response. I'll analyze it using our AI system and create a strategic response.",
+      timestamp: "2024-01-06T15:37:00Z",
+      hasAttachments: false,
+      isRead: true
+    },
+    {
+      id: 4,
+      senderId: userType === "client" ? userId : 1,
+      senderType: userType === "client" ? "client" : "admin",
+      senderName: userType === "client" ? "You" : "John Doe",
+      message: "Documents uploaded successfully. Thank you for the quick response!",
+      timestamp: "2024-01-06T15:45:00Z",
+      hasAttachments: true,
+      attachments: [
+        { name: "bank_statement_december.pdf", type: "application/pdf", size: "2.3 MB" },
+        { name: "experian_response.pdf", type: "application/pdf", size: "1.1 MB" }
+      ],
+      isRead: true
+    }
+  ];
+
+  // Demo documents data
+  const demoDocuments = documents || [
+    {
+      id: 1,
+      fileName: "drivers_license.jpg",
+      fileType: "image/jpeg",
+      fileSize: "1.2 MB",
+      uploadedBy: "client",
+      uploadedAt: "2024-01-05T10:00:00Z",
+      category: "ID_DOCUMENT",
+      status: "VERIFIED",
+      isSecure: true
+    },
+    {
+      id: 2,
+      fileName: "social_security_card.jpg",
+      fileType: "image/jpeg", 
+      fileSize: "0.8 MB",
+      uploadedBy: "client",
+      uploadedAt: "2024-01-05T10:05:00Z",
+      category: "SSN_DOCUMENT",
+      status: "VERIFIED",
+      isSecure: true
+    },
+    {
+      id: 3,
+      fileName: "bank_statement_december.pdf",
+      fileType: "application/pdf",
+      fileSize: "2.3 MB",
+      uploadedBy: "client",
+      uploadedAt: "2024-01-06T15:45:00Z",
+      category: "FINANCIAL_DOCUMENT",
+      status: "PENDING_REVIEW",
+      isSecure: true
+    },
+    {
+      id: 4,
+      fileName: "experian_dispute_response.pdf",
+      fileType: "application/pdf",
+      fileSize: "1.1 MB",
+      uploadedBy: "client",
+      uploadedAt: "2024-01-06T15:45:00Z",
+      category: "BUREAU_RESPONSE",
+      status: "PENDING_REVIEW",
+      isSecure: true
+    }
+  ];
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType.includes('pdf')) return <FileText className="h-4 w-4 text-red-600" />;
+    if (fileType.includes('image')) return <Eye className="h-4 w-4 text-blue-600" />;
+    return <Paperclip className="h-4 w-4 text-gray-600" />;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "VERIFIED": return "default";
+      case "PENDING_REVIEW": return "secondary";
+      case "REJECTED": return "destructive";
+      default: return "outline";
+    }
+  };
+
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case "ID_DOCUMENT": return "ID Document";
+      case "SSN_DOCUMENT": return "SSN Document";
+      case "FINANCIAL_DOCUMENT": return "Financial Document";
+      case "BUREAU_RESPONSE": return "Bureau Response";
+      case "UTILITY_BILL": return "Utility Bill";
+      case "PAYSTUB": return "Pay Stub";
+      default: return "Document";
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Tabs defaultValue="chat" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="chat">Secure Chat</TabsTrigger>
+          <TabsTrigger value="documents">Document Vault</TabsTrigger>
+          <TabsTrigger value="upload">Upload Documents</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="chat" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageCircle className="h-5 w-5 text-blue-600" />
+                Secure Communication
+                <Badge variant="outline" className="ml-auto">
+                  <Lock className="h-3 w-3 mr-1" />
+                  Encrypted
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* Messages Area */}
+              <div className="h-96 overflow-y-auto border rounded-lg p-4 mb-4 space-y-4 bg-gray-50">
+                {demoMessages.map((msg: any) => (
+                  <div
+                    key={msg.id}
+                    className={`flex ${msg.senderType === userType ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                        msg.senderType === userType
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white border shadow-sm'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        {msg.senderType === userType ? (
+                          <User className="h-3 w-3" />
+                        ) : (
+                          <UserCheck className="h-3 w-3" />
+                        )}
+                        <span className="text-xs font-medium">{msg.senderName}</span>
+                        <Clock className="h-3 w-3 ml-auto" />
+                        <span className="text-xs opacity-75">
+                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      
+                      <p className="text-sm">{msg.message}</p>
+                      
+                      {msg.hasAttachments && msg.attachments && (
+                        <div className="mt-2 space-y-1">
+                          {msg.attachments.map((file: any, idx: number) => (
+                            <div key={idx} className="flex items-center gap-2 p-2 bg-black/10 rounded text-xs">
+                              {getFileIcon(file.type)}
+                              <span>{file.name}</span>
+                              <span className="text-xs opacity-75">({file.size})</span>
+                              <Download className="h-3 w-3 ml-auto cursor-pointer" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* File Attachments Preview */}
+              {selectedFiles.length > 0 && (
+                <div className="border rounded-lg p-3 mb-4 bg-blue-50">
+                  <p className="text-sm font-medium mb-2">Attachments:</p>
+                  <div className="space-y-2">
+                    {selectedFiles.map((file, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-sm">
+                        {getFileIcon(file.type)}
+                        <span>{file.name}</span>
+                        <span className="text-gray-500">({(file.size / 1024 / 1024).toFixed(1)} MB)</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(idx)}
+                          className="ml-auto h-6 w-6 p-0"
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Message Input */}
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Type your message..."
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  />
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={sendMessageMutation.isPending || (!message.trim() && selectedFiles.length === 0)}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="documents" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-green-600" />
+                Secure Document Vault
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {demoDocuments.map((doc: any) => (
+                  <Card key={doc.id} className="border-gray-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        {getFileIcon(doc.fileType)}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{doc.fileName}</p>
+                          <p className="text-xs text-gray-600">{doc.fileSize}</p>
+                          <Badge variant={getStatusColor(doc.status)} className="mt-1 text-xs">
+                            {doc.status.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-3 pt-3 border-t">
+                        <div className="flex justify-between items-center text-xs text-gray-600 mb-2">
+                          <span>Category</span>
+                          <span>{getCategoryLabel(doc.category)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs text-gray-600 mb-2">
+                          <span>Uploaded</span>
+                          <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <div className="flex items-center gap-1">
+                            <Lock className="h-3 w-3 text-green-600" />
+                            <span className="text-green-600">Encrypted</span>
+                          </div>
+                          <Button variant="ghost" size="sm" className="h-6 text-xs">
+                            <Download className="h-3 w-3 mr-1" />
+                            Download
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="upload" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="h-5 w-5 text-purple-600" />
+                Upload Documents
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Upload Secure Documents</h3>
+                <p className="text-gray-600 mb-4">
+                  Drag and drop files here or click to browse
+                </p>
+                <Button variant="outline">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Choose Files
+                </Button>
+                <p className="text-xs text-gray-500 mt-4">
+                  Supported: PDF, JPG, PNG, DOC, DOCX (Max 10MB per file)
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Required Documents</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {[
+                        { name: "Government ID", status: "✓ Uploaded", color: "text-green-600" },
+                        { name: "Social Security Card", status: "✓ Uploaded", color: "text-green-600" },
+                        { name: "Bank Statements", status: "✓ Uploaded", color: "text-green-600" },
+                        { name: "Bureau Responses", status: "✓ Uploaded", color: "text-green-600" },
+                        { name: "Pay Stubs", status: "⚠ Needed", color: "text-yellow-600" },
+                        { name: "Utility Bills", status: "⚠ Needed", color: "text-yellow-600" }
+                      ].map((doc, idx) => (
+                        <div key={idx} className="flex justify-between items-center p-2 border rounded">
+                          <span className="text-sm">{doc.name}</span>
+                          <span className={`text-xs font-medium ${doc.color}`}>{doc.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Security & Privacy</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-green-600" />
+                        <span className="text-sm">256-bit AES encryption</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Lock className="h-4 w-4 text-green-600" />
+                        <span className="text-sm">SOC 2 compliant storage</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <UserCheck className="h-4 w-4 text-green-600" />
+                        <span className="text-sm">Admin-only access</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-green-600" />
+                        <span className="text-sm">Automatic purging after case closure</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

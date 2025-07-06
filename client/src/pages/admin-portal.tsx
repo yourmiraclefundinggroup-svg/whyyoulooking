@@ -15,8 +15,9 @@ import { CreditSimulatorModal } from "@/components/credit-simulator-modal";
 import { AdminUSPSTracking } from "@/components/admin-usps-tracking";
 import { FollowUpAlerts } from "@/components/follow-up-alerts";
 import { BureauResponseAnalysis } from "@/components/bureau-response-analysis";
+import { SecureChat } from "@/components/secure-chat";
 import { User, CreditReport, CreditIssue, Dispute } from "@shared/schema";
-import { Users, FileText, AlertTriangle, Send, Settings, Menu, X, TrendingUp, Shield, UserPlus, Brain, BarChart, CheckSquare, Clock, CalendarDays } from "lucide-react";
+import { Users, FileText, AlertTriangle, Send, Settings, Menu, X, TrendingUp, Shield, UserPlus, Brain, BarChart, CheckSquare, Clock, CalendarDays, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AdminPortal() {
@@ -50,6 +51,7 @@ export default function AdminPortal() {
     { href: "/admin-portal", label: "Client Management", icon: Users },
     { href: "/admin-portal/disputes", label: "Dispute Center", icon: Send },
     { href: "/admin-portal/bureau-analysis", label: "Bureau Analysis", icon: Brain },
+    { href: "/admin-portal/chat", label: "Client Communication", icon: MessageCircle },
     { href: "/admin-portal/analytics", label: "Analytics", icon: TrendingUp },
     { href: "/admin-portal/settings", label: "Settings", icon: Settings },
   ];
@@ -142,6 +144,13 @@ export default function AdminPortal() {
       />;
     } else if (location === "/admin-portal/bureau-analysis") {
       return <BureauAnalysisPage />;
+    } else if (location === "/admin-portal/chat") {
+      return <ClientCommunicationPage 
+        clientUsers={clientUsers}
+        selectedClientId={selectedClientId}
+        setSelectedClientId={setSelectedClientId}
+        selectedClient={selectedClient}
+      />;
     } else if (location === "/admin-portal/analytics") {
       return <AnalyticsPage clientUsers={clientUsers} />;
     } else if (location === "/admin-portal/settings") {
@@ -928,6 +937,92 @@ function SettingsPage() {
           </Button>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Client Communication Page Component
+function ClientCommunicationPage({ clientUsers, selectedClientId, setSelectedClientId, selectedClient }: any) {
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+              <MessageCircle className="h-7 w-7 text-orange-500" />
+              Client Communication
+            </h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Secure messaging and document exchange with clients.
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-orange-600">{clientUsers.length}</div>
+            <div className="text-sm text-slate-600">Active Clients</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Client List */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-lg">Client List</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {clientUsers.map((client: User) => (
+                <Button
+                  key={client.id}
+                  variant={selectedClientId === client.id ? "default" : "outline"}
+                  className={`w-full p-3 h-auto justify-start ${
+                    selectedClientId === client.id
+                      ? 'border-blue-500 bg-blue-600 text-white'
+                      : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                  }`}
+                  onClick={() => setSelectedClientId(client.id)}
+                >
+                  <div className="text-left">
+                    <div className="font-medium text-sm">
+                      {client.firstName} {client.lastName}
+                    </div>
+                    <div className="text-xs opacity-75">{client.email}</div>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Chat Interface */}
+        <div className="lg:col-span-3">
+          {selectedClient ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-blue-600" />
+                  Chat with {selectedClient.firstName} {selectedClient.lastName}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SecureChat userId={selectedClient.id} userType="admin" />
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <MessageCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Select a Client
+                </h3>
+                <p className="text-gray-600">
+                  Choose a client from the list to start secure communication
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
