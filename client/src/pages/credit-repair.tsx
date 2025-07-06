@@ -9,6 +9,8 @@ import { USPSTracking } from "@/components/usps-tracking";
 import { AICreditAnalysis } from "@/components/ai-credit-analysis";
 import { CreditSimulatorModal } from "@/components/credit-simulator-modal";
 import { CreditMonitoringConnections } from "@/components/credit-monitoring-connections";
+import { CreditUtilizationOptimizer } from "@/components/credit-utilization-optimizer";
+import { LoanReadinessAssessment } from "@/components/loan-readiness-assessment";
 import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -173,10 +175,12 @@ export default function CreditRepair() {
       </div>
 
       <Tabs defaultValue="issues" className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-4 h-9 sm:h-10">
+        <TabsList className="grid w-full grid-cols-6 h-9 sm:h-10">
           <TabsTrigger value="issues" className="text-sm">Credit Issues</TabsTrigger>
           <TabsTrigger value="disputes" className="text-sm">Disputes</TabsTrigger>
           <TabsTrigger value="monitoring" className="text-sm">Monitoring</TabsTrigger>
+          <TabsTrigger value="utilization" className="text-sm">Utilization AI</TabsTrigger>
+          <TabsTrigger value="loan-readiness" className="text-sm">Loan Readiness</TabsTrigger>
           <TabsTrigger value="ai-tools" className="text-sm">AI Tools</TabsTrigger>
         </TabsList>
 
@@ -401,6 +405,14 @@ export default function CreditRepair() {
 
         <TabsContent value="monitoring" className="space-y-6">
           <CreditMonitoringConnections userId={userId} />
+        </TabsContent>
+
+        <TabsContent value="utilization" className="space-y-6">
+          <CreditUtilizationOptimizer userId={userId} />
+        </TabsContent>
+
+        <TabsContent value="loan-readiness" className="space-y-6">
+          <LoanReadinessAssessment userId={userId} />
         </TabsContent>
 
         <TabsContent value="ai-tools" className="space-y-6">

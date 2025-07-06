@@ -53,6 +53,84 @@ export interface BureauResponseAnalysisResult {
   confidenceScore: number;
 }
 
+export interface CreditCard {
+  id: number;
+  cardName: string;
+  bank: string;
+  creditLimit: number;
+  currentBalance: number;
+  interestRate: number;
+  dueDate: Date;
+}
+
+export interface UtilizationOptimizationResult {
+  overall: {
+    currentUtilization: number;
+    targetUtilization: number;
+    scoreImpact: number;
+    totalOptimization: number;
+  };
+  cardOptimizations: Array<{
+    cardId: number;
+    cardName: string;
+    currentBalance: number;
+    currentUtilization: number;
+    targetUtilization: number;
+    suggestedAction: string;
+    amountSuggestion: number;
+    priority: "HIGH" | "MEDIUM" | "LOW";
+    timeframe: string;
+    scoreImpact: number;
+  }>;
+  alerts: Array<{
+    type: "SPENDING_LIMIT" | "UTILIZATION_THRESHOLD" | "PAYMENT_DUE" | "OPTIMIZATION_OPPORTUNITY";
+    message: string;
+    actionSuggestion: string;
+    urgency: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+    cardId?: number;
+    suggestedAmount?: number;
+  }>;
+}
+
+export interface LoanReadinessData {
+  annualIncome: number;
+  monthlyIncome: number;
+  monthlyDebtPayments: number;
+  employmentStatus: string;
+  employmentLength: number;
+  savingsAmount: number;
+  checkingAmount: number;
+  investmentAmount: number;
+  creditScore: number;
+  loanAmount: number;
+  downPayment: number;
+  loanType: "MORTGAGE" | "AUTO" | "PERSONAL" | "BUSINESS";
+}
+
+export interface LoanReadinessResult {
+  readinessScore: number; // 0-100
+  approvalProbability: number; // 0-100
+  debtToIncomeRatio: number;
+  timelineToQualification: string;
+  estimatedInterestRate: number;
+  monthlyPaymentEstimate: number;
+  strengths: string[];
+  concerns: string[];
+  recommendedActions: Array<{
+    action: string;
+    priority: "HIGH" | "MEDIUM" | "LOW";
+    timeframe: string;
+    impact: string;
+  }>;
+  nextSteps: string[];
+  aiInsights: {
+    summary: string;
+    keyFactors: string[];
+    riskAssessment: string;
+    recommendations: string[];
+  };
+}
+
 export class AIService {
   async generateDisputeLetter(params: DisputeLetterParams): Promise<string> {
     try {
@@ -331,6 +409,380 @@ Always provide actionable, legally sound advice.`
       console.error("Error analyzing bureau response:", error);
       return this.generateDemoBureauAnalysis(responseText, bureau);
     }
+  }
+
+  async optimizeCreditUtilization(cards: CreditCard[], currentScore: number): Promise<UtilizationOptimizationResult> {
+    try {
+      const prompt = `Analyze credit card utilization and provide optimal spending/payment strategy:
+
+CURRENT CREDIT CARDS:
+${cards.map(card => `
+Card: ${card.cardName} (${card.bank})
+Credit Limit: $${(card.creditLimit / 100).toLocaleString()}
+Current Balance: $${(card.currentBalance / 100).toLocaleString()}
+Current Utilization: ${Math.round((card.currentBalance / card.creditLimit) * 100)}%
+Interest Rate: ${(card.interestRate / 100).toFixed(2)}%
+Due Date: ${card.dueDate.toLocaleDateString()}
+`).join('')}
+
+CURRENT CREDIT SCORE: ${currentScore}
+
+Provide optimization strategy in JSON format:
+{
+  "overall": {
+    "currentUtilization": number,
+    "targetUtilization": number,
+    "scoreImpact": number,
+    "totalOptimization": number
+  },
+  "cardOptimizations": [
+    {
+      "cardId": number,
+      "cardName": "string",
+      "currentBalance": number,
+      "currentUtilization": number,
+      "targetUtilization": number,
+      "suggestedAction": "string",
+      "amountSuggestion": number,
+      "priority": "HIGH/MEDIUM/LOW",
+      "timeframe": "string",
+      "scoreImpact": number
+    }
+  ],
+  "alerts": [
+    {
+      "type": "SPENDING_LIMIT/UTILIZATION_THRESHOLD/PAYMENT_DUE/OPTIMIZATION_OPPORTUNITY",
+      "message": "string",
+      "actionSuggestion": "string",
+      "urgency": "CRITICAL/HIGH/MEDIUM/LOW",
+      "cardId": number,
+      "suggestedAmount": number
+    }
+  ]
+}
+
+Focus on:
+- Optimal utilization ratios for maximum score impact
+- Strategic payment timing
+- Balance transfer opportunities
+- Spending allocation across cards
+- Emergency alerts for critical thresholds`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: "You are a credit utilization optimization expert. Provide strategic recommendations for maximizing credit scores through optimal utilization management. Respond only with valid JSON."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 1500,
+        temperature: 0.2
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || "{}");
+      return result as UtilizationOptimizationResult;
+    } catch (error) {
+      console.error("Error optimizing credit utilization:", error);
+      return this.generateDemoUtilizationOptimization(cards, currentScore);
+    }
+  }
+
+  private generateDemoUtilizationOptimization(cards: CreditCard[], currentScore: number): UtilizationOptimizationResult {
+    const totalLimit = cards.reduce((sum, card) => sum + card.creditLimit, 0);
+    const totalBalance = cards.reduce((sum, card) => sum + card.currentBalance, 0);
+    const currentUtilization = Math.round((totalBalance / totalLimit) * 100);
+
+    return {
+      overall: {
+        currentUtilization,
+        targetUtilization: 10,
+        scoreImpact: Math.max(5, Math.min(50, Math.floor((currentUtilization - 10) * 1.2))),
+        totalOptimization: Math.floor((currentUtilization - 10) / 100 * totalLimit)
+      },
+      cardOptimizations: cards.map(card => {
+        const utilization = Math.round((card.currentBalance / card.creditLimit) * 100);
+        const targetUtil = utilization > 30 ? 10 : Math.max(5, utilization - 5);
+        const paymentSuggestion = Math.floor((utilization - targetUtil) / 100 * card.creditLimit);
+        
+        return {
+          cardId: card.id,
+          cardName: card.cardName,
+          currentBalance: card.currentBalance,
+          currentUtilization: utilization,
+          targetUtilization: targetUtil,
+          suggestedAction: utilization > 30 ? `Pay down $${(paymentSuggestion / 100).toLocaleString()}` : 
+                          utilization > 10 ? `Reduce by $${(paymentSuggestion / 100).toLocaleString()}` : "Maintain current level",
+          amountSuggestion: paymentSuggestion,
+          priority: utilization > 30 ? "HIGH" : utilization > 10 ? "MEDIUM" : "LOW",
+          timeframe: utilization > 30 ? "Within 7 days" : "Within 30 days",
+          scoreImpact: Math.max(2, Math.min(25, Math.floor((utilization - targetUtil) * 0.8)))
+        };
+      }),
+      alerts: cards
+        .filter(card => {
+          const util = (card.currentBalance / card.creditLimit) * 100;
+          return util > 30 || new Date(card.dueDate).getTime() - Date.now() < 7 * 24 * 60 * 60 * 1000;
+        })
+        .map(card => {
+          const util = (card.currentBalance / card.creditLimit) * 100;
+          const daysUntilDue = Math.ceil((new Date(card.dueDate).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+          
+          if (util > 30) {
+            return {
+              type: "UTILIZATION_THRESHOLD" as const,
+              message: `${card.cardName} utilization is ${Math.round(util)}% - significantly impacting your score`,
+              actionSuggestion: `Pay down $${Math.floor((util - 10) / 100 * card.creditLimit / 100).toLocaleString()} to optimize score impact`,
+              urgency: util > 50 ? "CRITICAL" as const : "HIGH" as const,
+              cardId: card.id,
+              suggestedAmount: Math.floor((util - 10) / 100 * card.creditLimit)
+            };
+          } else {
+            return {
+              type: "PAYMENT_DUE" as const,
+              message: `${card.cardName} payment due in ${daysUntilDue} days`,
+              actionSuggestion: `Schedule payment to maintain low utilization`,
+              urgency: daysUntilDue <= 3 ? "HIGH" as const : "MEDIUM" as const,
+              cardId: card.id,
+              suggestedAmount: card.currentBalance
+            };
+          }
+        })
+    };
+  }
+
+  async assessLoanReadiness(data: LoanReadinessData): Promise<LoanReadinessResult> {
+    try {
+      const prompt = `Analyze loan readiness for ${data.loanType.toLowerCase()} loan application:
+
+FINANCIAL PROFILE:
+Annual Income: $${(data.annualIncome / 100).toLocaleString()}
+Monthly Income: $${(data.monthlyIncome / 100).toLocaleString()}
+Monthly Debt Payments: $${(data.monthlyDebtPayments / 100).toLocaleString()}
+Employment Status: ${data.employmentStatus}
+Employment Length: ${Math.floor(data.employmentLength / 12)} years ${data.employmentLength % 12} months
+Savings: $${(data.savingsAmount / 100).toLocaleString()}
+Checking: $${(data.checkingAmount / 100).toLocaleString()}
+Investments: $${(data.investmentAmount / 100).toLocaleString()}
+Credit Score: ${data.creditScore}
+
+LOAN DETAILS:
+Loan Type: ${data.loanType}
+Loan Amount: $${(data.loanAmount / 100).toLocaleString()}
+Down Payment: $${(data.downPayment / 100).toLocaleString()}
+
+Provide comprehensive loan readiness assessment in JSON format:
+{
+  "readinessScore": number (0-100),
+  "approvalProbability": number (0-100),
+  "debtToIncomeRatio": number,
+  "timelineToQualification": "string",
+  "estimatedInterestRate": number (basis points),
+  "monthlyPaymentEstimate": number (cents),
+  "strengths": ["string"],
+  "concerns": ["string"],
+  "recommendedActions": [
+    {
+      "action": "string",
+      "priority": "HIGH/MEDIUM/LOW",
+      "timeframe": "string",
+      "impact": "string"
+    }
+  ],
+  "nextSteps": ["string"],
+  "aiInsights": {
+    "summary": "string",
+    "keyFactors": ["string"],
+    "riskAssessment": "string",
+    "recommendations": ["string"]
+  }
+}
+
+Consider:
+- Debt-to-income ratios and lending standards
+- Employment stability and income verification
+- Asset liquidity and reserves
+- Credit score impact on rates and approval
+- Down payment adequacy
+- Market conditions and interest rates`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: "You are a senior loan underwriter and financial advisor with expertise in mortgage lending, auto loans, and personal finance. Provide realistic assessments based on current lending standards. Respond only with valid JSON."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 2000,
+        temperature: 0.1
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || "{}");
+      return result as LoanReadinessResult;
+    } catch (error) {
+      console.error("Error assessing loan readiness:", error);
+      return this.generateDemoLoanReadiness(data);
+    }
+  }
+
+  private generateDemoLoanReadiness(data: LoanReadinessData): LoanReadinessResult {
+    const debtToIncomeRatio = Math.round((data.monthlyDebtPayments / data.monthlyIncome) * 100);
+    const totalAssets = data.savingsAmount + data.checkingAmount + data.investmentAmount;
+    const loanToValue = data.loanType === "MORTGAGE" ? Math.round(((data.loanAmount - data.downPayment) / data.loanAmount) * 100) : 0;
+    
+    // Calculate readiness score based on multiple factors
+    let readinessScore = 50; // Base score
+    
+    // Credit score impact (0-25 points)
+    if (data.creditScore >= 740) readinessScore += 25;
+    else if (data.creditScore >= 700) readinessScore += 20;
+    else if (data.creditScore >= 650) readinessScore += 15;
+    else if (data.creditScore >= 600) readinessScore += 10;
+    else readinessScore += 5;
+    
+    // Debt-to-income impact (0-20 points)
+    if (debtToIncomeRatio <= 20) readinessScore += 20;
+    else if (debtToIncomeRatio <= 30) readinessScore += 15;
+    else if (debtToIncomeRatio <= 40) readinessScore += 10;
+    else if (debtToIncomeRatio <= 50) readinessScore += 5;
+    
+    // Employment stability (0-15 points)
+    if (data.employmentLength >= 24) readinessScore += 15;
+    else if (data.employmentLength >= 12) readinessScore += 10;
+    else if (data.employmentLength >= 6) readinessScore += 5;
+    
+    // Assets and reserves (0-15 points)
+    const monthsOfReserves = totalAssets / data.monthlyIncome;
+    if (monthsOfReserves >= 6) readinessScore += 15;
+    else if (monthsOfReserves >= 3) readinessScore += 10;
+    else if (monthsOfReserves >= 1) readinessScore += 5;
+    
+    // Down payment (0-10 points for mortgage)
+    if (data.loanType === "MORTGAGE") {
+      const downPaymentPercent = (data.downPayment / data.loanAmount) * 100;
+      if (downPaymentPercent >= 20) readinessScore += 10;
+      else if (downPaymentPercent >= 10) readinessScore += 7;
+      else if (downPaymentPercent >= 5) readinessScore += 5;
+      else if (downPaymentPercent >= 3) readinessScore += 3;
+    }
+    
+    readinessScore = Math.min(100, readinessScore);
+    
+    // Calculate approval probability
+    let approvalProbability = readinessScore;
+    if (data.creditScore < 580) approvalProbability = Math.min(approvalProbability, 25);
+    if (debtToIncomeRatio > 50) approvalProbability = Math.min(approvalProbability, 30);
+    
+    // Estimate interest rate based on credit score and loan type
+    let baseRate = 0;
+    switch (data.loanType) {
+      case "MORTGAGE": baseRate = 650; break; // 6.50%
+      case "AUTO": baseRate = 550; break; // 5.50%
+      case "PERSONAL": baseRate = 1200; break; // 12.00%
+      case "BUSINESS": baseRate = 800; break; // 8.00%
+    }
+    
+    // Adjust rate based on credit score
+    if (data.creditScore >= 740) baseRate -= 100;
+    else if (data.creditScore >= 700) baseRate -= 50;
+    else if (data.creditScore >= 650) baseRate += 0;
+    else if (data.creditScore >= 600) baseRate += 100;
+    else baseRate += 200;
+    
+    // Estimate monthly payment (simplified calculation)
+    const monthlyRate = baseRate / 100 / 100 / 12;
+    const numPayments = data.loanType === "MORTGAGE" ? 360 : data.loanType === "AUTO" ? 60 : 36;
+    const monthlyPayment = Math.round((data.loanAmount - data.downPayment) * 
+      (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+      (Math.pow(1 + monthlyRate, numPayments) - 1));
+
+    const strengths = [];
+    const concerns = [];
+    const recommendedActions = [];
+
+    // Analyze strengths
+    if (data.creditScore >= 740) strengths.push("Excellent credit score provides access to best rates");
+    if (debtToIncomeRatio <= 30) strengths.push("Low debt-to-income ratio shows strong financial management");
+    if (data.employmentLength >= 24) strengths.push("Stable employment history demonstrates income reliability");
+    if (totalAssets >= data.monthlyIncome * 6) strengths.push("Strong savings reserves exceed 6 months expenses");
+
+    // Identify concerns
+    if (data.creditScore < 650) concerns.push("Credit score below optimal range for best rates");
+    if (debtToIncomeRatio > 40) concerns.push("High debt-to-income ratio may limit loan options");
+    if (data.employmentLength < 12) concerns.push("Limited employment history may require additional documentation");
+    if (totalAssets < data.monthlyIncome * 2) concerns.push("Limited cash reserves for emergencies and closing costs");
+
+    // Generate recommendations
+    if (data.creditScore < 700) {
+      recommendedActions.push({
+        action: "Improve credit score through credit repair and optimization",
+        priority: "HIGH",
+        timeframe: "3-6 months",
+        impact: "Could reduce interest rate by 0.5-1.0%"
+      });
+    }
+    if (debtToIncomeRatio > 36) {
+      recommendedActions.push({
+        action: "Pay down existing debt to improve debt-to-income ratio",
+        priority: "HIGH",
+        timeframe: "3-12 months",
+        impact: "Essential for loan approval in many programs"
+      });
+    }
+    if (totalAssets < data.monthlyIncome * 3) {
+      recommendedActions.push({
+        action: "Build emergency savings and down payment reserves",
+        priority: "MEDIUM",
+        timeframe: "6-12 months",
+        impact: "Increases approval odds and provides financial security"
+      });
+    }
+
+    return {
+      readinessScore,
+      approvalProbability,
+      debtToIncomeRatio,
+      timelineToQualification: readinessScore >= 75 ? "Ready now" : 
+                               readinessScore >= 60 ? "3-6 months" : 
+                               readinessScore >= 40 ? "6-12 months" : "12+ months",
+      estimatedInterestRate: baseRate,
+      monthlyPaymentEstimate: monthlyPayment,
+      strengths,
+      concerns,
+      recommendedActions,
+      nextSteps: [
+        "Review and verify all financial documentation",
+        "Get pre-qualified with multiple lenders",
+        "Compare loan programs and rates",
+        "Address any identified concerns before applying"
+      ],
+      aiInsights: {
+        summary: `Based on your financial profile, you have a ${readinessScore}% loan readiness score with ${approvalProbability}% approval probability.`,
+        keyFactors: [
+          `Credit Score: ${data.creditScore} (${data.creditScore >= 740 ? 'Excellent' : data.creditScore >= 700 ? 'Good' : data.creditScore >= 650 ? 'Fair' : 'Needs Improvement'})`,
+          `Debt-to-Income: ${debtToIncomeRatio}% (${debtToIncomeRatio <= 30 ? 'Excellent' : debtToIncomeRatio <= 40 ? 'Good' : 'High'})`,
+          `Employment: ${Math.floor(data.employmentLength / 12)} years (${data.employmentLength >= 24 ? 'Stable' : 'Limited'})`
+        ],
+        riskAssessment: readinessScore >= 75 ? "Low risk - strong candidate for approval" :
+                        readinessScore >= 60 ? "Moderate risk - likely approval with good terms" :
+                        readinessScore >= 40 ? "Higher risk - may need manual underwriting" :
+                        "High risk - significant improvements needed",
+        recommendations: concerns.length > 0 ? 
+          ["Focus on addressing the identified concerns before applying for optimal results"] :
+          ["You appear well-positioned for loan approval - consider shopping for best rates"]
+      }
+    };
   }
 
   private generateDemoBureauAnalysis(responseText: string, bureau: string): BureauResponseAnalysisResult {

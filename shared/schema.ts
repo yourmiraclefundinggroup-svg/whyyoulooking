@@ -177,6 +177,106 @@ export const insertCreditFileSyncHistorySchema = createInsertSchema(creditFileSy
 export const insertBureauResponseSchema = createInsertSchema(bureauResponses).omit({ id: true, createdAt: true });
 export const insertBureauResponseAnalysisSchema = createInsertSchema(bureauResponseAnalysis).omit({ id: true, createdAt: true });
 
+// Credit Utilization Optimizer
+export const creditCards = pgTable("credit_cards", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  cardName: text("card_name").notNull(),
+  bank: text("bank").notNull(),
+  creditLimit: integer("credit_limit").notNull(),
+  currentBalance: integer("current_balance").notNull().default(0),
+  minimumPayment: integer("minimum_payment").notNull().default(0),
+  dueDate: timestamp("due_date").notNull(),
+  interestRate: integer("interest_rate").notNull(), // stored as basis points (e.g., 1899 = 18.99%)
+  lastUpdated: timestamp("last_updated").notNull().defaultNow(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+export const utilizationOptimizations = pgTable("utilization_optimizations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  optimizationType: text("optimization_type", { enum: ["SPENDING", "PAYMENT", "BALANCE_TRANSFER", "LIMIT_INCREASE"] }).notNull(),
+  cardId: integer("card_id").references(() => creditCards.id),
+  recommendation: text("recommendation").notNull(),
+  currentUtilization: integer("current_utilization").notNull(), // percentage as integer (e.g., 85 = 85%)
+  targetUtilization: integer("target_utilization").notNull(),
+  potentialScoreImpact: integer("potential_score_impact").notNull(),
+  actionRequired: text("action_required").notNull(),
+  amountSuggestion: integer("amount_suggestion"), // dollar amount in cents
+  priority: text("priority", { enum: ["HIGH", "MEDIUM", "LOW"] }).notNull(),
+  timeframe: text("timeframe").notNull(), // e.g., "Within 7 days"
+  isCompleted: boolean("is_completed").notNull().default(false),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+export const utilizationAlerts = pgTable("utilization_alerts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  cardId: integer("card_id").references(() => creditCards.id),
+  alertType: text("alert_type", { enum: ["SPENDING_LIMIT", "UTILIZATION_THRESHOLD", "PAYMENT_DUE", "OPTIMIZATION_OPPORTUNITY"] }).notNull(),
+  message: text("message").notNull(),
+  actionSuggestion: text("action_suggestion").notNull(),
+  currentAmount: integer("current_amount"), // current spending/balance in cents
+  suggestedAmount: integer("suggested_amount"), // suggested spending/payment in cents
+  urgency: text("urgency", { enum: ["CRITICAL", "HIGH", "MEDIUM", "LOW"] }).notNull(),
+  isRead: boolean("is_read").notNull().default(false),
+  isActive: boolean("is_active").notNull().default(true),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+export const insertCreditCardSchema = createInsertSchema(creditCards).omit({ id: true, createdAt: true, lastUpdated: true });
+export const insertUtilizationOptimizationSchema = createInsertSchema(utilizationOptimizations).omit({ id: true, createdAt: true, completedAt: true });
+export const insertUtilizationAlertSchema = createInsertSchema(utilizationAlerts).omit({ id: true, createdAt: true });
+
+// Mortgage/Loan Readiness Score
+export const loanReadinessProfiles = pgTable("loan_readiness_profiles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  annualIncome: integer("annual_income").notNull(), // in cents
+  monthlyIncome: integer("monthly_income").notNull(), // in cents
+  monthlyDebtPayments: integer("monthly_debt_payments").notNull().default(0), // in cents
+  employmentStatus: text("employment_status", { enum: ["EMPLOYED", "SELF_EMPLOYED", "UNEMPLOYED", "RETIRED", "CONTRACTOR"] }).notNull(),
+  employmentLength: integer("employment_length").notNull(), // in months
+  jobTitle: text("job_title"),
+  employer: text("employer"),
+  savingsAmount: integer("savings_amount").notNull().default(0), // in cents
+  checkingAmount: integer("checking_amount").notNull().default(0), // in cents
+  investmentAmount: integer("investment_amount").notNull().default(0), // in cents
+  hasOtherAssets: boolean("has_other_assets").notNull().default(false),
+  otherAssetsValue: integer("other_assets_value").default(0), // in cents
+  housingStatus: text("housing_status", { enum: ["RENT", "OWN", "LIVE_WITH_FAMILY", "OTHER"] }).notNull(),
+  monthlyRentMortgage: integer("monthly_rent_mortgage").notNull().default(0), // in cents
+  lastUpdated: timestamp("last_updated").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+export const loanReadinessAssessments = pgTable("loan_readiness_assessments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  profileId: integer("profile_id").notNull().references(() => loanReadinessProfiles.id),
+  loanType: text("loan_type", { enum: ["MORTGAGE", "AUTO", "PERSONAL", "BUSINESS"] }).notNull(),
+  loanAmount: integer("loan_amount").notNull(), // in cents
+  downPayment: integer("down_payment").notNull().default(0), // in cents
+  readinessScore: integer("readiness_score").notNull(), // 0-100
+  approvalProbability: integer("approval_probability").notNull(), // 0-100
+  debtToIncomeRatio: integer("debt_to_income_ratio").notNull(), // as percentage (e.g., 35 = 35%)
+  recommendedActions: text("recommended_actions").array(),
+  timelineToQualification: text("timeline_to_qualification"), // e.g., "3-6 months"
+  estimatedInterestRate: integer("estimated_interest_rate"), // in basis points
+  monthlyPaymentEstimate: integer("monthly_payment_estimate"), // in cents
+  strengths: text("strengths").array(),
+  concerns: text("concerns").array(),
+  nextSteps: text("next_steps").array(),
+  aiInsights: text("ai_insights"), // JSON string with detailed AI analysis
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+export const insertLoanReadinessProfileSchema = createInsertSchema(loanReadinessProfiles).omit({ id: true, createdAt: true, lastUpdated: true });
+export const insertLoanReadinessAssessmentSchema = createInsertSchema(loanReadinessAssessments).omit({ id: true, createdAt: true });
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -204,3 +304,13 @@ export type BureauResponse = typeof bureauResponses.$inferSelect;
 export type InsertBureauResponse = z.infer<typeof insertBureauResponseSchema>;
 export type BureauResponseAnalysis = typeof bureauResponseAnalysis.$inferSelect;
 export type InsertBureauResponseAnalysis = z.infer<typeof insertBureauResponseAnalysisSchema>;
+export type CreditCard = typeof creditCards.$inferSelect;
+export type InsertCreditCard = z.infer<typeof insertCreditCardSchema>;
+export type UtilizationOptimization = typeof utilizationOptimizations.$inferSelect;
+export type InsertUtilizationOptimization = z.infer<typeof insertUtilizationOptimizationSchema>;
+export type UtilizationAlert = typeof utilizationAlerts.$inferSelect;
+export type InsertUtilizationAlert = z.infer<typeof insertUtilizationAlertSchema>;
+export type LoanReadinessProfile = typeof loanReadinessProfiles.$inferSelect;
+export type InsertLoanReadinessProfile = z.infer<typeof insertLoanReadinessProfileSchema>;
+export type LoanReadinessAssessment = typeof loanReadinessAssessments.$inferSelect;
+export type InsertLoanReadinessAssessment = z.infer<typeof insertLoanReadinessAssessmentSchema>;

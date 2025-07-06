@@ -2,6 +2,7 @@ import {
   users, creditReports, creditIssues, disputes, creditGoals, 
   educationalContent, creditBuildingActions, testingFeedback, betaAccess,
   creditMonitoringConnections, creditFileSyncHistory, bureauResponses, bureauResponseAnalysis,
+  creditCards, utilizationOptimizations, utilizationAlerts, loanReadinessProfiles, loanReadinessAssessments,
   type User, type InsertUser,
   type CreditReport, type InsertCreditReport,
   type CreditIssue, type InsertCreditIssue,
@@ -14,7 +15,12 @@ import {
   type CreditMonitoringConnection, type InsertCreditMonitoringConnection,
   type CreditFileSyncHistory, type InsertCreditFileSyncHistory,
   type BureauResponse, type InsertBureauResponse,
-  type BureauResponseAnalysis, type InsertBureauResponseAnalysis
+  type BureauResponseAnalysis, type InsertBureauResponseAnalysis,
+  type CreditCard, type InsertCreditCard,
+  type UtilizationOptimization, type InsertUtilizationOptimization,
+  type UtilizationAlert, type InsertUtilizationAlert,
+  type LoanReadinessProfile, type InsertLoanReadinessProfile,
+  type LoanReadinessAssessment, type InsertLoanReadinessAssessment
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -88,6 +94,23 @@ export interface IStorage {
   updateBureauResponse(id: number, updates: Partial<BureauResponse>): Promise<BureauResponse | undefined>;
   getBureauResponseAnalysis(responseId: number): Promise<BureauResponseAnalysis | undefined>;
   createBureauResponseAnalysis(analysis: InsertBureauResponseAnalysis): Promise<BureauResponseAnalysis>;
+
+  // Credit Utilization Optimizer
+  getCreditCards(userId: number): Promise<CreditCard[]>;
+  getCreditCard(id: number): Promise<CreditCard | undefined>;
+  createCreditCard(card: InsertCreditCard): Promise<CreditCard>;
+  updateCreditCard(id: number, updates: Partial<CreditCard>): Promise<CreditCard | undefined>;
+  getUtilizationOptimizations(userId: number): Promise<UtilizationOptimization[]>;
+  createUtilizationOptimization(optimization: InsertUtilizationOptimization): Promise<UtilizationOptimization>;
+  getUtilizationAlerts(userId: number): Promise<UtilizationAlert[]>;
+  createUtilizationAlert(alert: InsertUtilizationAlert): Promise<UtilizationAlert>;
+  markUtilizationAlertAsRead(alertId: number): Promise<UtilizationAlert | undefined>;
+
+  // Loan Readiness Assessment
+  getLoanReadinessProfile(userId: number): Promise<LoanReadinessProfile | null>;
+  saveLoanReadinessProfile(data: any): Promise<LoanReadinessProfile>;
+  getLoanReadinessAssessments(userId: number): Promise<LoanReadinessAssessment[]>;
+  saveLoanReadinessAssessment(data: InsertLoanReadinessAssessment): Promise<LoanReadinessAssessment>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -291,6 +314,11 @@ export class MemStorage implements IStorage {
   private creditFileSyncHistory: Map<number, CreditFileSyncHistory> = new Map();
   private bureauResponses: Map<number, BureauResponse> = new Map();
   private bureauResponseAnalysis: Map<number, BureauResponseAnalysis> = new Map();
+  private creditCards: Map<number, CreditCard> = new Map();
+  private utilizationOptimizations: Map<number, UtilizationOptimization> = new Map();
+  private utilizationAlerts: Map<number, UtilizationAlert> = new Map();
+  private loanReadinessProfiles: Map<number, LoanReadinessProfile> = new Map();
+  private loanReadinessAssessments: Map<number, LoanReadinessAssessment> = new Map();
   private currentId: number = 1;
 
   constructor() {
@@ -782,6 +810,91 @@ export class MemStorage implements IStorage {
     this.bureauResponseAnalysis.set(1, demoAnalysis1);
     this.bureauResponseAnalysis.set(2, demoAnalysis2);
 
+    // Demo Credit Cards for Sarah Wilson (userId 2)
+    const demoCard1: CreditCard = {
+      id: 1,
+      userId: 2,
+      cardName: "Chase Sapphire Preferred",
+      bank: "Chase",
+      creditLimit: 800000, // $8,000 in cents
+      currentBalance: 500000, // $5,000 in cents (62.5% utilization)
+      minimumPayment: 10000, // $100 in cents
+      dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
+      interestRate: 1799, // 17.99%
+      lastUpdated: new Date(),
+      isActive: true,
+      createdAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) // 1 year ago
+    };
+
+    const demoCard2: CreditCard = {
+      id: 2,
+      userId: 2,
+      cardName: "Capital One Venture",
+      bank: "Capital One",
+      creditLimit: 500000, // $5,000 in cents
+      currentBalance: 125000, // $1,250 in cents (25% utilization)
+      minimumPayment: 2500, // $25 in cents
+      dueDate: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000), // 8 days from now
+      interestRate: 2199, // 21.99%
+      lastUpdated: new Date(),
+      isActive: true,
+      createdAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000) // 6 months ago
+    };
+
+    const demoCard3: CreditCard = {
+      id: 3,
+      userId: 2,
+      cardName: "American Express Gold",
+      bank: "American Express",
+      creditLimit: 1000000, // $10,000 in cents
+      currentBalance: 75000, // $750 in cents (7.5% utilization)
+      minimumPayment: 2500, // $25 in cents
+      dueDate: new Date(Date.now() + 22 * 24 * 60 * 60 * 1000), // 22 days from now
+      interestRate: 1699, // 16.99%
+      lastUpdated: new Date(),
+      isActive: true,
+      createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) // 3 months ago
+    };
+
+    // Demo Utilization Alerts
+    const demoAlert1: UtilizationAlert = {
+      id: 1,
+      userId: 2,
+      cardId: 1,
+      alertType: "UTILIZATION_THRESHOLD",
+      message: "Chase Sapphire Preferred utilization is 62.5% - significantly impacting your score",
+      actionSuggestion: "Pay down $4,200 to get below 30% utilization for maximum score impact",
+      currentAmount: 500000,
+      suggestedAmount: 420000,
+      urgency: "HIGH",
+      isRead: false,
+      isActive: true,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+    };
+
+    const demoAlert2: UtilizationAlert = {
+      id: 2,
+      userId: 2,
+      cardId: 2,
+      alertType: "PAYMENT_DUE",
+      message: "Capital One Venture payment due in 8 days",
+      actionSuggestion: "Schedule payment to maintain low utilization and avoid late fees",
+      currentAmount: 125000,
+      suggestedAmount: 2500,
+      urgency: "MEDIUM",
+      isRead: false,
+      isActive: true,
+      expiresAt: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000),
+      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+    };
+
+    this.creditCards.set(1, demoCard1);
+    this.creditCards.set(2, demoCard2);
+    this.creditCards.set(3, demoCard3);
+    this.utilizationAlerts.set(1, demoAlert1);
+    this.utilizationAlerts.set(2, demoAlert2);
+
     this.currentId = 100; // Start from 100 for new entries
   }
 
@@ -1074,6 +1187,114 @@ export class MemStorage implements IStorage {
     };
     this.bureauResponseAnalysis.set(id, analysis);
     return analysis;
+  }
+
+  // Credit Utilization Optimizer methods
+  async getCreditCards(userId: number): Promise<CreditCard[]> {
+    return Array.from(this.creditCards.values()).filter(card => card.userId === userId);
+  }
+
+  async getCreditCard(id: number): Promise<CreditCard | undefined> {
+    return this.creditCards.get(id);
+  }
+
+  async createCreditCard(insertCard: InsertCreditCard): Promise<CreditCard> {
+    const id = this.currentId++;
+    const card: CreditCard = { 
+      ...insertCard, 
+      id, 
+      lastUpdated: new Date(),
+      createdAt: new Date() 
+    };
+    this.creditCards.set(id, card);
+    return card;
+  }
+
+  async updateCreditCard(id: number, updates: Partial<CreditCard>): Promise<CreditCard | undefined> {
+    const card = this.creditCards.get(id);
+    if (card) {
+      const updated = { ...card, ...updates, lastUpdated: new Date() };
+      this.creditCards.set(id, updated);
+      return updated;
+    }
+    return undefined;
+  }
+
+  async getUtilizationOptimizations(userId: number): Promise<UtilizationOptimization[]> {
+    return Array.from(this.utilizationOptimizations.values()).filter(opt => opt.userId === userId);
+  }
+
+  async createUtilizationOptimization(insertOptimization: InsertUtilizationOptimization): Promise<UtilizationOptimization> {
+    const id = this.currentId++;
+    const optimization: UtilizationOptimization = { 
+      ...insertOptimization, 
+      id, 
+      createdAt: new Date() 
+    };
+    this.utilizationOptimizations.set(id, optimization);
+    return optimization;
+  }
+
+  async getUtilizationAlerts(userId: number): Promise<UtilizationAlert[]> {
+    return Array.from(this.utilizationAlerts.values()).filter(alert => alert.userId === userId && alert.isActive);
+  }
+
+  async createUtilizationAlert(insertAlert: InsertUtilizationAlert): Promise<UtilizationAlert> {
+    const id = this.currentId++;
+    const alert: UtilizationAlert = { 
+      ...insertAlert, 
+      id, 
+      createdAt: new Date() 
+    };
+    this.utilizationAlerts.set(id, alert);
+    return alert;
+  }
+
+  async markUtilizationAlertAsRead(alertId: number): Promise<UtilizationAlert | undefined> {
+    const alert = this.utilizationAlerts.get(alertId);
+    if (alert) {
+      const updated = { ...alert, isRead: true };
+      this.utilizationAlerts.set(alertId, updated);
+      return updated;
+    }
+    return undefined;
+  }
+
+  // Loan Readiness Assessment methods
+  async getLoanReadinessProfile(userId: number): Promise<LoanReadinessProfile | null> {
+    return Array.from(this.loanReadinessProfiles.values()).find(profile => profile.userId === userId) || null;
+  }
+
+  async saveLoanReadinessProfile(data: any): Promise<LoanReadinessProfile> {
+    const existingProfile = Array.from(this.loanReadinessProfiles.values()).find(p => p.userId === data.userId);
+    
+    const profile: LoanReadinessProfile = {
+      id: existingProfile?.id || this.currentId++,
+      ...data,
+      lastUpdated: new Date(),
+      createdAt: existingProfile?.createdAt || new Date()
+    };
+    
+    this.loanReadinessProfiles.set(profile.id, profile);
+    return profile;
+  }
+
+  async getLoanReadinessAssessments(userId: number): Promise<LoanReadinessAssessment[]> {
+    return Array.from(this.loanReadinessAssessments.values())
+      .filter(assessment => assessment.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async saveLoanReadinessAssessment(data: InsertLoanReadinessAssessment): Promise<LoanReadinessAssessment> {
+    const id = this.currentId++;
+    const assessment: LoanReadinessAssessment = {
+      ...data,
+      id,
+      createdAt: new Date()
+    };
+    
+    this.loanReadinessAssessments.set(id, assessment);
+    return assessment;
   }
 }
 

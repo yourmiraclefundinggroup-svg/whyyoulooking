@@ -768,6 +768,111 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
+  // Loan readiness routes
+  app.get("/api/loan-readiness/profile/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const profile = await storage.getLoanReadinessProfile(userId);
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching loan readiness profile:", error);
+      res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  });
+
+  app.post("/api/loan-readiness/profile", async (req, res) => {
+    try {
+      const profileData = req.body;
+      const profile = await storage.saveLoanReadinessProfile(profileData);
+      res.json(profile);
+    } catch (error) {
+      console.error("Error saving loan readiness profile:", error);
+      res.status(500).json({ error: "Failed to save profile" });
+    }
+  });
+
+  app.get("/api/loan-readiness/assessments/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const assessments = await storage.getLoanReadinessAssessments(userId);
+      res.json(assessments);
+    } catch (error) {
+      console.error("Error fetching loan readiness assessments:", error);
+      res.status(500).json({ error: "Failed to fetch assessments" });
+    }
+  });
+
+  app.post("/api/loan-readiness/assess", async (req, res) => {
+    try {
+      const assessmentData = req.body;
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ 
+          message: "OpenAI API key not configured. Using demo assessment." 
+        });
+      }
+      
+      // Run AI assessment
+      const result = await aiService.assessLoanReadiness(assessmentData);
+      
+      // Save assessment result
+      const assessment = await storage.saveLoanReadinessAssessment({
+        userId: assessmentData.userId,
+        profileId: assessmentData.profileId || 1,
+        loanType: assessmentData.loanType,
+        loanAmount: assessmentData.loanAmount,
+        downPayment: assessmentData.downPayment,
+        readinessScore: result.readinessScore,
+        approvalProbability: result.approvalProbability,
+        debtToIncomeRatio: result.debtToIncomeRatio,
+        recommendedActions: result.recommendedActions.map(a => a.action),
+        timelineToQualification: result.timelineToQualification,
+        estimatedInterestRate: result.estimatedInterestRate,
+        monthlyPaymentEstimate: result.monthlyPaymentEstimate,
+        strengths: result.strengths,
+        concerns: result.concerns,
+        nextSteps: result.nextSteps,
+        aiInsights: JSON.stringify(result.aiInsights)
+      });
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error running loan readiness assessment:", error);
+      
+      // Provide demo assessment on error
+      if (error.status === 429 || error.message?.includes('quota') || error.code === 'insufficient_quota') {
+        const demoResult = {
+          readinessScore: 75,
+          approvalProbability: 80,
+          debtToIncomeRatio: 28,
+          timelineToQualification: "Ready now",
+          estimatedInterestRate: 650,
+          monthlyPaymentEstimate: 180000,
+          strengths: ["Good credit score", "Stable employment", "Low debt-to-income ratio"],
+          concerns: ["Limited down payment", "Could improve savings reserves"],
+          recommendedActions: [
+            {
+              action: "Increase down payment to 20% for better rates",
+              priority: "MEDIUM",
+              timeframe: "3-6 months",
+              impact: "Could reduce interest rate by 0.25%"
+            }
+          ],
+          nextSteps: ["Shop for pre-approval", "Compare lender rates", "Gather documentation"],
+          aiInsights: {
+            summary: "You have a strong financial profile with 75% loan readiness.",
+            keyFactors: ["Credit Score: 720 (Good)", "DTI: 28% (Excellent)", "Employment: 3+ years (Stable)"],
+            riskAssessment: "Low risk - strong candidate for approval",
+            recommendations: ["Consider increasing down payment for optimal terms"]
+          }
+        };
+        res.json(demoResult);
+      } else {
+        res.status(500).json({ error: "Failed to run assessment" });
+      }
+    }
+  });
+
   // AI Dispute Letter Generation
   app.post("/api/generate-dispute-letter", async (req, res) => {
     const { issueType, creditor, amount, description, bureau, dateAdded, impact } = req.body;
@@ -1026,6 +1131,101 @@ Format the response as a complete business letter ready to send.`;
     } catch (error) {
       console.error("Error fetching bureau response analysis:", error);
       res.status(500).json({ error: "Failed to fetch analysis" });
+    }
+  });
+
+  // Credit Utilization Optimizer Routes
+  app.get("/api/credit-cards/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const cards = await storage.getCreditCards(userId);
+      res.json(cards);
+    } catch (error) {
+      console.error("Error fetching credit cards:", error);
+      res.status(500).json({ error: "Failed to fetch credit cards" });
+    }
+  });
+
+  app.post("/api/credit-cards", async (req, res) => {
+    try {
+      const card = await storage.createCreditCard(req.body);
+      res.json(card);
+    } catch (error) {
+      console.error("Error creating credit card:", error);
+      res.status(500).json({ error: "Failed to create credit card" });
+    }
+  });
+
+  app.put("/api/credit-cards/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const card = await storage.updateCreditCard(id, req.body);
+      if (!card) {
+        return res.status(404).json({ error: "Credit card not found" });
+      }
+      res.json(card);
+    } catch (error) {
+      console.error("Error updating credit card:", error);
+      res.status(500).json({ error: "Failed to update credit card" });
+    }
+  });
+
+  app.post("/api/optimize-utilization/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      // Get user's credit cards and current score
+      const cards = await storage.getCreditCards(userId);
+      const creditReport = await storage.getCreditReport(userId);
+      const currentScore = creditReport?.creditScore || 650;
+
+      if (cards.length === 0) {
+        return res.status(400).json({ error: "No credit cards found for optimization" });
+      }
+
+      // Convert to AI service format
+      const cardData = cards.map(card => ({
+        id: card.id,
+        cardName: card.cardName,
+        bank: card.bank,
+        creditLimit: card.creditLimit,
+        currentBalance: card.currentBalance,
+        interestRate: card.interestRate,
+        dueDate: new Date(card.dueDate)
+      }));
+
+      // Run AI optimization
+      const optimization = await aiService.optimizeCreditUtilization(cardData, currentScore);
+
+      res.json(optimization);
+    } catch (error) {
+      console.error("Error optimizing utilization:", error);
+      res.status(500).json({ error: "Failed to optimize utilization" });
+    }
+  });
+
+  app.get("/api/utilization-alerts/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const alerts = await storage.getUtilizationAlerts(userId);
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error fetching utilization alerts:", error);
+      res.status(500).json({ error: "Failed to fetch utilization alerts" });
+    }
+  });
+
+  app.patch("/api/utilization-alerts/:id/read", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const alert = await storage.markUtilizationAlertAsRead(id);
+      if (!alert) {
+        return res.status(404).json({ error: "Alert not found" });
+      }
+      res.json(alert);
+    } catch (error) {
+      console.error("Error marking alert as read:", error);
+      res.status(500).json({ error: "Failed to mark alert as read" });
     }
   });
 
