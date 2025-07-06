@@ -706,8 +706,9 @@ Format the response as a complete business letter ready to send.`;
       
       // Demo authentication - in production, use proper password hashing
       const demoCredentials = {
-        "admin@creditfixpro.com": { password: "admin123", accessLevel: "ADMIN", id: 1 },
-        "client@example.com": { password: "client123", accessLevel: "CLIENT_VIEWER", id: 2 },
+        "admin@creditfixpro.com": { password: "admin123", accessLevel: "ADMIN", id: 6 },
+        "sarah.johnson@example.com": { password: "client123", accessLevel: "CLIENT_VIEWER", id: 1 },
+        "client@example.com": { password: "client123", accessLevel: "CLIENT_VIEWER", id: 5 },
         "michael.davis@email.com": { password: "client123", accessLevel: "CLIENT_VIEWER", id: 3 },
         "jennifer.martinez@email.com": { password: "client123", accessLevel: "CLIENT_VIEWER", id: 4 }
       };

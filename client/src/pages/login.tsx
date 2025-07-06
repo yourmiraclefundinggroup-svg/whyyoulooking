@@ -174,9 +174,9 @@ export default function Login() {
                 <div className="space-y-2 text-sm">
                   <div className="p-3 bg-blue-50 rounded-lg">
                     <p className="font-medium text-blue-900">Demo Clients:</p>
-                    <p className="text-blue-700">Sarah: client@example.com / client123</p>
+                    <p className="text-blue-700">Sarah: sarah.johnson@example.com / client123</p>
+                    <p className="text-blue-700">Alt: client@example.com / client123</p>
                     <p className="text-blue-700">Michael: michael.davis@email.com / client123</p>
-                    <p className="text-blue-700">Jennifer: jennifer.martinez@email.com / client123</p>
                   </div>
                 </div>
               )}

@@ -184,19 +184,19 @@ export default function CreditRepair() {
       </div>
 
       <Tabs defaultValue="issues" className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-12 h-9 sm:h-10 text-xs overflow-x-auto">
-          <TabsTrigger value="issues" className="text-xs min-w-0">Issues</TabsTrigger>
-          <TabsTrigger value="disputes" className="text-xs min-w-0">Disputes</TabsTrigger>
-          <TabsTrigger value="monitoring" className="text-xs min-w-0">Monitor</TabsTrigger>
-          <TabsTrigger value="utilization" className="text-xs min-w-0">Utilization</TabsTrigger>
-          <TabsTrigger value="loan-readiness" className="text-xs min-w-0">Loan</TabsTrigger>
-          <TabsTrigger value="credit-mix" className="text-xs min-w-0">Mix</TabsTrigger>
-          <TabsTrigger value="identity-theft" className="text-xs min-w-0">ID Theft</TabsTrigger>
-          <TabsTrigger value="rent-utility" className="text-xs min-w-0">Rent</TabsTrigger>
-          <TabsTrigger value="integrations" className="text-xs min-w-0">Verify</TabsTrigger>
-          <TabsTrigger value="business-credit" className="text-xs min-w-0">Business</TabsTrigger>
-          <TabsTrigger value="chat" className="text-xs min-w-0">Chat</TabsTrigger>
-          <TabsTrigger value="ai-tools" className="text-xs min-w-0">AI Tools</TabsTrigger>
+        <TabsList className="flex w-full h-auto min-h-[40px] overflow-x-auto overflow-y-hidden whitespace-nowrap p-1 gap-1 scrollbar-hide">
+          <TabsTrigger value="issues" className="text-xs px-3 py-2 flex-shrink-0 whitespace-nowrap">Issues</TabsTrigger>
+          <TabsTrigger value="disputes" className="text-xs px-3 py-2 flex-shrink-0 whitespace-nowrap">Disputes</TabsTrigger>
+          <TabsTrigger value="monitoring" className="text-xs px-3 py-2 flex-shrink-0 whitespace-nowrap">Monitor</TabsTrigger>
+          <TabsTrigger value="utilization" className="text-xs px-3 py-2 flex-shrink-0 whitespace-nowrap">Utilization</TabsTrigger>
+          <TabsTrigger value="loan-readiness" className="text-xs px-3 py-2 flex-shrink-0 whitespace-nowrap">Loan</TabsTrigger>
+          <TabsTrigger value="credit-mix" className="text-xs px-3 py-2 flex-shrink-0 whitespace-nowrap">Mix</TabsTrigger>
+          <TabsTrigger value="identity-theft" className="text-xs px-3 py-2 flex-shrink-0 whitespace-nowrap">ID Theft</TabsTrigger>
+          <TabsTrigger value="rent-utility" className="text-xs px-3 py-2 flex-shrink-0 whitespace-nowrap">Rent</TabsTrigger>
+          <TabsTrigger value="integrations" className="text-xs px-3 py-2 flex-shrink-0 whitespace-nowrap">Verify</TabsTrigger>
+          <TabsTrigger value="business-credit" className="text-xs px-3 py-2 flex-shrink-0 whitespace-nowrap">Business</TabsTrigger>
+          <TabsTrigger value="chat" className="text-xs px-3 py-2 flex-shrink-0 whitespace-nowrap">Chat</TabsTrigger>
+          <TabsTrigger value="ai-tools" className="text-xs px-3 py-2 flex-shrink-0 whitespace-nowrap">AI Tools</TabsTrigger>
         </TabsList>
 
         <TabsContent value="issues" className="space-y-4 sm:space-y-6">
