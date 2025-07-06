@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { aiService } from "./ai-service";
-import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema } from "@shared/schema";
+import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -927,6 +927,105 @@ Format the response as a complete business letter ready to send.`;
     } catch (error) {
       console.error("Error syncing credit monitoring:", error);
       res.status(500).json({ error: "Failed to sync credit monitoring" });
+    }
+  });
+
+  // Bureau Response Analysis Routes
+  app.get("/api/bureau-responses/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const responses = await storage.getBureauResponses(userId);
+      res.json(responses);
+    } catch (error) {
+      console.error("Error fetching bureau responses:", error);
+      res.status(500).json({ error: "Failed to fetch bureau responses" });
+    }
+  });
+
+  app.get("/api/bureau-response/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const response = await storage.getBureauResponse(id);
+      if (!response) {
+        return res.status(404).json({ error: "Bureau response not found" });
+      }
+      res.json(response);
+    } catch (error) {
+      console.error("Error fetching bureau response:", error);
+      res.status(500).json({ error: "Failed to fetch bureau response" });
+    }
+  });
+
+  app.post("/api/bureau-responses", async (req, res) => {
+    try {
+      const validatedData = insertBureauResponseSchema.parse(req.body);
+      const response = await storage.createBureauResponse(validatedData);
+      res.json(response);
+    } catch (error) {
+      console.error("Error creating bureau response:", error);
+      res.status(400).json({ error: "Failed to create bureau response" });
+    }
+  });
+
+  app.post("/api/bureau-response/:id/analyze", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const response = await storage.getBureauResponse(id);
+      
+      if (!response) {
+        return res.status(404).json({ error: "Bureau response not found" });
+      }
+
+      // Run AI analysis
+      const analysisResult = await aiService.analyzeBureauResponse(
+        response.responseText,
+        response.bureau,
+        response.disputeId ? { disputeId: response.disputeId } : undefined
+      );
+
+      // Save analysis to storage
+      const analysis = await storage.createBureauResponseAnalysis({
+        responseId: response.id,
+        analysisResult: JSON.stringify(analysisResult),
+        rejectionReasons: analysisResult.rejectionReasons,
+        recommendedActions: JSON.stringify(analysisResult.recommendedActions),
+        successProbability: analysisResult.successProbability,
+        strategyType: analysisResult.strategyType,
+        nextDisputeTemplate: analysisResult.nextDisputeTemplate,
+        confidenceScore: analysisResult.confidenceScore,
+        processingTime: Date.now() // Simple processing time calculation
+      });
+
+      // Update response to link with analysis
+      await storage.updateBureauResponse(id, { 
+        aiAnalysisId: analysis.id,
+        nextStepGenerated: true
+      });
+
+      res.json({
+        response,
+        analysis,
+        aiAnalysis: analysisResult
+      });
+    } catch (error) {
+      console.error("Error analyzing bureau response:", error);
+      res.status(500).json({ error: "Failed to analyze bureau response" });
+    }
+  });
+
+  app.get("/api/bureau-response-analysis/:responseId", async (req, res) => {
+    try {
+      const responseId = parseInt(req.params.responseId);
+      const analysis = await storage.getBureauResponseAnalysis(responseId);
+      
+      if (!analysis) {
+        return res.status(404).json({ error: "Analysis not found" });
+      }
+
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error fetching bureau response analysis:", error);
+      res.status(500).json({ error: "Failed to fetch analysis" });
     }
   });
 

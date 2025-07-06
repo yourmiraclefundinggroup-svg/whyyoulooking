@@ -1,7 +1,7 @@
 import { 
   users, creditReports, creditIssues, disputes, creditGoals, 
   educationalContent, creditBuildingActions, testingFeedback, betaAccess,
-  creditMonitoringConnections, creditFileSyncHistory,
+  creditMonitoringConnections, creditFileSyncHistory, bureauResponses, bureauResponseAnalysis,
   type User, type InsertUser,
   type CreditReport, type InsertCreditReport,
   type CreditIssue, type InsertCreditIssue,
@@ -12,7 +12,9 @@ import {
   type TestingFeedback, type InsertTestingFeedback,
   type BetaAccess, type InsertBetaAccess,
   type CreditMonitoringConnection, type InsertCreditMonitoringConnection,
-  type CreditFileSyncHistory, type InsertCreditFileSyncHistory
+  type CreditFileSyncHistory, type InsertCreditFileSyncHistory,
+  type BureauResponse, type InsertBureauResponse,
+  type BureauResponseAnalysis, type InsertBureauResponseAnalysis
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -78,6 +80,14 @@ export interface IStorage {
   getCreditFileSyncHistory(userId: number): Promise<CreditFileSyncHistory[]>;
   getCreditFileSyncHistoryByConnection(connectionId: number): Promise<CreditFileSyncHistory[]>;
   createCreditFileSyncHistory(history: InsertCreditFileSyncHistory): Promise<CreditFileSyncHistory>;
+
+  // Bureau Response Analysis
+  getBureauResponses(userId: number): Promise<BureauResponse[]>;
+  getBureauResponse(id: number): Promise<BureauResponse | undefined>;
+  createBureauResponse(response: InsertBureauResponse): Promise<BureauResponse>;
+  updateBureauResponse(id: number, updates: Partial<BureauResponse>): Promise<BureauResponse | undefined>;
+  getBureauResponseAnalysis(responseId: number): Promise<BureauResponseAnalysis | undefined>;
+  createBureauResponseAnalysis(analysis: InsertBureauResponseAnalysis): Promise<BureauResponseAnalysis>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -279,6 +289,8 @@ export class MemStorage implements IStorage {
   private betaAccess: Map<number, BetaAccess> = new Map();
   private creditMonitoringConnections: Map<number, CreditMonitoringConnection> = new Map();
   private creditFileSyncHistory: Map<number, CreditFileSyncHistory> = new Map();
+  private bureauResponses: Map<number, BureauResponse> = new Map();
+  private bureauResponseAnalysis: Map<number, BureauResponseAnalysis> = new Map();
   private currentId: number = 1;
 
   constructor() {
@@ -674,6 +686,102 @@ export class MemStorage implements IStorage {
     this.creditFileSyncHistory.set(2, demoSyncHistory2);
     this.creditFileSyncHistory.set(3, demoSyncHistory3);
 
+    // Demo Bureau Responses
+    const demoBureauResponse1: BureauResponse = {
+      id: 1,
+      userId: 2,
+      disputeId: 1,
+      bureau: "EXPERIAN",
+      responseType: "VERIFIED",
+      responseText: "After investigation, we have verified the information with the data furnisher and determined that the information is accurate as reported. No changes will be made to your credit file.",
+      responseDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      documentUrl: null,
+      aiAnalysisId: 1,
+      nextStepGenerated: true,
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+    };
+
+    const demoBureauResponse2: BureauResponse = {
+      id: 2,
+      userId: 2,
+      disputeId: 2,
+      bureau: "EQUIFAX",
+      responseType: "FRIVOLOUS",
+      responseText: "Your dispute has been determined to be frivolous or irrelevant. We will not process this dispute as it lacks sufficient information to warrant an investigation.",
+      responseDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      documentUrl: null,
+      aiAnalysisId: 2,
+      nextStepGenerated: true,
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+    };
+
+    const demoAnalysis1: BureauResponseAnalysis = {
+      id: 1,
+      responseId: 1,
+      analysisResult: JSON.stringify({
+        summary: "Standard verification response - can be challenged",
+        legalIssues: ["Insufficient verification procedures", "No specific evidence provided"],
+        nextSteps: ["Request method of verification", "Direct furnisher dispute"]
+      }),
+      rejectionReasons: ["Item verified with data furnisher", "Information deemed accurate"],
+      recommendedActions: JSON.stringify([
+        {
+          action: "Request method of verification",
+          priority: "HIGH",
+          timeframe: "10 days",
+          description: "Demand details of their verification procedures"
+        },
+        {
+          action: "Direct furnisher dispute",
+          priority: "MEDIUM", 
+          timeframe: "30 days",
+          description: "Dispute directly with the original creditor"
+        }
+      ]),
+      successProbability: 65,
+      strategyType: "DOCUMENTATION",
+      nextDisputeTemplate: "Method of verification request template generated",
+      confidenceScore: 85,
+      processingTime: 2500,
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+    };
+
+    const demoAnalysis2: BureauResponseAnalysis = {
+      id: 2,
+      responseId: 2,
+      analysisResult: JSON.stringify({
+        summary: "Improper frivolous determination - FCRA violation",
+        legalIssues: ["Frivolous determination without basis", "Violation of FCRA Section 611"],
+        nextSteps: ["File CFPB complaint", "Send method of verification request"]
+      }),
+      rejectionReasons: ["Dispute marked as frivolous", "Insufficient investigation conducted"],
+      recommendedActions: JSON.stringify([
+        {
+          action: "File CFPB complaint",
+          priority: "HIGH",
+          timeframe: "7 days",
+          description: "Submit complaint citing improper frivolous determination"
+        },
+        {
+          action: "Send method of verification request",
+          priority: "HIGH",
+          timeframe: "14 days", 
+          description: "Demand proof of verification procedures used"
+        }
+      ]),
+      successProbability: 80,
+      strategyType: "ESCALATION",
+      nextDisputeTemplate: "FCRA violation escalation letter template generated",
+      confidenceScore: 90,
+      processingTime: 3200,
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+    };
+
+    this.bureauResponses.set(1, demoBureauResponse1);
+    this.bureauResponses.set(2, demoBureauResponse2);
+    this.bureauResponseAnalysis.set(1, demoAnalysis1);
+    this.bureauResponseAnalysis.set(2, demoAnalysis2);
+
     this.currentId = 100; // Start from 100 for new entries
   }
 
@@ -921,6 +1029,51 @@ export class MemStorage implements IStorage {
     };
     this.creditFileSyncHistory.set(id, history);
     return history;
+  }
+
+  // Bureau Response Analysis methods
+  async getBureauResponses(userId: number): Promise<BureauResponse[]> {
+    return Array.from(this.bureauResponses.values()).filter(response => response.userId === userId);
+  }
+
+  async getBureauResponse(id: number): Promise<BureauResponse | undefined> {
+    return this.bureauResponses.get(id);
+  }
+
+  async createBureauResponse(insertResponse: InsertBureauResponse): Promise<BureauResponse> {
+    const id = this.currentId++;
+    const response: BureauResponse = { 
+      ...insertResponse, 
+      id, 
+      createdAt: new Date() 
+    };
+    this.bureauResponses.set(id, response);
+    return response;
+  }
+
+  async updateBureauResponse(id: number, updates: Partial<BureauResponse>): Promise<BureauResponse | undefined> {
+    const response = this.bureauResponses.get(id);
+    if (response) {
+      const updated = { ...response, ...updates };
+      this.bureauResponses.set(id, updated);
+      return updated;
+    }
+    return undefined;
+  }
+
+  async getBureauResponseAnalysis(responseId: number): Promise<BureauResponseAnalysis | undefined> {
+    return Array.from(this.bureauResponseAnalysis.values()).find(analysis => analysis.responseId === responseId);
+  }
+
+  async createBureauResponseAnalysis(insertAnalysis: InsertBureauResponseAnalysis): Promise<BureauResponseAnalysis> {
+    const id = this.currentId++;
+    const analysis: BureauResponseAnalysis = { 
+      ...insertAnalysis, 
+      id, 
+      createdAt: new Date() 
+    };
+    this.bureauResponseAnalysis.set(id, analysis);
+    return analysis;
   }
 }
 

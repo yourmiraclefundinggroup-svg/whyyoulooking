@@ -133,6 +133,35 @@ export const creditFileSyncHistory = pgTable("credit_file_sync_history", {
   syncDate: timestamp("sync_date").defaultNow().notNull(),
 });
 
+// Bureau Response Analysis
+export const bureauResponses = pgTable("bureau_responses", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  disputeId: integer("dispute_id").references(() => disputes.id),
+  bureau: text("bureau", { enum: ["EXPERIAN", "EQUIFAX", "TRANSUNION"] }).notNull(),
+  responseType: text("response_type", { enum: ["VERIFIED", "DELETED", "UPDATED", "FRIVOLOUS", "PARTIAL"] }).notNull(),
+  responseText: text("response_text").notNull(),
+  responseDate: timestamp("response_date").notNull(),
+  documentUrl: text("document_url"), // URL to uploaded response document
+  aiAnalysisId: integer("ai_analysis_id").references(() => bureauResponseAnalysis.id),
+  nextStepGenerated: boolean("next_step_generated").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+export const bureauResponseAnalysis = pgTable("bureau_response_analysis", {
+  id: serial("id").primaryKey(),
+  responseId: integer("response_id").notNull().references(() => bureauResponses.id),
+  analysisResult: text("analysis_result").notNull(), // JSON string with AI analysis
+  rejectionReasons: text("rejection_reasons").array(), // Array of identified rejection reasons
+  recommendedActions: text("recommended_actions").notNull(), // JSON string with next steps
+  successProbability: integer("success_probability"), // 0-100 percentage
+  strategyType: text("strategy_type", { enum: ["ESCALATION", "REWRITE", "DOCUMENTATION", "VALIDATION", "LEGAL"] }).notNull(),
+  nextDisputeTemplate: text("next_dispute_template"), // Generated follow-up dispute letter
+  confidenceScore: integer("confidence_score").notNull(), // AI confidence in analysis (0-100)
+  processingTime: integer("processing_time"), // Time taken for analysis in milliseconds
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertCreditReportSchema = createInsertSchema(creditReports).omit({ id: true, lastUpdated: true });
@@ -145,6 +174,8 @@ export const insertTestingFeedbackSchema = createInsertSchema(testingFeedback).o
 export const insertBetaAccessSchema = createInsertSchema(betaAccess).omit({ id: true, createdAt: true });
 export const insertCreditMonitoringConnectionSchema = createInsertSchema(creditMonitoringConnections).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertCreditFileSyncHistorySchema = createInsertSchema(creditFileSyncHistory).omit({ id: true, syncDate: true });
+export const insertBureauResponseSchema = createInsertSchema(bureauResponses).omit({ id: true, createdAt: true });
+export const insertBureauResponseAnalysisSchema = createInsertSchema(bureauResponseAnalysis).omit({ id: true, createdAt: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -169,3 +200,7 @@ export type CreditMonitoringConnection = typeof creditMonitoringConnections.$inf
 export type InsertCreditMonitoringConnection = z.infer<typeof insertCreditMonitoringConnectionSchema>;
 export type CreditFileSyncHistory = typeof creditFileSyncHistory.$inferSelect;
 export type InsertCreditFileSyncHistory = z.infer<typeof insertCreditFileSyncHistorySchema>;
+export type BureauResponse = typeof bureauResponses.$inferSelect;
+export type InsertBureauResponse = z.infer<typeof insertBureauResponseSchema>;
+export type BureauResponseAnalysis = typeof bureauResponseAnalysis.$inferSelect;
+export type InsertBureauResponseAnalysis = z.infer<typeof insertBureauResponseAnalysisSchema>;
