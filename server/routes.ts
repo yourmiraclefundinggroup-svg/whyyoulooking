@@ -816,6 +816,120 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
+  // Credit Monitoring Connection Routes
+  app.get("/api/credit-monitoring-connections/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const connections = await storage.getCreditMonitoringConnections(userId);
+      res.json(connections);
+    } catch (error) {
+      console.error("Error fetching credit monitoring connections:", error);
+      res.status(500).json({ error: "Failed to fetch credit monitoring connections" });
+    }
+  });
+
+  app.post("/api/credit-monitoring-connections", async (req, res) => {
+    try {
+      const connection = await storage.createCreditMonitoringConnection(req.body);
+      res.json(connection);
+    } catch (error) {
+      console.error("Error creating credit monitoring connection:", error);
+      res.status(500).json({ error: "Failed to create credit monitoring connection" });
+    }
+  });
+
+  app.put("/api/credit-monitoring-connections/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const connection = await storage.updateCreditMonitoringConnection(id, req.body);
+      if (!connection) {
+        return res.status(404).json({ error: "Credit monitoring connection not found" });
+      }
+      res.json(connection);
+    } catch (error) {
+      console.error("Error updating credit monitoring connection:", error);
+      res.status(500).json({ error: "Failed to update credit monitoring connection" });
+    }
+  });
+
+  app.delete("/api/credit-monitoring-connections/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteCreditMonitoringConnection(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Credit monitoring connection not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting credit monitoring connection:", error);
+      res.status(500).json({ error: "Failed to delete credit monitoring connection" });
+    }
+  });
+
+  // Credit File Sync History Routes
+  app.get("/api/credit-file-sync-history/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const history = await storage.getCreditFileSyncHistory(userId);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching credit file sync history:", error);
+      res.status(500).json({ error: "Failed to fetch credit file sync history" });
+    }
+  });
+
+  app.post("/api/credit-file-sync-history", async (req, res) => {
+    try {
+      const history = await storage.createCreditFileSyncHistory(req.body);
+      res.json(history);
+    } catch (error) {
+      console.error("Error creating credit file sync history:", error);
+      res.status(500).json({ error: "Failed to create credit file sync history" });
+    }
+  });
+
+  // Credit Monitoring Sync Action Routes
+  app.post("/api/sync-credit-monitoring/:connectionId", async (req, res) => {
+    try {
+      const connectionId = parseInt(req.params.connectionId);
+      const connection = await storage.getCreditMonitoringConnection(connectionId);
+      
+      if (!connection) {
+        return res.status(404).json({ error: "Credit monitoring connection not found" });
+      }
+
+      // Simulate credit monitoring sync (in real implementation, this would call external APIs)
+      const mockSyncResult = {
+        userId: connection.userId,
+        connectionId: connectionId,
+        provider: connection.provider,
+        syncStatus: "SUCCESS",
+        issuesFound: Math.floor(Math.random() * 5) + 1,
+        issuesAdded: Math.floor(Math.random() * 3),
+        issuesUpdated: Math.floor(Math.random() * 2),
+        scoreChange: Math.floor(Math.random() * 20) - 10, // -10 to +10 change
+        syncDetails: JSON.stringify({
+          newAccounts: Math.floor(Math.random() * 2),
+          updatedBalances: Math.floor(Math.random() * 3),
+          resolvedIssues: Math.floor(Math.random() * 2)
+        })
+      };
+
+      const syncHistory = await storage.createCreditFileSyncHistory(mockSyncResult);
+      
+      // Update connection last sync date
+      await storage.updateCreditMonitoringConnection(connectionId, {
+        lastSyncDate: new Date(),
+        syncErrorMessage: null
+      });
+
+      res.json(syncHistory);
+    } catch (error) {
+      console.error("Error syncing credit monitoring:", error);
+      res.status(500).json({ error: "Failed to sync credit monitoring" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

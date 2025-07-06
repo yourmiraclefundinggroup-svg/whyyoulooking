@@ -1,6 +1,7 @@
 import { 
   users, creditReports, creditIssues, disputes, creditGoals, 
   educationalContent, creditBuildingActions, testingFeedback, betaAccess,
+  creditMonitoringConnections, creditFileSyncHistory,
   type User, type InsertUser,
   type CreditReport, type InsertCreditReport,
   type CreditIssue, type InsertCreditIssue,
@@ -9,7 +10,9 @@ import {
   type EducationalContent, type InsertEducationalContent,
   type CreditBuildingAction, type InsertCreditBuildingAction,
   type TestingFeedback, type InsertTestingFeedback,
-  type BetaAccess, type InsertBetaAccess
+  type BetaAccess, type InsertBetaAccess,
+  type CreditMonitoringConnection, type InsertCreditMonitoringConnection,
+  type CreditFileSyncHistory, type InsertCreditFileSyncHistory
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -63,6 +66,18 @@ export interface IStorage {
   // Admin Users
   getTestUsers(): Promise<User[]>;
   updateUserAccess(userId: number, accessLevel: string): Promise<User | undefined>;
+
+  // Credit Monitoring Connections
+  getCreditMonitoringConnections(userId: number): Promise<CreditMonitoringConnection[]>;
+  getCreditMonitoringConnection(id: number): Promise<CreditMonitoringConnection | undefined>;
+  createCreditMonitoringConnection(connection: InsertCreditMonitoringConnection): Promise<CreditMonitoringConnection>;
+  updateCreditMonitoringConnection(id: number, updates: Partial<CreditMonitoringConnection>): Promise<CreditMonitoringConnection | undefined>;
+  deleteCreditMonitoringConnection(id: number): Promise<boolean>;
+
+  // Credit File Sync History
+  getCreditFileSyncHistory(userId: number): Promise<CreditFileSyncHistory[]>;
+  getCreditFileSyncHistoryByConnection(connectionId: number): Promise<CreditFileSyncHistory[]>;
+  createCreditFileSyncHistory(history: InsertCreditFileSyncHistory): Promise<CreditFileSyncHistory>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -262,6 +277,8 @@ export class MemStorage implements IStorage {
   private creditBuildingActions: Map<number, CreditBuildingAction> = new Map();
   private testingFeedback: Map<number, TestingFeedback> = new Map();
   private betaAccess: Map<number, BetaAccess> = new Map();
+  private creditMonitoringConnections: Map<number, CreditMonitoringConnection> = new Map();
+  private creditFileSyncHistory: Map<number, CreditFileSyncHistory> = new Map();
   private currentId: number = 1;
 
   constructor() {
@@ -559,6 +576,104 @@ export class MemStorage implements IStorage {
     ];
     buildingActions.forEach(action => this.creditBuildingActions.set(action.id, action));
 
+    // Demo Credit Monitoring Connections
+    const demoConnection1: CreditMonitoringConnection = {
+      id: 1,
+      userId: 2,
+      provider: "EXPERIAN",
+      accountEmail: "sarah.wilson@example.com",
+      isActive: true,
+      lastSyncDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+      syncFrequency: "DAILY",
+      credentialsEncrypted: btoa("demo_encrypted_password"),
+      autoSyncEnabled: true,
+      syncErrorMessage: null,
+      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+      updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+    };
+
+    const demoConnection2: CreditMonitoringConnection = {
+      id: 2,
+      userId: 2,
+      provider: "IDENTITY_IQ",
+      accountEmail: "sarah.wilson@example.com",
+      isActive: true,
+      lastSyncDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+      syncFrequency: "WEEKLY",
+      credentialsEncrypted: btoa("demo_encrypted_password"),
+      autoSyncEnabled: true,
+      syncErrorMessage: null,
+      createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000), // 45 days ago
+      updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    };
+
+    // Demo Sync History
+    const demoSyncHistory1: CreditFileSyncHistory = {
+      id: 1,
+      userId: 2,
+      connectionId: 1,
+      provider: "EXPERIAN",
+      syncStatus: "SUCCESS",
+      issuesFound: 3,
+      issuesAdded: 1,
+      issuesUpdated: 2,
+      scoreChange: 8,
+      syncDetails: JSON.stringify({
+        newAccounts: 0,
+        updatedBalances: 2,
+        resolvedIssues: 1,
+        newInquiries: 0
+      }),
+      errorMessage: null,
+      syncDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+    };
+
+    const demoSyncHistory2: CreditFileSyncHistory = {
+      id: 2,
+      userId: 2,
+      connectionId: 2,
+      provider: "IDENTITY_IQ",
+      syncStatus: "SUCCESS",
+      issuesFound: 2,
+      issuesAdded: 0,
+      issuesUpdated: 1,
+      scoreChange: 5,
+      syncDetails: JSON.stringify({
+        newAccounts: 0,
+        updatedBalances: 1,
+        resolvedIssues: 0,
+        newInquiries: 1
+      }),
+      errorMessage: null,
+      syncDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    };
+
+    const demoSyncHistory3: CreditFileSyncHistory = {
+      id: 3,
+      userId: 2,
+      connectionId: 1,
+      provider: "EXPERIAN",
+      syncStatus: "PARTIAL",
+      issuesFound: 1,
+      issuesAdded: 0,
+      issuesUpdated: 1,
+      scoreChange: 2,
+      syncDetails: JSON.stringify({
+        newAccounts: 0,
+        updatedBalances: 1,
+        resolvedIssues: 0,
+        newInquiries: 0
+      }),
+      errorMessage: "Some data could not be synchronized due to temporary provider issues",
+      syncDate: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000)
+    };
+
+    this.creditMonitoringConnections.set(1, demoConnection1);
+    this.creditMonitoringConnections.set(2, demoConnection2);
+    this.creditFileSyncHistory.set(1, demoSyncHistory1);
+    this.creditFileSyncHistory.set(2, demoSyncHistory2);
+    this.creditFileSyncHistory.set(3, demoSyncHistory3);
+
     this.currentId = 100; // Start from 100 for new entries
   }
 
@@ -748,6 +863,64 @@ export class MemStorage implements IStorage {
     const updatedUser = { ...user, accessLevel };
     this.users.set(userId, updatedUser);
     return updatedUser;
+  }
+
+  // Credit Monitoring Connections
+  async getCreditMonitoringConnections(userId: number): Promise<CreditMonitoringConnection[]> {
+    return Array.from(this.creditMonitoringConnections.values()).filter(conn => conn.userId === userId);
+  }
+
+  async getCreditMonitoringConnection(id: number): Promise<CreditMonitoringConnection | undefined> {
+    return this.creditMonitoringConnections.get(id);
+  }
+
+  async createCreditMonitoringConnection(insertConnection: InsertCreditMonitoringConnection): Promise<CreditMonitoringConnection> {
+    const id = this.currentId++;
+    const connection: CreditMonitoringConnection = {
+      ...insertConnection,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.creditMonitoringConnections.set(id, connection);
+    return connection;
+  }
+
+  async updateCreditMonitoringConnection(id: number, updates: Partial<CreditMonitoringConnection>): Promise<CreditMonitoringConnection | undefined> {
+    const connection = this.creditMonitoringConnections.get(id);
+    if (!connection) return undefined;
+    
+    const updatedConnection = { ...connection, ...updates, updatedAt: new Date() };
+    this.creditMonitoringConnections.set(id, updatedConnection);
+    return updatedConnection;
+  }
+
+  async deleteCreditMonitoringConnection(id: number): Promise<boolean> {
+    return this.creditMonitoringConnections.delete(id);
+  }
+
+  // Credit File Sync History
+  async getCreditFileSyncHistory(userId: number): Promise<CreditFileSyncHistory[]> {
+    return Array.from(this.creditFileSyncHistory.values())
+      .filter(history => history.userId === userId)
+      .sort((a, b) => b.syncDate.getTime() - a.syncDate.getTime());
+  }
+
+  async getCreditFileSyncHistoryByConnection(connectionId: number): Promise<CreditFileSyncHistory[]> {
+    return Array.from(this.creditFileSyncHistory.values())
+      .filter(history => history.connectionId === connectionId)
+      .sort((a, b) => b.syncDate.getTime() - a.syncDate.getTime());
+  }
+
+  async createCreditFileSyncHistory(insertHistory: InsertCreditFileSyncHistory): Promise<CreditFileSyncHistory> {
+    const id = this.currentId++;
+    const history: CreditFileSyncHistory = {
+      ...insertHistory,
+      id,
+      syncDate: new Date()
+    };
+    this.creditFileSyncHistory.set(id, history);
+    return history;
   }
 }
 

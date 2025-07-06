@@ -8,6 +8,7 @@ import { DisputeLetterModal } from "@/components/dispute-letter-modal";
 import { USPSTracking } from "@/components/usps-tracking";
 import { AICreditAnalysis } from "@/components/ai-credit-analysis";
 import { CreditSimulatorModal } from "@/components/credit-simulator-modal";
+import { CreditMonitoringConnections } from "@/components/credit-monitoring-connections";
 import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -172,9 +173,10 @@ export default function CreditRepair() {
       </div>
 
       <Tabs defaultValue="issues" className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-3 h-9 sm:h-10">
+        <TabsList className="grid w-full grid-cols-4 h-9 sm:h-10">
           <TabsTrigger value="issues" className="text-sm">Credit Issues</TabsTrigger>
           <TabsTrigger value="disputes" className="text-sm">Disputes</TabsTrigger>
+          <TabsTrigger value="monitoring" className="text-sm">Monitoring</TabsTrigger>
           <TabsTrigger value="ai-tools" className="text-sm">AI Tools</TabsTrigger>
         </TabsList>
 
@@ -395,6 +397,10 @@ export default function CreditRepair() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="monitoring" className="space-y-6">
+          <CreditMonitoringConnections userId={userId} />
         </TabsContent>
 
         <TabsContent value="ai-tools" className="space-y-6">

@@ -123,4 +123,5 @@ Preferred communication style: Simple, everyday language.
 ## Changelog
 
 Changelog:
+- July 06, 2025. Added credit monitoring service integration (IdentityIQ, Experian, Smart Credit) for automatic credit file syncing
 - July 05, 2025. Initial setup

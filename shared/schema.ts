@@ -103,6 +103,36 @@ export const betaAccess = pgTable("beta_access", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const creditMonitoringConnections = pgTable("credit_monitoring_connections", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  provider: text("provider").notNull(), // 'IDENTITY_IQ', 'EXPERIAN', 'SMART_CREDIT'
+  accountEmail: text("account_email").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  lastSyncDate: timestamp("last_sync_date"),
+  syncFrequency: text("sync_frequency").default("DAILY").notNull(), // 'DAILY', 'WEEKLY', 'MONTHLY'
+  credentialsEncrypted: text("credentials_encrypted"), // Encrypted login credentials
+  autoSyncEnabled: boolean("auto_sync_enabled").default(true).notNull(),
+  syncErrorMessage: text("sync_error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const creditFileSyncHistory = pgTable("credit_file_sync_history", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  connectionId: integer("connection_id").references(() => creditMonitoringConnections.id).notNull(),
+  provider: text("provider").notNull(),
+  syncStatus: text("sync_status").notNull(), // 'SUCCESS', 'FAILED', 'PARTIAL'
+  issuesFound: integer("issues_found").default(0).notNull(),
+  issuesAdded: integer("issues_added").default(0).notNull(),
+  issuesUpdated: integer("issues_updated").default(0).notNull(),
+  scoreChange: integer("score_change"), // Change in credit score from this sync
+  syncDetails: text("sync_details"), // JSON string with detailed sync information
+  errorMessage: text("error_message"),
+  syncDate: timestamp("sync_date").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertCreditReportSchema = createInsertSchema(creditReports).omit({ id: true, lastUpdated: true });
@@ -113,6 +143,8 @@ export const insertEducationalContentSchema = createInsertSchema(educationalCont
 export const insertCreditBuildingActionSchema = createInsertSchema(creditBuildingActions).omit({ id: true });
 export const insertTestingFeedbackSchema = createInsertSchema(testingFeedback).omit({ id: true, createdAt: true });
 export const insertBetaAccessSchema = createInsertSchema(betaAccess).omit({ id: true, createdAt: true });
+export const insertCreditMonitoringConnectionSchema = createInsertSchema(creditMonitoringConnections).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertCreditFileSyncHistorySchema = createInsertSchema(creditFileSyncHistory).omit({ id: true, syncDate: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -133,3 +165,7 @@ export type TestingFeedback = typeof testingFeedback.$inferSelect;
 export type InsertTestingFeedback = z.infer<typeof insertTestingFeedbackSchema>;
 export type BetaAccess = typeof betaAccess.$inferSelect;
 export type InsertBetaAccess = z.infer<typeof insertBetaAccessSchema>;
+export type CreditMonitoringConnection = typeof creditMonitoringConnections.$inferSelect;
+export type InsertCreditMonitoringConnection = z.infer<typeof insertCreditMonitoringConnectionSchema>;
+export type CreditFileSyncHistory = typeof creditFileSyncHistory.$inferSelect;
+export type InsertCreditFileSyncHistory = z.infer<typeof insertCreditFileSyncHistorySchema>;
