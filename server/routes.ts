@@ -730,6 +730,9 @@ Format the response as a complete business letter ready to send.`;
       
       // Get full user data
       const user = await storage.getUser(userCreds.id);
+      console.log("Authentication - User ID being fetched:", userCreds.id);
+      console.log("Authentication - User data from storage:", user);
+      
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
