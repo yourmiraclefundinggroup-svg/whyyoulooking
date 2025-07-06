@@ -18,20 +18,20 @@ export function IdentityTheftRecovery({ userId }: IdentityTheftRecoveryProps) {
   const queryClient = useQueryClient();
 
   const { data: cases, isLoading } = useQuery({
-    queryKey: [`/api/identity-theft-cases/${userId}`],
+    queryKey: [`/api/identity-theft-scan/${userId}`],
     enabled: !!userId
   });
 
   const scanMutation = useMutation({
     mutationFn: async () => {
-      return await fetch(`/api/identity-theft-cases/scan`, {
+      return await fetch(`/api/identity-theft-scan/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId })
       }).then(res => res.json());
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/identity-theft-cases/${userId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/identity-theft-scan/${userId}`] });
     }
   });
 

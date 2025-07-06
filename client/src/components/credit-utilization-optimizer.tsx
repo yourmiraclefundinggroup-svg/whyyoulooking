@@ -103,7 +103,10 @@ export function CreditUtilizationOptimizer({ userId }: CreditUtilizationOptimize
 
   // Optimize utilization mutation
   const optimizeUtilizationMutation = useMutation({
-    mutationFn: () => apiRequest(`/api/optimize-utilization/${userId}`, { method: "POST" }),
+    mutationFn: () => apiRequest(`/api/credit-utilization/optimize`, { 
+      method: "POST",
+      body: { userId }
+    }),
     onSuccess: (data) => {
       setOptimizationResult(data);
       toast({ description: "AI optimization completed successfully" });
