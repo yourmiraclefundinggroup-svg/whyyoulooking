@@ -3,6 +3,9 @@ import {
   educationalContent, creditBuildingActions, testingFeedback, betaAccess,
   creditMonitoringConnections, creditFileSyncHistory, bureauResponses, bureauResponseAnalysis,
   creditCards, utilizationOptimizations, utilizationAlerts, loanReadinessProfiles, loanReadinessAssessments,
+  goodwillLetters, creditMixOptimizations, identityTheftCases, rentUtilityReporting,
+  creditCardPredictions, financialBehaviorProfiles, bankAccountConnections, taxIntegrations,
+  employmentVerifications, disputeSuccessPredictions, mlTrainingData,
   type User, type InsertUser,
   type CreditReport, type InsertCreditReport,
   type CreditIssue, type InsertCreditIssue,
@@ -20,7 +23,18 @@ import {
   type UtilizationOptimization, type InsertUtilizationOptimization,
   type UtilizationAlert, type InsertUtilizationAlert,
   type LoanReadinessProfile, type InsertLoanReadinessProfile,
-  type LoanReadinessAssessment, type InsertLoanReadinessAssessment
+  type LoanReadinessAssessment, type InsertLoanReadinessAssessment,
+  type GoodwillLetter, type InsertGoodwillLetter,
+  type CreditMixOptimization, type InsertCreditMixOptimization,
+  type IdentityTheftCase, type InsertIdentityTheftCase,
+  type RentUtilityReporting, type InsertRentUtilityReporting,
+  type CreditCardPrediction, type InsertCreditCardPrediction,
+  type FinancialBehaviorProfile, type InsertFinancialBehaviorProfile,
+  type BankAccountConnection, type InsertBankAccountConnection,
+  type TaxIntegration, type InsertTaxIntegration,
+  type EmploymentVerification, type InsertEmploymentVerification,
+  type DisputeSuccessPrediction, type InsertDisputeSuccessPrediction,
+  type MlTrainingData, type InsertMlTrainingData
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -111,6 +125,68 @@ export interface IStorage {
   saveLoanReadinessProfile(data: any): Promise<LoanReadinessProfile>;
   getLoanReadinessAssessments(userId: number): Promise<LoanReadinessAssessment[]>;
   saveLoanReadinessAssessment(data: InsertLoanReadinessAssessment): Promise<LoanReadinessAssessment>;
+
+  // Goodwill Letters
+  getGoodwillLetters(userId: number): Promise<GoodwillLetter[]>;
+  getGoodwillLetter(id: number): Promise<GoodwillLetter | undefined>;
+  createGoodwillLetter(letter: InsertGoodwillLetter): Promise<GoodwillLetter>;
+  updateGoodwillLetter(id: number, updates: Partial<GoodwillLetter>): Promise<GoodwillLetter | undefined>;
+
+  // Credit Mix Optimization
+  getCreditMixOptimizations(userId: number): Promise<CreditMixOptimization[]>;
+  getCreditMixOptimization(id: number): Promise<CreditMixOptimization | undefined>;
+  createCreditMixOptimization(optimization: InsertCreditMixOptimization): Promise<CreditMixOptimization>;
+  updateCreditMixOptimization(id: number, updates: Partial<CreditMixOptimization>): Promise<CreditMixOptimization | undefined>;
+
+  // Identity Theft Recovery
+  getIdentityTheftCases(userId: number): Promise<IdentityTheftCase[]>;
+  getIdentityTheftCase(id: number): Promise<IdentityTheftCase | undefined>;
+  createIdentityTheftCase(case_: InsertIdentityTheftCase): Promise<IdentityTheftCase>;
+  updateIdentityTheftCase(id: number, updates: Partial<IdentityTheftCase>): Promise<IdentityTheftCase | undefined>;
+
+  // Rent/Utility Reporting
+  getRentUtilityReporting(userId: number): Promise<RentUtilityReporting[]>;
+  getRentUtilityReportingById(id: number): Promise<RentUtilityReporting | undefined>;
+  createRentUtilityReporting(reporting: InsertRentUtilityReporting): Promise<RentUtilityReporting>;
+  updateRentUtilityReporting(id: number, updates: Partial<RentUtilityReporting>): Promise<RentUtilityReporting | undefined>;
+
+  // Credit Card Predictions
+  getCreditCardPredictions(userId: number): Promise<CreditCardPrediction[]>;
+  getCreditCardPrediction(id: number): Promise<CreditCardPrediction | undefined>;
+  createCreditCardPrediction(prediction: InsertCreditCardPrediction): Promise<CreditCardPrediction>;
+  updateCreditCardPrediction(id: number, updates: Partial<CreditCardPrediction>): Promise<CreditCardPrediction | undefined>;
+
+  // Financial Behavior Profiles
+  getFinancialBehaviorProfile(userId: number): Promise<FinancialBehaviorProfile | undefined>;
+  createFinancialBehaviorProfile(profile: InsertFinancialBehaviorProfile): Promise<FinancialBehaviorProfile>;
+  updateFinancialBehaviorProfile(id: number, updates: Partial<FinancialBehaviorProfile>): Promise<FinancialBehaviorProfile | undefined>;
+
+  // Bank Account Connections
+  getBankAccountConnections(userId: number): Promise<BankAccountConnection[]>;
+  getBankAccountConnection(id: number): Promise<BankAccountConnection | undefined>;
+  createBankAccountConnection(connection: InsertBankAccountConnection): Promise<BankAccountConnection>;
+  updateBankAccountConnection(id: number, updates: Partial<BankAccountConnection>): Promise<BankAccountConnection | undefined>;
+
+  // Tax Integrations
+  getTaxIntegrations(userId: number): Promise<TaxIntegration[]>;
+  getTaxIntegration(id: number): Promise<TaxIntegration | undefined>;
+  createTaxIntegration(integration: InsertTaxIntegration): Promise<TaxIntegration>;
+  updateTaxIntegration(id: number, updates: Partial<TaxIntegration>): Promise<TaxIntegration | undefined>;
+
+  // Employment Verifications
+  getEmploymentVerifications(userId: number): Promise<EmploymentVerification[]>;
+  getEmploymentVerification(id: number): Promise<EmploymentVerification | undefined>;
+  createEmploymentVerification(verification: InsertEmploymentVerification): Promise<EmploymentVerification>;
+  updateEmploymentVerification(id: number, updates: Partial<EmploymentVerification>): Promise<EmploymentVerification | undefined>;
+
+  // Dispute Success Predictions
+  getDisputeSuccessPredictions(disputeId: number): Promise<DisputeSuccessPrediction[]>;
+  getDisputeSuccessPrediction(id: number): Promise<DisputeSuccessPrediction | undefined>;
+  createDisputeSuccessPrediction(prediction: InsertDisputeSuccessPrediction): Promise<DisputeSuccessPrediction>;
+
+  // ML Training Data
+  getMlTrainingData(dataType?: string): Promise<MlTrainingData[]>;
+  createMlTrainingData(data: InsertMlTrainingData): Promise<MlTrainingData>;
 }
 
 export class DatabaseStorage implements IStorage {

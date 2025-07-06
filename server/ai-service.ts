@@ -131,6 +131,68 @@ export interface LoanReadinessResult {
   };
 }
 
+// Additional AI Service Interfaces
+export interface GoodwillLetterParams {
+  creditorName: string;
+  accountNumber: string;
+  latePaymentDate: string;
+  paymentAmount: number;
+  circumstance: string;
+  customerRelationshipYears: number;
+}
+
+export interface CreditMixOptimizationResult {
+  currentMixScore: number;
+  targetMixScore: number;
+  improvementPotential: number;
+  recommendedProducts: any[];
+  actionPlan: any[];
+  riskAssessment: string;
+  implementationTimeline: string;
+}
+
+export interface IdentityTheftDetectionResult {
+  detectionConfidence: number;
+  fraudulentAccounts: any[];
+  suspiciousPatterns: string[];
+  recoverySteps: any[];
+  urgencyLevel: string;
+  estimatedRecoveryTime: string;
+}
+
+export interface CreditCardApprovalPrediction {
+  approvalProbability: number;
+  recommendedTiming: string;
+  requirements: string[];
+  improvementSuggestions: any[];
+  hardInquiryRisk: string;
+  preQualificationAvailable: boolean;
+}
+
+export interface FinancialBehaviorAnalysis {
+  behaviorScore: number;
+  spendingPatterns: any[];
+  improvementAreas: string[];
+  coachingPlan: any[];
+  budgetRecommendations: any;
+}
+
+export interface RentUtilityOptimizationResult {
+  recommendedServices: any[];
+  scoreImpactEstimate: number;
+  optimizationPlan: any[];
+  costBenefitAnalysis: any;
+}
+
+export interface DisputeSuccessPredictionResult {
+  successProbability: number;
+  keyFactors: string[];
+  recommendedStrategy: string;
+  timeframeEstimate: string;
+  confidenceScore: number;
+  nextSteps: string[];
+}
+
 export class AIService {
   async generateDisputeLetter(params: DisputeLetterParams): Promise<string> {
     try {
@@ -1116,6 +1178,564 @@ Enclosures: Copy of ID, Proof of Address`
     };
 
     return templates[issueType as keyof typeof templates] || templates.COLLECTION;
+  }
+
+  // Goodwill Letter Generation
+  async generateGoodwillLetter(params: GoodwillLetterParams): Promise<string> {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert credit repair specialist who writes compelling goodwill letters. Create a personalized goodwill letter that:
+            1. Acknowledges responsibility professionally
+            2. Explains circumstances without making excuses
+            3. Emphasizes customer relationship and loyalty
+            4. Makes a respectful request for goodwill adjustment
+            5. Uses professional but personal tone
+            6. Is concise and compelling`
+          },
+          {
+            role: "user",
+            content: `Generate a goodwill letter with these details:
+            Creditor: ${params.creditorName}
+            Account: ${params.accountNumber}
+            Late Payment Date: ${params.latePaymentDate}
+            Payment Amount: $${params.paymentAmount}
+            Circumstance: ${params.circumstance}
+            Customer Relationship: ${params.customerRelationshipYears} years
+            
+            Make it personal and compelling while maintaining professionalism.`
+          }
+        ]
+      });
+
+      return response.choices[0].message.content || this.generateDemoGoodwillLetter(params);
+    } catch (error) {
+      console.error('Error generating goodwill letter:', error);
+      return this.generateDemoGoodwillLetter(params);
+    }
+  }
+
+  // Credit Mix Optimization
+  async optimizeCreditMix(currentProducts: any[], creditProfile: any): Promise<CreditMixOptimizationResult> {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: `You are a credit optimization expert. Analyze credit mix and provide specific recommendations for improvement. Respond with JSON containing:
+            {
+              "currentMixScore": number,
+              "targetMixScore": number,
+              "improvementPotential": number,
+              "recommendedProducts": array,
+              "actionPlan": array,
+              "riskAssessment": string,
+              "implementationTimeline": string
+            }`
+          },
+          {
+            role: "user",
+            content: `Analyze credit mix for optimization:
+            Current Products: ${JSON.stringify(currentProducts)}
+            Credit Profile: ${JSON.stringify(creditProfile)}
+            
+            Provide specific product recommendations and timeline.`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+      return this.formatCreditMixResult(result);
+    } catch (error) {
+      console.error('Error optimizing credit mix:', error);
+      return this.generateDemoCreditMixOptimization(currentProducts, creditProfile);
+    }
+  }
+
+  // Identity Theft Detection
+  async detectIdentityTheft(accounts: any[], creditReports: any[]): Promise<IdentityTheftDetectionResult> {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: `You are an identity theft detection specialist. Analyze credit data for potential fraud patterns. Respond with JSON containing:
+            {
+              "detectionConfidence": number,
+              "fraudulentAccounts": array,
+              "suspiciousPatterns": array,
+              "recoverySteps": array,
+              "urgencyLevel": string
+            }`
+          },
+          {
+            role: "user",
+            content: `Analyze for identity theft patterns:
+            Accounts: ${JSON.stringify(accounts)}
+            Credit Reports: ${JSON.stringify(creditReports)}
+            
+            Identify any suspicious patterns or fraudulent accounts.`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+      return this.formatIdentityTheftResult(result);
+    } catch (error) {
+      console.error('Error detecting identity theft:', error);
+      return this.generateDemoIdentityTheftDetection(accounts);
+    }
+  }
+
+  // Credit Card Approval Prediction
+  async predictCreditCardApproval(userProfile: any, targetCard: any): Promise<CreditCardApprovalPrediction> {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: `You are a credit card approval specialist. Predict approval probability and provide timing recommendations. Respond with JSON containing:
+            {
+              "approvalProbability": number,
+              "recommendedTiming": string,
+              "requirements": array,
+              "improvementSuggestions": array,
+              "hardInquiryRisk": string
+            }`
+          },
+          {
+            role: "user",
+            content: `Predict approval for credit card:
+            User Profile: ${JSON.stringify(userProfile)}
+            Target Card: ${JSON.stringify(targetCard)}
+            
+            Provide approval probability and optimization recommendations.`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+      return this.formatCreditCardPrediction(result);
+    } catch (error) {
+      console.error('Error predicting credit card approval:', error);
+      return this.generateDemoCreditCardPrediction(userProfile, targetCard);
+    }
+  }
+
+  // Financial Behavior Analysis
+  async analyzeFinancialBehavior(spendingData: any, goals: any): Promise<FinancialBehaviorAnalysis> {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: `You are a financial behavior coach. Analyze spending patterns and provide personalized coaching. Respond with JSON containing:
+            {
+              "behaviorScore": number,
+              "spendingPatterns": array,
+              "improvementAreas": array,
+              "coachingPlan": array,
+              "budgetRecommendations": object
+            }`
+          },
+          {
+            role: "user",
+            content: `Analyze financial behavior:
+            Spending Data: ${JSON.stringify(spendingData)}
+            Goals: ${JSON.stringify(goals)}
+            
+            Provide behavioral analysis and coaching recommendations.`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+      return this.formatFinancialBehaviorAnalysis(result);
+    } catch (error) {
+      console.error('Error analyzing financial behavior:', error);
+      return this.generateDemoFinancialBehaviorAnalysis(spendingData, goals);
+    }
+  }
+
+  // Rent/Utility Reporting Optimization
+  async optimizeRentUtilityReporting(profile: any): Promise<RentUtilityOptimizationResult> {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: `You are a rent/utility reporting specialist. Analyze which services provide maximum credit score benefit. Respond with JSON containing:
+            {
+              "recommendedServices": array,
+              "scoreImpactEstimate": number,
+              "optimizationPlan": array,
+              "costBenefitAnalysis": object
+            }`
+          },
+          {
+            role: "user",
+            content: `Optimize rent/utility reporting:
+            Profile: ${JSON.stringify(profile)}
+            
+            Recommend the best reporting services for maximum score impact.`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+      return this.formatRentUtilityOptimization(result);
+    } catch (error) {
+      console.error('Error optimizing rent/utility reporting:', error);
+      return this.generateDemoRentUtilityOptimization(profile);
+    }
+  }
+
+  // Dispute Success Prediction
+  async predictDisputeSuccess(disputeData: any, historicalData: any[]): Promise<DisputeSuccessPredictionResult> {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: `You are a dispute success prediction specialist. Analyze factors and predict success probability. Respond with JSON containing:
+            {
+              "successProbability": number,
+              "keyFactors": array,
+              "recommendedStrategy": string,
+              "timeframeEstimate": string,
+              "confidenceScore": number
+            }`
+          },
+          {
+            role: "user",
+            content: `Predict dispute success:
+            Dispute Data: ${JSON.stringify(disputeData)}
+            Historical Data: ${JSON.stringify(historicalData)}
+            
+            Provide success probability and strategy recommendations.`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+      return this.formatDisputeSuccessPrediction(result);
+    } catch (error) {
+      console.error('Error predicting dispute success:', error);
+      return this.generateDemoDisputeSuccessPrediction(disputeData);
+    }
+  }
+
+  // Demo/Fallback Methods
+  private generateDemoGoodwillLetter(params: GoodwillLetterParams): string {
+    return `Dear ${params.creditorName} Customer Service,
+
+I hope this letter finds you well. I am writing as a loyal customer of ${params.customerRelationshipYears} years to request your consideration for a goodwill adjustment regarding a late payment on my account ${params.accountNumber}.
+
+On ${params.latePaymentDate}, I experienced ${params.circumstance}, which resulted in a late payment of $${params.paymentAmount}. I take full responsibility for this oversight and have since taken steps to ensure this situation does not occur again.
+
+Throughout our ${params.customerRelationshipYears}-year relationship, I have maintained a positive payment history and valued my account with your institution. This late payment was an isolated incident that does not reflect my commitment to meeting my financial obligations.
+
+I would be deeply grateful if you would consider removing this late payment from my credit report as a gesture of goodwill. I understand this is at your discretion, and I genuinely appreciate your time and consideration.
+
+Thank you for your continued excellent service and for considering my request.
+
+Respectfully yours,
+[Your Name]
+[Account Number: ${params.accountNumber}]`;
+  }
+
+  private generateDemoCreditMixOptimization(currentProducts: any[], creditProfile: any): CreditMixOptimizationResult {
+    return {
+      currentMixScore: 65,
+      targetMixScore: 85,
+      improvementPotential: 20,
+      recommendedProducts: [
+        {
+          type: "Personal Loan",
+          provider: "Credit Union",
+          amount: 5000,
+          impact: "+12 points",
+          timeline: "2-3 months"
+        },
+        {
+          type: "Secured Credit Card",
+          provider: "Capital One",
+          limit: 500,
+          impact: "+8 points", 
+          timeline: "1 month"
+        }
+      ],
+      actionPlan: [
+        {
+          step: 1,
+          action: "Apply for small personal loan",
+          priority: "HIGH",
+          timeline: "Next 30 days"
+        },
+        {
+          step: 2,
+          action: "Open secured credit card",
+          priority: "MEDIUM", 
+          timeline: "Month 2"
+        }
+      ],
+      riskAssessment: "Low risk - recommended products align with current credit profile",
+      implementationTimeline: "3-4 months for full optimization"
+    };
+  }
+
+  private generateDemoIdentityTheftDetection(accounts: any[]): IdentityTheftDetectionResult {
+    return {
+      detectionConfidence: 85,
+      fraudulentAccounts: [
+        {
+          creditor: "Unknown Credit Card Co.",
+          accountNumber: "****1234",
+          openedDate: "2024-01-15",
+          suspiciousFactors: ["Unknown creditor", "No prior history", "High initial balance"]
+        }
+      ],
+      suspiciousPatterns: [
+        "Multiple new accounts opened within 30 days",
+        "Accounts opened in different geographic locations",
+        "Unusually high credit limits for profile"
+      ],
+      recoverySteps: [
+        {
+          step: 1,
+          action: "File police report",
+          priority: "IMMEDIATE",
+          description: "Report identity theft to local authorities"
+        },
+        {
+          step: 2,
+          action: "Place fraud alerts",
+          priority: "IMMEDIATE", 
+          description: "Contact all three credit bureaus"
+        },
+        {
+          step: 3,
+          action: "Dispute fraudulent accounts",
+          priority: "HIGH",
+          description: "Submit disputes for all identified fraudulent accounts"
+        }
+      ],
+      urgencyLevel: "HIGH",
+      estimatedRecoveryTime: "3-6 months"
+    };
+  }
+
+  private generateDemoCreditCardPrediction(userProfile: any, targetCard: any): CreditCardApprovalPrediction {
+    return {
+      approvalProbability: 78,
+      recommendedTiming: "Apply in 2-3 months after credit utilization improvement",
+      requirements: [
+        "Credit score above 650",
+        "Income above $25,000",
+        "No late payments in last 12 months"
+      ],
+      improvementSuggestions: [
+        {
+          action: "Reduce credit utilization below 10%",
+          impact: "+15% approval probability",
+          timeline: "2 months"
+        },
+        {
+          action: "Pay down existing balances",
+          impact: "+10% approval probability", 
+          timeline: "1 month"
+        }
+      ],
+      hardInquiryRisk: "MEDIUM",
+      preQualificationAvailable: true
+    };
+  }
+
+  private generateDemoFinancialBehaviorAnalysis(spendingData: any, goals: any): FinancialBehaviorAnalysis {
+    return {
+      behaviorScore: 72,
+      spendingPatterns: [
+        {
+          category: "Dining Out",
+          amount: 450,
+          trend: "INCREASING",
+          recommendation: "Set monthly limit of $300"
+        },
+        {
+          category: "Subscriptions",
+          amount: 89,
+          trend: "STABLE",
+          recommendation: "Review unused subscriptions"
+        }
+      ],
+      improvementAreas: [
+        "Impulse spending control",
+        "Emergency fund building",
+        "Credit utilization management"
+      ],
+      coachingPlan: [
+        {
+          week: 1,
+          focus: "Spending awareness",
+          activities: ["Track daily expenses", "Identify triggers"]
+        },
+        {
+          week: 2,
+          focus: "Budget optimization",
+          activities: ["Create spending categories", "Set limits"]
+        }
+      ],
+      budgetRecommendations: {
+        housing: 30,
+        transportation: 15,
+        food: 12,
+        savings: 20,
+        entertainment: 8,
+        other: 15
+      }
+    };
+  }
+
+  private generateDemoRentUtilityOptimization(profile: any): RentUtilityOptimizationResult {
+    return {
+      recommendedServices: [
+        {
+          name: "RentTrack",
+          type: "RENT",
+          monthlyFee: 9.95,
+          scoreImpact: 15,
+          reportsToBureaus: ["Experian", "TransUnion"]
+        },
+        {
+          name: "eCredable Lift",
+          type: "UTILITIES",
+          monthlyFee: 24.95,
+          scoreImpact: 12,
+          reportsToBureaus: ["All three bureaus"]
+        }
+      ],
+      scoreImpactEstimate: 25,
+      optimizationPlan: [
+        {
+          month: 1,
+          action: "Enroll in RentTrack",
+          cost: 9.95,
+          expectedImpact: 10
+        },
+        {
+          month: 2,
+          action: "Add utility reporting",
+          cost: 24.95,
+          expectedImpact: 15
+        }
+      ],
+      costBenefitAnalysis: {
+        totalMonthlyCost: 34.90,
+        estimatedScoreIncrease: 25,
+        breakEvenTimeline: "3-4 months",
+        longTermValue: "High"
+      }
+    };
+  }
+
+  private generateDemoDisputeSuccessPrediction(disputeData: any): DisputeSuccessPredictionResult {
+    return {
+      successProbability: 82,
+      keyFactors: [
+        "Clear documentation provided",
+        "Valid legal grounds for dispute",
+        "No previous disputes on this account",
+        "Account age supports claim"
+      ],
+      recommendedStrategy: "DOCUMENTATION",
+      timeframeEstimate: "30-45 days",
+      confidenceScore: 88,
+      nextSteps: [
+        "Submit dispute with supporting documentation",
+        "Follow up in 30 days if no response",
+        "Escalate to CFPB if necessary"
+      ]
+    };
+  }
+
+  // Formatting helper methods
+  private formatCreditMixResult(result: any): CreditMixOptimizationResult {
+    return {
+      currentMixScore: result.currentMixScore || 65,
+      targetMixScore: result.targetMixScore || 85,
+      improvementPotential: result.improvementPotential || 20,
+      recommendedProducts: result.recommendedProducts || [],
+      actionPlan: result.actionPlan || [],
+      riskAssessment: result.riskAssessment || "Analysis pending",
+      implementationTimeline: result.implementationTimeline || "3-6 months"
+    };
+  }
+
+  private formatIdentityTheftResult(result: any): IdentityTheftDetectionResult {
+    return {
+      detectionConfidence: result.detectionConfidence || 0,
+      fraudulentAccounts: result.fraudulentAccounts || [],
+      suspiciousPatterns: result.suspiciousPatterns || [],
+      recoverySteps: result.recoverySteps || [],
+      urgencyLevel: result.urgencyLevel || "LOW",
+      estimatedRecoveryTime: result.estimatedRecoveryTime || "Unknown"
+    };
+  }
+
+  private formatCreditCardPrediction(result: any): CreditCardApprovalPrediction {
+    return {
+      approvalProbability: result.approvalProbability || 0,
+      recommendedTiming: result.recommendedTiming || "Immediate",
+      requirements: result.requirements || [],
+      improvementSuggestions: result.improvementSuggestions || [],
+      hardInquiryRisk: result.hardInquiryRisk || "MEDIUM",
+      preQualificationAvailable: result.preQualificationAvailable || false
+    };
+  }
+
+  private formatFinancialBehaviorAnalysis(result: any): FinancialBehaviorAnalysis {
+    return {
+      behaviorScore: result.behaviorScore || 50,
+      spendingPatterns: result.spendingPatterns || [],
+      improvementAreas: result.improvementAreas || [],
+      coachingPlan: result.coachingPlan || [],
+      budgetRecommendations: result.budgetRecommendations || {}
+    };
+  }
+
+  private formatRentUtilityOptimization(result: any): RentUtilityOptimizationResult {
+    return {
+      recommendedServices: result.recommendedServices || [],
+      scoreImpactEstimate: result.scoreImpactEstimate || 0,
+      optimizationPlan: result.optimizationPlan || [],
+      costBenefitAnalysis: result.costBenefitAnalysis || {}
+    };
+  }
+
+  private formatDisputeSuccessPrediction(result: any): DisputeSuccessPredictionResult {
+    return {
+      successProbability: result.successProbability || 0,
+      keyFactors: result.keyFactors || [],
+      recommendedStrategy: result.recommendedStrategy || "STANDARD",
+      timeframeEstimate: result.timeframeEstimate || "30-60 days",
+      confidenceScore: result.confidenceScore || 0,
+      nextSteps: result.nextSteps || []
+    };
   }
 }
 

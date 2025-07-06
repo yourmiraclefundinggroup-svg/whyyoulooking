@@ -11,6 +11,9 @@ import { CreditSimulatorModal } from "@/components/credit-simulator-modal";
 import { CreditMonitoringConnections } from "@/components/credit-monitoring-connections";
 import { CreditUtilizationOptimizer } from "@/components/credit-utilization-optimizer";
 import { LoanReadinessAssessment } from "@/components/loan-readiness-assessment";
+import { CreditMixOptimizer } from "@/components/credit-mix-optimizer";
+import { IdentityTheftRecovery } from "@/components/identity-theft-recovery";
+import { RentUtilityOptimizer } from "@/components/rent-utility-optimizer";
 import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -175,13 +178,16 @@ export default function CreditRepair() {
       </div>
 
       <Tabs defaultValue="issues" className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-6 h-9 sm:h-10">
-          <TabsTrigger value="issues" className="text-sm">Credit Issues</TabsTrigger>
-          <TabsTrigger value="disputes" className="text-sm">Disputes</TabsTrigger>
-          <TabsTrigger value="monitoring" className="text-sm">Monitoring</TabsTrigger>
-          <TabsTrigger value="utilization" className="text-sm">Utilization AI</TabsTrigger>
-          <TabsTrigger value="loan-readiness" className="text-sm">Loan Readiness</TabsTrigger>
-          <TabsTrigger value="ai-tools" className="text-sm">AI Tools</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-9 h-9 sm:h-10 text-xs">
+          <TabsTrigger value="issues" className="text-xs">Issues</TabsTrigger>
+          <TabsTrigger value="disputes" className="text-xs">Disputes</TabsTrigger>
+          <TabsTrigger value="monitoring" className="text-xs">Monitoring</TabsTrigger>
+          <TabsTrigger value="utilization" className="text-xs">Utilization</TabsTrigger>
+          <TabsTrigger value="loan-readiness" className="text-xs">Loan Ready</TabsTrigger>
+          <TabsTrigger value="credit-mix" className="text-xs">Mix</TabsTrigger>
+          <TabsTrigger value="identity-theft" className="text-xs">ID Theft</TabsTrigger>
+          <TabsTrigger value="rent-utility" className="text-xs">Rent/Util</TabsTrigger>
+          <TabsTrigger value="ai-tools" className="text-xs">AI Tools</TabsTrigger>
         </TabsList>
 
         <TabsContent value="issues" className="space-y-4 sm:space-y-6">
@@ -413,6 +419,18 @@ export default function CreditRepair() {
 
         <TabsContent value="loan-readiness" className="space-y-6">
           <LoanReadinessAssessment userId={userId} />
+        </TabsContent>
+
+        <TabsContent value="credit-mix" className="space-y-6">
+          <CreditMixOptimizer userId={userId} />
+        </TabsContent>
+
+        <TabsContent value="identity-theft" className="space-y-6">
+          <IdentityTheftRecovery userId={userId} />
+        </TabsContent>
+
+        <TabsContent value="rent-utility" className="space-y-6">
+          <RentUtilityOptimizer userId={userId} />
         </TabsContent>
 
         <TabsContent value="ai-tools" className="space-y-6">
