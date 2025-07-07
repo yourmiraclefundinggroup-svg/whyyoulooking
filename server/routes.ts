@@ -1,13 +1,61 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { aiService } from "./ai-service";
 import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema } from "@shared/schema";
 import { z } from "zod";
 
+// Authentication middleware
+const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ message: 'Access token required' });
+  }
+
+  // Simple token validation - in production, use JWT or proper session validation
+  const tokenParts = token.split('_');
+  if (tokenParts.length !== 3 || tokenParts[0] !== 'token') {
+    return res.status(403).json({ message: 'Invalid token' });
+  }
+
+  const userId = parseInt(tokenParts[1]);
+  try {
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(403).json({ message: 'Invalid user' });
+    }
+    
+    // Add user to request object
+    (req as any).user = user;
+    next();
+  } catch (error) {
+    return res.status(403).json({ message: 'Token validation failed' });
+  }
+};
+
+// Admin-only middleware
+const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+  const user = (req as any).user;
+  if (!user || user.accessLevel !== 'ADMIN') {
+    return res.status(403).json({ message: 'Admin access required' });
+  }
+  next();
+};
+
+// Client access middleware (CLIENT_VIEWER or ADMIN)
+const requireClientAccess = (req: Request, res: Response, next: NextFunction) => {
+  const user = (req as any).user;
+  if (!user || (user.accessLevel !== 'CLIENT_VIEWER' && user.accessLevel !== 'ADMIN')) {
+    return res.status(403).json({ message: 'Client access required' });
+  }
+  next();
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Users
-  app.get("/api/users", async (req, res) => {
+  // Users (Admin only)
+  app.get("/api/users", authenticateToken, requireAdmin, async (req, res) => {
     try {
       const users = await storage.getTestUsers();
       res.json(users);
@@ -16,9 +64,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/users/:id", async (req, res) => {
+  app.get("/api/users/:id", authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const requestingUser = (req as any).user;
+      
+      // Users can only access their own data unless they're admin
+      if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
       const user = await storage.getUser(id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -69,11 +124,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Credit Issues
-  app.get("/api/credit-issues", async (req, res) => {
+  // Credit Issues (Authenticated users only)
+  app.get("/api/credit-issues", authenticateToken, requireClientAccess, async (req, res) => {
     try {
-      // Default to user ID 1 for this demo
-      const userId = 1;
+      const requestingUser = (req as any).user;
+      // Use the authenticated user's ID instead of defaulting to 1
+      const userId = requestingUser.id;
       const issues = await storage.getCreditIssues(userId);
       res.json(issues);
     } catch (error) {
@@ -81,9 +137,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/credit-issues/:userId", async (req, res) => {
+  app.get("/api/credit-issues/:userId", authenticateToken, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
+      const requestingUser = (req as any).user;
+      
+      // Users can only access their own credit issues unless they're admin
+      if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
       const issues = await storage.getCreditIssues(userId);
       res.json(issues);
     } catch (error) {
@@ -105,11 +168,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Disputes
-  app.get("/api/disputes", async (req, res) => {
+  // Disputes (Authenticated users only)
+  app.get("/api/disputes", authenticateToken, requireClientAccess, async (req, res) => {
     try {
-      // Default to user ID 1 for this demo
-      const userId = 1;
+      const requestingUser = (req as any).user;
+      // Use the authenticated user's ID instead of defaulting to 1
+      const userId = requestingUser.id;
       const disputes = await storage.getDisputes(userId);
       res.json(disputes);
     } catch (error) {
