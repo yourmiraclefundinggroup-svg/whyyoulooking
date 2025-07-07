@@ -158,29 +158,7 @@ export default function Login() {
               </Button>
             </form>
 
-            {/* Demo Credentials */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Demo Credentials</h4>
-              
-              {loginType === "admin" ? (
-                <div className="space-y-2 text-sm">
-                  <div className="p-3 bg-purple-50 rounded-lg">
-                    <p className="font-medium text-purple-900">Admin Access:</p>
-                    <p className="text-purple-700">Email: admin@creditfixpro.com</p>
-                    <p className="text-purple-700">Password: admin123</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2 text-sm">
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <p className="font-medium text-blue-900">Demo Clients:</p>
-                    <p className="text-blue-700">Sarah: sarah.johnson@example.com / client123</p>
-                    <p className="text-blue-700">Alt: client@example.com / client123</p>
-                    <p className="text-blue-700">Michael: michael.davis@email.com / client123</p>
-                  </div>
-                </div>
-              )}
-            </div>
+
           </CardContent>
         </Card>
 
