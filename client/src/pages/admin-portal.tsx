@@ -16,6 +16,7 @@ import { AdminUSPSTracking } from "@/components/admin-usps-tracking";
 import { FollowUpAlerts } from "@/components/follow-up-alerts";
 import { BureauResponseAnalysis } from "@/components/bureau-response-analysis";
 import { SecureChat } from "@/components/secure-chat";
+import { AdminSettings } from "@/components/admin-settings";
 import { User, CreditReport, CreditIssue, Dispute } from "@shared/schema";
 import { Users, FileText, AlertTriangle, Send, Settings, Menu, X, TrendingUp, Shield, UserPlus, Brain, BarChart, CheckSquare, Clock, CalendarDays, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -915,30 +916,7 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
 
 // Settings Page Component
 function SettingsPage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Configure system settings and preferences.
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Admin Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-600 mb-4">
-            Configure system settings and preferences.
-          </p>
-          <Button disabled>
-            Coming Soon - Advanced Settings
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return <AdminSettings />;
 }
 
 // Client Communication Page Component

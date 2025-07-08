@@ -44,6 +44,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(userId: number, updates: Partial<User>): Promise<User | undefined>;
   updateUserPassword(userId: number, newPassword: string): Promise<User | undefined>;
 
   // Credit Reports
@@ -202,10 +203,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    // Automatically assign temporary password for CLIENT_VIEWER users
+    // New users require password reset unless they are admin
     const userToInsert = {
       ...insertUser,
-      password: insertUser.accessLevel === 'CLIENT_VIEWER' ? 'client123' : insertUser.password
+      passwordResetRequired: insertUser.accessLevel !== 'ADMIN'
     };
     
     const [user] = await db
@@ -213,6 +214,15 @@ export class DatabaseStorage implements IStorage {
       .values(userToInsert)
       .returning();
     return user;
+  }
+
+  async updateUser(userId: number, updates: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, userId))
+      .returning();
+    return user || undefined;
   }
 
   async updateUserPassword(userId: number, newPassword: string): Promise<User | undefined> {

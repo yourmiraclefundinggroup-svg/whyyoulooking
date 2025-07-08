@@ -786,14 +786,14 @@ Format the response as a complete business letter ready to send.`;
       // Generate simple token (in production, use JWT)
       const token = `token_${user.id}_${Date.now()}`;
       
-      // Check if user is using temporary password
-      const isTemporaryPassword = password === "client123";
+      // Check if user needs password reset
+      const requiresPasswordReset = user.passwordResetRequired || false;
       
       res.json({
         user,
         token,
         message: "Login successful",
-        requiresPasswordReset: isTemporaryPassword
+        requiresPasswordReset
       });
     } catch (error) {
       res.status(500).json({ message: "Login failed" });
@@ -836,8 +836,11 @@ Format the response as a complete business letter ready to send.`;
         });
       }
       
-      // Update password in storage
-      await storage.updateUserPassword(userId, newPassword);
+      // Update password and mark password reset as complete
+      await storage.updateUser(userId, { 
+        password: newPassword,
+        passwordResetRequired: false 
+      });
       
       res.json({ message: "Password updated successfully" });
     } catch (error) {
