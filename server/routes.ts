@@ -768,34 +768,19 @@ Format the response as a complete business letter ready to send.`;
     try {
       const { email, password, loginType } = req.body;
       
-      // Demo authentication - in production, use proper password hashing
-      const demoCredentials = {
-        "admin@creditfixpro.com": { password: "admin123", accessLevel: "ADMIN", id: 6 },
-        "sarah.johnson@example.com": { password: "client123", accessLevel: "CLIENT_VIEWER", id: 1 },
-        "client@example.com": { password: "client123", accessLevel: "CLIENT_VIEWER", id: 5 },
-        "michael.davis@email.com": { password: "client123", accessLevel: "CLIENT_VIEWER", id: 3 },
-        "jennifer.martinez@email.com": { password: "client123", accessLevel: "CLIENT_VIEWER", id: 4 }
-      };
-      
-      const userCreds = demoCredentials[email as keyof typeof demoCredentials];
-      
-      if (!userCreds || userCreds.password !== password) {
+      // Get user from database
+      const user = await storage.getUserByEmail(email);
+      if (!user || user.password !== password) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
       // Check if login type matches user access level
-      if (loginType === "admin" && userCreds.accessLevel !== "ADMIN") {
+      if (loginType === "admin" && user.accessLevel !== "ADMIN") {
         return res.status(403).json({ message: "Access denied - Admin portal requires admin privileges" });
       }
       
-      if (loginType === "client" && userCreds.accessLevel === "ADMIN") {
+      if (loginType === "client" && user.accessLevel === "ADMIN") {
         return res.status(403).json({ message: "Use admin portal for admin access" });
-      }
-      
-      // Get full user data
-      const user = await storage.getUser(userCreds.id);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
       }
       
       // Generate simple token (in production, use JWT)

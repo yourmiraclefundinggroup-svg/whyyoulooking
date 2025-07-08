@@ -202,9 +202,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    // Automatically assign temporary password for CLIENT_VIEWER users
+    const userToInsert = {
+      ...insertUser,
+      password: insertUser.accessLevel === 'CLIENT_VIEWER' ? 'client123' : insertUser.password
+    };
+    
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values(userToInsert)
       .returning();
     return user;
   }

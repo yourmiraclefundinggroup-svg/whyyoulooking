@@ -142,6 +142,16 @@ function ClientProfileForm() {
         />
       </div>
 
+      <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+        <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+          <Key className="h-4 w-4" />
+          <span className="text-sm font-medium">Automatic Login Setup</span>
+        </div>
+        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+          New clients will be assigned temporary password "client123" and must create a secure password on first login.
+        </p>
+      </div>
+
       <Button type="submit" disabled={createClientMutation.isPending} className="w-full">
         {createClientMutation.isPending ? "Creating..." : "Create Client Profile"}
       </Button>
