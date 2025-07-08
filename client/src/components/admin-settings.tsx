@@ -24,7 +24,7 @@ export function AdminSettings() {
 
   const passwordChangeM = useMutation({
     mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
-      const response = await apiRequest("POST", "/api/auth/reset-password", JSON.stringify(data));
+      const response = await apiRequest("POST", "/api/auth/reset-password", data);
       return response.json();
     },
     onSuccess: () => {
