@@ -123,6 +123,12 @@ Preferred communication style: Simple, everyday language.
 ## Changelog
 
 Changelog:
+- July 08, 2025. **CRITICAL SECURITY FIX: Hardcoded Credentials Removed**
+  - ✅ Removed hardcoded password dictionary from password reset route
+  - ✅ Fixed security vulnerability that allowed unauthorized access with admin123/client123
+  - ✅ Authentication now properly validates against user's stored password
+  - ✅ Temporary password detection system still functional for forced resets
+  - ✅ All demo credentials removed from production code
 - July 07, 2025. **DEPLOYMENT READY: Complete Authentication System with Forced Password Reset**
   - ✅ Comprehensive security audit completed with all API endpoints protected
   - ✅ Frontend authentication headers properly implemented

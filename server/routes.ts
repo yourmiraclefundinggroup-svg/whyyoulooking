@@ -823,18 +823,8 @@ Format the response as a complete business letter ready to send.`;
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Verify current password (in production, use proper password hashing)
-      const demoCredentials = {
-        "admin@creditfixpro.com": "admin123",
-        "sarah.johnson@example.com": "client123",
-        "client@example.com": "client123",
-        "michael.davis@email.com": "client123",
-        "jennifer.martinez@email.com": "client123"
-      };
-      
-      const expectedPassword = demoCredentials[user.email as keyof typeof demoCredentials] || "client123";
-      
-      if (currentPassword !== expectedPassword) {
+      // Verify current password against user's stored password
+      if (currentPassword !== user.password) {
         return res.status(401).json({ message: "Current password is incorrect" });
       }
       
