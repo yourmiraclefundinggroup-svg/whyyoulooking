@@ -9,12 +9,14 @@ import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import { ForcePasswordReset } from "@/components/force-password-reset";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loginType, setLoginType] = useState<"client" | "admin">("client");
+  const [requiresPasswordReset, setRequiresPasswordReset] = useState(false);
   const [, setLocation] = useLocation();
   const { setCurrentUserId } = useUserContext();
 
@@ -35,6 +37,12 @@ export default function Login() {
       // Set user context
       setCurrentUserId(data.user.id);
       
+      // Check if password reset is required
+      if (data.requiresPasswordReset) {
+        setRequiresPasswordReset(true);
+        return;
+      }
+      
       // Redirect to root and let App.tsx handle routing to correct portal
       window.location.href = "/";
     },
@@ -54,6 +62,16 @@ export default function Login() {
     
     loginMutation.mutate({ email, password, type: loginType });
   };
+
+  const handlePasswordReset = () => {
+    // After password reset, redirect to appropriate portal
+    window.location.href = "/";
+  };
+
+  // Show forced password reset if required
+  if (requiresPasswordReset) {
+    return <ForcePasswordReset onPasswordReset={handlePasswordReset} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

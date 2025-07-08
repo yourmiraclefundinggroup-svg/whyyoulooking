@@ -801,10 +801,14 @@ Format the response as a complete business letter ready to send.`;
       // Generate simple token (in production, use JWT)
       const token = `token_${user.id}_${Date.now()}`;
       
+      // Check if user is using temporary password
+      const isTemporaryPassword = password === "client123";
+      
       res.json({
         user,
         token,
-        message: "Login successful"
+        message: "Login successful",
+        requiresPasswordReset: isTemporaryPassword
       });
     } catch (error) {
       res.status(500).json({ message: "Login failed" });
@@ -816,6 +820,54 @@ Format the response as a complete business letter ready to send.`;
       res.json({ message: "Logout successful" });
     } catch (error) {
       res.status(500).json({ message: "Logout failed" });
+    }
+  });
+
+  app.post("/api/auth/reset-password", authenticateToken, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const userId = (req as any).user.id;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current password and new password are required" });
+      }
+      
+      // Get user from storage
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Verify current password (in production, use proper password hashing)
+      const demoCredentials = {
+        "admin@creditfixpro.com": "admin123",
+        "sarah.johnson@example.com": "client123",
+        "client@example.com": "client123",
+        "michael.davis@email.com": "client123",
+        "jennifer.martinez@email.com": "client123"
+      };
+      
+      const expectedPassword = demoCredentials[user.email as keyof typeof demoCredentials] || "client123";
+      
+      if (currentPassword !== expectedPassword) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+      
+      // Validate new password strength
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      if (!passwordRegex.test(newPassword)) {
+        return res.status(400).json({ 
+          message: "New password must be at least 8 characters with uppercase, lowercase, number, and special character" 
+        });
+      }
+      
+      // Update password in storage
+      await storage.updateUserPassword(userId, newPassword);
+      
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      console.error("Password reset error:", error);
+      res.status(500).json({ message: "Failed to reset password" });
     }
   });
 

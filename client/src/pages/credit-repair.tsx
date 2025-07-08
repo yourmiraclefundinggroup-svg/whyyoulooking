@@ -19,19 +19,20 @@ import { TaxSoftwareIntegration } from "@/components/tax-software-integration";
 import { EmploymentVerification } from "@/components/employment-verification";
 import { BusinessCreditPortal } from "@/components/business-credit-portal";
 import { SecureChat } from "@/components/secure-chat";
+import { PasswordReset } from "@/components/password-reset";
 import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatRelativeDate, getIssueTypeColor, getIssueTypeIcon, getDisputeStatusColor } from "@/lib/utils";
 import type { CreditIssue, Dispute } from "@shared/schema";
-import { Shield } from "lucide-react";
+import { Shield, LogOut } from "lucide-react";
 
 export default function CreditRepair() {
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<CreditIssue | undefined>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user, canCreateDisputes, isClientViewer } = useUserContext();
+  const { user, canCreateDisputes, isClientViewer, logout } = useUserContext();
 
   // Use current user ID from context or default to 1
   const userId = user?.id || 1;
@@ -100,7 +101,25 @@ export default function CreditRepair() {
     <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
       {/* Header - More compact for mobile */}
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Credit Repair</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Credit Repair</h1>
+          <div className="flex items-center space-x-4">
+            {user && (
+              <span className="text-sm text-gray-600">
+                {user.firstName} {user.lastName}
+              </span>
+            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={logout}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <LogOut className="h-4 w-4 mr-1" />
+              Logout
+            </Button>
+          </div>
+        </div>
         {isClientViewer ? (
           <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-800">
@@ -196,6 +215,7 @@ export default function CreditRepair() {
           <TabsTrigger value="integrations" className="text-xs px-2 py-2">Verify</TabsTrigger>
           <TabsTrigger value="business-credit" className="text-xs px-2 py-2">Business</TabsTrigger>
           <TabsTrigger value="chat" className="text-xs px-2 py-2">Chat</TabsTrigger>
+          <TabsTrigger value="password-reset" className="text-xs px-2 py-2">Password</TabsTrigger>
           <TabsTrigger value="ai-tools" className="text-xs px-2 py-2">AI Tools</TabsTrigger>
         </TabsList>
 
@@ -485,6 +505,10 @@ export default function CreditRepair() {
 
         <TabsContent value="chat" className="space-y-6">
           <SecureChat userId={userId} userType="client" />
+        </TabsContent>
+
+        <TabsContent value="password-reset" className="space-y-6">
+          <PasswordReset />
         </TabsContent>
 
         <TabsContent value="ai-tools" className="space-y-6">

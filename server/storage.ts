@@ -44,6 +44,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserPassword(userId: number, newPassword: string): Promise<User | undefined>;
 
   // Credit Reports
   getCreditReport(userId: number): Promise<CreditReport | undefined>;
@@ -206,6 +207,15 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async updateUserPassword(userId: number, newPassword: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ password: newPassword })
+      .where(eq(users.id, userId))
+      .returning();
+    return user || undefined;
   }
 
   async getCreditReport(userId: number): Promise<CreditReport | undefined> {
@@ -988,6 +998,15 @@ export class MemStorage implements IStorage {
     const user: User = { ...insertUser, id, createdAt: new Date() };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUserPassword(userId: number, newPassword: string): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, password: newPassword };
+    this.users.set(userId, updatedUser);
+    return updatedUser;
   }
 
   // Credit Reports
