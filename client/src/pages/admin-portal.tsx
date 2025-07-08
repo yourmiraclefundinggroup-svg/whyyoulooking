@@ -82,14 +82,14 @@ export default function AdminPortal() {
   });
 
   // Create new client mutation
-  const [newClient, setNewClient] = useState({ firstName: "", lastName: "", email: "" });
+  const [newClient, setNewClient] = useState({ firstName: "", lastName: "", email: "", password: "" });
   const createClientMutation = useMutation({
-    mutationFn: async (clientData: { firstName: string; lastName: string; email: string }) => {
-      const response = await apiRequest("POST", "/api/users", {
+    mutationFn: async (clientData: { firstName: string; lastName: string; email: string; password: string }) => {
+      const response = await apiRequest("POST", "/api/users", JSON.stringify({
         ...clientData,
-        accessLevel: "STANDARD",
-        isTestUser: true
-      });
+        accessLevel: "CLIENT_VIEWER",
+        isTestUser: false
+      }));
       return response.json();
     },
     onSuccess: () => {
@@ -97,7 +97,7 @@ export default function AdminPortal() {
         title: "Success",
         description: "Client created successfully",
       });
-      setNewClient({ firstName: "", lastName: "", email: "" });
+      setNewClient({ firstName: "", lastName: "", email: "", password: "" });
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
     },
     onError: () => {
@@ -111,7 +111,7 @@ export default function AdminPortal() {
 
   const handleCreateClient = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newClient.firstName && newClient.lastName && newClient.email) {
+    if (newClient.firstName && newClient.lastName && newClient.email && newClient.password) {
       createClientMutation.mutate(newClient);
     }
   };
@@ -362,6 +362,26 @@ function ClientManagementPage({
                   placeholder="john.doe@example.com"
                   required
                 />
+              </div>
+              <div>
+                <Label htmlFor="password">Initial Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={newClient.password}
+                  onChange={(e) => setNewClient((prev: any) => ({ ...prev, password: e.target.value }))}
+                  placeholder="Set a secure password"
+                  required
+                />
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                  <UserPlus className="h-4 w-4" />
+                  <span className="text-sm font-medium">Secure Setup</span>
+                </div>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  Client will be required to reset this password on first login.
+                </p>
               </div>
               <Button 
                 type="submit" 
@@ -916,7 +936,15 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
 
 // Settings Page Component
 function SettingsPage() {
-  return <AdminSettings />;
+  return (
+    <div className="p-6 max-w-4xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Admin Settings</h1>
+        <p className="text-gray-600">Manage your admin account and system settings</p>
+      </div>
+      <AdminSettings />
+    </div>
+  );
 }
 
 // Client Communication Page Component
@@ -1013,3 +1041,4 @@ function BureauAnalysisPage() {
     </div>
   );
 }
+
