@@ -115,13 +115,34 @@ export function PasswordReset() {
   };
 
   return (
-    <Card className="max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <KeyRound className="h-5 w-5" />
-          <span>Change Password</span>
-        </CardTitle>
-      </CardHeader>
+    <div className="space-y-6">
+      {/* User Info Card */}
+      <Card className="max-w-md mx-auto bg-blue-50 border-blue-200">
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-3">
+            <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <span className="text-blue-600 font-semibold text-sm">
+                {user?.firstName?.[0]}{user?.lastName?.[0]}
+              </span>
+            </div>
+            <div>
+              <p className="font-medium text-blue-800">{user?.firstName} {user?.lastName}</p>
+              <p className="text-sm text-blue-600">{user?.email}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <KeyRound className="h-5 w-5" />
+            <span>Change Password</span>
+          </CardTitle>
+          <p className="text-sm text-gray-600 mt-2">
+            Update your account password for enhanced security.
+          </p>
+        </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Current Password */}
@@ -244,5 +265,23 @@ export function PasswordReset() {
         </form>
       </CardContent>
     </Card>
+
+    {/* Success Message */}
+    {resetPasswordMutation.isSuccess && (
+      <Card className="max-w-md mx-auto bg-green-50 border-green-200">
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-3">
+            <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
+              <KeyRound className="h-4 w-4 text-green-600" />
+            </div>
+            <div>
+              <p className="font-medium text-green-800">Password Updated Successfully</p>
+              <p className="text-sm text-green-600">Your account is now more secure.</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )}
+    </div>
   );
 }
