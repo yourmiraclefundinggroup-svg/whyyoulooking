@@ -85,11 +85,11 @@ export default function AdminPortal() {
   const [newClient, setNewClient] = useState({ firstName: "", lastName: "", email: "", password: "" });
   const createClientMutation = useMutation({
     mutationFn: async (clientData: { firstName: string; lastName: string; email: string; password: string }) => {
-      const response = await apiRequest("POST", "/api/users", JSON.stringify({
+      const response = await apiRequest("POST", "/api/users", {
         ...clientData,
         accessLevel: "CLIENT_VIEWER",
         isTestUser: false
-      }));
+      });
       return response.json();
     },
     onSuccess: () => {
