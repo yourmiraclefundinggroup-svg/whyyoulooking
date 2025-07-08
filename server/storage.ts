@@ -88,6 +88,7 @@ export interface IStorage {
   validateAccessCode(code: string): Promise<BetaAccess | undefined>;
 
   // Admin Users
+  getUsers(): Promise<User[]>;
   getTestUsers(): Promise<User[]>;
   updateUserAccess(userId: number, accessLevel: string): Promise<User | undefined>;
 
@@ -386,6 +387,10 @@ export class DatabaseStorage implements IStorage {
   async validateAccessCode(code: string): Promise<BetaAccess | undefined> {
     const [access] = await db.select().from(betaAccess).where(eq(betaAccess.accessCode, code));
     return access || undefined;
+  }
+
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(users.accessLevel, users.firstName);
   }
 
   async getTestUsers(): Promise<User[]> {
@@ -1182,6 +1187,15 @@ export class MemStorage implements IStorage {
 
   async validateAccessCode(code: string): Promise<BetaAccess | undefined> {
     return Array.from(this.betaAccess.values()).find(access => access.accessCode === code);
+  }
+
+  async getUsers(): Promise<User[]> {
+    return Array.from(this.users.values()).sort((a, b) => {
+      if (a.accessLevel !== b.accessLevel) {
+        return a.accessLevel === 'ADMIN' ? -1 : 1;
+      }
+      return a.firstName.localeCompare(b.firstName);
+    });
   }
 
   async getTestUsers(): Promise<User[]> {
