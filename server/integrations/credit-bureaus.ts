@@ -81,20 +81,30 @@ export interface CreditAlert {
 
 // Option 1: Direct Experian Integration
 export class ExperianService {
-  private baseUrl = process.env.EXPERIAN_API_URL || 'https://api.experian.com';
-  private clientId = process.env.EXPERIAN_CLIENT_ID;
-  private clientSecret = process.env.EXPERIAN_CLIENT_SECRET;
+  private baseUrl = process.env.EXPERIAN_API_URL || 'https://sandbox-us-api.experian.com';
+  private clientId = process.env.EXPERIAN_CLIENT_ID || '1wUzh5bdGgmwf0GGrqOeYOikJZGJ9VsY';
+  private clientSecret = process.env.EXPERIAN_CLIENT_SECRET || 'xPA7hf0c0UCn2n1V';
 
   async getAccessToken(): Promise<string> {
     try {
-      const response = await fetch(`${this.baseUrl}/oauth/token`, {
+      const response = await fetch(`${this.baseUrl}/oauth2/v1/token`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')}`
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'client_id': this.clientId,
+          'client_secret': this.clientSecret
         },
-        body: 'grant_type=client_credentials'
+        body: JSON.stringify({
+          grant_type: 'client_credentials'
+        })
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Experian API error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+      }
 
       const data = await response.json();
       return data.access_token;
@@ -104,27 +114,59 @@ export class ExperianService {
     }
   }
 
-  async getCreditReport(userId: number, consumerConsent: boolean): Promise<CreditReport> {
-    if (!consumerConsent) {
-      throw new Error('Consumer consent required for credit report access');
-    }
-
+  async getCreditReport(userId: number, consumerData: {
+    firstName: string;
+    lastName: string;
+    ssn: string;
+    dateOfBirth: string;
+    address: {
+      line1: string;
+      city: string;
+      state: string;
+      zipCode: string;
+    };
+  }): Promise<CreditReport> {
     try {
       const accessToken = await this.getAccessToken();
       
+      const requestBody = {
+        consumerPii: {
+          primaryApplicant: {
+            name: {
+              lastName: consumerData.lastName,
+              firstName: consumerData.firstName
+            },
+            dob: {
+              dob: consumerData.dateOfBirth
+            },
+            ssn: {
+              ssn: consumerData.ssn
+            },
+            currentAddress: {
+              line1: consumerData.address.line1,
+              city: consumerData.address.city,
+              state: consumerData.address.state,
+              zipCode: consumerData.address.zipCode
+            }
+          }
+        },
+        requestor: {
+          subscriberCode: this.clientId
+        }
+      };
+
       const response = await fetch(`${this.baseUrl}/consumerservices/credit-profile/v1/credit-report`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          consumerPii: {
-            // This would contain user's PII for report lookup
-            // Implementation requires FCRA compliance
-          }
-        })
+        body: JSON.stringify(requestBody)
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const reportData = await response.json();
       

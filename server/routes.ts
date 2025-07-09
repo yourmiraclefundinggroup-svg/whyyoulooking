@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { aiService } from "./ai-service";
+import { ExperianService } from "./integrations/credit-bureaus";
 import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -1619,6 +1620,39 @@ Format the response as a complete business letter ready to send.`;
     } catch (error) {
       console.error("Error fetching credit report:", error);
       res.status(500).json({ error: "Failed to fetch credit report" });
+    }
+  });
+
+  // Experian API Test Endpoint
+  app.post("/api/experian/test", authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const experianService = new ExperianService();
+      
+      // Test authentication first
+      const accessToken = await experianService.getAccessToken();
+      
+      res.json({ 
+        success: true, 
+        message: "Experian API authentication successful",
+        tokenPreview: accessToken ? `${accessToken.substring(0, 20)}...` : null,
+        credentials: {
+          clientId: process.env.EXPERIAN_CLIENT_ID || '1wUzh5bdGgmwf0GGrqOeYOikJZGJ9VsY',
+          hasSecret: !!process.env.EXPERIAN_CLIENT_SECRET,
+          baseUrl: process.env.EXPERIAN_API_URL || 'https://sandbox-us-api.experian.com'
+        }
+      });
+    } catch (error) {
+      console.error("Experian API test failed:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to connect to Experian API",
+        message: error.message,
+        credentials: {
+          clientId: process.env.EXPERIAN_CLIENT_ID || '1wUzh5bdGgmwf0GGrqOeYOikJZGJ9VsY',
+          hasSecret: !!process.env.EXPERIAN_CLIENT_SECRET,
+          baseUrl: process.env.EXPERIAN_API_URL || 'https://sandbox-us-api.experian.com'
+        }
+      });
     }
   });
 
