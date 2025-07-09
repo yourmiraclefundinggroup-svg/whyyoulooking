@@ -120,6 +120,42 @@ This is a comprehensive credit repair application built with a modern tech stack
 
 Preferred communication style: Simple, everyday language.
 
+## Production Integration Setup
+
+### Banking Integration (Plaid)
+- **Status**: Real integration implemented, requires API credentials
+- **Cost**: $0.75-$1.50 per customer per month (Pay-as-You-Go)
+- **Setup**: Set PLAID_CLIENT_ID and PLAID_SECRET environment variables
+- **Features**: Account verification, transaction history, balance monitoring, ACH transfers
+- **Documentation**: https://plaid.com/docs/api/
+
+### Credit Bureau Integration Options
+
+#### Option 1: Direct Experian (Recommended)
+- **Status**: Full integration code ready
+- **Setup**: Set EXPERIAN_CLIENT_ID and EXPERIAN_CLIENT_SECRET
+- **Developer Portal**: https://developer.experian.com/
+- **Features**: Direct credit reports, real-time monitoring, comprehensive data
+
+#### Option 2: Multi-Bureau via CRS Credit API
+- **Status**: Integration ready for all three bureaus
+- **Setup**: Set CRS_CREDIT_API_KEY environment variable
+- **Website**: https://crscreditapi.com/
+- **Features**: Single API for Experian, Equifax, TransUnion access
+
+#### Option 3: Soft Pulls via iSoftpull
+- **Status**: Integration ready for prequalification
+- **Setup**: Set ISOFTPULL_API_KEY environment variable
+- **Website**: https://www.isoftpull.com/
+- **Features**: Soft credit pulls, FICO scores, prequalification tools
+
+### Current Status
+- ✅ **New clients see NO demo content** - database returns clean data
+- ✅ **Chat system** works with real database storage
+- ✅ **Rent utility links** open real external service websites
+- 🔴 **Bank connections** require Plaid API credentials for real functionality
+- 🔴 **Credit monitoring** requires bureau API credentials for real data
+
 ## Changelog
 
 Changelog:

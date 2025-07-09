@@ -1512,6 +1512,115 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
+  // Plaid Bank Integration Routes
+  app.post("/api/plaid/create-link-token", authenticateToken, async (req, res) => {
+    try {
+      const { userId } = req.body;
+      
+      if (!process.env.PLAID_CLIENT_ID || !process.env.PLAID_SECRET) {
+        return res.status(500).json({ 
+          error: "Plaid credentials not configured. Please set PLAID_CLIENT_ID and PLAID_SECRET environment variables." 
+        });
+      }
+
+      const { plaidService } = await import('./integrations/plaid');
+      const linkToken = await plaidService.createLinkToken(userId);
+      
+      res.json({ link_token: linkToken });
+    } catch (error) {
+      console.error("Error creating Plaid link token:", error);
+      res.status(500).json({ error: "Failed to create bank connection token" });
+    }
+  });
+
+  app.post("/api/plaid/exchange-public-token", authenticateToken, async (req, res) => {
+    try {
+      const { publicToken, userId } = req.body;
+      
+      const { plaidService } = await import('./integrations/plaid');
+      const connectionData = await plaidService.exchangePublicToken(publicToken, userId);
+      
+      // Store the bank connection in our database
+      const bankConnection = await storage.createBankAccountConnection({
+        userId,
+        bankName: connectionData.institutionName,
+        accountType: 'CHECKING',
+        accessToken: connectionData.accessToken,
+        itemId: connectionData.itemId,
+        institutionId: connectionData.institutionId,
+        isActive: true,
+        autoPaymentOptimization: false,
+        securityLevel: 'BANK_GRADE'
+      });
+      
+      res.json({ 
+        connection: bankConnection,
+        accounts: connectionData.accounts 
+      });
+    } catch (error) {
+      console.error("Error exchanging Plaid public token:", error);
+      res.status(500).json({ error: "Failed to connect bank account" });
+    }
+  });
+
+  app.get("/api/plaid/accounts/:connectionId/balances", authenticateToken, async (req, res) => {
+    try {
+      const connectionId = parseInt(req.params.connectionId);
+      const connection = await storage.getBankAccountConnection(connectionId);
+      
+      if (!connection || !connection.accessToken) {
+        return res.status(404).json({ error: "Bank connection not found" });
+      }
+
+      const { plaidService } = await import('./integrations/plaid');
+      const balances = await plaidService.getAccountBalances(connection.accessToken);
+      
+      res.json(balances);
+    } catch (error) {
+      console.error("Error fetching account balances:", error);
+      res.status(500).json({ error: "Failed to fetch account balances" });
+    }
+  });
+
+  // Credit Bureau API Routes  
+  app.post("/api/credit-bureaus/connect", authenticateToken, async (req, res) => {
+    try {
+      const { userId, provider, credentials } = req.body;
+      
+      if (!process.env.EXPERIAN_CLIENT_ID && provider === 'EXPERIAN') {
+        return res.status(500).json({ 
+          error: "Credit bureau credentials not configured. Please set environment variables." 
+        });
+      }
+
+      const { creditBureauService } = await import('./integrations/credit-bureaus');
+      await creditBureauService.startCreditMonitoring(userId, provider);
+      
+      res.json({ success: true, message: `Credit monitoring started with ${provider}` });
+    } catch (error) {
+      console.error("Error connecting to credit bureau:", error);
+      res.status(500).json({ error: "Failed to connect to credit bureau" });
+    }
+  });
+
+  app.get("/api/credit-bureaus/report/:userId", authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { provider = 'EXPERIAN' } = req.query;
+      
+      const { creditBureauService } = await import('./integrations/credit-bureaus');
+      const creditData = await creditBureauService.getCreditData(
+        userId, 
+        provider as 'EXPERIAN' | 'CRS_API' | 'ISOFTPULL'
+      );
+      
+      res.json(creditData);
+    } catch (error) {
+      console.error("Error fetching credit report:", error);
+      res.status(500).json({ error: "Failed to fetch credit report" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
