@@ -16,7 +16,9 @@ interface SecureChatProps {
 export function SecureChat({ userId, userType }: SecureChatProps) {
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const queryClient = useQueryClient();
@@ -105,6 +107,41 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
     }
   });
 
+  const uploadDocumentMutation = useMutation({
+    mutationFn: async (files: File[]) => {
+      const token = localStorage.getItem('auth_token');
+      
+      // Upload each file
+      for (const file of files) {
+        const response = await fetch('/api/chat/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            userId,
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            documentType: getDocumentType(file.name),
+            uploadedBy: userType.toUpperCase()
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to upload ${file.name}`);
+        }
+      }
+      
+      return files;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/chat/documents`, userId] });
+      setUploadFiles([]);
+    }
+  });
+
   const handleSendMessage = () => {
     if (message.trim() || selectedFiles.length > 0) {
       sendMessageMutation.mutate({ message, files: selectedFiles });
@@ -118,6 +155,32 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
 
   const removeFile = (index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUploadFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setUploadFiles(prev => [...prev, ...files]);
+  };
+
+  const removeUploadFile = (index: number) => {
+    setUploadFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDocumentUpload = () => {
+    if (uploadFiles.length > 0) {
+      uploadDocumentMutation.mutate(uploadFiles);
+    }
+  };
+
+  const getDocumentType = (fileName: string) => {
+    const name = fileName.toLowerCase();
+    if (name.includes('id') || name.includes('license') || name.includes('passport')) return 'ID_DOCUMENT';
+    if (name.includes('ssn') || name.includes('social')) return 'SSN_DOCUMENT';
+    if (name.includes('bank') || name.includes('statement')) return 'FINANCIAL_DOCUMENT';
+    if (name.includes('bureau') || name.includes('response')) return 'BUREAU_RESPONSE';
+    if (name.includes('utility') || name.includes('bill')) return 'UTILITY_BILL';
+    if (name.includes('pay') || name.includes('stub')) return 'PAYSTUB';
+    return 'OTHER';
   };
 
   useEffect(() => {
@@ -366,13 +429,22 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Upload Area */}
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                 <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Upload Secure Documents</h3>
                 <p className="text-gray-600 mb-4">
                   Drag and drop files here or click to browse
                 </p>
-                <Button variant="outline">
+                <input
+                  ref={uploadInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleUploadFileSelect}
+                  className="hidden"
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                />
+                <Button variant="outline" onClick={() => uploadInputRef.current?.click()}>
                   <Upload className="h-4 w-4 mr-2" />
                   Choose Files
                 </Button>
@@ -380,6 +452,39 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
                   Supported: PDF, JPG, PNG, DOC, DOCX (Max 10MB per file)
                 </p>
               </div>
+
+              {/* Selected Files Preview */}
+              {uploadFiles.length > 0 && (
+                <div className="border rounded-lg p-4 bg-blue-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium">Selected Files ({uploadFiles.length})</h4>
+                    <Button 
+                      onClick={handleDocumentUpload}
+                      disabled={uploadDocumentMutation.isPending}
+                      className="h-8"
+                    >
+                      {uploadDocumentMutation.isPending ? 'Uploading...' : 'Upload All'}
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {uploadFiles.map((file, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-sm bg-white p-2 rounded">
+                        {getFileIcon(file.type)}
+                        <span className="flex-1 truncate">{file.name}</span>
+                        <span className="text-gray-500">({(file.size / 1024 / 1024).toFixed(1)} MB)</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeUploadFile(idx)}
+                          className="h-6 w-6 p-0"
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card>
