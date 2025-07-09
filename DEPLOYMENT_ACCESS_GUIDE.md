@@ -35,12 +35,12 @@ Both the Client Portal and Admin Portal use the same login page but authenticate
 - No access to create new disputes or use AI features
 
 ### 2. Admin Portal Access
-**For you (CreditFix Pro staff) to access the full admin system:**
+**For you (ScoreShift staff) to access the full admin system:**
 
 1. Navigate to the same app URL: `https://your-app-name.replit.app`
 2. Select "**Admin Portal**" button (blue, on the right)
 3. Enter admin credentials:
-   - Email: `admin@creditfixpro.com`
+   - Email: `admin@scoreshift.com`
    - Password: `admin123`
 4. Click "Sign In"
 
@@ -87,7 +87,7 @@ Your app comes with demo accounts for immediate testing:
 
 **Admin Demo Account:**
 - Portal: Admin Portal
-- Email: `admin@creditfixpro.com`
+- Email: `admin@scoreshift.com`
 - Password: `admin123`
 
 **Client Demo Account:**

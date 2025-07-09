@@ -10,12 +10,33 @@ interface AdminUSPSTrackingProps {
 }
 
 export function AdminUSPSTracking({ userId }: AdminUSPSTrackingProps) {
-  const { data: disputes = [], isLoading } = useQuery({
+  const { data: disputes = [], isLoading, error } = useQuery({
     queryKey: ['/api/disputes', userId],
-    queryFn: () => fetch(`/api/disputes?userId=${userId}`).then(res => res.json())
+    queryFn: async () => {
+      const authToken = localStorage.getItem("auth_token");
+      if (!authToken) {
+        throw new Error("Authentication required");
+      }
+      
+      const res = await fetch(`/api/disputes?userId=${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+      
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
   });
 
-  const pendingDisputes = disputes.filter((dispute: Dispute) => 
+  // Ensure disputes is always an array before filtering
+  const validDisputes = Array.isArray(disputes) ? disputes : [];
+  const pendingDisputes = validDisputes.filter((dispute: Dispute) => 
     dispute.status === 'PENDING' || dispute.status === 'SENT'
   );
 

@@ -540,7 +540,7 @@ export class MemStorage implements IStorage {
       id: 1,
       firstName: "Admin",
       lastName: "User",
-      email: "admin@creditfixpro.com",
+      email: "admin@scoreshift.com",
       accessLevel: "ADMIN",
       isTestUser: false,
       testingNotes: null,

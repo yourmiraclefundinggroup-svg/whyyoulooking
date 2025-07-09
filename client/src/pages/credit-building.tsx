@@ -443,7 +443,7 @@ export default function CreditBuilding() {
                     
                     <div className="p-4 border border-blue-200 rounded-lg bg-blue-50">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold text-blue-900">CreditFix Pro Tradelines</h4>
+                        <h4 className="font-semibold text-blue-900">ScoreShift Tradelines</h4>
                         <Badge variant="outline" className="bg-blue-100 text-blue-800">Our Service</Badge>
                       </div>
                       <p className="text-sm text-blue-700 mb-3">
@@ -458,7 +458,7 @@ export default function CreditBuilding() {
                       <Button 
                         size="sm" 
                         className="w-full bg-blue-600 hover:bg-blue-700"
-                        onClick={() => window.open('mailto:tradelines@creditfixpro.com?subject=Tradeline Inquiry&body=Hi, I would like to learn more about your available tradelines and pricing. Please contact me with more information.', '_blank')}
+                        onClick={() => window.open('mailto:tradelines@scoreshift.com?subject=Tradeline Inquiry&body=Hi, I would like to learn more about your available tradelines and pricing. Please contact me with more information.', '_blank')}
                       >
                         Contact Us for Tradelines →
                       </Button>

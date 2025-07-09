@@ -184,7 +184,7 @@ export default function AdminPortal() {
                   <div className="flex items-center cursor-pointer">
                     <Shield className="h-8 w-8 text-orange-400 mr-3" />
                     <div>
-                      <h1 className="text-xl md:text-2xl font-bold text-white">CreditFix Pro</h1>
+                      <h1 className="text-xl md:text-2xl font-bold text-white">ScoreShift</h1>
                       <p className="text-xs text-orange-300 font-medium">ADMIN PORTAL</p>
                     </div>
                   </div>

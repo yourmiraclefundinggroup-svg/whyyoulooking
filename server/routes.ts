@@ -640,9 +640,10 @@ Format the response as a complete business letter ready to send.`;
   });
 
   // Get disputes requiring follow-up (14 days have passed)
-  app.get("/api/disputes/follow-up", async (req, res) => {
+  app.get("/api/disputes/follow-up", authenticateToken, async (req, res) => {
     try {
-      const userId = 1; // TODO: Get from auth
+      const requestingUser = (req as any).user;
+      const userId = requestingUser.accessLevel === 'ADMIN' ? 1 : requestingUser.id; // Default to user 1 for admin or requesting user
       const allDisputes = await storage.getDisputes(userId);
       
       // Return the delivered dispute that needs follow-up
