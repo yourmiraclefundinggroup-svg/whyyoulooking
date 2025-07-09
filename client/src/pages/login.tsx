@@ -53,12 +53,26 @@ export default function Login() {
         status: error.status,
         response: error.response
       });
+      
+      // Show specific error message based on the error type
+      if (error.message?.includes("Invalid credentials")) {
+        console.error("Credential validation failed - check email/password combination");
+      }
+      if (error.message?.includes("Access denied")) {
+        console.error("Access denied - check if you selected the correct portal type");
+      }
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
+    
+    console.log("Login attempt:", {
+      email,
+      password: password.substring(0, 3) + "***", // Only show first 3 chars for debugging
+      loginType
+    });
     
     loginMutation.mutate({ email, password, type: loginType });
   };
