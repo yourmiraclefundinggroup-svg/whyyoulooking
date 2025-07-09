@@ -102,7 +102,7 @@ export function ForcePasswordReset({ onPasswordReset }: ForcePasswordResetProps)
     
     setErrors([]);
     resetPasswordMutation.mutate({
-      currentPassword: "client123", // Use temporary password
+      currentPassword: "Myteam100$", // Use current admin password
       newPassword,
     });
   };
