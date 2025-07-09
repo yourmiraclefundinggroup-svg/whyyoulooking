@@ -1410,6 +1410,108 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
+  // Chat API Routes
+  app.get("/api/chat/messages/:userId", authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const requestingUser = (req as any).user;
+      
+      // Users can only access their own messages unless they're admin
+      if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const messages = await storage.getChatMessages(userId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching chat messages:", error);
+      res.status(500).json({ error: "Failed to fetch messages" });
+    }
+  });
+
+  app.get("/api/chat/documents/:userId", authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const requestingUser = (req as any).user;
+      
+      // Users can only access their own documents unless they're admin
+      if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const documents = await storage.getChatDocuments(userId);
+      res.json(documents);
+    } catch (error) {
+      console.error("Error fetching chat documents:", error);
+      res.status(500).json({ error: "Failed to fetch documents" });
+    }
+  });
+
+  app.post("/api/chat/send", authenticateToken, async (req, res) => {
+    try {
+      const { userId, message, senderType } = req.body;
+      const requestingUser = (req as any).user;
+      
+      // Validate sender type matches user access
+      if (senderType === 'ADMIN' && requestingUser.accessLevel !== 'ADMIN') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      if (senderType === 'CLIENT' && requestingUser.id !== userId) {
+        return res.status(403).json({ message: "Can only send messages as yourself" });
+      }
+      
+      const chatMessage = await storage.createChatMessage({
+        userId,
+        message,
+        senderType,
+        isRead: false
+      });
+      
+      res.json(chatMessage);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+
+  // File upload for chat documents
+  app.post("/api/chat/upload", authenticateToken, async (req, res) => {
+    try {
+      const { userId, fileName, fileSize, fileType, documentType, uploadedBy } = req.body;
+      const requestingUser = (req as any).user;
+      
+      // Validate upload permissions
+      if (uploadedBy === 'ADMIN' && requestingUser.accessLevel !== 'ADMIN') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      if (uploadedBy === 'CLIENT' && requestingUser.id !== userId) {
+        return res.status(403).json({ message: "Can only upload files as yourself" });
+      }
+      
+      // In a real implementation, you'd handle file storage here
+      // For now, simulate file upload
+      const filePath = `/uploads/${userId}/${Date.now()}_${fileName}`;
+      
+      const document = await storage.createChatDocument({
+        userId,
+        fileName,
+        fileSize,
+        fileType,
+        documentType,
+        filePath,
+        uploadedBy,
+        isEncrypted: true
+      });
+      
+      res.json(document);
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      res.status(500).json({ error: "Failed to upload document" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

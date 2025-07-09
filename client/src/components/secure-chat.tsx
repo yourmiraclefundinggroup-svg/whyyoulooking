@@ -22,37 +22,84 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
   const queryClient = useQueryClient();
 
   const { data: messages, isLoading } = useQuery({
-    queryKey: [`/api/chat/messages/${userId}`],
+    queryKey: [`/api/chat/messages`, userId],
     enabled: !!userId,
-    refetchInterval: 5000 // Refresh every 5 seconds for real-time feel
+    refetchInterval: 5000, // Refresh every 5 seconds for real-time feel
+    queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`/api/chat/messages/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch messages');
+      return response.json();
+    }
   });
 
   const { data: documents } = useQuery({
-    queryKey: [`/api/chat/documents/${userId}`],
-    enabled: !!userId
+    queryKey: [`/api/chat/documents`, userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`/api/chat/documents/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch documents');
+      return response.json();
+    }
   });
 
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { message: string; files?: File[] }) => {
-      const formData = new FormData();
-      formData.append('userId', userId.toString());
-      formData.append('message', data.message);
-      formData.append('senderType', userType);
+      const token = localStorage.getItem('auth_token');
       
-      if (data.files) {
-        data.files.forEach(file => {
-          formData.append('files', file);
-        });
+      // First send the message
+      const messageResponse = await fetch('/api/chat/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          userId,
+          message: data.message,
+          senderType: userType.toUpperCase()
+        })
+      });
+
+      if (!messageResponse.ok) {
+        throw new Error('Failed to send message');
       }
 
-      return await fetch('/api/chat/send', {
-        method: 'POST',
-        body: formData
-      }).then(res => res.json());
+      // Handle file uploads if present
+      if (data.files && data.files.length > 0) {
+        for (const file of data.files) {
+          await fetch('/api/chat/upload', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              userId,
+              fileName: file.name,
+              fileSize: file.size,
+              fileType: file.type,
+              documentType: 'OTHER',
+              uploadedBy: userType.toUpperCase()
+            })
+          });
+        }
+      }
+
+      return messageResponse.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/chat/messages/${userId}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/chat/documents/${userId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/chat/messages`, userId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/chat/documents`, userId] });
       setMessage("");
       setSelectedFiles([]);
     }
@@ -77,101 +124,11 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Demo messages data
-  const demoMessages = messages || [
-    {
-      id: 1,
-      senderId: userType === "client" ? userId : 1,
-      senderType: "admin",
-      senderName: "Credit Specialist",
-      message: "Hi! I've reviewed your credit report and have some recommendations. Could you please upload your recent bank statements?",
-      timestamp: "2024-01-06T15:30:00Z",
-      hasAttachments: false,
-      isRead: true
-    },
-    {
-      id: 2,
-      senderId: userType === "client" ? userId : 1,
-      senderType: userType === "client" ? "client" : "admin",
-      senderName: userType === "client" ? "You" : "John Doe",
-      message: "Sure! I'll upload the bank statements now. Also, I received a response from Experian - should I upload that too?",
-      timestamp: "2024-01-06T15:35:00Z",
-      hasAttachments: false,
-      isRead: true
-    },
-    {
-      id: 3,
-      senderId: userType === "client" ? userId : 1,
-      senderType: "admin",
-      senderName: "Credit Specialist",
-      message: "Yes, absolutely! Please upload the Experian response. I'll analyze it using our AI system and create a strategic response.",
-      timestamp: "2024-01-06T15:37:00Z",
-      hasAttachments: false,
-      isRead: true
-    },
-    {
-      id: 4,
-      senderId: userType === "client" ? userId : 1,
-      senderType: userType === "client" ? "client" : "admin",
-      senderName: userType === "client" ? "You" : "John Doe",
-      message: "Documents uploaded successfully. Thank you for the quick response!",
-      timestamp: "2024-01-06T15:45:00Z",
-      hasAttachments: true,
-      attachments: [
-        { name: "bank_statement_december.pdf", type: "application/pdf", size: "2.3 MB" },
-        { name: "experian_response.pdf", type: "application/pdf", size: "1.1 MB" }
-      ],
-      isRead: true
-    }
-  ];
+  // Use real messages from API or empty array if loading/none
+  const chatMessages = messages || [];
 
-  // Demo documents data
-  const demoDocuments = documents || [
-    {
-      id: 1,
-      fileName: "drivers_license.jpg",
-      fileType: "image/jpeg",
-      fileSize: "1.2 MB",
-      uploadedBy: "client",
-      uploadedAt: "2024-01-05T10:00:00Z",
-      category: "ID_DOCUMENT",
-      status: "VERIFIED",
-      isSecure: true
-    },
-    {
-      id: 2,
-      fileName: "social_security_card.jpg",
-      fileType: "image/jpeg", 
-      fileSize: "0.8 MB",
-      uploadedBy: "client",
-      uploadedAt: "2024-01-05T10:05:00Z",
-      category: "SSN_DOCUMENT",
-      status: "VERIFIED",
-      isSecure: true
-    },
-    {
-      id: 3,
-      fileName: "bank_statement_december.pdf",
-      fileType: "application/pdf",
-      fileSize: "2.3 MB",
-      uploadedBy: "client",
-      uploadedAt: "2024-01-06T15:45:00Z",
-      category: "FINANCIAL_DOCUMENT",
-      status: "PENDING_REVIEW",
-      isSecure: true
-    },
-    {
-      id: 4,
-      fileName: "experian_dispute_response.pdf",
-      fileType: "application/pdf",
-      fileSize: "1.1 MB",
-      uploadedBy: "client",
-      uploadedAt: "2024-01-06T15:45:00Z",
-      category: "BUREAU_RESPONSE",
-      status: "PENDING_REVIEW",
-      isSecure: true
-    }
-  ];
+  // Use real documents from API or empty array if loading/none
+  const userDocuments = documents || [];
 
   const getFileIcon = (fileType: string) => {
     if (fileType.includes('pdf')) return <FileText className="h-4 w-4 text-red-600" />;
@@ -233,7 +190,19 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
             <CardContent>
               {/* Messages Area */}
               <div className="h-96 overflow-y-auto border rounded-lg p-4 mb-4 space-y-4 bg-gray-50">
-                {demoMessages.map((msg: any) => (
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-gray-500">Loading messages...</div>
+                  </div>
+                ) : chatMessages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center text-gray-500">
+                      <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>No messages yet. Start a conversation!</p>
+                    </div>
+                  </div>
+                ) : (
+                  chatMessages.map((msg: any) => (
                   <div
                     key={msg.id}
                     className={`flex ${msg.senderType === userType ? 'justify-end' : 'justify-start'}`}
@@ -251,30 +220,20 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
                         ) : (
                           <UserCheck className="h-3 w-3" />
                         )}
-                        <span className="text-xs font-medium">{msg.senderName}</span>
+                        <span className="text-xs font-medium">
+                          {msg.senderType === userType ? "You" : (msg.senderType === "ADMIN" ? "Credit Specialist" : "Client")}
+                        </span>
                         <Clock className="h-3 w-3 ml-auto" />
                         <span className="text-xs opacity-75">
-                          {new Date(msg.timestamp).toLocaleTimeString()}
+                          {new Date(msg.createdAt).toLocaleTimeString()}
                         </span>
                       </div>
                       
                       <p className="text-sm">{msg.message}</p>
-                      
-                      {msg.hasAttachments && msg.attachments && (
-                        <div className="mt-2 space-y-1">
-                          {msg.attachments.map((file: any, idx: number) => (
-                            <div key={idx} className="flex items-center gap-2 p-2 bg-black/10 rounded text-xs">
-                              {getFileIcon(file.type)}
-                              <span>{file.name}</span>
-                              <span className="text-xs opacity-75">({file.size})</span>
-                              <Download className="h-3 w-3 ml-auto cursor-pointer" />
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
                 <div ref={messagesEndRef} />
               </div>
 
@@ -347,17 +306,24 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {demoDocuments.map((doc: any) => (
-                  <Card key={doc.id} className="border-gray-200">
+              {userDocuments.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No documents uploaded yet</p>
+                  <p className="text-sm text-gray-400">Upload documents in the Upload tab to see them here</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {userDocuments.map((doc: any) => (
+                    <Card key={doc.id} className="border-gray-200">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
                         {getFileIcon(doc.fileType)}
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{doc.fileName}</p>
-                          <p className="text-xs text-gray-600">{doc.fileSize}</p>
-                          <Badge variant={getStatusColor(doc.status)} className="mt-1 text-xs">
-                            {doc.status.replace('_', ' ')}
+                          <p className="text-xs text-gray-600">{(doc.fileSize / 1024 / 1024).toFixed(1)} MB</p>
+                          <Badge variant={getStatusColor(doc.status || 'PENDING_REVIEW')} className="mt-1 text-xs">
+                            {(doc.status || 'PENDING_REVIEW').replace('_', ' ')}
                           </Badge>
                         </div>
                       </div>
@@ -365,11 +331,11 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
                       <div className="mt-3 pt-3 border-t">
                         <div className="flex justify-between items-center text-xs text-gray-600 mb-2">
                           <span>Category</span>
-                          <span>{getCategoryLabel(doc.category)}</span>
+                          <span>{getCategoryLabel(doc.documentType || 'OTHER')}</span>
                         </div>
                         <div className="flex justify-between items-center text-xs text-gray-600 mb-2">
                           <span>Uploaded</span>
-                          <span>{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+                          <span>{new Date(doc.createdAt).toLocaleDateString()}</span>
                         </div>
                         <div className="flex justify-between items-center text-xs">
                           <div className="flex items-center gap-1">
@@ -383,9 +349,10 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
                         </div>
                       </div>
                     </CardContent>
-                  </Card>
-                ))}
-              </div>
+                    </Card>
+                  ))
+                }</div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

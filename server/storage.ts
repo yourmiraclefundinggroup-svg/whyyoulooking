@@ -5,7 +5,7 @@ import {
   creditCards, utilizationOptimizations, utilizationAlerts, loanReadinessProfiles, loanReadinessAssessments,
   goodwillLetters, creditMixOptimizations, identityTheftCases, rentUtilityReporting,
   creditCardPredictions, financialBehaviorProfiles, bankAccountConnections, taxIntegrations,
-  employmentVerifications, disputeSuccessPredictions, mlTrainingData,
+  employmentVerifications, disputeSuccessPredictions, mlTrainingData, chatMessages, chatDocuments,
   type User, type InsertUser,
   type CreditReport, type InsertCreditReport,
   type CreditIssue, type InsertCreditIssue,
@@ -34,7 +34,9 @@ import {
   type TaxIntegration, type InsertTaxIntegration,
   type EmploymentVerification, type InsertEmploymentVerification,
   type DisputeSuccessPrediction, type InsertDisputeSuccessPrediction,
-  type MlTrainingData, type InsertMlTrainingData
+  type MlTrainingData, type InsertMlTrainingData,
+  chatMessages as ChatMessage, type InsertChatMessage,
+  chatDocuments as ChatDocument, type InsertChatDocument
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -190,6 +192,12 @@ export interface IStorage {
   // ML Training Data
   getMlTrainingData(dataType?: string): Promise<MlTrainingData[]>;
   createMlTrainingData(data: InsertMlTrainingData): Promise<MlTrainingData>;
+
+  // Chat System
+  getChatMessages(userId: number): Promise<any[]>;
+  getChatDocuments(userId: number): Promise<any[]>;
+  createChatMessage(message: InsertChatMessage): Promise<any>;
+  createChatDocument(document: InsertChatDocument): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -405,6 +413,100 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedUser || undefined;
   }
+
+  // Chat System Implementation
+  async getChatMessages(userId: number): Promise<any[]> {
+    return await db.select().from(chatMessages).where(eq(chatMessages.userId, userId));
+  }
+
+  async getChatDocuments(userId: number): Promise<any[]> {
+    return await db.select().from(chatDocuments).where(eq(chatDocuments.userId, userId));
+  }
+
+  async createChatMessage(message: InsertChatMessage): Promise<any> {
+    const [chatMessage] = await db
+      .insert(chatMessages)
+      .values(message)
+      .returning();
+    return chatMessage;
+  }
+
+  async createChatDocument(document: InsertChatDocument): Promise<any> {
+    const [chatDocument] = await db
+      .insert(chatDocuments)
+      .values(document)
+      .returning();
+    return chatDocument;
+  }
+
+  // Placeholder implementations for missing methods (to be implemented when needed)
+  async getCreditMonitoringConnections(userId: number): Promise<CreditMonitoringConnection[]> { return []; }
+  async getCreditMonitoringConnection(id: number): Promise<CreditMonitoringConnection | undefined> { return undefined; }
+  async createCreditMonitoringConnection(connection: InsertCreditMonitoringConnection): Promise<CreditMonitoringConnection> { throw new Error("Not implemented"); }
+  async updateCreditMonitoringConnection(id: number, updates: Partial<CreditMonitoringConnection>): Promise<CreditMonitoringConnection | undefined> { return undefined; }
+  async deleteCreditMonitoringConnection(id: number): Promise<boolean> { return false; }
+  async getCreditFileSyncHistory(userId: number): Promise<CreditFileSyncHistory[]> { return []; }
+  async getCreditFileSyncHistoryByConnection(connectionId: number): Promise<CreditFileSyncHistory[]> { return []; }
+  async createCreditFileSyncHistory(history: InsertCreditFileSyncHistory): Promise<CreditFileSyncHistory> { throw new Error("Not implemented"); }
+  async getBureauResponses(userId: number): Promise<BureauResponse[]> { return []; }
+  async getBureauResponse(id: number): Promise<BureauResponse | undefined> { return undefined; }
+  async createBureauResponse(response: InsertBureauResponse): Promise<BureauResponse> { throw new Error("Not implemented"); }
+  async updateBureauResponse(id: number, updates: Partial<BureauResponse>): Promise<BureauResponse | undefined> { return undefined; }
+  async getBureauResponseAnalysis(responseId: number): Promise<BureauResponseAnalysis | undefined> { return undefined; }
+  async createBureauResponseAnalysis(analysis: InsertBureauResponseAnalysis): Promise<BureauResponseAnalysis> { throw new Error("Not implemented"); }
+  async getCreditCards(userId: number): Promise<CreditCard[]> { return []; }
+  async getCreditCard(id: number): Promise<CreditCard | undefined> { return undefined; }
+  async createCreditCard(card: InsertCreditCard): Promise<CreditCard> { throw new Error("Not implemented"); }
+  async updateCreditCard(id: number, updates: Partial<CreditCard>): Promise<CreditCard | undefined> { return undefined; }
+  async getUtilizationOptimizations(userId: number): Promise<UtilizationOptimization[]> { return []; }
+  async createUtilizationOptimization(optimization: InsertUtilizationOptimization): Promise<UtilizationOptimization> { throw new Error("Not implemented"); }
+  async getUtilizationAlerts(userId: number): Promise<UtilizationAlert[]> { return []; }
+  async createUtilizationAlert(alert: InsertUtilizationAlert): Promise<UtilizationAlert> { throw new Error("Not implemented"); }
+  async markUtilizationAlertAsRead(alertId: number): Promise<UtilizationAlert | undefined> { return undefined; }
+  async getLoanReadinessProfile(userId: number): Promise<LoanReadinessProfile | null> { return null; }
+  async saveLoanReadinessProfile(data: any): Promise<LoanReadinessProfile> { throw new Error("Not implemented"); }
+  async getLoanReadinessAssessments(userId: number): Promise<LoanReadinessAssessment[]> { return []; }
+  async saveLoanReadinessAssessment(data: InsertLoanReadinessAssessment): Promise<LoanReadinessAssessment> { throw new Error("Not implemented"); }
+  async getGoodwillLetters(userId: number): Promise<GoodwillLetter[]> { return []; }
+  async getGoodwillLetter(id: number): Promise<GoodwillLetter | undefined> { return undefined; }
+  async createGoodwillLetter(letter: InsertGoodwillLetter): Promise<GoodwillLetter> { throw new Error("Not implemented"); }
+  async updateGoodwillLetter(id: number, updates: Partial<GoodwillLetter>): Promise<GoodwillLetter | undefined> { return undefined; }
+  async getCreditMixOptimizations(userId: number): Promise<CreditMixOptimization[]> { return []; }
+  async getCreditMixOptimization(id: number): Promise<CreditMixOptimization | undefined> { return undefined; }
+  async createCreditMixOptimization(optimization: InsertCreditMixOptimization): Promise<CreditMixOptimization> { throw new Error("Not implemented"); }
+  async updateCreditMixOptimization(id: number, updates: Partial<CreditMixOptimization>): Promise<CreditMixOptimization | undefined> { return undefined; }
+  async getIdentityTheftCases(userId: number): Promise<IdentityTheftCase[]> { return []; }
+  async getIdentityTheftCase(id: number): Promise<IdentityTheftCase | undefined> { return undefined; }
+  async createIdentityTheftCase(case_: InsertIdentityTheftCase): Promise<IdentityTheftCase> { throw new Error("Not implemented"); }
+  async updateIdentityTheftCase(id: number, updates: Partial<IdentityTheftCase>): Promise<IdentityTheftCase | undefined> { return undefined; }
+  async getRentUtilityReporting(userId: number): Promise<RentUtilityReporting[]> { return []; }
+  async getRentUtilityReportingById(id: number): Promise<RentUtilityReporting | undefined> { return undefined; }
+  async createRentUtilityReporting(reporting: InsertRentUtilityReporting): Promise<RentUtilityReporting> { throw new Error("Not implemented"); }
+  async updateRentUtilityReporting(id: number, updates: Partial<RentUtilityReporting>): Promise<RentUtilityReporting | undefined> { return undefined; }
+  async getCreditCardPredictions(userId: number): Promise<CreditCardPrediction[]> { return []; }
+  async getCreditCardPrediction(id: number): Promise<CreditCardPrediction | undefined> { return undefined; }
+  async createCreditCardPrediction(prediction: InsertCreditCardPrediction): Promise<CreditCardPrediction> { throw new Error("Not implemented"); }
+  async updateCreditCardPrediction(id: number, updates: Partial<CreditCardPrediction>): Promise<CreditCardPrediction | undefined> { return undefined; }
+  async getFinancialBehaviorProfile(userId: number): Promise<FinancialBehaviorProfile | undefined> { return undefined; }
+  async createFinancialBehaviorProfile(profile: InsertFinancialBehaviorProfile): Promise<FinancialBehaviorProfile> { throw new Error("Not implemented"); }
+  async updateFinancialBehaviorProfile(id: number, updates: Partial<FinancialBehaviorProfile>): Promise<FinancialBehaviorProfile | undefined> { return undefined; }
+  async getBankAccountConnections(userId: number): Promise<BankAccountConnection[]> { return []; }
+  async getBankAccountConnection(id: number): Promise<BankAccountConnection | undefined> { return undefined; }
+  async createBankAccountConnection(connection: InsertBankAccountConnection): Promise<BankAccountConnection> { throw new Error("Not implemented"); }
+  async updateBankAccountConnection(id: number, updates: Partial<BankAccountConnection>): Promise<BankAccountConnection | undefined> { return undefined; }
+  async getTaxIntegrations(userId: number): Promise<TaxIntegration[]> { return []; }
+  async getTaxIntegration(id: number): Promise<TaxIntegration | undefined> { return undefined; }
+  async createTaxIntegration(integration: InsertTaxIntegration): Promise<TaxIntegration> { throw new Error("Not implemented"); }
+  async updateTaxIntegration(id: number, updates: Partial<TaxIntegration>): Promise<TaxIntegration | undefined> { return undefined; }
+  async getEmploymentVerifications(userId: number): Promise<EmploymentVerification[]> { return []; }
+  async getEmploymentVerification(id: number): Promise<EmploymentVerification | undefined> { return undefined; }
+  async createEmploymentVerification(verification: InsertEmploymentVerification): Promise<EmploymentVerification> { throw new Error("Not implemented"); }
+  async updateEmploymentVerification(id: number, updates: Partial<EmploymentVerification>): Promise<EmploymentVerification | undefined> { return undefined; }
+  async getDisputeSuccessPredictions(disputeId: number): Promise<DisputeSuccessPrediction[]> { return []; }
+  async getDisputeSuccessPrediction(id: number): Promise<DisputeSuccessPrediction | undefined> { return undefined; }
+  async createDisputeSuccessPrediction(prediction: InsertDisputeSuccessPrediction): Promise<DisputeSuccessPrediction> { throw new Error("Not implemented"); }
+  async getMlTrainingData(dataType?: string): Promise<MlTrainingData[]> { return []; }
+  async createMlTrainingData(data: InsertMlTrainingData): Promise<MlTrainingData> { throw new Error("Not implemented"); }
 }
 
 export class MemStorage implements IStorage {

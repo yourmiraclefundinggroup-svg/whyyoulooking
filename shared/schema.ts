@@ -233,6 +233,35 @@ export const insertCreditCardSchema = createInsertSchema(creditCards).omit({ id:
 export const insertUtilizationOptimizationSchema = createInsertSchema(utilizationOptimizations).omit({ id: true, createdAt: true, completedAt: true });
 export const insertUtilizationAlertSchema = createInsertSchema(utilizationAlerts).omit({ id: true, createdAt: true });
 
+// Chat System
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  message: text("message").notNull(),
+  senderType: text("sender_type", { enum: ["CLIENT", "ADMIN"] }).notNull(),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+export const chatDocuments = pgTable("chat_documents", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  messageId: integer("message_id").references(() => chatMessages.id),
+  fileName: text("file_name").notNull(),
+  fileSize: integer("file_size").notNull(), // in bytes
+  fileType: text("file_type").notNull(), // MIME type
+  documentType: text("document_type", { 
+    enum: ["ID", "SSN_CARD", "BANK_STATEMENT", "BUREAU_RESPONSE", "INCOME_VERIFICATION", "OTHER"] 
+  }).notNull(),
+  filePath: text("file_path").notNull(), // Server file path
+  uploadedBy: text("uploaded_by", { enum: ["CLIENT", "ADMIN"] }).notNull(),
+  isEncrypted: boolean("is_encrypted").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
+export const insertChatDocumentSchema = createInsertSchema(chatDocuments).omit({ id: true, createdAt: true });
+
 // Mortgage/Loan Readiness Score
 export const loanReadinessProfiles = pgTable("loan_readiness_profiles", {
   id: serial("id").primaryKey(),
