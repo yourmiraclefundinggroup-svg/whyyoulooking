@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Home, Zap, TrendingUp, DollarSign, CheckCircle } from "lucide-react";
+import { Home, Zap, TrendingUp, DollarSign, CheckCircle, ExternalLink } from "lucide-react";
 
 interface RentUtilityOptimizerProps {
   userId: number;
@@ -51,14 +51,36 @@ export function RentUtilityOptimizer({ userId }: RentUtilityOptimizerProps) {
         type: "RENT",
         monthlyFee: 9.95,
         scoreImpact: 15,
-        reportsToBureaus: ["Experian", "TransUnion"]
+        reportsToBureaus: ["Experian", "TransUnion"],
+        website: "https://www.renttrack.com",
+        description: "Leading rent reporting service"
       },
       {
         name: "eCredable Lift",
         type: "UTILITIES",
         monthlyFee: 24.95,
         scoreImpact: 12,
-        reportsToBureaus: ["All three bureaus"]
+        reportsToBureaus: ["All three bureaus"],
+        website: "https://www.ecredable.com",
+        description: "Comprehensive utility reporting"
+      },
+      {
+        name: "Rental Kharma",
+        type: "RENT",
+        monthlyFee: 6.95,
+        scoreImpact: 18,
+        reportsToBureaus: ["All three bureaus"],
+        website: "https://www.rentalkharma.com",
+        description: "Fast rent reporting setup"
+      },
+      {
+        name: "PayYourRent",
+        type: "RENT",
+        monthlyFee: 14.95,
+        scoreImpact: 20,
+        reportsToBureaus: ["Experian", "TransUnion", "Equifax"],
+        website: "https://www.payyourrent.com",
+        description: "Full-service rent payment and reporting"
       }
     ],
     scoreImpactEstimate: 25,
@@ -124,7 +146,7 @@ export function RentUtilityOptimizer({ userId }: RentUtilityOptimizerProps) {
                   }
                   <div>
                     <h4 className="font-semibold">{service.name}</h4>
-                    <p className="text-sm text-gray-600">{service.type} Reporting</p>
+                    <p className="text-sm text-gray-600">{service.description}</p>
                     <p className="text-sm">Reports to: {service.reportsToBureaus.join(", ")}</p>
                   </div>
                 </div>
@@ -144,14 +166,32 @@ export function RentUtilityOptimizer({ userId }: RentUtilityOptimizerProps) {
                 <Progress value={(service.scoreImpact / 20) * 100} className="h-2" />
               </div>
 
-              <Button
-                onClick={() => enrollMutation.mutate(service.name)}
-                disabled={enrollMutation.isPending}
-                className="w-full mt-3"
-                size="sm"
-              >
-                {enrollMutation.isPending ? "Enrolling..." : "Enroll Now"}
-              </Button>
+              <div className="flex gap-2 mt-3">
+                <Button
+                  asChild
+                  className="flex-1"
+                  size="sm"
+                >
+                  <a 
+                    href={service.website} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Visit {service.name}
+                  </a>
+                </Button>
+                <Button
+                  onClick={() => enrollMutation.mutate(service.name)}
+                  disabled={enrollMutation.isPending}
+                  variant="outline"
+                  size="sm"
+                  className="px-4"
+                >
+                  {enrollMutation.isPending ? "..." : "Track"}
+                </Button>
+              </div>
             </div>
           ))}
         </CardContent>
