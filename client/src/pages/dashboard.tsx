@@ -8,6 +8,7 @@ import { DisputeLetterModal } from "@/components/dispute-letter-modal";
 import { CreditSimulatorModal } from "@/components/credit-simulator-modal";
 import { AICreditAnalysis } from "@/components/ai-credit-analysis";
 import { FollowUpAlerts } from "@/components/follow-up-alerts";
+import { ScoreShiftHeroLogo } from "@/components/scoreshift-logo";
 import { formatCurrency, formatRelativeDate, getIssueTypeColor, getIssueTypeIcon, getDisputeStatusColor } from "@/lib/utils";
 import type { User, CreditReport, CreditIssue, Dispute, CreditGoal, EducationalContent, CreditBuildingAction } from "@shared/schema";
 
@@ -62,19 +63,33 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-      {/* Welcome Section */}
-      <div className="mb-8">
-        <div className="md:flex md:items-center md:justify-between mb-6">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-              Welcome back, {user?.firstName || 'User'}
+      {/* Hero Section with ScoreShift Branding */}
+      <div className="mb-8 bg-gradient-to-r from-blue-50 to-white rounded-2xl p-6 border border-blue-100">
+        <div className="flex flex-col md:flex-row items-center justify-between">
+          <div className="text-center md:text-left mb-4 md:mb-0">
+            <ScoreShiftHeroLogo className="mb-4" />
+            <h2 className="text-2xl font-bold leading-7 text-blue-900 sm:text-3xl">
+              Welcome back, {user?.firstName || 'User'}!
             </h2>
-            <p className="mt-1 text-sm text-gray-500">Here's your credit repair progress overview</p>
+            <p className="mt-2 text-blue-600 font-medium">Transform your credit score with AI-powered insights</p>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-700">{creditReport?.creditScore || '---'}</div>
+              <div className="text-sm text-blue-600">Current Score</div>
+            </div>
+            <div className="h-12 w-px bg-blue-200"></div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">+23</div>
+              <div className="text-sm text-green-600">This Month</div>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Credit Score Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {/* Credit Score Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Primary Credit Score Card */}
           <Card className="md:col-span-2">
             <CardContent className="p-6">

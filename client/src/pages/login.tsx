@@ -88,17 +88,34 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">ScoreShift</h1>
-          <h2 className="text-xl font-semibold text-gray-700">
+          {/* ScoreShift Logo Design */}
+          <div className="flex items-center justify-center mb-6">
+            <div className="relative">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-3 rounded-2xl shadow-lg transform -rotate-2 hover:rotate-0 transition-transform duration-300">
+                <h1 className="text-3xl font-bold tracking-tight">Score</h1>
+              </div>
+              <div className="bg-white text-blue-700 px-6 py-3 rounded-2xl shadow-lg border-2 border-blue-200 transform rotate-2 hover:rotate-0 transition-transform duration-300 -mt-3 ml-4">
+                <h1 className="text-3xl font-bold tracking-tight">Shift</h1>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-center mb-4">
+            <div className="h-1 w-12 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"></div>
+            <div className="mx-3 text-2xl">📈</div>
+            <div className="h-1 w-12 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full"></div>
+          </div>
+          
+          <h2 className="text-xl font-semibold text-blue-900 mb-2">
             {loginType === "client" ? "Client Portal" : "Admin Portal"}
           </h2>
-          <p className="text-gray-600 mt-2">
+          <p className="text-blue-600 mt-2 font-medium">
             {loginType === "client" 
-              ? "View your credit repair progress" 
-              : "Manage client accounts and disputes"}
+              ? "Track your credit score transformation" 
+              : "Empower clients to shift their credit scores"}
           </p>
         </div>
 

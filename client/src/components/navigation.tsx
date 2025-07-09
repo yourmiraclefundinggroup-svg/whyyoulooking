@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useUserContext } from "@/hooks/use-user-context";
+import { ScoreShiftLogo } from "@/components/scoreshift-logo";
 
 export function Navigation() {
   const [location] = useLocation();
@@ -20,13 +21,13 @@ export function Navigation() {
   ];
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-white shadow-sm border-b border-blue-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <Link href="/">
-                <h1 className="text-xl md:text-2xl font-bold trust-blue cursor-pointer">ScoreShift</h1>
+                <ScoreShiftLogo size="lg" animated className="cursor-pointer" />
               </Link>
             </div>
             {/* Desktop Navigation */}
