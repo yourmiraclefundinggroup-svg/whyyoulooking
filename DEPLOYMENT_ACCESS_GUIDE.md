@@ -10,7 +10,7 @@ ScoreShift features two separate authentication portals designed for different u
 ### When Deployed on Replit
 After deploying your app using Replit's deployment button, both portals will be accessible through the same domain but with different login credentials:
 
-**Main Application URL**: `https://your-app-name.replit.app`
+**Main Application URL**: `https://scoreshiftapp.com`
 
 Both the Client Portal and Admin Portal use the same login page but authenticate users differently based on their credentials and portal selection.
 
@@ -19,7 +19,7 @@ Both the Client Portal and Admin Portal use the same login page but authenticate
 ### 1. Client Portal Access
 **For your clients to access their view-only portal:**
 
-1. Navigate to your deployed app URL: `https://your-app-name.replit.app`
+1. Navigate to your deployed app URL: `https://scoreshiftapp.com`
 2. The login screen will appear automatically
 3. Select "**Client Portal**" button (blue, on the left)
 4. Enter client credentials:
@@ -37,7 +37,7 @@ Both the Client Portal and Admin Portal use the same login page but authenticate
 ### 2. Admin Portal Access
 **For you (ScoreShift staff) to access the full admin system:**
 
-1. Navigate to the same app URL: `https://your-app-name.replit.app`
+1. Navigate to the same app URL: `https://scoreshiftapp.com`
 2. Select "**Admin Portal**" button (blue, on the right)
 3. Enter admin credentials:
    - Email: `admin@scoreshift.com`

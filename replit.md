@@ -159,6 +159,11 @@ Preferred communication style: Simple, everyday language.
 ## Changelog
 
 Changelog:
+- July 09, 2025. **DOMAIN UPDATED TO SCORESHIFTAPP.COM**
+  - ✅ **Custom Domain**: Updated all references from .replit.app to scoreshiftapp.com
+  - ✅ **Environment Variables**: BASE_URL set to https://scoreshiftapp.com
+  - ✅ **Documentation**: DEPLOYMENT_ACCESS_GUIDE.md updated with new domain
+  - ✅ **Ready for Custom Domain Setup**: All URLs point to scoreshiftapp.com
 - July 09, 2025. **EXPERIAN API INTEGRATION ADDED**
   - ✅ **Experian Consumer Credit Profile API**: Added complete integration with real credentials
   - ✅ **Client ID/Secret**: Integrated from developer.experian.com (1wUzh5bdGgmwf0GGrqOeYOikJZGJ9VsY)
