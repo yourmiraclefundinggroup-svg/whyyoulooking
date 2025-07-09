@@ -87,17 +87,17 @@ export class ExperianService {
 
   async getAccessToken(): Promise<string> {
     try {
+      // Try the standard OAuth 2.0 client credentials flow
+      const authString = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+      
       const response = await fetch(`${this.baseUrl}/oauth2/v1/token`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'client_id': this.clientId,
-          'client_secret': this.clientSecret
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${authString}`,
+          'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          grant_type: 'client_credentials'
-        })
+        body: 'grant_type=client_credentials'
       });
 
       if (!response.ok) {
