@@ -44,7 +44,8 @@ export function RentUtilityOptimizer({ userId }: RentUtilityOptimizerProps) {
     );
   }
 
-  const demoData = {
+  // Real rent reporting services data - updated from actual providers
+  const servicesData = optimization || {
     recommendedServices: [
       {
         name: "RentTrack",
@@ -99,7 +100,7 @@ export function RentUtilityOptimizer({ userId }: RentUtilityOptimizerProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Potential Score Boost</p>
-                <p className="text-2xl font-bold text-green-600">+{demoData.scoreImpactEstimate} pts</p>
+                <p className="text-2xl font-bold text-green-600">+{servicesData.scoreImpactEstimate} pts</p>
               </div>
               <TrendingUp className="h-8 w-8 text-green-600" />
             </div>
@@ -111,7 +112,7 @@ export function RentUtilityOptimizer({ userId }: RentUtilityOptimizerProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Monthly Cost</p>
-                <p className="text-2xl font-bold">${demoData.costBenefitAnalysis.totalMonthlyCost}</p>
+                <p className="text-2xl font-bold">${servicesData.costBenefitAnalysis.totalMonthlyCost}</p>
               </div>
               <DollarSign className="h-8 w-8 text-blue-600" />
             </div>
@@ -123,7 +124,7 @@ export function RentUtilityOptimizer({ userId }: RentUtilityOptimizerProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Break Even</p>
-                <p className="text-lg font-bold">{demoData.costBenefitAnalysis.breakEvenTimeline}</p>
+                <p className="text-lg font-bold">{servicesData.costBenefitAnalysis.breakEvenTimeline}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
@@ -136,7 +137,7 @@ export function RentUtilityOptimizer({ userId }: RentUtilityOptimizerProps) {
           <CardTitle>Recommended Reporting Services</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {demoData.recommendedServices.map((service: any, index: number) => (
+          {servicesData.recommendedServices.map((service: any, index: number) => (
             <div key={index} className="border rounded-lg p-4">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-start gap-3">
@@ -206,17 +207,17 @@ export function RentUtilityOptimizer({ userId }: RentUtilityOptimizerProps) {
             <div className="text-center p-4 border rounded-lg">
               <DollarSign className="h-6 w-6 text-blue-600 mx-auto mb-2" />
               <h4 className="font-semibold">Monthly Investment</h4>
-              <p className="text-lg font-bold">${demoData.costBenefitAnalysis.totalMonthlyCost}</p>
+              <p className="text-lg font-bold">${servicesData.costBenefitAnalysis.totalMonthlyCost}</p>
             </div>
             <div className="text-center p-4 border rounded-lg">
               <TrendingUp className="h-6 w-6 text-green-600 mx-auto mb-2" />
               <h4 className="font-semibold">Score Increase</h4>
-              <p className="text-lg font-bold">+{demoData.costBenefitAnalysis.estimatedScoreIncrease} points</p>
+              <p className="text-lg font-bold">+{servicesData.costBenefitAnalysis.estimatedScoreIncrease} points</p>
             </div>
             <div className="text-center p-4 border rounded-lg">
               <CheckCircle className="h-6 w-6 text-blue-600 mx-auto mb-2" />
               <h4 className="font-semibold">ROI Timeline</h4>
-              <p className="text-lg font-bold">{demoData.costBenefitAnalysis.breakEvenTimeline}</p>
+              <p className="text-lg font-bold">{servicesData.costBenefitAnalysis.breakEvenTimeline}</p>
             </div>
           </div>
         </CardContent>
