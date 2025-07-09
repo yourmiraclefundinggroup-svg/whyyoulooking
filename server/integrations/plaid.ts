@@ -33,7 +33,7 @@ export class PlaidService {
         user: {
           client_user_id: userId.toString(),
         },
-        client_name: 'CreditFix Pro',
+        client_name: 'ScoreShift',
         products: ['auth', 'transactions', 'assets'],
         country_codes: ['US'],
         language: 'en',

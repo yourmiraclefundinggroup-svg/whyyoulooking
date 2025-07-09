@@ -1,7 +1,7 @@
-# Credit Repair Application - Replit Guide
+# ScoreShift - Credit Repair Platform - Replit Guide
 
 ## Overview
-This is a comprehensive credit repair application built with a modern tech stack featuring React frontend, Express.js backend, and PostgreSQL database. The app provides AI-powered credit repair tools, dispute management, USPS tracking, and beta testing capabilities for credit repair professionals and their clients.
+ScoreShift is a comprehensive credit repair platform built with a modern tech stack featuring React frontend, Express.js backend, and PostgreSQL database. The app provides AI-powered credit repair tools, dispute management, USPS tracking, and beta testing capabilities for credit repair professionals and their clients.
 
 ## System Architecture
 

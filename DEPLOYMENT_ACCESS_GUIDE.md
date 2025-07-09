@@ -1,9 +1,9 @@
-# CreditFix Pro - Portal Access Guide
+# ScoreShift - Portal Access Guide
 
 ## Overview
-CreditFix Pro features two separate authentication portals designed for different user types:
+ScoreShift features two separate authentication portals designed for different user types:
 - **Client Portal**: View-only access for clients to see their credit repair progress
-- **Admin Portal**: Full administrative access for CreditFix Pro staff to manage client accounts and create disputes
+- **Admin Portal**: Full administrative access for ScoreShift staff to manage client accounts and create disputes
 
 ## Portal Access URLs
 

@@ -26,7 +26,7 @@ export function Navigation() {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <Link href="/">
-                <h1 className="text-xl md:text-2xl font-bold trust-blue cursor-pointer">CreditFix Pro</h1>
+                <h1 className="text-xl md:text-2xl font-bold trust-blue cursor-pointer">ScoreShift</h1>
               </Link>
             </div>
             {/* Desktop Navigation */}
