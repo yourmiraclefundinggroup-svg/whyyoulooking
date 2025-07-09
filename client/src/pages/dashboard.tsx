@@ -62,7 +62,8 @@ export default function Dashboard() {
   const accountAgeProgress = creditReport ? Math.min((creditReport.accountAge / 60) * 100, 100) : 0; // 60 months = 5 years target
 
   return (
-    <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <>
+      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       {/* Hero Section with ScoreShift Branding */}
       <div className="mb-8 bg-gradient-to-r from-blue-50 to-white rounded-2xl p-6 border border-blue-100">
         <div className="flex flex-col md:flex-row items-center justify-between">
@@ -431,6 +432,6 @@ export default function Dashboard() {
         onOpenChange={setSimulatorModalOpen}
         currentScore={creditReport?.creditScore || 658}
       />
-    </div>
+    </>
   );
 }
