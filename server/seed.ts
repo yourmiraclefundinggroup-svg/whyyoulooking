@@ -8,11 +8,26 @@ async function seedDatabase() {
   try {
     console.log("Seeding database...");
 
-    // Create a sample user
+    // Create admin user
+    const [adminUser] = await db.insert(users).values({
+      firstName: "Admin",
+      lastName: "User",
+      email: "admin@scoreshift.com",
+      password: "admin123",
+      accessLevel: "ADMIN",
+      passwordResetRequired: true
+    }).returning();
+
+    console.log("Created admin user:", adminUser);
+
+    // Create Sarah Johnson client user
     const [user] = await db.insert(users).values({
       firstName: "Sarah",
       lastName: "Johnson",
-      email: "sarah.johnson@example.com"
+      email: "sarah.johnson@example.com",
+      password: "client123",
+      accessLevel: "CLIENT_VIEWER",
+      passwordResetRequired: true
     }).returning();
 
     console.log("Created user:", user);
