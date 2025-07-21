@@ -439,12 +439,33 @@ export class DatabaseStorage implements IStorage {
     return chatDocument;
   }
 
-  // Placeholder implementations for missing methods (to be implemented when needed)
-  async getCreditMonitoringConnections(userId: number): Promise<CreditMonitoringConnection[]> { return []; }
-  async getCreditMonitoringConnection(id: number): Promise<CreditMonitoringConnection | undefined> { return undefined; }
-  async createCreditMonitoringConnection(connection: InsertCreditMonitoringConnection): Promise<CreditMonitoringConnection> { throw new Error("Not implemented"); }
-  async updateCreditMonitoringConnection(id: number, updates: Partial<CreditMonitoringConnection>): Promise<CreditMonitoringConnection | undefined> { return undefined; }
-  async deleteCreditMonitoringConnection(id: number): Promise<boolean> { return false; }
+  // Credit Monitoring Connections
+  async getCreditMonitoringConnections(userId: number): Promise<CreditMonitoringConnection[]> {
+    return await db.select().from(creditMonitoringConnections).where(eq(creditMonitoringConnections.userId, userId));
+  }
+  
+  async getCreditMonitoringConnection(id: number): Promise<CreditMonitoringConnection | undefined> {
+    const [connection] = await db.select().from(creditMonitoringConnections).where(eq(creditMonitoringConnections.id, id));
+    return connection || undefined;
+  }
+  
+  async createCreditMonitoringConnection(connection: InsertCreditMonitoringConnection): Promise<CreditMonitoringConnection> {
+    const [newConnection] = await db.insert(creditMonitoringConnections).values(connection).returning();
+    return newConnection;
+  }
+  
+  async updateCreditMonitoringConnection(id: number, updates: Partial<CreditMonitoringConnection>): Promise<CreditMonitoringConnection | undefined> {
+    const [updatedConnection] = await db.update(creditMonitoringConnections)
+      .set(updates)
+      .where(eq(creditMonitoringConnections.id, id))
+      .returning();
+    return updatedConnection || undefined;
+  }
+  
+  async deleteCreditMonitoringConnection(id: number): Promise<boolean> {
+    const result = await db.delete(creditMonitoringConnections).where(eq(creditMonitoringConnections.id, id));
+    return result.rowCount > 0;
+  }
   async getCreditFileSyncHistory(userId: number): Promise<CreditFileSyncHistory[]> { return []; }
   async getCreditFileSyncHistoryByConnection(connectionId: number): Promise<CreditFileSyncHistory[]> { return []; }
   async createCreditFileSyncHistory(history: InsertCreditFileSyncHistory): Promise<CreditFileSyncHistory> { throw new Error("Not implemented"); }

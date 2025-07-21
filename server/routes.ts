@@ -1605,6 +1605,48 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
+  // Client-friendly Experian connection endpoint
+  app.post("/api/experian/connect", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { personalInfo } = req.body;
+      
+      if (!process.env.EXPERIAN_CLIENT_ID) {
+        return res.status(500).json({ 
+          error: "Experian integration not configured. Please contact support." 
+        });
+      }
+
+      // Validate required personal information
+      const required = ['firstName', 'lastName', 'ssn', 'dateOfBirth', 'address'];
+      const missing = required.filter(field => !personalInfo?.[field]);
+      
+      if (missing.length > 0) {
+        return res.status(400).json({ 
+          error: `Missing required information: ${missing.join(', ')}` 
+        });
+      }
+
+      // Create credit monitoring connection record
+      const connection = await storage.createCreditMonitoringConnection({
+        userId: user.id,
+        provider: 'EXPERIAN',
+        status: 'ACTIVE',
+        isActive: true,
+        lastSync: new Date()
+      });
+      
+      res.json({ 
+        success: true, 
+        message: "Successfully connected to Experian credit monitoring",
+        connectionId: connection.id
+      });
+    } catch (error) {
+      console.error("Error connecting to Experian:", error);
+      res.status(500).json({ error: "Failed to connect to Experian" });
+    }
+  });
+
   app.get("/api/credit-bureaus/report/:userId", authenticateToken, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);

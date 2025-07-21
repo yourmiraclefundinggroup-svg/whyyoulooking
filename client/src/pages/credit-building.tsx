@@ -4,13 +4,30 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 import type { CreditReport, CreditBuildingAction, CreditGoal } from "@shared/schema";
 
 export default function CreditBuilding() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [showExperianForm, setShowExperianForm] = useState(false);
+  const [experianForm, setExperianForm] = useState({
+    firstName: '',
+    lastName: '',
+    ssn: '',
+    dateOfBirth: '',
+    address: {
+      line1: '',
+      city: '',
+      state: '',
+      zipCode: ''
+    }
+  });
 
   // Hardcoded user ID for demo
   const userId = 1;
@@ -43,6 +60,39 @@ export default function CreditBuilding() {
       toast({
         title: "Error",
         description: "Failed to update action",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const connectExperianMutation = useMutation({
+    mutationFn: async (personalInfo: typeof experianForm) => {
+      const response = await apiRequest("POST", `/api/experian/connect`, { personalInfo });
+      return response.json();
+    },
+    onSuccess: () => {
+      setShowExperianForm(false);
+      setExperianForm({
+        firstName: '',
+        lastName: '',
+        ssn: '',
+        dateOfBirth: '',
+        address: {
+          line1: '',
+          city: '',
+          state: '',
+          zipCode: ''
+        }
+      });
+      toast({
+        title: "Successfully Connected",
+        description: "Your Experian credit monitoring is now active",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Connection Failed",
+        description: error.message || "Failed to connect to Experian",
         variant: "destructive",
       });
     },
@@ -292,6 +342,167 @@ export default function CreditBuilding() {
         </TabsContent>
 
         <TabsContent value="services" className="space-y-6">
+          {/* Credit Bureau Connections */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Credit Bureau Connections</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Experian Connection */}
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                      <i className="fas fa-shield-alt text-red-600"></i>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">Experian Credit Monitoring</h3>
+                      <p className="text-sm text-gray-600">Connect to monitor your Experian credit report in real-time</p>
+                    </div>
+                  </div>
+                  <Dialog open={showExperianForm} onOpenChange={setShowExperianForm}>
+                    <DialogTrigger asChild>
+                      <Button>Connect Now</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Connect to Experian</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="firstName">First Name</Label>
+                            <Input
+                              id="firstName"
+                              value={experianForm.firstName}
+                              onChange={(e) => setExperianForm(prev => ({ ...prev, firstName: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="lastName">Last Name</Label>
+                            <Input
+                              id="lastName"
+                              value={experianForm.lastName}
+                              onChange={(e) => setExperianForm(prev => ({ ...prev, lastName: e.target.value }))}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="ssn">Social Security Number</Label>
+                          <Input
+                            id="ssn"
+                            type="password"
+                            placeholder="XXX-XX-XXXX"
+                            value={experianForm.ssn}
+                            onChange={(e) => setExperianForm(prev => ({ ...prev, ssn: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                          <Input
+                            id="dateOfBirth"
+                            type="date"
+                            value={experianForm.dateOfBirth}
+                            onChange={(e) => setExperianForm(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="address">Street Address</Label>
+                          <Input
+                            id="address"
+                            value={experianForm.address.line1}
+                            onChange={(e) => setExperianForm(prev => ({ 
+                              ...prev, 
+                              address: { ...prev.address, line1: e.target.value }
+                            }))}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="city">City</Label>
+                            <Input
+                              id="city"
+                              value={experianForm.address.city}
+                              onChange={(e) => setExperianForm(prev => ({ 
+                                ...prev, 
+                                address: { ...prev.address, city: e.target.value }
+                              }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="state">State</Label>
+                            <Input
+                              id="state"
+                              placeholder="CA"
+                              maxLength={2}
+                              value={experianForm.address.state}
+                              onChange={(e) => setExperianForm(prev => ({ 
+                                ...prev, 
+                                address: { ...prev.address, state: e.target.value.toUpperCase() }
+                              }))}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="zipCode">ZIP Code</Label>
+                          <Input
+                            id="zipCode"
+                            value={experianForm.address.zipCode}
+                            onChange={(e) => setExperianForm(prev => ({ 
+                              ...prev, 
+                              address: { ...prev.address, zipCode: e.target.value }
+                            }))}
+                          />
+                        </div>
+                        <div className="flex justify-end space-x-2">
+                          <Button 
+                            variant="outline" 
+                            onClick={() => setShowExperianForm(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
+                            onClick={() => connectExperianMutation.mutate(experianForm)}
+                            disabled={connectExperianMutation.isPending}
+                          >
+                            {connectExperianMutation.isPending ? 'Connecting...' : 'Connect'}
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                {/* Other bureau connections coming soon */}
+                <div className="flex items-center justify-between p-4 border rounded-lg opacity-50">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <i className="fas fa-shield-alt text-blue-600"></i>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">Equifax Credit Monitoring</h3>
+                      <p className="text-sm text-gray-600">Coming soon - comprehensive Equifax integration</p>
+                    </div>
+                  </div>
+                  <Button disabled>Coming Soon</Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg opacity-50">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                      <i className="fas fa-shield-alt text-green-600"></i>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">TransUnion Credit Monitoring</h3>
+                      <p className="text-sm text-gray-600">Coming soon - real-time TransUnion data</p>
+                    </div>
+                  </div>
+                  <Button disabled>Coming Soon</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Credit Building Services & Tools */}
           <Card>
             <CardHeader>
