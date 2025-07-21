@@ -112,6 +112,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get authenticated user's credit report
+  app.get("/api/credit-reports", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      const userId = requestingUser.id;
+      const report = await storage.getCreditReport(userId);
+      if (!report) {
+        return res.status(404).json({ message: "Credit report not found" });
+      }
+      res.json(report);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch credit report" });
+    }
+  });
+
   app.get("/api/credit-reports/:userId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);

@@ -10,6 +10,7 @@ import { AICreditAnalysis } from "@/components/ai-credit-analysis";
 import { FollowUpAlerts } from "@/components/follow-up-alerts";
 import { ScoreShiftHeroLogo } from "@/components/scoreshift-logo";
 import { formatCurrency, formatRelativeDate, getIssueTypeColor, getIssueTypeIcon, getDisputeStatusColor } from "@/lib/utils";
+import { useUserContext } from "@/hooks/use-user-context";
 import type { User, CreditReport, CreditIssue, Dispute, CreditGoal, EducationalContent, CreditBuildingAction } from "@shared/schema";
 
 export default function Dashboard() {
@@ -17,27 +18,24 @@ export default function Dashboard() {
   const [simulatorModalOpen, setSimulatorModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<CreditIssue | undefined>();
 
-  // Hardcoded user ID for demo
-  const userId = 1;
-
-  const { data: user } = useQuery<User>({
-    queryKey: ['/api/users', userId],
-  });
+  // Get current user from context
+  const { user } = useUserContext();
+  const userId = user?.id || 1;
 
   const { data: creditReport } = useQuery<CreditReport>({
-    queryKey: ['/api/credit-reports', userId],
+    queryKey: ['/api/credit-reports'],
   });
 
   const { data: creditIssues = [] } = useQuery<CreditIssue[]>({
-    queryKey: ['/api/credit-issues', userId],
+    queryKey: ['/api/credit-issues'],
   });
 
   const { data: disputes = [] } = useQuery<Dispute[]>({
-    queryKey: ['/api/disputes', userId],
+    queryKey: ['/api/disputes'],
   });
 
   const { data: creditGoal } = useQuery<CreditGoal>({
-    queryKey: ['/api/credit-goals', userId],
+    queryKey: ['/api/credit-goals'],
   });
 
   const { data: educationalContent = [] } = useQuery<EducationalContent[]>({
@@ -45,7 +43,7 @@ export default function Dashboard() {
   });
 
   const { data: creditBuildingActions = [] } = useQuery<CreditBuildingAction[]>({
-    queryKey: ['/api/credit-building-actions', userId],
+    queryKey: ['/api/credit-building-actions'],
   });
 
   const handleDispute = (issue: CreditIssue) => {
