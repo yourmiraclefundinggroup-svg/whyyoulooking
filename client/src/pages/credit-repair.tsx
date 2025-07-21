@@ -25,7 +25,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatRelativeDate, getIssueTypeColor, getIssueTypeIcon, getDisputeStatusColor } from "@/lib/utils";
 import type { CreditIssue, Dispute } from "@shared/schema";
-import { Shield, LogOut } from "lucide-react";
+import { Shield, LogOut, ExternalLink } from "lucide-react";
+import { Link } from "wouter";
 
 export default function CreditRepair() {
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
@@ -121,12 +122,38 @@ export default function CreditRepair() {
           </div>
         </div>
         {isClientViewer ? (
-          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <i className="fas fa-eye mr-2"></i>
-              <strong>Client View:</strong> This shows the work being done on your credit file. 
-              You can view dispute progress and tracking but cannot create new disputes.
-            </p>
+          <div className="mt-3 space-y-3">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <i className="fas fa-eye mr-2"></i>
+                <strong>Client View:</strong> This shows the work being done on your credit file. 
+                You can view dispute progress and tracking but cannot create new disputes.
+              </p>
+            </div>
+            
+            {/* Prominent Experian Connect Button */}
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-shield-alt text-red-600 text-lg"></i>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-red-900">Connect to Experian</h3>
+                    <p className="text-xs text-red-700">Get real-time credit monitoring and updates</p>
+                  </div>
+                </div>
+                <Link href="/experian">
+                  <Button 
+                    size="sm"
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    Connect
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
         ) : (
           <p className="mt-1 text-sm sm:text-base text-gray-600">

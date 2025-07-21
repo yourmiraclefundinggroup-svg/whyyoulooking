@@ -10,14 +10,16 @@ export function Navigation() {
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, isClientViewer, isAdmin, canAccessCreditBuilding, canAccessEducation, logout } = useUserContext();
+  
+  // Show basic navigation even if user is still loading
+  const displayUser = user || { firstName: 'Loading', lastName: '', accessLevel: 'CLIENT_VIEWER' };
 
-  // Filter navigation based on user access level
+  // Show basic navigation for all authenticated users
   const navItems = [
-    { href: "/dashboard", label: "Dashboard" },
     { href: "/credit-repair", label: "Credit Repair" },
+    { href: "/experian", label: "Experian Connect" },
     ...(canAccessCreditBuilding ? [{ href: "/credit-building", label: "Credit Building" }] : []),
     ...(canAccessEducation ? [{ href: "/education", label: "Education" }] : []),
-    { href: "/experian", label: "Experian Connect" },
     ...(isAdmin ? [{ href: "/admin", label: "Admin" }] : []),
   ];
 
@@ -54,7 +56,7 @@ export function Navigation() {
             {/* User Indicator */}
             <div className="hidden sm:flex items-center space-x-2 text-sm">
               <div className="text-gray-700">
-                {user ? `${user.firstName} ${user.lastName}` : 'Loading...'}
+                {displayUser.firstName} {displayUser.lastName}
               </div>
               {isClientViewer && (
                 <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
