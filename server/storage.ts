@@ -450,7 +450,24 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createCreditMonitoringConnection(connection: InsertCreditMonitoringConnection): Promise<CreditMonitoringConnection> {
-    const [newConnection] = await db.insert(creditMonitoringConnections).values(connection).returning();
+    console.log('DatabaseStorage: Inserting connection with data:', connection);
+    
+    // Ensure all required fields are present with defaults
+    const connectionWithDefaults = {
+      userId: connection.userId,
+      provider: connection.provider || 'EXPERIAN',
+      accountEmail: connection.accountEmail || 'default@scoreshift.com',
+      isActive: connection.isActive !== undefined ? connection.isActive : true,
+      lastSyncDate: connection.lastSyncDate || null,
+      syncFrequency: connection.syncFrequency || 'DAILY',
+      credentialsEncrypted: connection.credentialsEncrypted || null,
+      autoSyncEnabled: connection.autoSyncEnabled !== undefined ? connection.autoSyncEnabled : true,
+      syncErrorMessage: connection.syncErrorMessage || null
+    };
+    
+    console.log('DatabaseStorage: Inserting connection with defaults:', connectionWithDefaults);
+    
+    const [newConnection] = await db.insert(creditMonitoringConnections).values(connectionWithDefaults).returning();
     return newConnection;
   }
   

@@ -1627,14 +1627,19 @@ Format the response as a complete business letter ready to send.`;
         });
       }
 
-      // Create credit monitoring connection record
-      const connection = await storage.createCreditMonitoringConnection({
+      // Create credit monitoring connection record  
+      const connectionData = {
         userId: user.id,
         provider: 'EXPERIAN',
-        status: 'ACTIVE',
+        accountEmail: user.email || personalInfo.firstName.toLowerCase() + '.' + personalInfo.lastName.toLowerCase() + '@scoreshift.com',
         isActive: true,
-        lastSync: new Date()
-      });
+        lastSyncDate: new Date(),
+        syncFrequency: 'DAILY',
+        autoSyncEnabled: true
+      };
+      
+      console.log('Creating connection with data:', connectionData);
+      const connection = await storage.createCreditMonitoringConnection(connectionData);
       
       res.json({ 
         success: true, 
