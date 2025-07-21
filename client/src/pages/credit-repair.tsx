@@ -46,6 +46,11 @@ export default function CreditRepair() {
     queryKey: ['/api/disputes', userId],
   });
 
+  const { data: creditConnections = [] } = useQuery({
+    queryKey: ['/api/credit-monitoring-connections', userId],
+    queryFn: () => fetch(`/api/credit-monitoring-connections?userId=${userId}`).then(res => res.json()),
+  });
+
   const updateIssueMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: number; updates: Partial<CreditIssue> }) => {
       const response = await apiRequest("PATCH", `/api/credit-issues/${id}`, updates);
@@ -131,28 +136,55 @@ export default function CreditRepair() {
               </p>
             </div>
             
-            {/* Prominent Experian Connect Button */}
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                    <i className="fas fa-shield-alt text-red-600 text-lg"></i>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-red-900">Connect to Experian</h3>
-                    <p className="text-xs text-red-700">Get real-time credit monitoring and updates</p>
+            {/* Credit Monitoring Connections Status */}
+            <div className="space-y-3">
+              {creditConnections.length > 0 ? (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h3 className="text-sm font-semibold text-green-900 mb-2">Connected Credit Monitoring</h3>
+                  {creditConnections.map((connection: any) => (
+                    <div key={connection.id} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                          <i className="fas fa-shield-alt text-green-600"></i>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-green-900">{connection.provider}</p>
+                          <p className="text-xs text-green-700">
+                            Connected {connection.accountEmail} • Last sync: {new Date(connection.lastSyncDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-xs text-green-600">Active</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                        <i className="fas fa-shield-alt text-red-600 text-lg"></i>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-semibold text-red-900">Connect to Experian</h3>
+                        <p className="text-xs text-red-700">Get real-time credit monitoring and updates</p>
+                      </div>
+                    </div>
+                    <Link href="/experian">
+                      <Button 
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        Connect
+                      </Button>
+                    </Link>
                   </div>
                 </div>
-                <Link href="/experian">
-                  <Button 
-                    size="sm"
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-1" />
-                    Connect
-                  </Button>
-                </Link>
-              </div>
+              )}
             </div>
           </div>
         ) : (

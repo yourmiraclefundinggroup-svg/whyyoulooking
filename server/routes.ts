@@ -1030,6 +1030,23 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
+  // Get all credit monitoring connections for current authenticated user
+  app.get("/api/credit-monitoring-connections", async (req, res) => {
+    try {
+      // Simple approach - get connections for the requested user ID from query parameter
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : null;
+      if (!userId) {
+        return res.status(400).json({ error: "userId parameter required" });
+      }
+      
+      const connections = await storage.getCreditMonitoringConnections(userId);
+      res.json(connections);
+    } catch (error) {
+      console.error("Error fetching credit monitoring connections:", error);
+      res.status(500).json({ error: "Failed to fetch connections" });
+    }
+  });
+
   app.post("/api/credit-monitoring-connections", async (req, res) => {
     try {
       const connection = await storage.createCreditMonitoringConnection(req.body);
