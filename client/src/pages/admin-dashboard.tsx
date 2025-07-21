@@ -14,6 +14,7 @@ import { formatDate, formatRelativeDate } from "@/lib/utils";
 import { useUserContext } from "@/hooks/use-user-context";
 import { AlertCircle, Users, TestTube, MessageSquare, Plus, Key, UserPlus, Eye, Trash2 } from "lucide-react";
 import type { User, TestingFeedback, BetaAccess, InsertBetaAccess, InsertUser } from "@shared/schema";
+import { ClientCreditProfilesView } from "@/components/client-credit-profiles";
 
 // Client Profile Form Component
 function ClientProfileForm() {
@@ -477,10 +478,10 @@ export default function AdminDashboard() {
       <Tabs defaultValue="access-codes" className="space-y-6">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="client-profiles">Client Profiles</TabsTrigger>
+          <TabsTrigger value="credit-profiles">Credit Profiles</TabsTrigger>
           <TabsTrigger value="access-codes">Access Codes</TabsTrigger>
           <TabsTrigger value="test-users">Test Users</TabsTrigger>
           <TabsTrigger value="feedback">Feedback</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="client-profiles" className="space-y-6">
@@ -508,6 +509,10 @@ export default function AdminDashboard() {
               <ClientProfileList />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="credit-profiles" className="space-y-6">
+          <ClientCreditProfilesView />
         </TabsContent>
 
         <TabsContent value="access-codes" className="space-y-6">

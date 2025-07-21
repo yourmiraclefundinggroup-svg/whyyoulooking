@@ -1730,6 +1730,84 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
+  // Admin endpoints for viewing client credit profiles
+  app.get("/api/admin/credit-connections", authenticateToken, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      
+      // Only admins can view all client credit connections
+      if (requestingUser.accessLevel !== 'ADMIN') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      const connections = await storage.getAllCreditMonitoringConnectionsWithUsers();
+      res.json(connections);
+    } catch (error) {
+      console.error("Error fetching admin credit connections:", error);
+      res.status(500).json({ error: "Failed to fetch credit connections" });
+    }
+  });
+
+  app.get("/api/admin/credit-data/:userId", authenticateToken, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      const userId = parseInt(req.params.userId);
+      
+      // Only admins can view client credit data
+      if (requestingUser.accessLevel !== 'ADMIN') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      // For now, return demo credit data since we're in development
+      // In production, this would fetch real credit data from Experian API
+      const mockCreditData = {
+        score: 720 + Math.floor(Math.random() * 80), // Random score between 720-800
+        reportDate: new Date().toISOString(),
+        accounts: [
+          {
+            accountName: "Chase Freedom",
+            accountType: "Credit Card",
+            balance: Math.floor(Math.random() * 5000),
+            paymentStatus: Math.random() > 0.2 ? "Current" : "30 Days Late",
+            creditLimit: 10000
+          },
+          {
+            accountName: "Auto Loan - Honda",
+            accountType: "Installment",
+            balance: Math.floor(Math.random() * 25000),
+            paymentStatus: "Current",
+            creditLimit: 30000
+          },
+          {
+            accountName: "Discover Card",
+            accountType: "Credit Card", 
+            balance: Math.floor(Math.random() * 3000),
+            paymentStatus: "Current",
+            creditLimit: 8000
+          }
+        ],
+        inquiries: [
+          {
+            creditor: "Capital One",
+            inquiryDate: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
+            inquiryType: "Hard Inquiry"
+          },
+          {
+            creditor: "Experian",
+            inquiryDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(), 
+            inquiryType: "Soft Inquiry"
+          }
+        ],
+        publicRecords: []
+      };
+
+      res.json(mockCreditData);
+    } catch (error) {
+      console.error("Error fetching admin credit data:", error);
+      res.status(500).json({ error: "Failed to fetch credit data" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

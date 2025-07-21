@@ -100,6 +100,7 @@ export interface IStorage {
   createCreditMonitoringConnection(connection: InsertCreditMonitoringConnection): Promise<CreditMonitoringConnection>;
   updateCreditMonitoringConnection(id: number, updates: Partial<CreditMonitoringConnection>): Promise<CreditMonitoringConnection | undefined>;
   deleteCreditMonitoringConnection(id: number): Promise<boolean>;
+  getAllCreditMonitoringConnectionsWithUsers(): Promise<(CreditMonitoringConnection & { user?: User })[]>;
 
   // Credit File Sync History
   getCreditFileSyncHistory(userId: number): Promise<CreditFileSyncHistory[]>;
@@ -541,6 +542,60 @@ export class DatabaseStorage implements IStorage {
   async createDisputeSuccessPrediction(prediction: InsertDisputeSuccessPrediction): Promise<DisputeSuccessPrediction> { throw new Error("Not implemented"); }
   async getMlTrainingData(dataType?: string): Promise<MlTrainingData[]> { return []; }
   async createMlTrainingData(data: InsertMlTrainingData): Promise<MlTrainingData> { throw new Error("Not implemented"); }
+
+  async getAllCreditMonitoringConnectionsWithUsers(): Promise<(CreditMonitoringConnection & { user?: User })[]> {
+    const connections = await db
+      .select({
+        id: creditMonitoringConnections.id,
+        userId: creditMonitoringConnections.userId,
+        provider: creditMonitoringConnections.provider,
+        accountEmail: creditMonitoringConnections.accountEmail,
+        isActive: creditMonitoringConnections.isActive,
+        lastSyncDate: creditMonitoringConnections.lastSyncDate,
+        syncFrequency: creditMonitoringConnections.syncFrequency,
+        credentialsEncrypted: creditMonitoringConnections.credentialsEncrypted,
+        autoSyncEnabled: creditMonitoringConnections.autoSyncEnabled,
+        syncErrorMessage: creditMonitoringConnections.syncErrorMessage,
+        createdAt: creditMonitoringConnections.createdAt,
+        updatedAt: creditMonitoringConnections.updatedAt,
+        user: {
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          accessLevel: users.accessLevel
+        }
+      })
+      .from(creditMonitoringConnections)
+      .leftJoin(users, eq(creditMonitoringConnections.userId, users.id));
+    
+    return connections.map(row => ({
+      id: row.id,
+      userId: row.userId,
+      bureau: row.provider, // Map provider to bureau field expected by the interface
+      serviceProvider: row.provider,
+      accountEmail: row.accountEmail,
+      isActive: row.isActive,
+      lastSync: row.lastSyncDate,
+      syncFrequency: row.syncFrequency,
+      credentialsStored: !!row.credentialsEncrypted,
+      apiEndpoint: null,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      user: row.user.id ? {
+        id: row.user.id,
+        email: row.user.email,
+        firstName: row.user.firstName,
+        lastName: row.user.lastName,
+        accessLevel: row.user.accessLevel,
+        username: `${row.user.firstName} ${row.user.lastName}`,
+        password: '',
+        passwordResetRequired: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      } : undefined
+    }));
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -1379,6 +1434,15 @@ export class MemStorage implements IStorage {
 
   async deleteCreditMonitoringConnection(id: number): Promise<boolean> {
     return this.creditMonitoringConnections.delete(id);
+  }
+
+  async getAllCreditMonitoringConnectionsWithUsers(): Promise<(CreditMonitoringConnection & { user?: User })[]> {
+    const connections = Array.from(this.creditMonitoringConnections.values());
+    const connectionsWithUsers = connections.map(connection => {
+      const user = this.users.get(connection.userId);
+      return { ...connection, user };
+    });
+    return connectionsWithUsers;
   }
 
   // Credit File Sync History
