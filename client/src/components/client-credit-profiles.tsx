@@ -51,6 +51,13 @@ export function ClientCreditProfilesView() {
     queryFn: () => fetch('/api/admin/credit-connections').then(res => res.json()),
   });
 
+  // Function to fetch credit data for a specific user
+  const fetchCreditData = async (userId: number): Promise<CreditData> => {
+    const response = await fetch(`/api/admin/credit-data/${userId}`);
+    if (!response.ok) throw new Error('Failed to fetch credit data');
+    return response.json();
+  };
+
   if (connectionsLoading) {
     return (
       <Card>
