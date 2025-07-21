@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import CreditRepair from "@/pages/credit-repair";
 import CreditBuilding from "@/pages/credit-building";
 import Education from "@/pages/education";
+import ExperianConnect from "@/pages/experian-connect";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AdminPortal from "@/pages/admin-portal";
 import Login from "@/pages/login";
@@ -34,13 +35,14 @@ function Router() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {user?.accessLevel === "ADMIN" && <Navigation />}
+      <Navigation />
       <Switch>
         <Route path="/" component={() => user?.accessLevel === "ADMIN" ? <AdminPortal /> : <CreditRepair />} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/credit-repair" component={CreditRepair} />
         <Route path="/credit-building" component={CreditBuilding} />
         <Route path="/education" component={Education} />
+        <Route path="/experian" component={ExperianConnect} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/admin-portal" component={AdminPortal} />
         <Route path="/admin-portal/:section" component={AdminPortal} />

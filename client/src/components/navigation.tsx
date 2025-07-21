@@ -17,6 +17,7 @@ export function Navigation() {
     { href: "/credit-repair", label: "Credit Repair" },
     ...(canAccessCreditBuilding ? [{ href: "/credit-building", label: "Credit Building" }] : []),
     ...(canAccessEducation ? [{ href: "/education", label: "Education" }] : []),
+    { href: "/experian", label: "Experian Connect" },
     ...(isAdmin ? [{ href: "/admin", label: "Admin" }] : []),
   ];
 
