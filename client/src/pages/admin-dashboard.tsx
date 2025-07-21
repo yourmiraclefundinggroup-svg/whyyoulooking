@@ -12,9 +12,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatDate, formatRelativeDate } from "@/lib/utils";
 import { useUserContext } from "@/hooks/use-user-context";
-import { AlertCircle, Users, TestTube, MessageSquare, Plus, Key, UserPlus, Eye, Trash2 } from "lucide-react";
+import { AlertCircle, Users, TestTube, MessageSquare, Plus, Key, UserPlus, Eye, Trash2, Upload } from "lucide-react";
 import type { User, TestingFeedback, BetaAccess, InsertBetaAccess, InsertUser } from "@shared/schema";
 import { ClientCreditProfilesView } from "@/components/client-credit-profiles";
+import { CreditReportUploader } from "@/components/credit-report-uploader";
 
 // Client Profile Form Component
 function ClientProfileForm() {
@@ -476,9 +477,10 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue="access-codes" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="client-profiles">Client Profiles</TabsTrigger>
           <TabsTrigger value="credit-profiles">Credit Profiles</TabsTrigger>
+          <TabsTrigger value="upload-reports">Upload Reports</TabsTrigger>
           <TabsTrigger value="access-codes">Access Codes</TabsTrigger>
           <TabsTrigger value="test-users">Test Users</TabsTrigger>
           <TabsTrigger value="feedback">Feedback</TabsTrigger>
@@ -513,6 +515,10 @@ export default function AdminDashboard() {
 
         <TabsContent value="credit-profiles" className="space-y-6">
           <ClientCreditProfilesView />
+        </TabsContent>
+
+        <TabsContent value="upload-reports" className="space-y-6">
+          <CreditReportUploader />
         </TabsContent>
 
         <TabsContent value="access-codes" className="space-y-6">
