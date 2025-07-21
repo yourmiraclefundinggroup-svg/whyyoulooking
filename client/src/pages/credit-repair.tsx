@@ -104,10 +104,6 @@ export default function CreditRepair() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Credit Repair</h1>
-          {/* TEST: Very obvious button to see if changes are visible */}
-          <div className="mt-2 p-2 bg-yellow-400 text-black text-center rounded">
-            <strong>TEST: If you see this yellow banner, the updates are working!</strong>
-          </div>
           <div className="flex items-center space-x-4">
             {user && (
               <span className="text-sm text-gray-600">
