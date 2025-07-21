@@ -48,7 +48,6 @@ export function ClientCreditProfilesView() {
   // Fetch all credit monitoring connections with user info
   const { data: creditConnections = [], isLoading: connectionsLoading } = useQuery<CreditConnection[]>({
     queryKey: ['/api/admin/credit-connections'],
-    queryFn: () => fetch('/api/admin/credit-connections').then(res => res.json()),
   });
 
   // Function to fetch credit data for a specific user
@@ -123,7 +122,6 @@ export function ClientCreditProfilesView() {
 function ClientCreditCard({ connection }: { connection: CreditConnection }) {
   const { data: creditData, isLoading: creditLoading } = useQuery<CreditData>({
     queryKey: ['/api/admin/credit-data', connection.userId],
-    queryFn: () => fetch(`/api/admin/credit-data/${connection.userId}`).then(res => res.json()),
     enabled: connection.isActive,
   });
 
