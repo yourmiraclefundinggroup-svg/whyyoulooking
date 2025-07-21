@@ -27,9 +27,19 @@ function Router() {
   // Auto-redirect users to their correct portal if they're on the root page
   if (user && location === "/") {
     if (user.accessLevel === "ADMIN") {
-      return <AdminPortal />;
+      return (
+        <div className="min-h-screen bg-gray-50">
+          <Navigation />
+          <AdminPortal />
+        </div>
+      );
     } else {
-      return <CreditRepair />;
+      return (
+        <div className="min-h-screen bg-gray-50">
+          <Navigation />
+          <CreditRepair />
+        </div>
+      );
     }
   }
 

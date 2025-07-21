@@ -1628,7 +1628,7 @@ Format the response as a complete business letter ready to send.`;
       }
 
       // Create credit monitoring connection record  
-      const connectionData = {
+      const connection = await storage.createCreditMonitoringConnection({
         userId: user.id,
         provider: 'EXPERIAN',
         accountEmail: user.email || personalInfo.firstName.toLowerCase() + '.' + personalInfo.lastName.toLowerCase() + '@scoreshift.com',
@@ -1636,10 +1636,7 @@ Format the response as a complete business letter ready to send.`;
         lastSyncDate: new Date(),
         syncFrequency: 'DAILY',
         autoSyncEnabled: true
-      };
-      
-      console.log('Creating connection with data:', connectionData);
-      const connection = await storage.createCreditMonitoringConnection(connectionData);
+      });
       
       res.json({ 
         success: true, 
