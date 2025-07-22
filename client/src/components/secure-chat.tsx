@@ -31,49 +31,69 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
         description: `Preparing ${fileName}...`,
       });
 
-      // Create download URL and trigger download directly
+      // Create download URL
       const downloadUrl = `/api/chat/documents/download/${documentId}`;
       
-      // Create a temporary link element to trigger download
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = fileName;
-      
-      // Add authorization header by fetching and creating blob URL
-      const response = await fetch(downloadUrl, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-      });
+      // For mobile compatibility, try multiple download methods
+      try {
+        // Method 1: Fetch with blob (works best on mobile)
+        const response = await fetch(downloadUrl, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          },
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to download document');
+        if (!response.ok) {
+          throw new Error('Failed to download document');
+        }
+
+        const blob = await response.blob();
+        
+        // Check if device supports blob downloads
+        if (navigator.userAgent.match(/iPhone|iPad|iPod|Android/i)) {
+          // Mobile device - open in new tab for viewing/downloading
+          const blobUrl = window.URL.createObjectURL(blob);
+          window.open(blobUrl, '_blank');
+          setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+        } else {
+          // Desktop - trigger direct download
+          const blobUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+        }
+        
+        toast({
+          title: "Download Ready",
+          description: `${fileName} is ready`,
+        });
+        
+      } catch (fetchError) {
+        // Method 2: Direct link fallback
+        console.log('Blob method failed, trying direct link');
+        const link = document.createElement('a');
+        link.href = `${downloadUrl}?token=${localStorage.getItem('auth_token')}`;
+        link.download = fileName;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+          title: "Download Started",
+          description: `${fileName} download initiated`,
+        });
       }
-
-      // Create blob from response and download it
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
       
-      link.href = blobUrl;
-      link.target = '_blank';
-      
-      // Add to DOM temporarily and trigger click
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Clean up blob URL
-      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
-      
-      toast({
-        title: "Download Started",
-        description: `${fileName} download initiated`,
-      });
     } catch (error) {
       console.error('Download error:', error);
       toast({
-        title: "Download Failed",
-        description: "Could not download the document",
+        title: "Download Failed", 
+        description: "Could not download the document. Try again or contact support.",
         variant: "destructive",
       });
     }

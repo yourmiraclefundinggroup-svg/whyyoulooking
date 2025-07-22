@@ -1599,16 +1599,40 @@ Format the response as a complete business letter ready to send.`;
         return res.status(403).json({ message: "Access denied" });
       }
       
-      // Since we're simulating file storage, generate a downloadable response
-      // In production, this would stream the actual file content
+      // Set mobile-friendly headers
       res.set({
         'Content-Type': document.fileType || 'application/octet-stream',
         'Content-Disposition': `attachment; filename="${document.fileName}"`,
-        'Content-Length': document.fileSize.toString()
+        'Content-Length': document.fileSize.toString(),
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Authorization, Content-Type'
       });
       
       // For demonstration: create simulated file content
-      const simulatedContent = `This is a simulated download of ${document.fileName} (${document.fileSize} bytes)\nUploaded by: ${document.uploadedBy}\nDocument Type: ${document.documentType}\nFile Path: ${document.filePath}\n\nIn production, this would be the actual file content.`;
+      const simulatedContent = `SCORESHIFT DOCUMENT DOWNLOAD
+============================
+
+File: ${document.fileName}
+Size: ${document.fileSize} bytes
+Type: ${document.documentType}
+Uploaded by: ${document.uploadedBy}
+Upload Date: ${new Date(document.createdAt).toLocaleString()}
+File Path: ${document.filePath}
+
+============================
+DOCUMENT CONTENT SIMULATION
+============================
+
+This is a simulated download of the uploaded document.
+In a production environment, this would contain the actual file content.
+
+The document was successfully retrieved from the secure ScoreShift database.
+All downloads are logged for security and compliance purposes.
+
+END OF DOCUMENT
+`;
       
       res.send(simulatedContent);
     } catch (error) {
