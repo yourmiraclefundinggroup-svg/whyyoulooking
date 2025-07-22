@@ -1727,11 +1727,61 @@ Format the response as a complete business letter ready to send.`;
       if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== document.userId) {
         return res.status(403).json({ message: "Access denied" });
       }
+
+      // Import fs and path for file operations
+      const fs = await import('fs');
+      const path = await import('path');
       
-      // Determine proper MIME type for inline viewing
+      // Check if this is a real uploaded file in attached_assets
+      const attachedAssetPath = path.join(process.cwd(), 'attached_assets', document.fileName);
+      const uploadsPath = path.join(process.cwd(), 'uploads', document.fileName);
+      
+      let actualFilePath = null;
+      if (fs.existsSync(attachedAssetPath)) {
+        actualFilePath = attachedAssetPath;
+      } else if (fs.existsSync(uploadsPath)) {
+        actualFilePath = uploadsPath;
+      }
+      
+      // If we have the actual file, serve it directly
+      if (actualFilePath) {
+        const stats = fs.statSync(actualFilePath);
+        const fileStream = fs.createReadStream(actualFilePath);
+        
+        // Determine proper MIME type for inline viewing
+        let contentType = document.fileType || 'application/octet-stream';
+        const fileName = document.fileName.toLowerCase();
+        if (fileName.endsWith('.pdf')) {
+          contentType = 'application/pdf';
+        } else if (fileName.endsWith('.png')) {
+          contentType = 'image/png';
+        } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+          contentType = 'image/jpeg';
+        } else if (fileName.endsWith('.gif')) {
+          contentType = 'image/gif';
+        } else if (fileName.endsWith('.txt')) {
+          contentType = 'text/plain';
+        }
+        
+        // Set headers for inline viewing
+        res.set({
+          'Content-Type': contentType,
+          'Content-Disposition': `inline; filename="${document.fileName}"`,
+          'Content-Length': stats.size.toString(),
+          'Cache-Control': 'no-cache',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET',
+          'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+          'X-Content-Type-Options': 'nosniff'
+        });
+        
+        // Stream the actual file
+        fileStream.pipe(res);
+        return;
+      }
+      
+      // Fallback: create appropriate placeholder content
       let contentType = document.fileType || 'application/octet-stream';
-      
-      // Ensure proper MIME types for common file formats
       const fileName = document.fileName.toLowerCase();
       if (fileName.endsWith('.pdf')) {
         contentType = 'application/pdf';
@@ -1739,12 +1789,6 @@ Format the response as a complete business letter ready to send.`;
         contentType = 'image/png';
       } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
         contentType = 'image/jpeg';
-      } else if (fileName.endsWith('.gif')) {
-        contentType = 'image/gif';
-      } else if (fileName.endsWith('.txt')) {
-        contentType = 'text/plain';
-      } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
-        contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
       }
       
       // Set headers for inline viewing
