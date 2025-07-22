@@ -1,1 +1,21 @@
-{"fileName":"2285_Delta5_DL_STD Approval.pdf","fileType":"application/pdf","fileSize":223767,"downloadUrl":"/api/files/uploads/30/1753145951523_2285_Delta5_DL_STD Approval.pdf","message":"File ready for download","filePath":"/uploads/30/1753145951523_2285_Delta5_DL_STD Approval.pdf"}
+SCORESHIFT DOCUMENT DOWNLOAD
+============================
+
+File: IMG_3534_1753133169022.png
+Size: 53180 bytes
+Type: OTHER
+Uploaded by: CLIENT
+Upload Date: 7/22/2025, 9:15:49 PM
+File Path: /uploads/30/1753218949657_IMG_7037.png
+
+============================
+DOCUMENT CONTENT SIMULATION
+============================
+
+This is a simulated download of the uploaded document.
+In a production environment, this would contain the actual file content.
+
+The document was successfully retrieved from the secure ScoreShift database.
+All downloads are logged for security and compliance purposes.
+
+END OF DOCUMENT

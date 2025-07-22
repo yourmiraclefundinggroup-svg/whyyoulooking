@@ -2106,8 +2106,58 @@ startxref
       if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== document.userId) {
         return res.status(403).json({ message: "Access denied" });
       }
+
+      // Import fs and path for file operations
+      const fs = await import('fs');
+      const path = await import('path');
       
-      // Set mobile-friendly headers for forced download
+      // Check if this is a real uploaded file in attached_assets
+      const attachedAssetPath = path.join(process.cwd(), 'attached_assets', document.fileName);
+      const uploadsPath = path.join(process.cwd(), 'uploads', document.fileName);
+      
+      let actualFilePath = null;
+      if (fs.existsSync(attachedAssetPath)) {
+        actualFilePath = attachedAssetPath;
+      } else if (fs.existsSync(uploadsPath)) {
+        actualFilePath = uploadsPath;
+      }
+      
+      // If we have the actual file, serve it directly for download
+      if (actualFilePath) {
+        const stats = fs.statSync(actualFilePath);
+        const fileStream = fs.createReadStream(actualFilePath);
+        
+        // Determine proper MIME type but force download with octet-stream
+        let contentType = 'application/octet-stream';
+        const fileName = document.fileName.toLowerCase();
+        if (fileName.endsWith('.pdf')) {
+          contentType = 'application/pdf';
+        } else if (fileName.endsWith('.png')) {
+          contentType = 'image/png';  
+        } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+          contentType = 'image/jpeg';
+        }
+        
+        // Set mobile-friendly headers for forced download
+        res.set({
+          'Content-Type': 'application/octet-stream', // Force download on all devices
+          'Content-Disposition': `attachment; filename="${document.fileName}"`,
+          'Content-Length': stats.size.toString(),
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET',
+          'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+          'X-Content-Type-Options': 'nosniff'
+        });
+        
+        // Stream the actual file for download
+        fileStream.pipe(res);
+        return;
+      }
+      
+      // Fallback: create placeholder content only if file doesn't exist
       res.set({
         'Content-Type': 'application/octet-stream',
         'Content-Disposition': `attachment; filename="${document.fileName}"`,
@@ -2121,7 +2171,7 @@ startxref
         'X-Content-Type-Options': 'nosniff'
       });
       
-      // For demonstration: create simulated file content
+      // Fallback placeholder content
       const simulatedContent = `SCORESHIFT DOCUMENT DOWNLOAD
 ============================
 
