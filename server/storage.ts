@@ -5,7 +5,7 @@ import {
   creditCards, utilizationOptimizations, utilizationAlerts, loanReadinessProfiles, loanReadinessAssessments,
   goodwillLetters, creditMixOptimizations, identityTheftCases, rentUtilityReporting,
   creditCardPredictions, financialBehaviorProfiles, bankAccountConnections, taxIntegrations,
-  employmentVerifications, disputeSuccessPredictions, mlTrainingData, chatMessages, chatDocuments, documentTags,
+  employmentVerifications, disputeSuccessPredictions, mlTrainingData, chatMessages, chatDocuments, documentTags, aiConversations,
   type User, type InsertUser,
   type CreditReport, type InsertCreditReport,
   type CreditIssue, type InsertCreditIssue,
@@ -35,9 +35,10 @@ import {
   type EmploymentVerification, type InsertEmploymentVerification,
   type DisputeSuccessPrediction, type InsertDisputeSuccessPrediction,
   type MlTrainingData, type InsertMlTrainingData,
-  chatMessages as ChatMessage, type InsertChatMessage,
-  type ChatDocument, type InsertChatDocument,
-  type DocumentTag, type InsertDocumentTag
+  chatMessages as ChatMessage,
+  type ChatDocument, type InsertChatDocument, type InsertChatMessage,
+  type DocumentTag, type InsertDocumentTag,
+  type AiConversation, type InsertAiConversation
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
@@ -214,9 +215,16 @@ export interface IStorage {
   getDocumentsByTag(tagName: string): Promise<ChatDocument[]>;
   searchDocuments(query: string, userId?: number): Promise<ChatDocument[]>;
 
-  // AI conversation operations
-  getAIConversation(userId: number): Promise<any[]>;
-  storeAIMessage(userId: number, message: any): Promise<void>;
+  // AI Assistant Conversations
+  getAIConversation(userId: number): Promise<AiConversation[]>;
+  storeAIMessage(userId: number, message: {
+    role: 'user' | 'assistant';
+    content: string;
+    attachments: { name: string; size: number; type: string }[];
+    timestamp: string;
+    letterGenerated?: boolean;
+    letterUrl?: string;
+  }): Promise<AiConversation>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1862,17 +1870,36 @@ export class MemStorage implements IStorage {
     this.currentId = Math.max(this.currentId, tagId);
   }
 
-  // AI conversation methods implementation
-  async getAIConversation(userId: number): Promise<any[]> {
-    // For now, return an empty conversation array
-    // In production, this would query an AI conversation table
-    return [];
+  // AI Assistant Conversations Implementation
+  async getAIConversation(userId: number): Promise<AiConversation[]> {
+    return await db
+      .select()
+      .from(aiConversations)
+      .where(eq(aiConversations.userId, userId))
+      .orderBy(aiConversations.createdAt);
   }
 
-  async storeAIMessage(userId: number, message: any): Promise<void> {
-    // For now, we'll just log the message 
-    // In production, this would store in an AI conversation table
-    console.log(`AI message for user ${userId}:`, message);
+  async storeAIMessage(userId: number, message: {
+    role: 'user' | 'assistant';
+    content: string;
+    attachments: { name: string; size: number; type: string }[];
+    timestamp: string;
+    letterGenerated?: boolean;
+    letterUrl?: string;
+  }): Promise<AiConversation> {
+    const [aiMessage] = await db
+      .insert(aiConversations)
+      .values({
+        userId,
+        role: message.role,
+        content: message.content,
+        attachments: message.attachments,
+        letterGenerated: message.letterGenerated || false,
+        letterUrl: message.letterUrl || null,
+        timestamp: message.timestamp
+      })
+      .returning();
+    return aiMessage;
   }
 }
 

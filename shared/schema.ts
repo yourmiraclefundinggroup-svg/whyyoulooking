@@ -264,6 +264,19 @@ export const chatDocuments = pgTable("chat_documents", {
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
 
+// AI Assistant Conversations
+export const aiConversations = pgTable("ai_conversations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  role: text("role", { enum: ["user", "assistant"] }).notNull(),
+  content: text("content").notNull(),
+  attachments: json("attachments").$type<{ name: string; size: number; type: string }[]>().default([]),
+  letterGenerated: boolean("letter_generated").default(false),
+  letterUrl: text("letter_url"),
+  timestamp: text("timestamp").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
 export const documentTags = pgTable("document_tags", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
@@ -278,12 +291,16 @@ export const documentTags = pgTable("document_tags", {
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
 export const insertChatDocumentSchema = createInsertSchema(chatDocuments).omit({ id: true, createdAt: true });
 export const insertDocumentTagSchema = createInsertSchema(documentTags).omit({ id: true, createdAt: true });
+export const insertAiConversationSchema = createInsertSchema(aiConversations).omit({ id: true, createdAt: true });
 
 // Types for Smart Document Tagging
 export type DocumentTag = typeof documentTags.$inferSelect;
 export type InsertDocumentTag = typeof insertDocumentTagSchema._type;
 export type ChatDocument = typeof chatDocuments.$inferSelect;
 export type InsertChatDocument = typeof insertChatDocumentSchema._type;
+export type InsertChatMessage = typeof insertChatMessageSchema._type;
+export type AiConversation = typeof aiConversations.$inferSelect;
+export type InsertAiConversation = typeof insertAiConversationSchema._type;
 
 // Mortgage/Loan Readiness Score
 export const loanReadinessProfiles = pgTable("loan_readiness_profiles", {
