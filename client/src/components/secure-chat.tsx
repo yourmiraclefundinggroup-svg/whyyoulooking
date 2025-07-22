@@ -192,30 +192,36 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
         description: `Loading ${fileName} for viewing...`,
       });
 
+      const token = localStorage.getItem('auth_token');
       const viewUrl = `/api/chat/documents/view/${documentId}`;
       
-      // Open in new tab with authorization
-      const newTab = window.open('about:blank', '_blank');
-      if (!newTab) {
-        throw new Error('Popup blocked. Please allow popups for this site.');
-      }
-
+      console.log(`Fetching document ${documentId} (${fileName}) from ${viewUrl}`);
+      
       // Fetch the file with authorization
       const response = await fetch(viewUrl, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
 
+      console.log('Document fetch response:', response.status, response.headers.get('Content-Type'));
+
       if (!response.ok) {
-        newTab.close();
-        throw new Error('Failed to load document');
+        console.error('Document fetch failed:', response.status, response.statusText);
+        throw new Error(`Failed to load document: ${response.status} ${response.statusText}`);
       }
 
       const blob = await response.blob();
+      console.log('Blob created:', blob.size, 'bytes, type:', blob.type);
+      
       const blobUrl = window.URL.createObjectURL(blob);
       
-      newTab.location.href = blobUrl;
+      // Open in new tab
+      const newTab = window.open(blobUrl, '_blank');
+      if (!newTab) {
+        // If popup blocked, try direct window location
+        window.open(blobUrl, '_self');
+      }
       
       // Clean up blob URL after some time
       setTimeout(() => {
@@ -224,14 +230,14 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
       
       toast({
         title: "File Opened",
-        description: `${fileName} is now open in a new tab`,
+        description: `${fileName} is now open`,
       });
       
     } catch (error) {
       console.error('View error:', error);
       toast({
         title: "View Failed",
-        description: "Could not open the document. Please try again.",
+        description: `Could not open ${fileName}. Please try downloading instead.`,
         variant: "destructive",
       });
     }
