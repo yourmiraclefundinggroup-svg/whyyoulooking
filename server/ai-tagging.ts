@@ -229,7 +229,7 @@ Respond with a JSON array of suggested tags: ["tag1", "tag2", "tag3"]`;
         }]
       });
 
-      const suggestions = JSON.parse(response.content[0].text);
+      const suggestions = JSON.parse((response.content[0] as { text: string }).text);
       return Array.isArray(suggestions) ? suggestions.slice(0, 5) : [];
 
     } catch (error) {
@@ -239,4 +239,11 @@ Respond with a JSON array of suggested tags: ["tag1", "tag2", "tag3"]`;
   }
 }
 
-export default AIDocumentTagger.getInstance();
+const aiTagger = AIDocumentTagger.getInstance();
+
+export default aiTagger;
+
+// Export the analyzeDocument function for routes
+export async function analyzeDocument(fileName: string, fileType: string, documentType: string, fileSize?: number): Promise<DocumentAnalysis> {
+  return aiTagger.analyzeDocument(fileName, fileType, documentType, fileSize);
+}

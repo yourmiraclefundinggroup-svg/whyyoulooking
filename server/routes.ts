@@ -1551,7 +1551,7 @@ Format the response as a complete business letter ready to send.`;
       // Apply smart tagging in background (don't wait for completion)
       setImmediate(async () => {
         try {
-          const { analyzeDocument } = await import('./ai-tagging.js');
+          const { analyzeDocument } = await import('./ai-tagging');
           const analysis = await analyzeDocument(fileName, fileType, documentType, fileSize);
           
           // Update document with AI analysis results
@@ -2141,7 +2141,6 @@ END OF DOCUMENT
         userId,
         bankName: connectionData.institutionName,
         accountType: 'CHECKING',
-        accessToken: connectionData.accessToken,
         itemId: connectionData.itemId,
         institutionId: connectionData.institutionId,
         isActive: true,
@@ -2164,12 +2163,12 @@ END OF DOCUMENT
       const connectionId = parseInt(req.params.connectionId);
       const connection = await storage.getBankAccountConnection(connectionId);
       
-      if (!connection || !connection.accessToken) {
+      if (!connection) {
         return res.status(404).json({ error: "Bank connection not found" });
       }
 
       const { plaidService } = await import('./integrations/plaid');
-      const balances = await plaidService.getAccountBalances(connection.accessToken);
+      const balances = await plaidService.getAccountBalances(connection.itemId);
       
       res.json(balances);
     } catch (error) {
@@ -2283,7 +2282,7 @@ END OF DOCUMENT
       console.error("Experian API test failed:", error);
       
       // Check if this is a sandbox environment issue
-      const errorMessage = error.message || '';
+      const errorMessage = (error as Error).message || '';
       const isInternalServerError = errorMessage.includes('Internal Server Error');
       
       res.json({ 
@@ -2291,7 +2290,7 @@ END OF DOCUMENT
         error: isInternalServerError ? "Experian sandbox environment issue" : "Failed to connect to Experian API",
         message: isInternalServerError ? 
           "Experian sandbox may be temporarily unavailable. Integration code is correct - production environment should work." :
-          error.message,
+          (error as Error).message,
         credentials: {
           clientId: process.env.EXPERIAN_CLIENT_ID || '1wUzh5bdGgmwf0GGrqOeYOikJZGJ9VsY',
           hasSecret: !!process.env.EXPERIAN_CLIENT_SECRET,
