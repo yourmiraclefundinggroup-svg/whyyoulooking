@@ -2502,7 +2502,7 @@ END OF DOCUMENT
 
   // AI Assistant endpoints
   app.get("/api/ai/conversation/:userId", async (req, res) => {
-    if (!req.isAuthenticated()) {
+    if (!req.user) {
       return res.status(401).json({ message: "Authentication required" });
     }
     try {
@@ -2534,7 +2534,7 @@ END OF DOCUMENT
   });
 
   app.post("/api/ai/chat", async (req, res) => {
-    if (!req.isAuthenticated()) {
+    if (!req.user) {
       return res.status(401).json({ message: "Authentication required" });
     }
     try {
@@ -2664,7 +2664,7 @@ What specific credit challenge can I help you tackle today?`;
 
   // Generate AI dispute letter endpoint
   app.get("/api/ai/letter/:userId/:letterId", async (req, res) => {
-    if (!req.isAuthenticated()) {
+    if (!req.user) {
       return res.status(401).json({ message: "Authentication required" });
     }
     try {
