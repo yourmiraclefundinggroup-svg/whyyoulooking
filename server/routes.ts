@@ -1512,7 +1512,27 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
-  // File upload for chat documents with Smart Tagging
+  // Admin tool to clear corrupted documents for re-upload
+  app.post("/api/admin/clear-user-documents/:userId", authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const requestingUser = (req as any).user;
+      
+      if (requestingUser.accessLevel !== 'ADMIN') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      // Delete all documents for the user from the database
+      const deletedCount = await storage.deleteUserDocuments(userId);
+      
+      res.json({ success: true, deletedCount, message: `Cleared ${deletedCount} documents for user ${userId}. User can now re-upload clean files.` });
+    } catch (error) {
+      console.error("Error clearing user documents:", error);
+      res.status(500).json({ error: "Failed to clear user documents" });
+    }
+  });
+
+  // File upload for chat documents with Smart Tagging  
   app.post("/api/chat/upload", authenticateToken, async (req, res) => {
     try {
       const { userId, fileName, fileSize, fileType, documentType, uploadedBy } = req.body;
