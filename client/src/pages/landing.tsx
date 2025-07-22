@@ -88,7 +88,7 @@ export default function LandingPage() {
             </div>
             <div className="flex items-center space-x-3">
               <Link href="/auth">
-                <Button variant="outline" className="hidden md:flex">
+                <Button variant="outline">
                   <Users className="h-4 w-4 mr-2" />
                   Client Portal
                 </Button>
@@ -366,12 +366,14 @@ export default function LandingPage() {
             <div className="flex justify-center space-x-4 mb-8">
               <Link href="/auth">
                 <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800">
-                  Client Access
+                  <Users className="h-4 w-4 mr-2" />
+                  Client Portal
                 </Button>
               </Link>
               <Link href="/admin/auth">
                 <Button className="bg-blue-600 hover:bg-blue-700">
-                  Admin Access
+                  <Shield className="h-4 w-4 mr-2" />
+                  Admin Portal
                 </Button>
               </Link>
             </div>
