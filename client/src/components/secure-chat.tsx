@@ -27,65 +27,82 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
   const handleDownloadDocument = async (documentId: number, fileName: string) => {
     try {
       toast({
-        title: "Starting Download",
-        description: `Preparing ${fileName}...`,
+        title: "Downloading File",
+        description: `Getting ${fileName} ready for your device...`,
       });
 
-      // Create download URL
       const downloadUrl = `/api/chat/documents/download/${documentId}`;
       
-      // For mobile compatibility, try multiple download methods
-      try {
-        // Method 1: Fetch with blob (works best on mobile)
-        const response = await fetch(downloadUrl, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          },
-        });
+      // Fetch the file with authorization
+      const response = await fetch(downloadUrl, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
 
-        if (!response.ok) {
-          throw new Error('Failed to download document');
-        }
+      if (!response.ok) {
+        throw new Error('Failed to download document');
+      }
 
-        const blob = await response.blob();
+      const blob = await response.blob();
+      
+      // For mobile devices, use the File System Access API or fallback to traditional download
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // Mobile-specific download with better UX
+        const blobUrl = window.URL.createObjectURL(blob);
         
-        // Check if device supports blob downloads
-        if (navigator.userAgent.match(/iPhone|iPad|iPod|Android/i)) {
-          // Mobile device - open in new tab for viewing/downloading
-          const blobUrl = window.URL.createObjectURL(blob);
-          window.open(blobUrl, '_blank');
-          setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
-        } else {
-          // Desktop - trigger direct download
-          const blobUrl = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = blobUrl;
-          link.download = fileName;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
-        }
+        // Create a hidden link with download attribute
+        const downloadLink = document.createElement('a');
+        downloadLink.style.display = 'none';
+        downloadLink.href = blobUrl;
+        downloadLink.download = fileName;
         
-        toast({
-          title: "Download Ready",
-          description: `${fileName} is ready`,
-        });
+        // Add click handler to show instructions
+        downloadLink.onclick = () => {
+          toast({
+            title: "File Ready to Save",
+            description: `Tap "Download" or the share button to save ${fileName} to your device`,
+            duration: 8000,
+          });
+        };
         
-      } catch (fetchError) {
-        // Method 2: Direct link fallback
-        console.log('Blob method failed, trying direct link');
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        
+        // Also try to trigger browser download
+        setTimeout(() => {
+          const fallbackLink = document.createElement('a');
+          fallbackLink.href = blobUrl;
+          fallbackLink.download = fileName;
+          fallbackLink.target = '_blank';
+          fallbackLink.rel = 'noopener noreferrer';
+          document.body.appendChild(fallbackLink);
+          fallbackLink.click();
+          document.body.removeChild(fallbackLink);
+          document.body.removeChild(downloadLink);
+        }, 100);
+        
+        // Clean up after delay
+        setTimeout(() => {
+          window.URL.revokeObjectURL(blobUrl);
+        }, 10000);
+        
+      } else {
+        // Desktop download
+        const blobUrl = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = `${downloadUrl}?token=${localStorage.getItem('auth_token')}`;
+        link.href = blobUrl;
         link.download = fileName;
-        link.target = '_blank';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
         
         toast({
-          title: "Download Started",
-          description: `${fileName} download initiated`,
+          title: "Download Complete",
+          description: `${fileName} has been saved to your Downloads folder`,
         });
       }
       
@@ -93,7 +110,7 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
       console.error('Download error:', error);
       toast({
         title: "Download Failed", 
-        description: "Could not download the document. Try again or contact support.",
+        description: "Could not download the document. Please try again.",
         variant: "destructive",
       });
     }

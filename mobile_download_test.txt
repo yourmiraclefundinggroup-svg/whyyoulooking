@@ -1,0 +1,21 @@
+SCORESHIFT DOCUMENT DOWNLOAD
+============================
+
+File: 2285_Delta5_DL_STD Approval.pdf
+Size: 223767 bytes
+Type: OTHER
+Uploaded by: CLIENT
+Upload Date: 7/22/2025, 12:59:11 AM
+File Path: /uploads/30/1753145951523_2285_Delta5_DL_STD Approval.pdf
+
+============================
+DOCUMENT CONTENT SIMULATION
+============================
+
+This is a simulated download of the uploaded document.
+In a production environment, this would contain the actual file content.
+
+The document was successfully retrieved from the secure ScoreShift database.
+All downloads are logged for security and compliance purposes.
+
+END OF DOCUMENT

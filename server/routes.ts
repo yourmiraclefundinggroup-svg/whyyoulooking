@@ -1599,15 +1599,18 @@ Format the response as a complete business letter ready to send.`;
         return res.status(403).json({ message: "Access denied" });
       }
       
-      // Set mobile-friendly headers
+      // Set mobile-friendly headers for forced download
       res.set({
-        'Content-Type': document.fileType || 'application/octet-stream',
+        'Content-Type': 'application/octet-stream',
         'Content-Disposition': `attachment; filename="${document.fileName}"`,
         'Content-Length': document.fileSize.toString(),
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Authorization, Content-Type'
+        'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+        'X-Content-Type-Options': 'nosniff'
       });
       
       // For demonstration: create simulated file content
