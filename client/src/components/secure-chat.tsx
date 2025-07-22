@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageCircle, Upload, FileText, Shield, User, UserCheck, Clock, Paperclip, Send, Download, Eye, Lock, Tags } from "lucide-react";
+import { MessageCircle, Upload, FileText, Shield, User, UserCheck, Clock, Paperclip, Send, Download, Eye, Lock, Tags, Brain, Bot, Sparkles, FileCheck, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SmartDocumentTags from "@/components/smart-document-tags";
 
@@ -17,11 +17,15 @@ interface SecureChatProps {
 
 export function SecureChat({ userId, userType }: SecureChatProps) {
   const [message, setMessage] = useState("");
+  const [aiMessage, setAiMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [aiFiles, setAiFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
+  const aiFileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const aiMessagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   // Function to handle document download
@@ -203,6 +207,23 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
     }
   });
 
+  // AI conversation query
+  const { data: aiConversation = [], isLoading: aiLoading } = useQuery({
+    queryKey: [`/api/ai/conversation`, userId],
+    enabled: !!userId,
+    refetchInterval: 3000,
+    queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`/api/ai/conversation/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) return [];
+      return response.json();
+    }
+  });
+
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { message: string; files?: File[] }) => {
       const token = localStorage.getItem('auth_token');
@@ -321,6 +342,56 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
     }
   };
 
+  // AI message sending mutation
+  const sendAIMessageMutation = useMutation({
+    mutationFn: async (data: { message: string; files?: File[] }) => {
+      const token = localStorage.getItem('auth_token');
+      
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          userId,
+          message: data.message,
+          files: data.files?.map(file => ({
+            name: file.name,
+            size: file.size,
+            type: file.type
+          })) || []
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send AI message');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/ai/conversation`, userId] });
+      setAiMessage("");
+      setAiFiles([]);
+    }
+  });
+
+  const handleSendAIMessage = () => {
+    if (aiMessage.trim() || aiFiles.length > 0) {
+      sendAIMessageMutation.mutate({ message: aiMessage, files: aiFiles });
+    }
+  };
+
+  const handleAIFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setAiFiles(prev => [...prev, ...files]);
+  };
+
+  const removeAIFile = (index: number) => {
+    setAiFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const getDocumentType = (fileName: string) => {
     const name = fileName.toLowerCase();
     if (name.includes('id') || name.includes('license') || name.includes('passport')) return 'ID_DOCUMENT';
@@ -372,10 +443,15 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="chat" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 h-auto gap-1 p-1">
+        <TabsList className="grid w-full grid-cols-5 h-auto gap-1 p-1">
           <TabsTrigger value="chat" className="text-xs sm:text-sm px-2 py-2 min-w-0">
             <span className="hidden sm:inline">Secure Chat</span>
             <span className="sm:hidden">Chat</span>
+          </TabsTrigger>
+          <TabsTrigger value="ai-assistant" className="text-xs sm:text-sm px-2 py-2 min-w-0">
+            <Brain className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">AI Assistant</span>
+            <span className="sm:hidden">AI</span>
           </TabsTrigger>
           <TabsTrigger value="documents" className="text-xs sm:text-sm px-2 py-2 min-w-0">
             <span className="hidden sm:inline">Document Vault</span>
@@ -508,6 +584,206 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
                   disabled={sendMessageMutation.isPending || (!message.trim() && selectedFiles.length === 0)}
                 >
                   <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ai-assistant" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="h-5 w-5 text-purple-600" />
+                AI Assistant
+                <Badge variant="outline" className="ml-auto">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  AI-Powered
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* AI Messages Area */}
+              <div className="h-96 overflow-y-auto border rounded-lg p-4 mb-4 space-y-4 bg-gradient-to-b from-purple-50 to-blue-50">
+                {aiLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-gray-500">Loading AI conversation...</div>
+                  </div>
+                ) : aiConversation.length === 0 ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center text-gray-500">
+                      <Bot className="h-12 w-12 mx-auto mb-4 text-purple-500" />
+                      <h3 className="font-semibold text-lg mb-2">AI Credit Repair Assistant</h3>
+                      <p className="mb-2">Ask me to help you with:</p>
+                      <ul className="text-sm space-y-1 text-left max-w-md">
+                        <li className="flex items-center gap-2">
+                          <FileCheck className="h-4 w-4 text-blue-500" />
+                          Generate dispute letters for credit issues
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Brain className="h-4 w-4 text-purple-500" />
+                          Analyze uploaded credit reports and documents
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Zap className="h-4 w-4 text-orange-500" />
+                          Create personalized credit improvement strategies
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-green-500" />
+                          Review bureau responses and recommend next steps
+                        </li>
+                      </ul>
+                      <p className="text-sm mt-4">Start by typing a message or uploading a document!</p>
+                    </div>
+                  </div>
+                ) : (
+                  aiConversation.map((msg: any, index: number) => (
+                    <div
+                      key={index}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
+                          msg.role === 'user'
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-white border shadow-sm'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          {msg.role === 'user' ? (
+                            <User className="h-4 w-4" />
+                          ) : (
+                            <Bot className="h-4 w-4 text-purple-600" />
+                          )}
+                          <span className="text-sm font-medium">
+                            {msg.role === 'user' ? "You" : "AI Assistant"}
+                          </span>
+                          <Clock className="h-3 w-3 ml-auto opacity-75" />
+                          <span className="text-xs opacity-75">
+                            {new Date(msg.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        
+                        <div className="text-sm whitespace-pre-wrap">{msg.content}</div>
+                        
+                        {msg.attachments && msg.attachments.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-opacity-20">
+                            <p className="text-xs opacity-75 mb-1">Attachments:</p>
+                            {msg.attachments.map((file: any, idx: number) => (
+                              <div key={idx} className="flex items-center gap-1 text-xs">
+                                {getFileIcon(file.type)}
+                                <span>{file.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {msg.letterGenerated && (
+                          <div className="mt-2 pt-2 border-t border-opacity-20">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              onClick={() => window.open(msg.letterUrl, '_blank')}
+                            >
+                              <FileText className="h-3 w-3 mr-1" />
+                              View Generated Letter
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+                <div ref={aiMessagesEndRef} />
+              </div>
+
+              {/* AI File Attachments Preview */}
+              {aiFiles.length > 0 && (
+                <div className="border rounded-lg p-3 mb-4 bg-purple-50">
+                  <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <Brain className="h-4 w-4 text-purple-600" />
+                    Files for AI Analysis:
+                  </p>
+                  <div className="space-y-2">
+                    {aiFiles.map((file, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-sm">
+                        {getFileIcon(file.type)}
+                        <span>{file.name}</span>
+                        <span className="text-gray-500">({(file.size / 1024 / 1024).toFixed(1)} MB)</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeAIFile(idx)}
+                          className="ml-auto h-6 w-6 p-0"
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* AI Message Input */}
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    value={aiMessage}
+                    onChange={(e) => setAiMessage(e.target.value)}
+                    placeholder="Ask the AI to generate letters, analyze documents, or provide credit advice..."
+                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendAIMessage()}
+                    className="border-purple-200 focus:border-purple-500"
+                  />
+                </div>
+                <input
+                  ref={aiFileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleAIFileSelect}
+                  className="hidden"
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => aiFileInputRef.current?.click()}
+                  className="border-purple-200 text-purple-600 hover:bg-purple-50"
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={handleSendAIMessage}
+                  disabled={sendAIMessageMutation.isPending || (!aiMessage.trim() && aiFiles.length === 0)}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  {sendAIMessageMutation.isPending ? (
+                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+
+              {/* AI Quick Actions */}
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAiMessage("Generate a dispute letter for inaccurate collections account")}
+                  className="text-xs border-purple-200 text-purple-700 hover:bg-purple-50"
+                >
+                  <FileCheck className="h-3 w-3 mr-1" />
+                  Dispute Letter
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAiMessage("Analyze my credit report and recommend improvement strategies")}
+                  className="text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
+                >
+                  <Brain className="h-3 w-3 mr-1" />
+                  Credit Analysis
                 </Button>
               </div>
             </CardContent>

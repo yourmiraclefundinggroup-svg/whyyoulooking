@@ -213,6 +213,10 @@ export interface IStorage {
   incrementTagUsage(tagName: string): Promise<void>;
   getDocumentsByTag(tagName: string): Promise<ChatDocument[]>;
   searchDocuments(query: string, userId?: number): Promise<ChatDocument[]>;
+
+  // AI conversation operations
+  getAIConversation(userId: number): Promise<any[]>;
+  storeAIMessage(userId: number, message: any): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1856,6 +1860,19 @@ export class MemStorage implements IStorage {
     
     // Update currentId to start after tag IDs
     this.currentId = Math.max(this.currentId, tagId);
+  }
+
+  // AI conversation methods implementation
+  async getAIConversation(userId: number): Promise<any[]> {
+    // For now, return an empty conversation array
+    // In production, this would query an AI conversation table
+    return [];
+  }
+
+  async storeAIMessage(userId: number, message: any): Promise<void> {
+    // For now, we'll just log the message 
+    // In production, this would store in an AI conversation table
+    console.log(`AI message for user ${userId}:`, message);
   }
 }
 

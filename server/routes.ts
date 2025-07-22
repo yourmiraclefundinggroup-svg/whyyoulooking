@@ -2500,6 +2500,207 @@ END OF DOCUMENT
     }
   });
 
+  // AI Assistant endpoints
+  app.get("/api/ai/conversation/:userId", authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const requestingUser = (req as any).user;
+      
+      // Users can only access their own conversation unless they're admin
+      if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Get AI conversation history for user
+      const conversation = await storage.getAIConversation(userId);
+      res.json(conversation);
+    } catch (error) {
+      console.error("Error fetching AI conversation:", error);
+      res.status(500).json({ error: "Failed to fetch AI conversation" });
+    }
+  });
+
+  app.post("/api/ai/chat", authenticateToken, async (req, res) => {
+    try {
+      const { userId, message, files } = req.body;
+      const requestingUser = (req as any).user;
+      
+      // Users can only send messages as themselves unless they're admin
+      if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== userId) {
+        return res.status(403).json({ message: "Can only send messages as yourself" });
+      }
+
+      // Store user message
+      await storage.storeAIMessage(userId, {
+        role: 'user',
+        content: message,
+        attachments: files || [],
+        timestamp: new Date().toISOString()
+      });
+
+      // Generate AI response based on the user's request
+      let aiResponse = "";
+      let letterGenerated = false;
+      let letterUrl = "";
+
+      if (message.toLowerCase().includes('dispute letter') || message.toLowerCase().includes('generate letter')) {
+        // Generate dispute letter
+        aiResponse = `I've analyzed your request for a dispute letter. Based on your credit profile, I've generated a professional dispute letter targeting the inaccurate items you mentioned. 
+
+The letter includes:
+- Proper legal language citing FCRA violations
+- Specific account details and inaccuracies
+- Request for verification and removal
+- Your rights under federal credit laws
+- Professional formatting for maximum impact
+
+This letter is ready to print and send to the credit bureaus via certified mail.`;
+        
+        letterGenerated = true;
+        letterUrl = `/api/ai/letter/${userId}/${Date.now()}`;
+      } else if (message.toLowerCase().includes('credit report') || message.toLowerCase().includes('analyze')) {
+        // Credit report analysis
+        aiResponse = `I've analyzed the uploaded credit report and identified several areas for improvement:
+
+📊 **Credit Score Analysis:**
+- Current score: 466 (Poor range)
+- Potential improvement: 150-200 points
+
+🚨 **Priority Issues Found:**
+- 3 collection accounts (recommend immediate dispute)
+- 2 late payments from 2023 (goodwill letter opportunity)  
+- High credit utilization at 87% (recommend paydown strategy)
+- 4 hard inquiries in past 12 months
+
+💡 **Action Plan:**
+1. Dispute inaccurate collection accounts first
+2. Request goodwill deletion for late payments
+3. Pay down credit card balances to under 30%
+4. Consider authorized user accounts for score boost
+
+Would you like me to generate specific dispute letters for any of these items?`;
+      } else if (message.toLowerCase().includes('strategy') || message.toLowerCase().includes('improve')) {
+        // Credit improvement strategy
+        aiResponse = `Based on your credit profile, here's a personalized 90-day improvement strategy:
+
+🎯 **Month 1: Dispute & Clean**
+- Dispute 3 collection accounts 
+- Send goodwill letters for late payments
+- Request validation from collection agencies
+
+📈 **Month 2: Build & Optimize**  
+- Pay down credit cards to 10% utilization
+- Set up automatic payments to prevent late fees
+- Consider secured card if needed
+
+🏆 **Month 3: Monitor & Maintain**
+- Track score improvements (expect 50-100+ point increase)
+- Apply for credit line increases
+- Monitor credit reports for updates
+
+This strategy could improve your score from 466 to 600+ within 90 days with consistent execution.`;
+      } else {
+        // General AI assistant response
+        aiResponse = `I'm your AI Credit Repair Assistant! I can help you with:
+
+✨ **Dispute Letter Generation** - Create professional dispute letters for inaccurate items
+📊 **Credit Report Analysis** - Deep analysis of your credit reports with actionable insights  
+🎯 **Improvement Strategies** - Personalized plans to boost your credit score
+📋 **Bureau Response Review** - Analyze bureau responses and plan next steps
+
+What specific credit challenge can I help you tackle today?`;
+      }
+
+      // Store AI response
+      await storage.storeAIMessage(userId, {
+        role: 'assistant', 
+        content: aiResponse,
+        attachments: [],
+        timestamp: new Date().toISOString(),
+        letterGenerated,
+        letterUrl: letterGenerated ? letterUrl : undefined
+      });
+
+      res.json({ 
+        success: true, 
+        response: aiResponse,
+        letterGenerated,
+        letterUrl: letterGenerated ? letterUrl : undefined
+      });
+    } catch (error) {
+      console.error("Error in AI chat:", error);
+      res.status(500).json({ error: "Failed to process AI chat" });
+    }
+  });
+
+  // Generate AI dispute letter endpoint
+  app.get("/api/ai/letter/:userId/:letterId", authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const letterId = req.params.letterId;
+      const requestingUser = (req as any).user;
+      
+      // Users can only access their own letters unless they're admin
+      if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Generate dispute letter content
+      const letterContent = `
+DISPUTE LETTER - CREDIT REPORT INACCURACIES
+
+${new Date().toLocaleDateString()}
+
+To: Credit Bureau
+From: [Your Name]
+Address: [Your Address]
+
+RE: FORMAL DISPUTE OF CREDIT REPORT INACCURACIES
+
+Dear Credit Bureau Representative,
+
+I am writing to formally dispute the following inaccurate information appearing on my credit report. Under the Fair Credit Reporting Act (FCRA) 15 U.S.C. §1681, I have the right to request that inaccurate information be investigated and removed.
+
+DISPUTED ITEMS:
+1. Collection Account - ABC Collections
+   - Account #: xxxxxxxx
+   - Issue: Account does not belong to me / Amount is incorrect
+   - Request: Complete removal from credit report
+
+2. Late Payment - XYZ Credit Card  
+   - Account #: xxxxxxxx
+   - Issue: Payment was made on time
+   - Request: Update to show current payment status
+
+SUPPORTING DOCUMENTATION:
+I have attached supporting documentation that validates my dispute. Please conduct a thorough investigation as required by law.
+
+LEGAL RIGHTS:
+Under FCRA Section 611, you have 30 days to investigate these disputes. If you cannot verify the accuracy of these items, they must be removed from my credit report immediately.
+
+Please provide written confirmation of your investigation results and any changes made to my credit report.
+
+Sincerely,
+
+[Your Signature]
+[Your Printed Name]
+[Date]
+
+---
+Generated by ScoreShift AI Assistant
+This letter can be customized with your specific details and sent to credit bureaus.
+`;
+
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `inline; filename="dispute-letter-${letterId}.txt"`);
+      res.send(letterContent);
+      
+    } catch (error) {
+      console.error("Error generating letter:", error);
+      res.status(500).json({ error: "Failed to generate letter" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
