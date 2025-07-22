@@ -215,8 +215,11 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
     queryFn: async () => {
       console.log('Fetching AI conversation for user:', userId);
       
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`/api/ai/conversation/${userId}`, {
-        credentials: 'include' // Use session cookies instead of Bearer token
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       
       if (!response.ok) {
@@ -352,12 +355,13 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
     mutationFn: async (data: { message: string; files?: File[] }) => {
       console.log('Sending AI message:', { userId, message: data.message });
       
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        credentials: 'include', // Include session cookies
         body: JSON.stringify({
           userId,
           message: data.message,

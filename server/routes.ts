@@ -2501,10 +2501,7 @@ END OF DOCUMENT
   });
 
   // AI Assistant endpoints
-  app.get("/api/ai/conversation/:userId", async (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
+  app.get("/api/ai/conversation/:userId", authenticateToken, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const requestingUser = (req as any).user;
@@ -2533,10 +2530,7 @@ END OF DOCUMENT
     }
   });
 
-  app.post("/api/ai/chat", async (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
+  app.post("/api/ai/chat", authenticateToken, async (req, res) => {
     try {
       const { userId, message, files } = req.body;
       const requestingUser = (req as any).user;
@@ -2663,10 +2657,7 @@ What specific credit challenge can I help you tackle today?`;
   });
 
   // Generate AI dispute letter endpoint
-  app.get("/api/ai/letter/:userId/:letterId", async (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
+  app.get("/api/ai/letter/:userId/:letterId", authenticateToken, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const letterId = req.params.letterId;
