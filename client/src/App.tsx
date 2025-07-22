@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navigation } from "@/components/navigation";
 import { UserProvider, useUserContext } from "@/hooks/use-user-context";
+import LandingPage from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import CreditRepair from "@/pages/credit-repair";
 import CreditBuilding from "@/pages/credit-building";
@@ -19,7 +20,12 @@ function Router() {
   const { user } = useUserContext();
   const [location] = useLocation();
 
-  // Show login if no user is authenticated
+  // Show landing page if no user is authenticated and on root path
+  if (!user && location === "/") {
+    return <LandingPage />;
+  }
+
+  // Show login if no user is authenticated and not on landing page
   if (!user) {
     return <Login />;
   }
@@ -45,17 +51,42 @@ function Router() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navigation />
       <Switch>
-        <Route path="/" component={() => user?.accessLevel === "ADMIN" ? <AdminPortal /> : <CreditRepair />} />
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/credit-repair" component={CreditRepair} />
-        <Route path="/credit-building" component={CreditBuilding} />
-        <Route path="/education" component={Education} />
-        <Route path="/experian" component={ExperianConnect} />
-        <Route path="/admin" component={AdminDashboard} />
-        <Route path="/admin-portal" component={AdminPortal} />
-        <Route path="/admin-portal/:section" component={AdminPortal} />
+        <Route path="/" component={LandingPage} />
+        <Route path="/auth" component={Login} />
+        <Route path="/admin/auth" component={Login} />
+        <Route path="/dashboard">
+          <Navigation />
+          <Dashboard />
+        </Route>
+        <Route path="/credit-repair">
+          <Navigation />
+          <CreditRepair />
+        </Route>
+        <Route path="/credit-building">
+          <Navigation />
+          <CreditBuilding />
+        </Route>
+        <Route path="/education">
+          <Navigation />
+          <Education />
+        </Route>
+        <Route path="/experian">
+          <Navigation />
+          <ExperianConnect />
+        </Route>
+        <Route path="/admin">
+          <Navigation />
+          <AdminDashboard />
+        </Route>
+        <Route path="/admin-portal">
+          <Navigation />
+          <AdminPortal />
+        </Route>
+        <Route path="/admin-portal/:section">
+          <Navigation />
+          <AdminPortal />
+        </Route>
         <Route path="/login" component={Login} />
         <Route component={NotFound} />
       </Switch>
