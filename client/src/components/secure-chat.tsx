@@ -28,6 +28,69 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
   const aiMessagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  // Handle viewing AI-generated letters with proper authentication
+  const handleViewLetter = async (letterUrl: string) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      
+      // Fetch the letter content with authentication
+      const response = await fetch(letterUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to load dispute letter');
+      }
+      
+      const letterContent = await response.text();
+      
+      // Create a new window/tab with the letter content
+      const newWindow = window.open('', '_blank');
+      if (newWindow) {
+        newWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>AI Generated Dispute Letter</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; }
+              pre { white-space: pre-wrap; font-family: Arial, sans-serif; }
+            </style>
+          </head>
+          <body>
+            <h1>AI Generated Dispute Letter</h1>
+            <pre>${letterContent}</pre>
+          </body>
+          </html>
+        `);
+        newWindow.document.close();
+      } else {
+        // Fallback for popup blockers - show in current page
+        const blob = new Blob([letterContent], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'dispute-letter.txt';
+        a.click();
+        window.URL.revokeObjectURL(url);
+        
+        toast({
+          title: "Letter Downloaded",
+          description: "Your dispute letter has been downloaded to your device",
+        });
+      }
+    } catch (error) {
+      console.error('Error viewing letter:', error);
+      toast({
+        title: "Error Loading Letter",
+        description: "Failed to load the dispute letter. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Function to handle document download
   const handleDownloadDocument = async (documentId: number, fileName: string) => {
     try {
@@ -704,7 +767,7 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
                               variant="outline"
                               size="sm"
                               className="text-xs"
-                              onClick={() => window.open(msg.letterUrl, '_blank')}
+                              onClick={() => handleViewLetter(msg.letterUrl!)}
                             >
                               <FileText className="h-3 w-3 mr-1" />
                               View Generated Letter
