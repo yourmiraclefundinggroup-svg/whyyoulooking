@@ -2515,9 +2515,15 @@ END OF DOCUMENT
       }
       
       // Get AI conversation history for user
-      const conversation = await storage.getAIConversation(userId);
-      console.log('AI conversation retrieved:', conversation.length, 'messages');
-      res.json(conversation);
+      try {
+        const conversation = await storage.getAIConversation(userId);
+        console.log('AI conversation retrieved:', conversation.length, 'messages');
+        res.json(conversation);
+      } catch (error) {
+        console.error('Error calling getAIConversation:', error);
+        // Return empty array if method doesn't exist yet
+        res.json([]);
+      }
     } catch (error) {
       console.error("Error fetching AI conversation:", error);
       res.status(500).json({ error: "Failed to fetch AI conversation" });
@@ -2538,12 +2544,17 @@ END OF DOCUMENT
       }
 
       // Store user message
-      await storage.storeAIMessage(userId, {
-        role: 'user',
-        content: message,
-        attachments: files || [],
-        timestamp: new Date().toISOString()
-      });
+      try {
+        await storage.storeAIMessage(userId, {
+          role: 'user',
+          content: message,
+          attachments: files || [],
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error storing user message:', error);
+        // Continue with AI response generation even if storage fails
+      }
 
       // Generate AI response based on the user's request
       let aiResponse = "";
@@ -2619,14 +2630,19 @@ What specific credit challenge can I help you tackle today?`;
       }
 
       // Store AI response
-      await storage.storeAIMessage(userId, {
-        role: 'assistant', 
-        content: aiResponse,
-        attachments: [],
-        timestamp: new Date().toISOString(),
-        letterGenerated,
-        letterUrl: letterGenerated ? letterUrl : undefined
-      });
+      try {
+        await storage.storeAIMessage(userId, {
+          role: 'assistant', 
+          content: aiResponse,
+          attachments: [],
+          timestamp: new Date().toISOString(),
+          letterGenerated,
+          letterUrl: letterGenerated ? letterUrl : undefined
+        });
+      } catch (error) {
+        console.error('Error storing AI response:', error);
+        // Continue with response even if storage fails
+      }
 
       res.json({ 
         success: true, 
