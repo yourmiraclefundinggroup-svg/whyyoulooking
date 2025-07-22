@@ -1736,11 +1736,15 @@ Format the response as a complete business letter ready to send.`;
       const attachedAssetPath = path.join(process.cwd(), 'attached_assets', document.fileName);
       const uploadsPath = path.join(process.cwd(), 'uploads', document.fileName);
       
+      // ALWAYS serve real files - never serve placeholders
       let actualFilePath = null;
       if (fs.existsSync(attachedAssetPath)) {
         actualFilePath = attachedAssetPath;
       } else if (fs.existsSync(uploadsPath)) {
         actualFilePath = uploadsPath;
+      } else {
+        // If file doesn't exist, return 404 instead of placeholder
+        return res.status(404).json({ message: "File not found on server" });
       }
       
       // If we have the actual file, serve it directly
@@ -1763,16 +1767,19 @@ Format the response as a complete business letter ready to send.`;
           contentType = 'text/plain';
         }
         
-        // Set headers for inline viewing
+        // Set headers for inline viewing with strong cache-busting
         res.set({
           'Content-Type': contentType,
           'Content-Disposition': `inline; filename="${document.fileName}"`,
           'Content-Length': stats.size.toString(),
-          'Cache-Control': 'no-cache',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET',
           'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-          'X-Content-Type-Options': 'nosniff'
+          'X-Content-Type-Options': 'nosniff',
+          'ETag': `"${Date.now()}-${stats.size}"`
         });
         
         // Stream the actual file
