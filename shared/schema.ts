@@ -168,7 +168,16 @@ export const bureauResponseAnalysis = pgTable("bureau_response_analysis", {
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertCreditReportSchema = createInsertSchema(creditReports).omit({ id: true, lastUpdated: true });
 export const insertCreditIssueSchema = createInsertSchema(creditIssues).omit({ id: true });
-export const insertDisputeSchema = createInsertSchema(disputes).omit({ id: true, dateSent: true, actualResponse: true });
+export const insertDisputeSchema = createInsertSchema(disputes).omit({ 
+  id: true, 
+  dateSent: true, 
+  actualResponse: true, 
+  deliveryDate: true, 
+  followUpDate: true, 
+  alertSent: true 
+}).extend({
+  expectedResponse: z.string().transform((val) => new Date(val))
+});
 export const insertCreditGoalSchema = createInsertSchema(creditGoals).omit({ id: true, createdAt: true });
 export const insertEducationalContentSchema = createInsertSchema(educationalContent).omit({ id: true });
 export const insertCreditBuildingActionSchema = createInsertSchema(creditBuildingActions).omit({ id: true });
