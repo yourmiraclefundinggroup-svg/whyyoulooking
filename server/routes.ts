@@ -2235,7 +2235,6 @@ END OF DOCUMENT
         userId,
         bankName: connectionData.institutionName,
         accountType: 'CHECKING',
-        itemId: connectionData.itemId,
         institutionId: connectionData.institutionId,
         isActive: true,
         autoPaymentOptimization: false,
@@ -2262,7 +2261,7 @@ END OF DOCUMENT
       }
 
       const { plaidService } = await import('./integrations/plaid');
-      const balances = await plaidService.getAccountBalances(connection.itemId);
+      const balances = await plaidService.getAccountBalances(connection.institutionId);
       
       res.json(balances);
     } catch (error) {
