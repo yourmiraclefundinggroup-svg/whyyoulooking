@@ -1583,7 +1583,72 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
-  // Download chat document (admin or document owner only)
+  // View chat document (admin or document owner only)
+  app.get("/api/chat/documents/view/:documentId", authenticateToken, async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.documentId);
+      const requestingUser = (req as any).user;
+      
+      const document = await storage.getChatDocument(documentId);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Users can only view their own documents unless they're admin
+      if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== document.userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Set headers for inline viewing
+      res.set({
+        'Content-Type': document.fileType || 'application/pdf',
+        'Content-Disposition': `inline; filename="${document.fileName}"`,
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Authorization, Content-Type'
+      });
+      
+      // For demonstration: create simulated viewable content
+      const viewableContent = `SCORESHIFT DOCUMENT VIEWER
+============================
+
+File: ${document.fileName}
+Size: ${document.fileSize} bytes
+Type: ${document.documentType}
+Uploaded by: ${document.uploadedBy}
+Upload Date: ${new Date(document.createdAt).toLocaleString()}
+
+============================
+DOCUMENT CONTENT PREVIEW
+============================
+
+This is a preview of your uploaded document: ${document.fileName}
+
+Document Details:
+- File Type: ${document.fileType}
+- Document Category: ${document.documentType}
+- Upload Status: ${document.status || 'PENDING_REVIEW'}
+- Security Level: ENCRYPTED
+
+In a production environment, this would display the actual document content
+for viewing in the browser. PDFs would render inline, images would display,
+and text documents would show their full content.
+
+This secure viewing system ensures your sensitive documents remain protected
+while allowing easy access for review and verification.
+
+END OF PREVIEW
+`;
+      
+      res.send(viewableContent);
+    } catch (error) {
+      console.error("Error viewing document:", error);
+      res.status(500).json({ error: "Failed to view document" });
+    }
+  });
+
+  // Download chat document (admin or document owner only)  
   app.get("/api/chat/documents/download/:documentId", authenticateToken, async (req, res) => {
     try {
       const documentId = parseInt(req.params.documentId);

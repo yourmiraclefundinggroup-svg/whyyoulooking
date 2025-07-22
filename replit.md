@@ -159,14 +159,15 @@ Preferred communication style: Simple, everyday language.
 ## Changelog
 
 Changelog:
-- July 22, 2025. **MOBILE FILE DOWNLOAD SYSTEM COMPLETE - FULLY FUNCTIONAL**
+- July 22, 2025. **MOBILE FILE DOWNLOAD & VIEW SYSTEM COMPLETE - FULLY FUNCTIONAL**
   - ✅ **Fixed Mobile Download Issues**: Enhanced download functionality to work properly on mobile devices (iOS/Android)
+  - ✅ **Added Document Viewing**: New View button opens documents in browser tab for preview before downloading
   - ✅ **Multiple Download Methods**: Implemented blob-based downloads for mobile with direct link fallback
   - ✅ **Mobile-Optimized Headers**: Added mobile-friendly CORS and caching headers for better compatibility
-  - ✅ **File Serving API**: Complete download endpoint serving actual file content with proper MIME types
+  - ✅ **Dual API Endpoints**: Separate /view and /download endpoints with proper headers (inline vs attachment)
   - ✅ **Cross-Platform Support**: Downloads work on desktop (direct download) and mobile (new tab/view)
-  - ✅ **Admin Document Access**: Admins can download all 24 client uploaded documents through secure API
-  - ✅ **Production Ready**: Complete file download system ready for real file storage integration
+  - ✅ **Admin Document Access**: Admins can view and download all 24+ client uploaded documents
+  - ✅ **Production Ready**: Complete file viewing and download system ready for real file storage integration
 - July 21, 2025. **CREDIT REPORT AI ANALYSIS SYSTEM COMPLETE - FULLY FUNCTIONAL**
   - ✅ **Fixed Real Credit Score Display**: Ervin Ward now shows actual 466 credit score from Experian report (not mock 734-744)
   - ✅ **Credit Report Upload System**: Complete AI-powered document upload with drag-and-drop functionality

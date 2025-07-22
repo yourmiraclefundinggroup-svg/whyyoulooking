@@ -116,6 +116,59 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
     }
   };
 
+  // Function to handle document viewing
+  const handleViewDocument = async (documentId: number, fileName: string) => {
+    try {
+      toast({
+        title: "Opening File",
+        description: `Loading ${fileName} for viewing...`,
+      });
+
+      const viewUrl = `/api/chat/documents/view/${documentId}`;
+      
+      // Open in new tab with authorization
+      const newTab = window.open('about:blank', '_blank');
+      if (!newTab) {
+        throw new Error('Popup blocked. Please allow popups for this site.');
+      }
+
+      // Fetch the file with authorization
+      const response = await fetch(viewUrl, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        newTab.close();
+        throw new Error('Failed to load document');
+      }
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      newTab.location.href = blobUrl;
+      
+      // Clean up blob URL after some time
+      setTimeout(() => {
+        window.URL.revokeObjectURL(blobUrl);
+      }, 60000);
+      
+      toast({
+        title: "File Opened",
+        description: `${fileName} is now open in a new tab`,
+      });
+      
+    } catch (error) {
+      console.error('View error:', error);
+      toast({
+        title: "View Failed",
+        description: "Could not open the document. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const queryClient = useQueryClient();
 
   const { data: messages, isLoading } = useQuery({
@@ -500,15 +553,26 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
                             <Lock className="h-3 w-3 text-green-600" />
                             <span className="text-green-600">Encrypted</span>
                           </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-6 text-xs"
-                            onClick={() => handleDownloadDocument(doc.id, doc.fileName)}
-                          >
-                            <Download className="h-3 w-3 mr-1" />
-                            Download
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 text-xs px-1"
+                              onClick={() => handleViewDocument(doc.id, doc.fileName)}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 text-xs px-1"
+                              onClick={() => handleDownloadDocument(doc.id, doc.fileName)}
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Download
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
