@@ -1599,18 +1599,135 @@ Format the response as a complete business letter ready to send.`;
         return res.status(403).json({ message: "Access denied" });
       }
       
+      // Determine proper MIME type for inline viewing
+      let contentType = document.fileType || 'application/octet-stream';
+      
+      // Ensure proper MIME types for common file formats
+      const fileName = document.fileName.toLowerCase();
+      if (fileName.endsWith('.pdf')) {
+        contentType = 'application/pdf';
+      } else if (fileName.endsWith('.png')) {
+        contentType = 'image/png';
+      } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+        contentType = 'image/jpeg';
+      } else if (fileName.endsWith('.gif')) {
+        contentType = 'image/gif';
+      } else if (fileName.endsWith('.txt')) {
+        contentType = 'text/plain';
+      } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+        contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      }
+      
       // Set headers for inline viewing
       res.set({
-        'Content-Type': document.fileType || 'application/pdf',
+        'Content-Type': contentType,
         'Content-Disposition': `inline; filename="${document.fileName}"`,
         'Cache-Control': 'no-cache',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Authorization, Content-Type'
+        'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+        'X-Content-Type-Options': 'nosniff'
       });
       
-      // For demonstration: create simulated viewable content
-      const viewableContent = `SCORESHIFT DOCUMENT VIEWER
+      // For demonstration: create appropriate content based on file type
+      if (contentType.startsWith('image/')) {
+        // For images, we would serve the actual image binary data
+        // For demo purposes, create a simple SVG placeholder
+        const imagePlaceholder = `<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100%" height="100%" fill="#f0f0f0" stroke="#ddd" stroke-width="2"/>
+          <text x="200" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#666">
+            ${document.fileName}
+          </text>
+          <text x="200" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#999">
+            ${(document.fileSize / 1024).toFixed(1)} KB ${contentType}
+          </text>
+          <text x="200" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#999">
+            In production, this would show the actual image
+          </text>
+        </svg>`;
+        res.set('Content-Type', 'image/svg+xml');
+        res.send(imagePlaceholder);
+      } else if (contentType === 'application/pdf') {
+        // For PDFs, create a simple PDF-like response
+        const pdfContent = `%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/Resources <<
+/Font <<
+/F1 4 0 R
+>>
+>>
+/MediaBox [0 0 612 792]
+/Contents 5 0 R
+>>
+endobj
+
+4 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+>>
+endobj
+
+5 0 obj
+<<
+/Length 200
+>>
+stream
+BT
+/F1 12 Tf
+100 700 Td
+(ScoreShift Document Viewer) Tj
+0 -20 Td
+(File: ${document.fileName}) Tj
+0 -20 Td
+(Size: ${(document.fileSize / 1024).toFixed(1)} KB) Tj
+0 -20 Td
+(Type: ${document.documentType}) Tj
+0 -40 Td
+(In production, this would display the actual PDF content.) Tj
+ET
+endstream
+endobj
+
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000274 00000 n 
+0000000351 00000 n 
+trailer
+<<
+/Size 6
+/Root 1 0 R
+>>
+startxref
+605
+%%EOF`;
+        res.send(pdfContent);
+      } else {
+        // For other file types, create readable text content
+        const textContent = `SCORESHIFT DOCUMENT VIEWER
 ============================
 
 File: ${document.fileName}
@@ -1638,10 +1755,9 @@ and text documents would show their full content.
 This secure viewing system ensures your sensitive documents remain protected
 while allowing easy access for review and verification.
 
-END OF PREVIEW
-`;
-      
-      res.send(viewableContent);
+END OF PREVIEW`;
+        res.send(textContent);
+      }
     } catch (error) {
       console.error("Error viewing document:", error);
       res.status(500).json({ error: "Failed to view document" });
