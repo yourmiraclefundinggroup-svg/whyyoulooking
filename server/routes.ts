@@ -1546,6 +1546,75 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
+  // Get all chat documents (admin only)
+  app.get("/api/chat/documents", authenticateToken, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      
+      // Only admins can view all documents
+      if (requestingUser.accessLevel !== 'ADMIN') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      const documents = await storage.getAllChatDocuments();
+      res.json(documents);
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      res.status(500).json({ error: "Failed to fetch documents" });
+    }
+  });
+
+  // Get chat documents for a specific user
+  app.get("/api/chat/documents/:userId", authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const requestingUser = (req as any).user;
+      
+      // Users can only access their own documents unless they're admin
+      if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const documents = await storage.getChatDocuments(userId);
+      res.json(documents);
+    } catch (error) {
+      console.error("Error fetching user documents:", error);
+      res.status(500).json({ error: "Failed to fetch user documents" });
+    }
+  });
+
+  // Download chat document (admin or document owner only)
+  app.get("/api/chat/documents/download/:documentId", authenticateToken, async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.documentId);
+      const requestingUser = (req as any).user;
+      
+      const document = await storage.getChatDocument(documentId);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Users can only download their own documents unless they're admin
+      if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== document.userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // In a real implementation, you'd serve the actual file from storage
+      // For now, provide a download response with file metadata
+      res.json({
+        fileName: document.fileName,
+        fileType: document.fileType,
+        fileSize: document.fileSize,
+        downloadUrl: `/api/files${document.filePath}`,
+        message: "File ready for download",
+        filePath: document.filePath
+      });
+    } catch (error) {
+      console.error("Error downloading document:", error);
+      res.status(500).json({ error: "Failed to download document" });
+    }
+  });
+
   // Plaid Bank Integration Routes
   app.post("/api/plaid/create-link-token", authenticateToken, async (req, res) => {
     try {

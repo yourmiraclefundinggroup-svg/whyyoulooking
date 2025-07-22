@@ -197,6 +197,8 @@ export interface IStorage {
   // Chat System
   getChatMessages(userId: number): Promise<any[]>;
   getChatDocuments(userId: number): Promise<any[]>;
+  getAllChatDocuments(): Promise<any[]>;
+  getChatDocument(id: number): Promise<any | undefined>;
   createChatMessage(message: InsertChatMessage): Promise<any>;
   createChatDocument(document: InsertChatDocument): Promise<any>;
 }
@@ -422,6 +424,15 @@ export class DatabaseStorage implements IStorage {
 
   async getChatDocuments(userId: number): Promise<any[]> {
     return await db.select().from(chatDocuments).where(eq(chatDocuments.userId, userId));
+  }
+
+  async getAllChatDocuments(): Promise<any[]> {
+    return await db.select().from(chatDocuments).orderBy(chatDocuments.createdAt);
+  }
+
+  async getChatDocument(id: number): Promise<any | undefined> {
+    const [document] = await db.select().from(chatDocuments).where(eq(chatDocuments.id, id));
+    return document || undefined;
   }
 
   async createChatMessage(message: InsertChatMessage): Promise<any> {

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageCircle, Upload, FileText, Shield, User, UserCheck, Clock, Paperclip, Send, Download, Eye, Lock } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface SecureChatProps {
   userId: number;
@@ -20,6 +21,38 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  // Function to handle document download
+  const handleDownloadDocument = async (documentId: number, fileName: string) => {
+    try {
+      const response = await fetch(`/api/chat/documents/download/${documentId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to download document');
+      }
+
+      const data = await response.json();
+      toast({
+        title: "Download Ready",
+        description: `${fileName} is ready for download`,
+      });
+
+      // For now, show the download info since we're simulating file storage
+      console.log('Download info:', data);
+    } catch (error) {
+      toast({
+        title: "Download Failed",
+        description: "Could not download the document",
+        variant: "destructive",
+      });
+    }
+  };
 
   const queryClient = useQueryClient();
 
@@ -405,7 +438,12 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
                             <Lock className="h-3 w-3 text-green-600" />
                             <span className="text-green-600">Encrypted</span>
                           </div>
-                          <Button variant="ghost" size="sm" className="h-6 text-xs">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-6 text-xs"
+                            onClick={() => handleDownloadDocument(doc.id, doc.fileName)}
+                          >
                             <Download className="h-3 w-3 mr-1" />
                             Download
                           </Button>
