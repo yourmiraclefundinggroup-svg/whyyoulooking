@@ -26,10 +26,23 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
   // Function to handle document download
   const handleDownloadDocument = async (documentId: number, fileName: string) => {
     try {
-      const response = await fetch(`/api/chat/documents/download/${documentId}`, {
+      toast({
+        title: "Starting Download",
+        description: `Preparing ${fileName}...`,
+      });
+
+      // Create download URL and trigger download directly
+      const downloadUrl = `/api/chat/documents/download/${documentId}`;
+      
+      // Create a temporary link element to trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      
+      // Add authorization header by fetching and creating blob URL
+      const response = await fetch(downloadUrl, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          'Accept': 'application/json',
         },
       });
 
@@ -37,15 +50,27 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
         throw new Error('Failed to download document');
       }
 
-      const data = await response.json();
+      // Create blob from response and download it
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      link.href = blobUrl;
+      link.target = '_blank';
+      
+      // Add to DOM temporarily and trigger click
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up blob URL
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+      
       toast({
-        title: "Download Ready",
-        description: `${fileName} is ready for download`,
+        title: "Download Started",
+        description: `${fileName} download initiated`,
       });
-
-      // For now, show the download info since we're simulating file storage
-      console.log('Download info:', data);
     } catch (error) {
+      console.error('Download error:', error);
       toast({
         title: "Download Failed",
         description: "Could not download the document",

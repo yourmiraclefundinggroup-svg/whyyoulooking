@@ -1599,16 +1599,18 @@ Format the response as a complete business letter ready to send.`;
         return res.status(403).json({ message: "Access denied" });
       }
       
-      // In a real implementation, you'd serve the actual file from storage
-      // For now, provide a download response with file metadata
-      res.json({
-        fileName: document.fileName,
-        fileType: document.fileType,
-        fileSize: document.fileSize,
-        downloadUrl: `/api/files${document.filePath}`,
-        message: "File ready for download",
-        filePath: document.filePath
+      // Since we're simulating file storage, generate a downloadable response
+      // In production, this would stream the actual file content
+      res.set({
+        'Content-Type': document.fileType || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${document.fileName}"`,
+        'Content-Length': document.fileSize.toString()
       });
+      
+      // For demonstration: create simulated file content
+      const simulatedContent = `This is a simulated download of ${document.fileName} (${document.fileSize} bytes)\nUploaded by: ${document.uploadedBy}\nDocument Type: ${document.documentType}\nFile Path: ${document.filePath}\n\nIn production, this would be the actual file content.`;
+      
+      res.send(simulatedContent);
     } catch (error) {
       console.error("Error downloading document:", error);
       res.status(500).json({ error: "Failed to download document" });
