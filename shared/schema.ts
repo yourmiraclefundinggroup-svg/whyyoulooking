@@ -256,11 +256,34 @@ export const chatDocuments = pgTable("chat_documents", {
   filePath: text("file_path").notNull(), // Server file path
   uploadedBy: text("uploaded_by", { enum: ["CLIENT", "ADMIN"] }).notNull(),
   isEncrypted: boolean("is_encrypted").notNull().default(true),
+  smartTags: text("smart_tags").array(), // AI-generated tags
+  customTags: text("custom_tags").array(), // User-added tags
+  extractedText: text("extracted_text"), // OCR/text extraction for analysis
+  confidence: real("confidence"), // AI tagging confidence score
+  needsReview: boolean("needs_review").default(false), // Flag for low confidence tags
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+export const documentTags = pgTable("document_tags", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  category: text("category").notNull(), // CONTENT, FORMAT, PURPOSE, URGENCY, COMPLIANCE
+  color: text("color").notNull().default("#3B82F6"), // Hex color for UI
+  description: text("description"),
+  isSystemTag: boolean("is_system_tag").default(true), // System vs user-created
+  usageCount: integer("usage_count").default(0),
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
 export const insertChatDocumentSchema = createInsertSchema(chatDocuments).omit({ id: true, createdAt: true });
+export const insertDocumentTagSchema = createInsertSchema(documentTags).omit({ id: true, createdAt: true });
+
+// Types for Smart Document Tagging
+export type DocumentTag = typeof documentTags.$inferSelect;
+export type InsertDocumentTag = typeof insertDocumentTagSchema._type;
+export type ChatDocument = typeof chatDocuments.$inferSelect;
+export type InsertChatDocument = typeof insertChatDocumentSchema._type;
 
 // Mortgage/Loan Readiness Score
 export const loanReadinessProfiles = pgTable("loan_readiness_profiles", {

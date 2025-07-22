@@ -1509,7 +1509,7 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
-  // File upload for chat documents
+  // File upload for chat documents with Smart Tagging
   app.post("/api/chat/upload", authenticateToken, async (req, res) => {
     try {
       const { userId, fileName, fileSize, fileType, documentType, uploadedBy } = req.body;
@@ -1528,6 +1528,7 @@ Format the response as a complete business letter ready to send.`;
       // For now, simulate file upload
       const filePath = `/uploads/${userId}/${Date.now()}_${fileName}`;
       
+      // Create document first
       const document = await storage.createChatDocument({
         userId,
         fileName,
@@ -1536,7 +1537,40 @@ Format the response as a complete business letter ready to send.`;
         documentType,
         filePath,
         uploadedBy,
-        isEncrypted: true
+        isEncrypted: true,
+        smartTags: [],
+        customTags: [],
+        extractedText: null,
+        confidence: null,
+        needsReview: false
+      });
+      
+      // Apply smart tagging in background (don't wait for completion)
+      setImmediate(async () => {
+        try {
+          const { analyzeDocument } = await import('./ai-tagging.js');
+          const analysis = await analyzeDocument(fileName, fileType, documentType, fileSize);
+          
+          // Update document with AI analysis results
+          await storage.updateChatDocument(document.id, {
+            smartTags: analysis.smartTags,
+            extractedText: analysis.extractedText,
+            confidence: analysis.confidence,
+            needsReview: analysis.needsReview
+          });
+          
+          // Increment usage count for generated tags
+          for (const tag of analysis.smartTags) {
+            await storage.incrementTagUsage(tag);
+          }
+        } catch (error) {
+          console.error("Error in smart tagging:", error);
+          // Mark document for manual review if AI tagging fails
+          await storage.updateChatDocument(document.id, {
+            needsReview: true,
+            extractedText: `${documentType} document: ${fileName} (manual review required)`
+          });
+        }
       });
       
       res.json(document);
@@ -1580,6 +1614,98 @@ Format the response as a complete business letter ready to send.`;
     } catch (error) {
       console.error("Error fetching user documents:", error);
       res.status(500).json({ error: "Failed to fetch user documents" });
+    }
+  });
+
+  // Document Tag Management APIs
+  app.get("/api/documents/tags", authenticateToken, async (req, res) => {
+    try {
+      const tags = await storage.getAllDocumentTags();
+      res.json(tags);
+    } catch (error) {
+      console.error("Error fetching document tags:", error);
+      res.status(500).json({ error: "Failed to fetch document tags" });
+    }
+  });
+
+  app.post("/api/documents/tags", authenticateToken, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      if (requestingUser.accessLevel !== 'ADMIN') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { name, category, color, description, isSystemTag } = req.body;
+      const tag = await storage.createDocumentTag({
+        name,
+        category,
+        color: color || "#3B82F6",
+        description,
+        isSystemTag: isSystemTag || false,
+        usageCount: 0
+      });
+
+      res.json(tag);
+    } catch (error) {
+      console.error("Error creating document tag:", error);
+      res.status(500).json({ error: "Failed to create document tag" });
+    }
+  });
+
+  app.patch("/api/documents/:documentId/tags", authenticateToken, async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.documentId);
+      const { customTags } = req.body;
+      const requestingUser = (req as any).user;
+
+      const document = await storage.getChatDocument(documentId);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+
+      // Users can only modify their own documents unless they're admin
+      if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== document.userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const updatedDocument = await storage.updateChatDocument(documentId, {
+        customTags: customTags || []
+      });
+
+      res.json(updatedDocument);
+    } catch (error) {
+      console.error("Error updating document tags:", error);
+      res.status(500).json({ error: "Failed to update document tags" });
+    }
+  });
+
+  app.get("/api/documents/search", authenticateToken, async (req, res) => {
+    try {
+      const { query, tag, userId } = req.query;
+      const requestingUser = (req as any).user;
+      
+      let documents = [];
+      const searchUserId = requestingUser.accessLevel === 'ADMIN' ? 
+        (userId ? parseInt(userId as string) : undefined) : 
+        requestingUser.id;
+
+      if (query) {
+        documents = await storage.searchDocuments(query as string, searchUserId);
+      } else if (tag) {
+        documents = await storage.getDocumentsByTag(tag as string);
+        if (searchUserId) {
+          documents = documents.filter(doc => doc.userId === searchUserId);
+        }
+      } else {
+        documents = searchUserId ? 
+          await storage.getChatDocuments(searchUserId) :
+          await storage.getAllChatDocuments();
+      }
+
+      res.json(documents);
+    } catch (error) {
+      console.error("Error searching documents:", error);
+      res.status(500).json({ error: "Failed to search documents" });
     }
   });
 

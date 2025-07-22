@@ -5,7 +5,7 @@ import {
   creditCards, utilizationOptimizations, utilizationAlerts, loanReadinessProfiles, loanReadinessAssessments,
   goodwillLetters, creditMixOptimizations, identityTheftCases, rentUtilityReporting,
   creditCardPredictions, financialBehaviorProfiles, bankAccountConnections, taxIntegrations,
-  employmentVerifications, disputeSuccessPredictions, mlTrainingData, chatMessages, chatDocuments,
+  employmentVerifications, disputeSuccessPredictions, mlTrainingData, chatMessages, chatDocuments, documentTags,
   type User, type InsertUser,
   type CreditReport, type InsertCreditReport,
   type CreditIssue, type InsertCreditIssue,
@@ -36,7 +36,8 @@ import {
   type DisputeSuccessPrediction, type InsertDisputeSuccessPrediction,
   type MlTrainingData, type InsertMlTrainingData,
   chatMessages as ChatMessage, type InsertChatMessage,
-  chatDocuments as ChatDocument, type InsertChatDocument
+  type ChatDocument, type InsertChatDocument,
+  type DocumentTag, type InsertDocumentTag
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
@@ -201,6 +202,17 @@ export interface IStorage {
   getChatDocument(id: number): Promise<any | undefined>;
   createChatMessage(message: InsertChatMessage): Promise<any>;
   createChatDocument(document: InsertChatDocument): Promise<any>;
+  updateChatDocument(id: number, updates: Partial<ChatDocument>): Promise<ChatDocument | undefined>;
+
+  // Document Tagging System
+  getAllDocumentTags(): Promise<DocumentTag[]>;
+  getDocumentTag(id: number): Promise<DocumentTag | undefined>;
+  getDocumentTagByName(name: string): Promise<DocumentTag | undefined>;
+  createDocumentTag(tag: InsertDocumentTag): Promise<DocumentTag>;
+  updateDocumentTag(id: number, updates: Partial<DocumentTag>): Promise<DocumentTag | undefined>;
+  incrementTagUsage(tagName: string): Promise<void>;
+  getDocumentsByTag(tagName: string): Promise<ChatDocument[]>;
+  searchDocuments(query: string, userId?: number): Promise<ChatDocument[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -451,6 +463,76 @@ export class DatabaseStorage implements IStorage {
     return chatDocument;
   }
 
+  async updateChatDocument(id: number, updates: Partial<ChatDocument>): Promise<ChatDocument | undefined> {
+    const [updatedDocument] = await db
+      .update(chatDocuments)
+      .set(updates)
+      .where(eq(chatDocuments.id, id))
+      .returning();
+    return updatedDocument || undefined;
+  }
+
+  // Document Tagging System Implementation
+  async getAllDocumentTags(): Promise<DocumentTag[]> {
+    return await db.select().from(documentTags).orderBy(documentTags.category, documentTags.name);
+  }
+
+  async getDocumentTag(id: number): Promise<DocumentTag | undefined> {
+    const [tag] = await db.select().from(documentTags).where(eq(documentTags.id, id));
+    return tag || undefined;
+  }
+
+  async getDocumentTagByName(name: string): Promise<DocumentTag | undefined> {
+    const [tag] = await db.select().from(documentTags).where(eq(documentTags.name, name));
+    return tag || undefined;
+  }
+
+  async createDocumentTag(tag: InsertDocumentTag): Promise<DocumentTag> {
+    const [newTag] = await db
+      .insert(documentTags)
+      .values(tag)
+      .returning();
+    return newTag;
+  }
+
+  async updateDocumentTag(id: number, updates: Partial<DocumentTag>): Promise<DocumentTag | undefined> {
+    const [updatedTag] = await db
+      .update(documentTags)
+      .set(updates)
+      .where(eq(documentTags.id, id))
+      .returning();
+    return updatedTag || undefined;
+  }
+
+  async incrementTagUsage(tagName: string): Promise<void> {
+    await db
+      .update(documentTags)
+      .set({ usageCount: sql`${documentTags.usageCount} + 1` })
+      .where(eq(documentTags.name, tagName));
+  }
+
+  async getDocumentsByTag(tagName: string): Promise<ChatDocument[]> {
+    return await db
+      .select()
+      .from(chatDocuments)
+      .where(sql`${tagName} = ANY(${chatDocuments.smartTags}) OR ${tagName} = ANY(${chatDocuments.customTags})`);
+  }
+
+  async searchDocuments(query: string, userId?: number): Promise<ChatDocument[]> {
+    let whereCondition = sql`
+      (${chatDocuments.fileName} ILIKE ${'%' + query + '%'} OR
+       ${chatDocuments.extractedText} ILIKE ${'%' + query + '%'} OR
+       array_to_string(${chatDocuments.smartTags}, ',') ILIKE ${'%' + query + '%'} OR
+       array_to_string(${chatDocuments.customTags}, ',') ILIKE ${'%' + query + '%'})
+    `;
+    
+    if (userId) {
+      whereCondition = sql`${whereCondition} AND ${chatDocuments.userId} = ${userId}`;
+    }
+    
+    return await db.select().from(chatDocuments).where(whereCondition);
+  }
+
   // Credit Monitoring Connections
   async getCreditMonitoringConnections(userId: number): Promise<CreditMonitoringConnection[]> {
     return await db.select().from(creditMonitoringConnections).where(eq(creditMonitoringConnections.userId, userId));
@@ -628,10 +710,12 @@ export class MemStorage implements IStorage {
   private utilizationAlerts: Map<number, UtilizationAlert> = new Map();
   private loanReadinessProfiles: Map<number, LoanReadinessProfile> = new Map();
   private loanReadinessAssessments: Map<number, LoanReadinessAssessment> = new Map();
+  private documentTags: Map<number, DocumentTag> = new Map();
   private currentId: number = 1;
 
   constructor() {
     this.seedData();
+    this.seedDocumentTags();
   }
 
   private seedData() {
@@ -1631,6 +1715,147 @@ export class MemStorage implements IStorage {
     
     this.loanReadinessAssessments.set(id, assessment);
     return assessment;
+  }
+
+  // Document Tagging System - MemStorage Implementation
+  async updateChatDocument(id: number, updates: Partial<ChatDocument>): Promise<ChatDocument | undefined> {
+    const document = this.chatDocuments.find(doc => doc.id === id);
+    if (!document) return undefined;
+    
+    const updatedDocument = { ...document, ...updates, updatedAt: new Date() };
+    const index = this.chatDocuments.findIndex(doc => doc.id === id);
+    this.chatDocuments[index] = updatedDocument;
+    return updatedDocument;
+  }
+
+  async getAllDocumentTags(): Promise<DocumentTag[]> {
+    return Array.from(this.documentTags.values()).sort((a, b) => {
+      if (a.category !== b.category) return a.category.localeCompare(b.category);
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  async getDocumentTag(id: number): Promise<DocumentTag | undefined> {
+    return this.documentTags.get(id);
+  }
+
+  async getDocumentTagByName(name: string): Promise<DocumentTag | undefined> {
+    return Array.from(this.documentTags.values()).find(tag => tag.name === name);
+  }
+
+  async createDocumentTag(tag: InsertDocumentTag): Promise<DocumentTag> {
+    const id = this.currentId++;
+    const newTag: DocumentTag = {
+      ...tag,
+      id,
+      createdAt: new Date()
+    };
+    this.documentTags.set(id, newTag);
+    return newTag;
+  }
+
+  async updateDocumentTag(id: number, updates: Partial<DocumentTag>): Promise<DocumentTag | undefined> {
+    const tag = this.documentTags.get(id);
+    if (!tag) return undefined;
+    
+    const updatedTag = { ...tag, ...updates };
+    this.documentTags.set(id, updatedTag);
+    return updatedTag;
+  }
+
+  async incrementTagUsage(tagName: string): Promise<void> {
+    const tag = Array.from(this.documentTags.values()).find(t => t.name === tagName);
+    if (tag) {
+      tag.usageCount = (tag.usageCount || 0) + 1;
+      this.documentTags.set(tag.id, tag);
+    }
+  }
+
+  async getDocumentsByTag(tagName: string): Promise<ChatDocument[]> {
+    return this.chatDocuments.filter(doc => 
+      [...(doc.smartTags || []), ...(doc.customTags || [])].includes(tagName)
+    );
+  }
+
+  async searchDocuments(query: string, userId?: number): Promise<ChatDocument[]> {
+    const lowerQuery = query.toLowerCase();
+    return this.chatDocuments.filter(doc => {
+      if (userId && doc.userId !== userId) return false;
+      
+      const matchesQuery = 
+        doc.fileName.toLowerCase().includes(lowerQuery) ||
+        doc.extractedText?.toLowerCase().includes(lowerQuery) ||
+        [...(doc.smartTags || []), ...(doc.customTags || [])].some(tag => 
+          tag.toLowerCase().includes(lowerQuery)
+        );
+      
+      return matchesQuery;
+    });
+  }
+
+  private seedDocumentTags() {
+    // Content Tags
+    const contentTags = [
+      { name: "Government ID", category: "CONTENT", color: "#3B82F6", description: "Driver's license, passport, state ID" },
+      { name: "Social Security", category: "CONTENT", color: "#3B82F6", description: "Social Security card or documentation" },
+      { name: "Financial Document", category: "CONTENT", color: "#10B981", description: "Bank statements, financial records" },
+      { name: "Credit Report", category: "CONTENT", color: "#8B5CF6", description: "Credit reports from bureaus" },
+      { name: "Bureau Response", category: "CONTENT", color: "#F59E0B", description: "Responses from credit bureaus" },
+      { name: "Utility Bill", category: "CONTENT", color: "#06B6D4", description: "Utility bills for address verification" },
+      { name: "Pay Stub", category: "CONTENT", color: "#EC4899", description: "Employment income verification" },
+      { name: "Tax Document", category: "CONTENT", color: "#84CC16", description: "Tax returns and related documents" }
+    ];
+
+    // Format Tags  
+    const formatTags = [
+      { name: "PDF Document", category: "FORMAT", color: "#DC2626", description: "Adobe PDF format" },
+      { name: "Image File", category: "FORMAT", color: "#059669", description: "JPEG, PNG, or other image formats" },
+      { name: "Scanned Document", category: "FORMAT", color: "#7C3AED", description: "Scanned paper documents" },
+      { name: "Digital Native", category: "FORMAT", color: "#0EA5E9", description: "Digitally created documents" }
+    ];
+
+    // Purpose Tags
+    const purposeTags = [
+      { name: "Dispute Evidence", category: "PURPOSE", color: "#DC2626", description: "Documents for credit dispute process" },
+      { name: "Identity Verification", category: "PURPOSE", color: "#0891B2", description: "Documents for identity verification" },
+      { name: "Income Proof", category: "PURPOSE", color: "#65A30D", description: "Documents proving income" },
+      { name: "Address Verification", category: "PURPOSE", color: "#C2410C", description: "Documents for address verification" }
+    ];
+
+    // Urgency Tags
+    const urgencyTags = [
+      { name: "High Priority", category: "URGENCY", color: "#DC2626", description: "Requires immediate attention" },
+      { name: "Time Sensitive", category: "URGENCY", color: "#EA580C", description: "Has upcoming deadline" },
+      { name: "Standard", category: "URGENCY", color: "#65A30D", description: "Normal processing priority" }
+    ];
+
+    // Compliance Tags
+    const complianceTags = [
+      { name: "FCRA Compliant", category: "COMPLIANCE", color: "#0891B2", description: "Meets Fair Credit Reporting Act requirements" },
+      { name: "HIPAA Protected", category: "COMPLIANCE", color: "#7C3AED", description: "Protected health information" },
+      { name: "PII Sensitive", category: "COMPLIANCE", color: "#DC2626", description: "Contains personally identifiable information" }
+    ];
+
+    // Combine all tags and insert
+    const allTags = [...contentTags, ...formatTags, ...purposeTags, ...urgencyTags, ...complianceTags];
+    let tagId = 1;
+    
+    for (const tag of allTags) {
+      const documentTag: DocumentTag = {
+        id: tagId++,
+        name: tag.name,
+        category: tag.category,
+        color: tag.color,
+        description: tag.description,
+        isSystemTag: true,
+        usageCount: 0,
+        createdAt: new Date()
+      };
+      this.documentTags.set(documentTag.id, documentTag);
+    }
+    
+    // Update currentId to start after tag IDs
+    this.currentId = Math.max(this.currentId, tagId);
   }
 }
 

@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageCircle, Upload, FileText, Shield, User, UserCheck, Clock, Paperclip, Send, Download, Eye, Lock } from "lucide-react";
+import { MessageCircle, Upload, FileText, Shield, User, UserCheck, Clock, Paperclip, Send, Download, Eye, Lock, Tags } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import SmartDocumentTags from "@/components/smart-document-tags";
 
 interface SecureChatProps {
   userId: number;
@@ -371,7 +372,7 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="chat" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 h-auto gap-1 p-1">
+        <TabsList className="grid w-full grid-cols-4 h-auto gap-1 p-1">
           <TabsTrigger value="chat" className="text-xs sm:text-sm px-2 py-2 min-w-0">
             <span className="hidden sm:inline">Secure Chat</span>
             <span className="sm:hidden">Chat</span>
@@ -383,6 +384,11 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
           <TabsTrigger value="upload" className="text-xs sm:text-sm px-2 py-2 min-w-0">
             <span className="hidden sm:inline">Upload Documents</span>
             <span className="sm:hidden">Upload</span>
+          </TabsTrigger>
+          <TabsTrigger value="tags" className="text-xs sm:text-sm px-2 py-2 min-w-0">
+            <Tags className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Smart Tags</span>
+            <span className="sm:hidden">Tags</span>
           </TabsTrigger>
         </TabsList>
 
@@ -702,6 +708,13 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="tags" className="space-y-4">
+          <SmartDocumentTags 
+            documents={userDocuments} 
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: [`/api/chat/documents`, userId] })}
+          />
         </TabsContent>
       </Tabs>
     </div>
