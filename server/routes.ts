@@ -2235,10 +2235,7 @@ END OF DOCUMENT
         userId,
         bankName: connectionData.institutionName,
         accountType: 'CHECKING',
-        connectionStatus: 'CONNECTED',
-        isActive: true,
-        autoPaymentOptimization: false,
-        securityLevel: 'BANK_GRADE'
+        connectionStatus: 'CONNECTED'
       });
       
       res.json({ 
