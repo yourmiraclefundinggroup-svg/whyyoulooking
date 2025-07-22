@@ -214,13 +214,21 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
     refetchInterval: 3000,
     queryFn: async () => {
       const token = localStorage.getItem('auth_token');
+      console.log('Fetching AI conversation for user:', userId, 'hasToken:', !!token);
+      
       const response = await fetch(`/api/ai/conversation/${userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      if (!response.ok) return [];
-      return response.json();
+      
+      if (!response.ok) {
+        console.error('Failed to fetch AI conversation:', response.status, response.statusText);
+        return [];
+      }
+      const data = await response.json();
+      console.log('AI conversation data:', data);
+      return data;
     }
   });
 
@@ -347,6 +355,8 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
     mutationFn: async (data: { message: string; files?: File[] }) => {
       const token = localStorage.getItem('auth_token');
       
+      console.log('Sending AI message:', { userId, message: data.message, hasToken: !!token });
+      
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: {
@@ -365,15 +375,26 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send AI message');
+        const errorText = await response.text();
+        console.error('AI chat error:', response.status, errorText);
+        throw new Error(`Failed to send AI message: ${response.status} ${errorText}`);
       }
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('AI response success:', data);
       queryClient.invalidateQueries({ queryKey: [`/api/ai/conversation`, userId] });
       setAiMessage("");
       setAiFiles([]);
+    },
+    onError: (error) => {
+      console.error('AI message mutation error:', error);
+      toast({
+        title: "AI Assistant Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   });
 

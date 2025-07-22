@@ -2506,13 +2506,17 @@ END OF DOCUMENT
       const userId = parseInt(req.params.userId);
       const requestingUser = (req as any).user;
       
+      console.log('AI conversation request:', { userId, requestingUserId: requestingUser?.id, requestingUserAccess: requestingUser?.accessLevel });
+      
       // Users can only access their own conversation unless they're admin
       if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== userId) {
+        console.log('Access denied for AI conversation:', { requestingUserId: requestingUser.id, targetUserId: userId });
         return res.status(403).json({ message: "Access denied" });
       }
       
       // Get AI conversation history for user
       const conversation = await storage.getAIConversation(userId);
+      console.log('AI conversation retrieved:', conversation.length, 'messages');
       res.json(conversation);
     } catch (error) {
       console.error("Error fetching AI conversation:", error);
@@ -2525,8 +2529,11 @@ END OF DOCUMENT
       const { userId, message, files } = req.body;
       const requestingUser = (req as any).user;
       
+      console.log('AI chat request:', { userId, message, requestingUserId: requestingUser?.id, requestingUserAccess: requestingUser?.accessLevel });
+      
       // Users can only send messages as themselves unless they're admin
       if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== userId) {
+        console.log('Access denied:', { requestingUserId: requestingUser.id, targetUserId: userId });
         return res.status(403).json({ message: "Can only send messages as yourself" });
       }
 
