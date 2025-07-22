@@ -139,7 +139,7 @@ Respond in JSON format:
         }]
       });
 
-      const analysis = JSON.parse(response.content[0].text);
+      const analysis = JSON.parse((response.content[0] as { text: string }).text);
       
       // Validate and sanitize the response
       return {

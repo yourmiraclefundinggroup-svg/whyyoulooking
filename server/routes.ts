@@ -1,6 +1,9 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { aiConversations } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import { aiService } from "./ai-service";
 import { ExperianService } from "./integrations/credit-bureaus";
 import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema } from "@shared/schema";
@@ -2516,7 +2519,12 @@ END OF DOCUMENT
       
       // Get AI conversation history for user
       try {
-        const conversation = await storage.getAIConversation(userId);
+        // Direct database query to bypass storage method issue
+        const conversation = await db
+          .select()
+          .from(aiConversations)
+          .where(eq(aiConversations.userId, userId))
+          .orderBy(aiConversations.createdAt);
         console.log('AI conversation retrieved:', conversation.length, 'messages');
         res.json(conversation);
       } catch (error) {
@@ -2545,7 +2553,8 @@ END OF DOCUMENT
 
       // Store user message
       try {
-        await storage.storeAIMessage(userId, {
+        await db.insert(aiConversations).values({
+          userId,
           role: 'user',
           content: message,
           attachments: files || [],
@@ -2631,7 +2640,8 @@ What specific credit challenge can I help you tackle today?`;
 
       // Store AI response
       try {
-        await storage.storeAIMessage(userId, {
+        await db.insert(aiConversations).values({
+          userId,
           role: 'assistant', 
           content: aiResponse,
           attachments: [],

@@ -152,7 +152,7 @@ export const bureauResponses = pgTable("bureau_responses", {
 
 export const bureauResponseAnalysis = pgTable("bureau_response_analysis", {
   id: serial("id").primaryKey(),
-  responseId: integer("response_id").notNull().references(() => bureauResponses.id),
+  responseId: integer("response_id").notNull(),
   analysisResult: text("analysis_result").notNull(), // JSON string with AI analysis
   rejectionReasons: text("rejection_reasons").array(), // Array of identified rejection reasons
   recommendedActions: text("recommended_actions").notNull(), // JSON string with next steps

@@ -822,7 +822,10 @@ Consider:
       monthlyPaymentEstimate: monthlyPayment,
       strengths,
       concerns,
-      recommendedActions,
+      recommendedActions: recommendedActions.map(action => ({
+        ...action,
+        priority: action.priority as "HIGH" | "MEDIUM" | "LOW"
+      })),
       nextSteps: [
         "Review and verify all financial documentation",
         "Get pre-qualified with multiple lenders",
