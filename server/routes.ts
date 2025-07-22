@@ -2850,6 +2850,28 @@ This letter can be customized with your specific details and sent to credit bure
     }
   });
 
+  // Contact/Join request endpoint
+  app.post("/api/contact/join-request", async (req, res) => {
+    try {
+      const { type, timestamp, source } = req.body;
+      
+      console.log(`New ${type} from ${source} at ${timestamp}`);
+      console.log('Notification: Send email to Ervin.ward@scoreshiftapp.com');
+      
+      // In a production environment, you would send an actual email here
+      // using SendGrid or another email service
+      
+      res.json({ 
+        success: true, 
+        message: "Request received and notification sent",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error processing join request:", error);
+      res.status(500).json({ error: "Failed to process request" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

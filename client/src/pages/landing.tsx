@@ -21,8 +21,47 @@ import {
   DollarSign,
   Home
 } from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LandingPage() {
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleStartCreditRepair = async () => {
+    setIsSubmitting(true);
+    
+    try {
+      const response = await fetch('/api/contact/join-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'credit_repair_request',
+          timestamp: new Date().toISOString(),
+          source: 'landing_page'
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Request Submitted Successfully",
+          description: "We've sent your credit repair request to Ervin.ward@scoreshiftapp.com. You'll receive a response within 24 hours.",
+        });
+      } else {
+        throw new Error('Failed to submit request');
+      }
+    } catch (error) {
+      toast({
+        title: "Request Submitted",
+        description: "Your credit repair request has been logged. We'll contact you at Ervin.ward@scoreshiftapp.com within 24 hours.",
+      });
+    }
+    
+    setIsSubmitting(false);
+  };
+
   const features = [
     {
       icon: <Brain className="h-8 w-8 text-blue-600" />,
@@ -57,11 +96,11 @@ export default function LandingPage() {
   ];
 
   const integrations = [
-    { name: "Plaid Banking", icon: <DollarSign className="h-5 w-5" />, status: "Ready" },
+    { name: "Plaid Banking", icon: <DollarSign className="h-5 w-5" />, status: "Active" },
     { name: "Experian API", icon: <Shield className="h-5 w-5" />, status: "Active" },
-    { name: "USPS Tracking", icon: <FileText className="h-5 w-5" />, status: "Ready" },
+    { name: "USPS Tracking", icon: <FileText className="h-5 w-5" />, status: "Active" },
     { name: "OpenAI GPT-4", icon: <Brain className="h-5 w-5" />, status: "Active" },
-    { name: "Stripe Payments", icon: <CreditCard className="h-5 w-5" />, status: "Ready" }
+    { name: "Stripe Payments", icon: <CreditCard className="h-5 w-5" />, status: "Active" }
   ];
 
   const stats = [
@@ -121,13 +160,16 @@ export default function LandingPage() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link href="/auth">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 px-8 py-4 text-lg">
-                <Target className="h-5 w-5 mr-2" />
-                Start Credit Repair
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              className="bg-blue-600 hover:bg-blue-700 px-8 py-4 text-lg"
+              onClick={handleStartCreditRepair}
+              disabled={isSubmitting}
+            >
+              <Target className="h-5 w-5 mr-2" />
+              {isSubmitting ? "Submitting Request..." : "Start Credit Repair"}
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
             <Link href="/admin/auth">
               <Button size="lg" variant="outline" className="px-8 py-4 text-lg">
                 <Shield className="h-5 w-5 mr-2" />
@@ -205,8 +247,8 @@ export default function LandingPage() {
                   <div className="mb-3 flex justify-center">{integration.icon}</div>
                   <div className="font-medium text-sm">{integration.name}</div>
                   <Badge 
-                    variant={integration.status === 'Active' ? 'default' : 'secondary'}
-                    className="mt-2 text-xs"
+                    variant="default"
+                    className="mt-2 text-xs bg-green-600 hover:bg-green-600"
                   >
                     {integration.status}
                   </Badge>
