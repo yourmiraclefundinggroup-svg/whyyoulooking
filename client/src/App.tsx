@@ -28,7 +28,12 @@ function Router() {
     return <LandingPage />;
   }
 
-  // Show login if no user is authenticated and not on landing page
+  // Allow access to lead form without authentication
+  if (!user && location === "/get-started") {
+    return <LeadForm />;
+  }
+
+  // Show login if no user is authenticated and not on other allowed pages
   if (!user) {
     return <Login />;
   }
