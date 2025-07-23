@@ -17,6 +17,7 @@ export function Navigation() {
   // Show basic navigation for all authenticated users
   const navItems = [
     { href: "/credit-repair", label: "Credit Repair" },
+    { href: "/student-loans", label: "Student Loans" },
     { href: "/experian", label: "Experian Connect" },
     ...(canAccessCreditBuilding ? [{ href: "/credit-building", label: "Credit Building" }] : []),
     ...(canAccessEducation ? [{ href: "/education", label: "Education" }] : []),

@@ -12,6 +12,14 @@ export const users = pgTable("users", {
   isTestUser: boolean("is_test_user").default(false),
   testingNotes: text("testing_notes"), // Notes about their testing feedback
   passwordResetRequired: boolean("password_reset_required").default(true), // Force password reset on first login
+  studentLoansEnrolled: boolean("student_loans_enrolled").default(false),
+  monthlyStudentLoanPayment: decimal("monthly_student_loan_payment", { precision: 10, scale: 2 }),
+  employmentInfo: json("employment_info").$type<{
+    employer?: string;
+    income?: number;
+    employmentType?: string; // for PSLF eligibility
+    startDate?: string;
+  }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -71,6 +79,48 @@ export const educationalContent = pgTable("educational_content", {
   category: text("category").notNull(), // CREDIT_SCORES, DISPUTE_PROCESS, CREDIT_BUILDING
   imageUrl: text("image_url"),
   readTime: integer("read_time").notNull(), // in minutes
+});
+
+export const studentLoans = pgTable("student_loans", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  servicerName: text("servicer_name").notNull(),
+  loanBalance: decimal("loan_balance", { precision: 12, scale: 2 }).notNull(),
+  interestRate: decimal("interest_rate", { precision: 5, scale: 2 }).notNull(),
+  monthlyPayment: decimal("monthly_payment", { precision: 10, scale: 2 }).notNull(),
+  repaymentPlan: text("repayment_plan").notNull(),
+  loanType: text("loan_type").notNull(), // FEDERAL, PRIVATE
+  originalBalance: decimal("original_balance", { precision: 12, scale: 2 }),
+  graduationDate: date("graduation_date"),
+  status: text("status").notNull().default("ACTIVE"), // ACTIVE, PAID_OFF, DEFAULT, FORBEARANCE
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const loanNegotiations = pgTable("loan_negotiations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  loanId: integer("loan_id"),
+  negotiationType: text("negotiation_type").notNull(), // PAYMENT_REDUCTION, FORBEARANCE, FORGIVENESS, CONSOLIDATION
+  status: text("status").notNull().default("INITIATED"), // INITIATED, IN_PROGRESS, COMPLETED, REJECTED
+  documentsGenerated: text("documents_generated").array(),
+  outcome: text("outcome"),
+  savingsAchieved: decimal("savings_achieved", { precision: 10, scale: 2 }),
+  monthlyPaymentBefore: decimal("monthly_payment_before", { precision: 10, scale: 2 }),
+  monthlyPaymentAfter: decimal("monthly_payment_after", { precision: 10, scale: 2 }),
+  negotiationNotes: text("negotiation_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const loanDocuments = pgTable("loan_documents", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  negotiationId: integer("negotiation_id"),
+  documentType: text("document_type").notNull(), // HARDSHIP_LETTER, PAYMENT_MODIFICATION, CONSOLIDATION_APP
+  fileName: text("file_name").notNull(),
+  content: text("content").notNull(),
+  generated: boolean("generated").default(true), // true if AI generated, false if uploaded
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const creditBuildingActions = pgTable("credit_building_actions", {
@@ -187,6 +237,9 @@ export const insertCreditMonitoringConnectionSchema = createInsertSchema(creditM
 export const insertCreditFileSyncHistorySchema = createInsertSchema(creditFileSyncHistory).omit({ id: true, syncDate: true });
 export const insertBureauResponseSchema = createInsertSchema(bureauResponses).omit({ id: true, createdAt: true });
 export const insertBureauResponseAnalysisSchema = createInsertSchema(bureauResponseAnalysis).omit({ id: true, createdAt: true });
+export const insertStudentLoanSchema = createInsertSchema(studentLoans).omit({ id: true, createdAt: true });
+export const insertLoanNegotiationSchema = createInsertSchema(loanNegotiations).omit({ id: true, createdAt: true, completedAt: true });
+export const insertLoanDocumentSchema = createInsertSchema(loanDocuments).omit({ id: true, createdAt: true });
 
 // Credit Utilization Optimizer
 export const creditCards = pgTable("credit_cards", {
@@ -373,6 +426,12 @@ export type InsertEducationalContent = z.infer<typeof insertEducationalContentSc
 export type CreditBuildingAction = typeof creditBuildingActions.$inferSelect;
 export type InsertCreditBuildingAction = z.infer<typeof insertCreditBuildingActionSchema>;
 export type TestingFeedback = typeof testingFeedback.$inferSelect;
+export type StudentLoan = typeof studentLoans.$inferSelect;
+export type InsertStudentLoan = z.infer<typeof insertStudentLoanSchema>;
+export type LoanNegotiation = typeof loanNegotiations.$inferSelect;
+export type InsertLoanNegotiation = z.infer<typeof insertLoanNegotiationSchema>;
+export type LoanDocument = typeof loanDocuments.$inferSelect;
+export type InsertLoanDocument = z.infer<typeof insertLoanDocumentSchema>;
 export type InsertTestingFeedback = z.infer<typeof insertTestingFeedbackSchema>;
 export type BetaAccess = typeof betaAccess.$inferSelect;
 export type InsertBetaAccess = z.infer<typeof insertBetaAccessSchema>;

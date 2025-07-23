@@ -8,6 +8,7 @@ import { UserProvider, useUserContext } from "@/hooks/use-user-context";
 import LandingPage from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import CreditRepair from "@/pages/credit-repair";
+import StudentLoans from "@/pages/student-loans";
 import CreditBuilding from "@/pages/credit-building";
 import Education from "@/pages/education";
 import ExperianConnect from "@/pages/experian-connect";
@@ -62,6 +63,10 @@ function Router() {
         <Route path="/credit-repair">
           <Navigation />
           <CreditRepair />
+        </Route>
+        <Route path="/student-loans">
+          <Navigation />
+          <StudentLoans />
         </Route>
         <Route path="/credit-building">
           <Navigation />

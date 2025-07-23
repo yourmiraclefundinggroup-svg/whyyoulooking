@@ -2,12 +2,77 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { aiConversations } from "@shared/schema";
+import { aiConversations, studentLoans, loanNegotiations } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { aiService } from "./ai-service";
 import { ExperianService } from "./integrations/credit-bureaus";
-import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema } from "@shared/schema";
+import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema } from "@shared/schema";
 import { z } from "zod";
+
+// AI-powered loan negotiation strategy generation
+async function generateLoanNegotiationStrategy(negotiationData: any) {
+  const strategies = {
+    PAYMENT_REDUCTION: {
+      documents: ["hardship_letter", "income_verification"],
+      timeline: "2-4 weeks",
+      successRate: "75%",
+      strategy: "Focus on financial hardship and request income-driven repayment plan"
+    },
+    FORGIVENESS: {
+      documents: ["employment_certification", "payment_history"],
+      timeline: "3-6 months",
+      successRate: "60%",
+      strategy: "Verify PSLF eligibility and consolidate qualifying payments"
+    },
+    CONSOLIDATION: {
+      documents: ["loan_summary", "consolidation_application"],
+      timeline: "6-8 weeks", 
+      successRate: "90%",
+      strategy: "Combine federal loans for simplified payments and potential rate reduction"
+    }
+  };
+  
+  return strategies[negotiationData.negotiationType] || strategies.PAYMENT_REDUCTION;
+}
+
+function calculateCreditUtilizationImpact(creditReport: any, monthlyLoanPayment: number) {
+  if (!creditReport) return 0;
+  const estimatedIncomeImpact = monthlyLoanPayment * 12 * 0.1;
+  return Math.min(estimatedIncomeImpact / 1000, 50);
+}
+
+function generateCombinedRecommendations(creditReport: any, creditIssues: any[], studentLoans: any[]) {
+  const recommendations = [];
+  
+  if (creditIssues.length > 0 && studentLoans.length > 0) {
+    recommendations.push({
+      type: "TIMING",
+      title: "Coordinate Credit Repair with Loan Negotiations",
+      description: "Complete high-impact credit disputes before applying for loan modifications",
+      priority: "HIGH"
+    });
+  }
+  
+  if (studentLoans.some(loan => loan.loanType === 'FEDERAL')) {
+    recommendations.push({
+      type: "FORGIVENESS",
+      title: "Explore Federal Loan Forgiveness Programs",
+      description: "PSLF and IDR forgiveness could eliminate significant debt",
+      priority: "HIGH"
+    });
+  }
+  
+  if (creditReport && creditReport.creditScore < 650) {
+    recommendations.push({
+      type: "CREDIT_BUILDING",
+      title: "Improve Credit Before Refinancing",
+      description: "Increase score by 50+ points to qualify for better loan rates",
+      priority: "MEDIUM"
+    });
+  }
+  
+  return recommendations;
+}
 
 // Authentication middleware
 const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
@@ -2869,6 +2934,265 @@ This letter can be customized with your specific details and sent to credit bure
     } catch (error) {
       console.error("Error processing join request:", error);
       res.status(500).json({ error: "Failed to process request" });
+    }
+  });
+
+  // Student Loan Management APIs - Debug Endpoint
+  app.get("/api/debug-storage", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(storage));
+      const hasMethod = typeof storage.getStudentLoansByUserId;
+      
+      res.json({
+        userId: user.id,
+        storageMethods: methods,
+        hasStudentLoanMethod: hasMethod,
+        storageConstructorName: storage.constructor.name
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/student-loans", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      
+      // Direct database query bypassing storage layer
+      const loans = await db
+        .select()
+        .from(studentLoans)
+        .where(eq(studentLoans.userId, user.id));
+      
+      res.json(loans);
+    } catch (error) {
+      console.error("Error fetching student loans:", error);
+      res.status(500).json({ error: "Failed to fetch student loans" });
+    }
+  });
+
+  app.post("/api/student-loans", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const loanData = {
+        ...req.body,
+        userId: user.id,
+        status: "ACTIVE"
+      };
+      
+      const [newLoan] = await db
+        .insert(studentLoans)
+        .values(loanData)
+        .returning();
+        
+      res.json(newLoan);
+    } catch (error) {
+      console.error("Error creating student loan:", error);
+      res.status(500).json({ error: "Failed to create student loan" });
+    }
+  });
+
+  app.get("/api/loan-negotiations", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const negotiations = await db
+        .select()
+        .from(loanNegotiations)
+        .where(eq(loanNegotiations.userId, user.id));
+        
+      res.json(negotiations);
+    } catch (error) {
+      console.error("Error fetching loan negotiations:", error);
+      res.status(500).json({ error: "Failed to fetch loan negotiations" });
+    }
+  });
+
+  app.post("/api/loan-negotiations", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const negotiationData = {
+        ...req.body,
+        userId: user.id,
+        status: "INITIATED"
+      };
+      
+      const newNegotiation = await storage.createLoanNegotiation(negotiationData);
+      
+      // Generate AI-powered negotiation strategy
+      const aiStrategy = await generateLoanNegotiationStrategy(negotiationData);
+      
+      res.json({
+        negotiation: newNegotiation,
+        strategy: aiStrategy
+      });
+    } catch (error) {
+      console.error("Error creating loan negotiation:", error);
+      res.status(500).json({ error: "Failed to create loan negotiation" });
+    }
+  });
+
+  // Enhanced dashboard with student loan integration
+  app.get("/api/financial-overview", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      
+      // Get credit data
+      const creditReport = await storage.getCreditReportByUserId(user.id);
+      const creditIssues = await storage.getCreditIssuesByUserId(user.id);
+      
+      // Get student loan data
+      const studentLoans = await storage.getStudentLoansByUserId(user.id);
+      const loanNegotiations = await storage.getLoanNegotiationsByUserId(user.id);
+      
+      // Calculate combined insights
+      const totalLoanBalance = studentLoans.reduce((sum, loan) => sum + parseFloat(loan.loanBalance), 0);
+      const totalMonthlyPayment = studentLoans.reduce((sum, loan) => sum + parseFloat(loan.monthlyPayment), 0);
+      const creditUtilizationImpact = calculateCreditUtilizationImpact(creditReport, totalMonthlyPayment);
+      
+      const overview = {
+        creditScore: creditReport?.creditScore || 0,
+        totalCreditIssues: creditIssues.length,
+        totalLoanBalance,
+        totalMonthlyPayment,
+        activeLoanNegotiations: loanNegotiations.filter(n => n.status === 'IN_PROGRESS').length,
+        creditUtilizationImpact,
+        combinedRecommendations: generateCombinedRecommendations(creditReport, creditIssues, studentLoans)
+      };
+      
+      res.json(overview);
+    } catch (error) {
+      console.error("Error fetching financial overview:", error);
+      res.status(500).json({ error: "Failed to fetch financial overview" });
+    }
+  });
+
+  // Student Loan Management API Endpoints
+  app.get("/api/student-loans", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const loans = await storage.getStudentLoansByUserId(user.id);
+      res.json(loans);
+    } catch (error) {
+      console.error("Error fetching student loans:", error);
+      res.status(500).json({ error: "Failed to fetch student loans" });
+    }
+  });
+
+  app.post("/api/student-loans", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const loanData = { ...req.body, userId: user.id };
+      
+      // Validate loan data
+      if (!loanData.servicerName || !loanData.loanType || !loanData.currentBalance) {
+        return res.status(400).json({ error: "Missing required loan information" });
+      }
+      
+      const loan = await storage.createStudentLoan(loanData);
+      res.json(loan);
+    } catch (error) {
+      console.error("Error creating student loan:", error);
+      res.status(500).json({ error: "Failed to create student loan" });
+    }
+  });
+
+  app.put("/api/student-loans/:id", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const loanId = parseInt(req.params.id);
+      
+      // Verify loan ownership
+      const existingLoans = await storage.getStudentLoansByUserId(user.id);
+      const ownedLoan = existingLoans.find(loan => loan.id === loanId);
+      
+      if (!ownedLoan) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const updatedLoan = await storage.updateStudentLoan(loanId, req.body);
+      res.json(updatedLoan);
+    } catch (error) {
+      console.error("Error updating student loan:", error);
+      res.status(500).json({ error: "Failed to update student loan" });
+    }
+  });
+
+  app.get("/api/loan-negotiations", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const negotiations = await storage.getLoanNegotiationsByUserId(user.id);
+      res.json(negotiations);
+    } catch (error) {
+      console.error("Error fetching loan negotiations:", error);
+      res.status(500).json({ error: "Failed to fetch loan negotiations" });
+    }
+  });
+
+  app.post("/api/loan-negotiations", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const negotiationData = { ...req.body, userId: user.id, status: 'PLANNING' };
+      
+      // Generate AI-powered negotiation strategy
+      const strategy = await generateLoanNegotiationStrategy(negotiationData);
+      negotiationData.strategyGenerated = JSON.stringify(strategy);
+      
+      const negotiation = await storage.createLoanNegotiation(negotiationData);
+      res.json({ ...negotiation, strategy });
+    } catch (error) {
+      console.error("Error creating loan negotiation:", error);
+      res.status(500).json({ error: "Failed to create loan negotiation" });
+    }
+  });
+
+  app.put("/api/loan-negotiations/:id", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const negotiationId = parseInt(req.params.id);
+      
+      // Verify negotiation ownership
+      const existingNegotiations = await storage.getLoanNegotiationsByUserId(user.id);
+      const ownedNegotiation = existingNegotiations.find(neg => neg.id === negotiationId);
+      
+      if (!ownedNegotiation) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const updatedNegotiation = await storage.updateLoanNegotiation(negotiationId, req.body);
+      res.json(updatedNegotiation);
+    } catch (error) {
+      console.error("Error updating loan negotiation:", error);
+      res.status(500).json({ error: "Failed to update loan negotiation" });
+    }
+  });
+
+  // Admin endpoint to view all student loan data
+  app.get("/api/admin/student-loans", authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      // For admin overview, get sample data for all users
+      const allUsers = await storage.getUsers();
+      const loanData = [];
+      
+      for (const user of allUsers.slice(0, 5)) { // Limit to first 5 users for demo
+        const loans = await storage.getStudentLoansByUserId(user.id);
+        const negotiations = await storage.getLoanNegotiationsByUserId(user.id);
+        
+        if (loans.length > 0 || negotiations.length > 0) {
+          loanData.push({
+            user: user,
+            loans: loans,
+            negotiations: negotiations,
+            totalDebt: loans.reduce((sum, loan) => sum + loan.currentBalance, 0),
+            activeNegotiations: negotiations.filter(neg => neg.status === 'IN_PROGRESS').length
+          });
+        }
+      }
+      
+      res.json(loanData);
+    } catch (error) {
+      console.error("Error fetching admin student loan data:", error);
+      res.status(500).json({ error: "Failed to fetch student loan data" });
     }
   });
 

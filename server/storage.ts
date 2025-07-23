@@ -6,7 +6,9 @@ import {
   goodwillLetters, creditMixOptimizations, identityTheftCases, rentUtilityReporting,
   creditCardPredictions, financialBehaviorProfiles, bankAccountConnections, taxIntegrations,
   employmentVerifications, disputeSuccessPredictions, mlTrainingData, chatMessages, chatDocuments, documentTags, aiConversations,
-  type User, type InsertUser,
+  studentLoans, loanNegotiations, loanDocuments,
+  type User,
+  type InsertUser,
   type CreditReport, type InsertCreditReport,
   type CreditIssue, type InsertCreditIssue,
   type Dispute, type InsertDispute,
@@ -38,7 +40,10 @@ import {
   chatMessages as ChatMessage,
   type ChatDocument, type InsertChatDocument, type InsertChatMessage,
   type DocumentTag, type InsertDocumentTag,
-  type AiConversation, type InsertAiConversation
+  type AiConversation, type InsertAiConversation,
+  type StudentLoan, type InsertStudentLoan,
+  type LoanNegotiation, type InsertLoanNegotiation,
+  type LoanDocument, type InsertLoanDocument
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
@@ -225,6 +230,14 @@ export interface IStorage {
     letterGenerated?: boolean;
     letterUrl?: string;
   }): Promise<AiConversation>;
+
+  // Student Loan Management
+  getStudentLoansByUserId(userId: number): Promise<StudentLoan[]>;
+  createStudentLoan(data: InsertStudentLoan): Promise<StudentLoan>;
+  updateStudentLoan(id: number, data: Partial<StudentLoan>): Promise<StudentLoan>;
+  getLoanNegotiationsByUserId(userId: number): Promise<LoanNegotiation[]>;
+  createLoanNegotiation(data: InsertLoanNegotiation): Promise<LoanNegotiation>;
+  updateLoanNegotiation(id: number, data: Partial<LoanNegotiation>): Promise<LoanNegotiation>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -723,6 +736,8 @@ export class MemStorage implements IStorage {
   private loanReadinessProfiles: Map<number, LoanReadinessProfile> = new Map();
   private loanReadinessAssessments: Map<number, LoanReadinessAssessment> = new Map();
   private documentTags: Map<number, DocumentTag> = new Map();
+  private studentLoans: Map<number, StudentLoan> = new Map();
+  private loanNegotiations: Map<number, LoanNegotiation> = new Map();
   private currentId: number = 1;
 
   constructor() {
@@ -1900,6 +1915,49 @@ export class MemStorage implements IStorage {
       })
       .returning();
     return aiMessage;
+  }
+
+  // Student Loan Management  
+  async getStudentLoansByUserId(userId: number): Promise<StudentLoan[]> {
+    return await db.select().from(studentLoans).where(eq(studentLoans.userId, userId));
+  }
+
+  async createStudentLoan(data: InsertStudentLoan): Promise<StudentLoan> {
+    const [loan] = await db
+      .insert(studentLoans)
+      .values(data)
+      .returning();
+    return loan;
+  }
+
+  async updateStudentLoan(id: number, data: Partial<StudentLoan>): Promise<StudentLoan> {
+    const [loan] = await db
+      .update(studentLoans)
+      .set(data)
+      .where(eq(studentLoans.id, id))
+      .returning();
+    return loan;
+  }
+
+  async getLoanNegotiationsByUserId(userId: number): Promise<LoanNegotiation[]> {
+    return await db.select().from(loanNegotiations).where(eq(loanNegotiations.userId, userId));
+  }
+
+  async createLoanNegotiation(data: InsertLoanNegotiation): Promise<LoanNegotiation> {
+    const [negotiation] = await db
+      .insert(loanNegotiations)
+      .values(data)
+      .returning();
+    return negotiation;
+  }
+
+  async updateLoanNegotiation(id: number, data: Partial<LoanNegotiation>): Promise<LoanNegotiation> {
+    const [negotiation] = await db
+      .update(loanNegotiations)
+      .set(data)
+      .where(eq(loanNegotiations.id, id))
+      .returning();
+    return negotiation;
   }
 }
 
