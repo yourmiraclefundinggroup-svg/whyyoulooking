@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, real, date, json, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, real, date, json, jsonb, decimal } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -667,3 +667,94 @@ export type DisputeSuccessPrediction = typeof disputeSuccessPredictions.$inferSe
 export type InsertDisputeSuccessPrediction = z.infer<typeof insertDisputeSuccessPredictionSchema>;
 export type MlTrainingData = typeof mlTrainingData.$inferSelect;
 export type InsertMlTrainingData = z.infer<typeof insertMlTrainingDataSchema>;
+
+// Customer Support AI System Tables
+export const supportConversations = pgTable("support_conversations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  sessionId: text("session_id").notNull().unique(),
+  status: text("status", {
+    enum: ["ACTIVE", "RESOLVED", "ESCALATED", "CLOSED"]
+  }).notNull().default("ACTIVE"),
+  priority: text("priority", {
+    enum: ["LOW", "MEDIUM", "HIGH", "URGENT"]
+  }).notNull().default("MEDIUM"),
+  category: text("category", {
+    enum: ["CREDIT_REPAIR", "DISPUTE_HELP", "APP_NAVIGATION", "BILLING", "TECHNICAL", "GENERAL"]
+  }),
+  escalated: boolean("escalated").default(false),
+  escalatedAt: timestamp("escalated_at"),
+  assignedAgent: text("assigned_agent"),
+  customerSatisfaction: integer("customer_satisfaction"), // 1-5 rating
+  summary: text("summary"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const supportMessages = pgTable("support_messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").references(() => supportConversations.id).notNull(),
+  sender: text("sender", {
+    enum: ["USER", "AI", "AGENT"]
+  }).notNull(),
+  message: text("message").notNull(),
+  messageType: text("message_type", {
+    enum: ["TEXT", "FORM_DATA", "FILE_ATTACHMENT", "SYSTEM_NOTE"]
+  }).notNull().default("TEXT"),
+  metadata: jsonb("metadata").default({}),
+  sentiment: text("sentiment", {
+    enum: ["POSITIVE", "NEUTRAL", "NEGATIVE", "FRUSTRATED"]
+  }),
+  confidence: real("confidence"), // AI confidence score 0-1
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const supportTickets = pgTable("support_tickets", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").references(() => supportConversations.id).notNull(),
+  ticketNumber: text("ticket_number").notNull().unique(),
+  userId: integer("user_id").references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  status: text("status", {
+    enum: ["OPEN", "IN_PROGRESS", "WAITING_CUSTOMER", "RESOLVED", "CLOSED"]
+  }).notNull().default("OPEN"),
+  priority: text("priority", {
+    enum: ["LOW", "MEDIUM", "HIGH", "URGENT"]
+  }).notNull().default("MEDIUM"),
+  assignedTo: text("assigned_to"),
+  customerInfo: jsonb("customer_info").default({}),
+  tags: text("tags").array().default([]),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  resolvedAt: timestamp("resolved_at")
+});
+
+export const supportKnowledgeBase = pgTable("support_knowledge_base", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: text("category").notNull(),
+  tags: text("tags").array().default([]),
+  isPublic: boolean("is_public").default(true),
+  viewCount: integer("view_count").default(0),
+  helpfulCount: integer("helpful_count").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Insert schemas for support system
+export const insertSupportConversationSchema = createInsertSchema(supportConversations).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertSupportMessageSchema = createInsertSchema(supportMessages).omit({ id: true, createdAt: true });
+export const insertSupportTicketSchema = createInsertSchema(supportTickets).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertSupportKnowledgeBaseSchema = createInsertSchema(supportKnowledgeBase).omit({ id: true, createdAt: true, updatedAt: true });
+
+// Support system types
+export type SupportConversation = typeof supportConversations.$inferSelect;
+export type InsertSupportConversation = z.infer<typeof insertSupportConversationSchema>;
+export type SupportMessage = typeof supportMessages.$inferSelect;
+export type InsertSupportMessage = z.infer<typeof insertSupportMessageSchema>;
+export type SupportTicket = typeof supportTickets.$inferSelect;
+export type InsertSupportTicket = z.infer<typeof insertSupportTicketSchema>;
+export type SupportKnowledgeBase = typeof supportKnowledgeBase.$inferSelect;
+export type InsertSupportKnowledgeBase = z.infer<typeof insertSupportKnowledgeBaseSchema>;

@@ -15,6 +15,7 @@ import Education from "@/pages/education";
 import ExperianConnect from "@/pages/experian-connect";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AdminPortal from "@/pages/admin-portal";
+import SupportAdmin from "@/pages/support-admin";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -93,6 +94,10 @@ function Router() {
         <Route path="/admin-portal/:section">
           <Navigation />
           <AdminPortal />
+        </Route>
+        <Route path="/support-admin">
+          <Navigation />
+          <SupportAdmin />
         </Route>
         <Route path="/login" component={Login} />
         <Route component={NotFound} />

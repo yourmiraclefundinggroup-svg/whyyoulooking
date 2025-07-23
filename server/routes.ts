@@ -2,12 +2,142 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { aiConversations, studentLoans, loanNegotiations } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { 
+  aiConversations, studentLoans, loanNegotiations,
+  supportConversations, supportMessages, supportTickets, supportKnowledgeBase
+} from "@shared/schema";
+import { eq, desc, sql, or } from "drizzle-orm";
 import { aiService } from "./ai-service";
+import OpenAI from "openai";
+import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
 import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema } from "@shared/schema";
 import { z } from "zod";
+
+// Initialize OpenAI for support AI
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Authentication middleware (using existing implementation)
+// Note: authenticateToken function is defined later in the file
+
+// Generate AI support response
+async function generateSupportResponse(message: string, conversation: any) {
+  try {
+    const systemPrompt = `You are ScoreShift's AI customer support assistant. You help users with:
+
+1. Credit repair questions and guidance
+2. App navigation and feature explanation
+3. Dispute tracking and credit monitoring
+4. Student loan negotiation assistance
+5. Account and billing inquiries
+6. Technical support
+
+Key ScoreShift features:
+- AI-powered dispute letter generation
+- Credit score tracking and monitoring
+- Student loan negotiation tools
+- Real-time credit bureau connections
+- Educational content and credit coaching
+- Admin and client portals
+
+Guidelines:
+- Be helpful, professional, and empathetic
+- Provide specific, actionable advice
+- If the question is complex or requires human intervention, suggest escalation
+- Keep responses concise but informative
+- Always maintain a positive, solution-focused tone
+
+Conversation context: ${conversation.category || 'General inquiry'}
+Previous escalations: ${conversation.escalated ? 'Yes' : 'No'}`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: message }
+      ],
+      max_tokens: 500,
+      temperature: 0.7
+    });
+
+    const aiResponse = response.choices[0]?.message?.content || "I apologize, but I'm having trouble processing your request right now. Please try again or contact our support team directly.";
+
+    // Analyze sentiment and determine if escalation is needed
+    const sentiment = analyzeSentiment(message);
+    const escalationKeywords = ['angry', 'frustrated', 'complaint', 'refund', 'cancel', 'legal', 'lawsuit', 'terrible', 'awful'];
+    const escalationSuggested = escalationKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword)
+    ) || sentiment === "NEGATIVE";
+
+    // Categorize the inquiry
+    const category = categorizeInquiry(message);
+
+    return {
+      response: aiResponse,
+      sentiment,
+      confidence: 0.85,
+      category,
+      escalationSuggested
+    };
+  } catch (error) {
+    console.error("Error generating AI support response:", error);
+    
+    // Fallback response if OpenAI fails
+    return {
+      response: "Thank you for contacting ScoreShift support. I'm here to help with your credit repair and financial wellness questions. How can I assist you today?",
+      sentiment: "NEUTRAL",
+      confidence: 0.5,
+      category: "GENERAL",
+      escalationSuggested: false
+    };
+  }
+}
+
+// Simple sentiment analysis
+function analyzeSentiment(message: string): "POSITIVE" | "NEGATIVE" | "NEUTRAL" | "FRUSTRATED" {
+  const positiveWords = ['great', 'good', 'excellent', 'amazing', 'helpful', 'thank', 'love', 'perfect'];
+  const negativeWords = ['bad', 'terrible', 'awful', 'horrible', 'hate', 'angry', 'frustrated', 'disappointed'];
+  const frustratedWords = ['why', 'how', 'cant', "can't", 'not working', 'broken', 'issue', 'problem'];
+
+  const messageLower = message.toLowerCase();
+  
+  const positiveCount = positiveWords.filter(word => messageLower.includes(word)).length;
+  const negativeCount = negativeWords.filter(word => messageLower.includes(word)).length;
+  const frustratedCount = frustratedWords.filter(word => messageLower.includes(word)).length;
+
+  if (frustratedCount > 1) return "FRUSTRATED";
+  if (negativeCount > positiveCount) return "NEGATIVE";
+  if (positiveCount > 0) return "POSITIVE";
+  return "NEUTRAL";
+}
+
+// Categorize support inquiries
+function categorizeInquiry(message: string): string {
+  const messageLower = message.toLowerCase();
+  
+  if (messageLower.includes('credit') || messageLower.includes('score') || messageLower.includes('repair')) {
+    return "CREDIT_REPAIR";
+  }
+  if (messageLower.includes('dispute') || messageLower.includes('bureau') || messageLower.includes('letter')) {
+    return "DISPUTE_HELP";
+  }
+  if (messageLower.includes('student loan') || messageLower.includes('loan') || messageLower.includes('debt')) {
+    return "STUDENT_LOANS";
+  }
+  if (messageLower.includes('billing') || messageLower.includes('payment') || messageLower.includes('subscription')) {
+    return "BILLING";
+  }
+  if (messageLower.includes('login') || messageLower.includes('password') || messageLower.includes('account')) {
+    return "TECHNICAL";
+  }
+  if (messageLower.includes('navigate') || messageLower.includes('how to') || messageLower.includes('where')) {
+    return "APP_NAVIGATION";
+  }
+  
+  return "GENERAL";
+}
 
 // AI-powered loan negotiation strategy generation
 async function generateLoanNegotiationStrategy(negotiationData: any) {
@@ -3239,6 +3369,382 @@ Please contact this lead within 24 hours.
     } catch (error) {
       console.error("Error fetching admin student loan data:", error);
       res.status(500).json({ error: "Failed to fetch student loan data" });
+    }
+  });
+
+  // Customer Support AI System API Endpoints
+  
+  // Start a new support chat session
+  app.post("/api/support/chat/start", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      const sessionId = `support_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Create new conversation record
+      const [conversation] = await db
+        .insert(supportConversations)
+        .values({
+          userId: userId || null,
+          sessionId,
+          status: "ACTIVE",
+          priority: "MEDIUM"
+        })
+        .returning();
+
+      res.json({
+        sessionId,
+        conversationId: conversation.id,
+        status: "active"
+      });
+    } catch (error) {
+      console.error("Error starting support chat:", error);
+      res.status(500).json({ error: "Failed to start chat session" });
+    }
+  });
+
+  // Send message and get AI response
+  app.post("/api/support/chat/message", async (req, res) => {
+    try {
+      const { sessionId, message, userId } = req.body;
+      
+      // Find conversation
+      const [conversation] = await db
+        .select()
+        .from(supportConversations)
+        .where(eq(supportConversations.sessionId, sessionId));
+
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+
+      // Store user message
+      await db
+        .insert(supportMessages)
+        .values({
+          conversationId: conversation.id,
+          sender: "USER",
+          message,
+          messageType: "TEXT"
+        });
+
+      // Generate AI response using OpenAI
+      const aiResponse = await generateSupportResponse(message, conversation);
+      
+      // Store AI response
+      await db
+        .insert(supportMessages)
+        .values({
+          conversationId: conversation.id,
+          sender: "AI",
+          message: aiResponse.response,
+          messageType: "TEXT",
+          sentiment: aiResponse.sentiment,
+          confidence: aiResponse.confidence
+        });
+
+      // Update conversation category if detected
+      if (aiResponse.category && !conversation.category) {
+        await db
+          .update(supportConversations)
+          .set({ 
+            category: aiResponse.category,
+            updatedAt: new Date()
+          })
+          .where(eq(supportConversations.id, conversation.id));
+      }
+
+      res.json({
+        response: aiResponse.response,
+        confidence: aiResponse.confidence,
+        sentiment: aiResponse.sentiment,
+        category: aiResponse.category,
+        escalationSuggested: aiResponse.escalationSuggested
+      });
+    } catch (error) {
+      console.error("Error processing support message:", error);
+      res.status(500).json({ error: "Failed to process message" });
+    }
+  });
+
+  // Submit customer satisfaction rating
+  app.post("/api/support/chat/satisfaction", async (req, res) => {
+    try {
+      const { sessionId, rating } = req.body;
+      
+      await db
+        .update(supportConversations)
+        .set({ 
+          customerSatisfaction: rating,
+          updatedAt: new Date()
+        })
+        .where(eq(supportConversations.sessionId, sessionId));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error submitting satisfaction rating:", error);
+      res.status(500).json({ error: "Failed to submit rating" });
+    }
+  });
+
+  // Create support ticket
+  app.post("/api/support/tickets", async (req, res) => {
+    try {
+      const { sessionId, title, description, priority, category, customerInfo, userId } = req.body;
+      
+      // Find conversation
+      const [conversation] = await db
+        .select()
+        .from(supportConversations)
+        .where(eq(supportConversations.sessionId, sessionId));
+
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+
+      // Generate ticket number
+      const ticketNumber = `SUP-${Date.now().toString().slice(-6)}`;
+      
+      // Create ticket
+      const [ticket] = await db
+        .insert(supportTickets)
+        .values({
+          conversationId: conversation.id,
+          ticketNumber,
+          userId: userId || null,
+          title,
+          description,
+          priority: priority || "MEDIUM",
+          customerInfo,
+          tags: [category || "GENERAL"]
+        })
+        .returning();
+
+      // Update conversation status
+      await db
+        .update(supportConversations)
+        .set({ 
+          status: "ESCALATED",
+          escalated: true,
+          escalatedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(supportConversations.id, conversation.id));
+
+      // Log ticket creation
+      await db
+        .insert(supportMessages)
+        .values({
+          conversationId: conversation.id,
+          sender: "AI",
+          message: `Support ticket #${ticketNumber} has been created. Our team will contact you soon.`,
+          messageType: "SYSTEM_NOTE"
+        });
+
+      res.json({
+        ticketNumber,
+        ticketId: ticket.id,
+        status: "created"
+      });
+    } catch (error) {
+      console.error("Error creating support ticket:", error);
+      res.status(500).json({ error: "Failed to create support ticket" });
+    }
+  });
+
+  // Admin: Get support metrics
+  app.get("/api/support/admin/metrics", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      // Calculate metrics
+      const totalConversations = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(supportConversations);
+
+      const activeConversations = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(supportConversations)
+        .where(eq(supportConversations.status, "ACTIVE"));
+
+      const avgSatisfaction = await db
+        .select({ 
+          avg: sql<number>`avg(customer_satisfaction)` 
+        })
+        .from(supportConversations)
+        .where(sql`customer_satisfaction IS NOT NULL`);
+
+      const escalationData = await db
+        .select({ 
+          total: sql<number>`count(*)`,
+          escalated: sql<number>`count(*) filter (where escalated = true)`
+        })
+        .from(supportConversations);
+
+      const resolutionData = await db
+        .select({ 
+          total: sql<number>`count(*)`,
+          resolved: sql<number>`count(*) filter (where status IN ('RESOLVED', 'CLOSED'))`
+        })
+        .from(supportConversations);
+
+      const topCategories = await db
+        .select({ 
+          category: supportConversations.category,
+          count: sql<number>`count(*)`
+        })
+        .from(supportConversations)
+        .where(sql`category IS NOT NULL`)
+        .groupBy(supportConversations.category)
+        .orderBy(sql`count(*) DESC`)
+        .limit(5);
+
+      const metrics = {
+        totalConversations: totalConversations[0]?.count || 0,
+        activeConversations: activeConversations[0]?.count || 0,
+        averageResponseTime: 8, // Mock data - implement actual calculation
+        satisfactionRating: avgSatisfaction[0]?.avg || 0,
+        escalationRate: escalationData[0] ? (escalationData[0].escalated / escalationData[0].total) * 100 : 0,
+        resolutionRate: resolutionData[0] ? (resolutionData[0].resolved / resolutionData[0].total) * 100 : 0,
+        topCategories: topCategories.map(cat => ({
+          category: cat.category || "Unknown",
+          count: cat.count
+        })),
+        dailyVolume: [] // Mock data - implement actual calculation
+      };
+
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching support metrics:", error);
+      res.status(500).json({ error: "Failed to fetch metrics" });
+    }
+  });
+
+  // Admin: Get conversations
+  app.get("/api/support/admin/conversations", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { search, status, priority } = req.query;
+      
+      let query = db.select().from(supportConversations);
+      
+      if (search) {
+        query = query.where(sql`session_id ILIKE ${`%${search}%`}`);
+      }
+      if (status && status !== "ALL") {
+        query = query.where(eq(supportConversations.status, status as string));
+      }
+      if (priority && priority !== "ALL") {
+        query = query.where(eq(supportConversations.priority, priority as string));
+      }
+
+      const conversations = await query
+        .orderBy(desc(supportConversations.updatedAt))
+        .limit(50);
+
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ error: "Failed to fetch conversations" });
+    }
+  });
+
+  // Admin: Get tickets
+  app.get("/api/support/admin/tickets", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { search, status, priority } = req.query;
+      
+      let query = db.select().from(supportTickets);
+      
+      if (search) {
+        query = query.where(
+          or(
+            sql`title ILIKE ${`%${search}%`}`,
+            sql`ticket_number ILIKE ${`%${search}%`}`
+          )
+        );
+      }
+      if (status && status !== "ALL") {
+        query = query.where(eq(supportTickets.status, status as string));
+      }
+      if (priority && priority !== "ALL") {
+        query = query.where(eq(supportTickets.priority, priority as string));
+      }
+
+      const tickets = await query
+        .orderBy(desc(supportTickets.createdAt))
+        .limit(50);
+
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching tickets:", error);
+      res.status(500).json({ error: "Failed to fetch tickets" });
+    }
+  });
+
+  // Admin: Update conversation
+  app.put("/api/support/conversations/:id", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const conversationId = parseInt(req.params.id);
+      const updates = req.body;
+
+      const [updatedConversation] = await db
+        .update(supportConversations)
+        .set({
+          ...updates,
+          updatedAt: new Date()
+        })
+        .where(eq(supportConversations.id, conversationId))
+        .returning();
+
+      res.json(updatedConversation);
+    } catch (error) {
+      console.error("Error updating conversation:", error);
+      res.status(500).json({ error: "Failed to update conversation" });
+    }
+  });
+
+  // Admin: Update ticket
+  app.put("/api/support/tickets/:id", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const ticketId = parseInt(req.params.id);
+      const updates = req.body;
+
+      const [updatedTicket] = await db
+        .update(supportTickets)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+          ...(updates.status === "RESOLVED" || updates.status === "CLOSED" ? { resolvedAt: new Date() } : {})
+        })
+        .where(eq(supportTickets.id, ticketId))
+        .returning();
+
+      res.json(updatedTicket);
+    } catch (error) {
+      console.error("Error updating ticket:", error);
+      res.status(500).json({ error: "Failed to update ticket" });
     }
   });
 
