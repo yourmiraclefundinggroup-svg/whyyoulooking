@@ -10,6 +10,7 @@ import { AICreditAnalysis } from "@/components/ai-credit-analysis";
 import { FollowUpAlerts } from "@/components/follow-up-alerts";
 import { ScoreShiftHeroLogo } from "@/components/scoreshift-logo";
 import { SupportChat } from "@/components/support-chat";
+import { OnboardingProgressTracker } from "@/components/onboarding-progress-tracker";
 import { formatCurrency, formatRelativeDate, getIssueTypeColor, getIssueTypeIcon, getDisputeStatusColor } from "@/lib/utils";
 import { useUserContext } from "@/hooks/use-user-context";
 import type { User, CreditReport, CreditIssue, Dispute, CreditGoal, EducationalContent, CreditBuildingAction } from "@shared/schema";
@@ -86,6 +87,11 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Onboarding Progress Tracker */}
+      <div className="mb-8">
+        <OnboardingProgressTracker userId={userId} />
       </div>
 
       {/* Credit Score Section */}

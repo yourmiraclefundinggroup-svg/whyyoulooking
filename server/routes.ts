@@ -11,7 +11,7 @@ import { aiService } from "./ai-service";
 import OpenAI from "openai";
 import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
-import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema } from "@shared/schema";
+import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema } from "@shared/schema";
 import { z } from "zod";
 
 // Initialize OpenAI for support AI
@@ -3745,6 +3745,329 @@ Please contact this lead within 24 hours.
     } catch (error) {
       console.error("Error updating ticket:", error);
       res.status(500).json({ error: "Failed to update ticket" });
+    }
+  });
+
+  // Gamified Onboarding Progress API Routes
+  
+  // Get user's onboarding progress
+  app.get("/api/onboarding/progress/:userId", authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const [userProgress] = await db.select()
+        .from(userOnboardingProgress)
+        .where(eq(userOnboardingProgress.userId, userId));
+
+      if (!userProgress) {
+        // Create initial progress for new user
+        const [newProgress] = await db.insert(userOnboardingProgress)
+          .values({
+            userId,
+            currentStep: 1,
+            totalSteps: 10,
+            completedSteps: [],
+            experiencePoints: 0,
+            level: 1,
+            badges: [],
+            streakDays: 1,
+            lastActivityDate: new Date()
+          })
+          .returning();
+        
+        return res.json(newProgress);
+      }
+
+      res.json(userProgress);
+    } catch (error) {
+      console.error("Error fetching onboarding progress:", error);
+      res.status(500).json({ error: "Failed to fetch onboarding progress" });
+    }
+  });
+
+  // Get onboarding steps
+  app.get("/api/onboarding/steps", async (req, res) => {
+    try {
+      const steps = await db.select().from(onboardingSteps).orderBy(onboardingSteps.stepNumber);
+      
+      // If no steps exist, create default ones
+      if (steps.length === 0) {
+        const defaultSteps = [
+          {
+            stepNumber: 1,
+            title: "Complete Your Profile",
+            description: "Add your personal information and contact details",
+            icon: "user",
+            category: "SETUP" as const,
+            requiredAction: "Fill out profile form",
+            experienceReward: 100,
+            isOptional: false,
+            estimatedTime: "3 minutes",
+            helpText: "This helps us personalize your credit repair experience",
+            unlockConditions: []
+          },
+          {
+            stepNumber: 2,
+            title: "Upload Credit Report",
+            description: "Upload your most recent credit report for analysis",
+            icon: "file",
+            category: "CREDIT_ANALYSIS" as const,
+            requiredAction: "Upload credit report document",
+            experienceReward: 200,
+            isOptional: false,
+            estimatedTime: "5 minutes",
+            helpText: "We accept reports from all three bureaus",
+            unlockConditions: ["1"]
+          },
+          {
+            stepNumber: 3,
+            title: "Set Credit Goals",
+            description: "Define your target credit score and timeline",
+            icon: "target",
+            category: "GOAL_SETTING" as const,
+            requiredAction: "Create credit improvement goals",
+            experienceReward: 150,
+            isOptional: false,
+            estimatedTime: "4 minutes",
+            helpText: "Setting clear goals helps track your progress",
+            unlockConditions: ["2"]
+          },
+          {
+            stepNumber: 4,
+            title: "Connect Credit Monitoring",
+            description: "Link your Experian account for real-time updates",
+            icon: "shield",
+            category: "MONITORING" as const,
+            requiredAction: "Connect Experian account",
+            experienceReward: 250,
+            isOptional: false,
+            estimatedTime: "7 minutes",
+            helpText: "This enables automatic credit file monitoring",
+            unlockConditions: ["3"]
+          },
+          {
+            stepNumber: 5,
+            title: "Review Credit Issues",
+            description: "Identify negative items affecting your score",
+            icon: "trending-up",
+            category: "CREDIT_ANALYSIS" as const,
+            requiredAction: "Review identified credit issues",
+            experienceReward: 175,
+            isOptional: false,
+            estimatedTime: "10 minutes",
+            helpText: "Our AI identifies potential dispute opportunities",
+            unlockConditions: ["4"]
+          },
+          {
+            stepNumber: 6,
+            title: "Generate First Dispute Letter",
+            description: "Create AI-powered dispute letters for priority items",
+            icon: "file",
+            category: "DISPUTE_PROCESS" as const,
+            requiredAction: "Generate and review dispute letter",
+            experienceReward: 300,
+            isOptional: false,
+            estimatedTime: "8 minutes",
+            helpText: "Our AI creates personalized dispute strategies",
+            unlockConditions: ["5"]
+          },
+          {
+            stepNumber: 7,
+            title: "Send Dispute Letters",
+            description: "Mail dispute letters to credit bureaus",
+            icon: "zap",
+            category: "DISPUTE_PROCESS" as const,
+            requiredAction: "Send certified mail to bureaus",
+            experienceReward: 200,
+            isOptional: false,
+            estimatedTime: "15 minutes",
+            helpText: "We provide USPS tracking for all mailings",
+            unlockConditions: ["6"]
+          },
+          {
+            stepNumber: 8,
+            title: "Setup Follow-up Alerts",
+            description: "Configure notifications for bureau responses",
+            icon: "award",
+            category: "MONITORING" as const,
+            requiredAction: "Enable follow-up notifications",
+            experienceReward: 125,
+            isOptional: false,
+            estimatedTime: "3 minutes",
+            helpText: "Stay on top of dispute timelines automatically",
+            unlockConditions: ["7"]
+          },
+          {
+            stepNumber: 9,
+            title: "Explore Credit Building",
+            description: "Discover tools to improve your credit profile",
+            icon: "credit-card",
+            category: "SETUP" as const,
+            requiredAction: "Review credit building options",
+            experienceReward: 150,
+            isOptional: true,
+            estimatedTime: "5 minutes",
+            helpText: "Learn about secured cards, credit mix, and more",
+            unlockConditions: ["8"]
+          },
+          {
+            stepNumber: 10,
+            title: "Complete Onboarding",
+            description: "Congratulations! You're ready to repair your credit",
+            icon: "award",
+            category: "SETUP" as const,
+            requiredAction: "Review onboarding completion",
+            experienceReward: 500,
+            isOptional: false,
+            estimatedTime: "2 minutes",
+            helpText: "You've successfully set up your credit repair journey",
+            unlockConditions: ["9"]
+          }
+        ];
+
+        await db.insert(onboardingSteps).values(defaultSteps);
+        
+        const newSteps = await db.select().from(onboardingSteps).orderBy(onboardingSteps.stepNumber);
+        return res.json({ steps: newSteps });
+      }
+
+      res.json({ steps });
+    } catch (error) {
+      console.error("Error fetching onboarding steps:", error);
+      res.status(500).json({ error: "Failed to fetch onboarding steps" });
+    }
+  });
+
+  // Complete onboarding step
+  app.post("/api/onboarding/complete-step", authenticateToken, async (req, res) => {
+    try {
+      const { userId, stepId } = req.body;
+
+      // Get current progress
+      const [progress] = await db.select()
+        .from(userOnboardingProgress)
+        .where(eq(userOnboardingProgress.userId, userId));
+
+      if (!progress) {
+        return res.status(404).json({ error: "User progress not found" });
+      }
+
+      // Get step details
+      const [step] = await db.select()
+        .from(onboardingSteps)
+        .where(eq(onboardingSteps.id, stepId));
+
+      if (!step) {
+        return res.status(404).json({ error: "Step not found" });
+      }
+
+      // Check if step is already completed
+      if (progress.completedSteps.includes(stepId.toString())) {
+        return res.json({ success: false, message: "Step already completed" });
+      }
+
+      // Calculate new experience and level
+      const newExperience = progress.experiencePoints + step.experienceReward;
+      const newLevel = Math.floor(newExperience / 1000) + 1;
+      const leveledUp = newLevel > progress.level;
+
+      // Update progress
+      const updatedCompletedSteps = [...progress.completedSteps, stepId.toString()];
+      const isOnboardingComplete = updatedCompletedSteps.length >= progress.totalSteps;
+
+      await db.update(userOnboardingProgress)
+        .set({
+          completedSteps: updatedCompletedSteps,
+          experiencePoints: newExperience,
+          level: newLevel,
+          currentStep: Math.min(progress.currentStep + 1, progress.totalSteps),
+          isCompleted: isOnboardingComplete,
+          completedAt: isOnboardingComplete ? new Date() : null,
+          lastActivityDate: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(userOnboardingProgress.userId, userId));
+
+      // Check for new badges
+      const newBadges = [];
+      
+      // First step badge
+      if (stepId === 1) {
+        newBadges.push({
+          badgeId: "first_step",
+          name: "Getting Started",
+          description: "Completed your first onboarding step",
+          experienceAwarded: 50
+        });
+      }
+
+      // Halfway badge
+      if (updatedCompletedSteps.length === Math.ceil(progress.totalSteps / 2)) {
+        newBadges.push({
+          badgeId: "halfway_hero",
+          name: "Halfway Hero",
+          description: "Completed 50% of onboarding steps",
+          experienceAwarded: 100
+        });
+      }
+
+      // Completion badge
+      if (isOnboardingComplete) {
+        newBadges.push({
+          badgeId: "onboarding_complete",
+          name: "Onboarding Champion",
+          description: "Successfully completed all onboarding steps",
+          experienceAwarded: 200
+        });
+      }
+
+      // Level up badge
+      if (leveledUp) {
+        newBadges.push({
+          badgeId: `level_${newLevel}`,
+          name: `Level ${newLevel} Achiever`,
+          description: `Reached experience level ${newLevel}`,
+          experienceAwarded: 75
+        });
+      }
+
+      res.json({
+        success: true,
+        experienceAwarded: step.experienceReward,
+        newLevel: leveledUp ? newLevel : null,
+        newBadges,
+        isOnboardingComplete
+      });
+
+    } catch (error) {
+      console.error("Error completing step:", error);
+      res.status(500).json({ error: "Failed to complete step" });
+    }
+  });
+
+  // Get user badges
+  app.get("/api/onboarding/badges/:userId", authenticateToken, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+
+      // For now, return sample badges - in production, this would query earned badges
+      const sampleBadges = [
+        {
+          badgeId: "first_step",
+          name: "Getting Started",
+          description: "Completed your first onboarding step",
+          icon: "star",
+          category: "PROGRESS",
+          rarity: "COMMON",
+          experienceReward: 50,
+          earnedAt: new Date().toISOString(),
+          isNew: false
+        }
+      ];
+
+      res.json({ badges: sampleBadges });
+    } catch (error) {
+      console.error("Error fetching badges:", error);
+      res.status(500).json({ error: "Failed to fetch badges" });
     }
   });
 

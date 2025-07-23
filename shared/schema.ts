@@ -241,6 +241,63 @@ export const insertStudentLoanSchema = createInsertSchema(studentLoans).omit({ i
 export const insertLoanNegotiationSchema = createInsertSchema(loanNegotiations).omit({ id: true, createdAt: true, completedAt: true });
 export const insertLoanDocumentSchema = createInsertSchema(loanDocuments).omit({ id: true, createdAt: true });
 
+// Gamified Onboarding Progress Tracker
+export const userOnboardingProgress = pgTable("user_onboarding_progress", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  currentStep: integer("current_step").notNull().default(1),
+  totalSteps: integer("total_steps").notNull().default(10),
+  completedSteps: text("completed_steps").array().notNull().default([]), // Array of completed step IDs
+  experiencePoints: integer("experience_points").notNull().default(0),
+  level: integer("level").notNull().default(1),
+  badges: text("badges").array().notNull().default([]), // Array of earned badge IDs
+  streakDays: integer("streak_days").notNull().default(0),
+  lastActivityDate: timestamp("last_activity_date").defaultNow(),
+  isCompleted: boolean("is_completed").notNull().default(false),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
+export const onboardingSteps = pgTable("onboarding_steps", {
+  id: serial("id").primaryKey(),
+  stepNumber: integer("step_number").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull(),
+  category: text("category", { enum: ["SETUP", "CREDIT_ANALYSIS", "GOAL_SETTING", "DISPUTE_PROCESS", "MONITORING"] }).notNull(),
+  requiredAction: text("required_action").notNull(), // What user needs to do
+  experienceReward: integer("experience_reward").notNull().default(100),
+  isOptional: boolean("is_optional").notNull().default(false),
+  estimatedTime: text("estimated_time").notNull(), // e.g., "5 minutes"
+  helpText: text("help_text"),
+  unlockConditions: text("unlock_conditions").array(), // Prerequisites for this step
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+export const gamificationBadges = pgTable("gamification_badges", {
+  id: serial("id").primaryKey(),
+  badgeId: text("badge_id").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull(),
+  category: text("category", { enum: ["PROGRESS", "ACHIEVEMENT", "STREAK", "MILESTONE", "SPECIAL"] }).notNull(),
+  condition: text("condition").notNull(), // JSON string describing unlock condition
+  rarity: text("rarity", { enum: ["COMMON", "RARE", "EPIC", "LEGENDARY"] }).notNull(),
+  experienceReward: integer("experience_reward").notNull().default(50),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+export const userAchievements = pgTable("user_achievements", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  badgeId: text("badge_id").notNull().references(() => gamificationBadges.badgeId),
+  earnedAt: timestamp("earned_at").notNull().defaultNow(),
+  experienceAwarded: integer("experience_awarded").notNull(),
+  isNewBadge: boolean("is_new_badge").notNull().default(true) // For notification purposes
+});
+
 // Credit Utilization Optimizer
 export const creditCards = pgTable("credit_cards", {
   id: serial("id").primaryKey(),
@@ -758,3 +815,18 @@ export type SupportTicket = typeof supportTickets.$inferSelect;
 export type InsertSupportTicket = z.infer<typeof insertSupportTicketSchema>;
 export type SupportKnowledgeBase = typeof supportKnowledgeBase.$inferSelect;
 export type InsertSupportKnowledgeBase = z.infer<typeof insertSupportKnowledgeBaseSchema>;
+
+// Gamification schema inserts and types
+export const insertUserOnboardingProgressSchema = createInsertSchema(userOnboardingProgress).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertOnboardingStepSchema = createInsertSchema(onboardingSteps).omit({ id: true, createdAt: true });
+export const insertGamificationBadgeSchema = createInsertSchema(gamificationBadges).omit({ id: true, createdAt: true });
+export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({ id: true, earnedAt: true });
+
+export type UserOnboardingProgress = typeof userOnboardingProgress.$inferSelect;
+export type InsertUserOnboardingProgress = z.infer<typeof insertUserOnboardingProgressSchema>;
+export type OnboardingStep = typeof onboardingSteps.$inferSelect;
+export type InsertOnboardingStep = z.infer<typeof insertOnboardingStepSchema>;
+export type GamificationBadge = typeof gamificationBadges.$inferSelect;
+export type InsertGamificationBadge = z.infer<typeof insertGamificationBadgeSchema>;
+export type UserAchievement = typeof userAchievements.$inferSelect;
+export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
