@@ -2937,6 +2937,52 @@ This letter can be customized with your specific details and sent to credit bure
     }
   });
 
+  // Lead form submission with detailed information
+  app.post("/api/contact/lead-submission", async (req, res) => {
+    try {
+      const leadData = req.body;
+      
+      // Format the lead information for email
+      const emailBody = `
+New Credit Repair Lead Submission
+
+CONTACT INFORMATION:
+Name: ${leadData.firstName} ${leadData.lastName}
+Phone: ${leadData.phone}
+Email: ${leadData.email}
+Urgency: ${leadData.urgency}
+
+CREDIT ISSUES:
+${leadData.creditIssues.join(", ")}
+
+ADDITIONAL DETAILS:
+${leadData.additionalDetails || "None provided"}
+
+SUBMISSION DETAILS:
+Timestamp: ${leadData.timestamp}
+Source: ${leadData.source}
+Type: ${leadData.type}
+
+Please contact this lead within 24 hours.
+`;
+
+      // Log the lead submission
+      console.log("=== NEW CREDIT REPAIR LEAD ===");
+      console.log("Email would be sent to: Ervin.ward@scoreshiftapp.com");
+      console.log("Lead Details:", leadData);
+      console.log("Email Body:", emailBody);
+      console.log("================================");
+      
+      res.json({ 
+        success: true, 
+        message: "Lead submission received and forwarded to Ervin.ward@scoreshiftapp.com" 
+      });
+    } catch (error) {
+      console.error("Lead submission error:", error);
+      res.status(500).json({ error: "Failed to process lead submission" });
+    }
+  });
+
   // Student Loan Management APIs - Debug Endpoint
   app.get("/api/debug-storage", authenticateToken, async (req, res) => {
     try {

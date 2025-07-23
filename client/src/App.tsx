@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navigation } from "@/components/navigation";
 import { UserProvider, useUserContext } from "@/hooks/use-user-context";
 import LandingPage from "@/pages/landing";
+import LeadForm from "@/pages/lead-form";
 import Dashboard from "@/pages/dashboard";
 import CreditRepair from "@/pages/credit-repair";
 import StudentLoans from "@/pages/student-loans";
@@ -54,6 +55,7 @@ function Router() {
     <div className="min-h-screen bg-gray-50">
       <Switch>
         <Route path="/" component={LandingPage} />
+        <Route path="/get-started" component={LeadForm} />
         <Route path="/auth" component={Login} />
         <Route path="/admin/auth" component={Login} />
         <Route path="/dashboard">

@@ -166,16 +166,16 @@ export default function LandingPage() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Button 
-              size="lg" 
-              className="bg-blue-600 hover:bg-blue-700 px-8 py-4 text-lg"
-              onClick={handleStartCreditRepair}
-              disabled={isSubmitting}
-            >
-              <Target className="h-5 w-5 mr-2" />
-              {isSubmitting ? "Submitting Request..." : "Start Credit Repair"}
-              <ArrowRight className="h-5 w-5 ml-2" />
-            </Button>
+            <Link href="/get-started">
+              <Button 
+                size="lg" 
+                className="bg-blue-600 hover:bg-blue-700 px-8 py-4 text-lg"
+              >
+                <Target className="h-5 w-5 mr-2" />
+                Start Credit Repair
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </Button>
+            </Link>
             <Link href="/admin/auth">
               <Button size="lg" variant="outline" className="px-8 py-4 text-lg">
                 <Shield className="h-5 w-5 mr-2" />
@@ -229,24 +229,15 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <Button 
-              onClick={handleStartCreditRepair}
-              disabled={isSubmitting}
-              size="lg"
-              className="bg-white text-blue-600 hover:bg-gray-100 font-semibold px-8 py-3"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full mr-2" />
-                  Submitting Request...
-                </>
-              ) : (
-                <>
-                  <GraduationCap className="h-5 w-5 mr-2" />
-                  Start Student Loan Negotiation
-                </>
-              )}
-            </Button>
+            <Link href="/get-started">
+              <Button 
+                size="lg"
+                className="bg-white text-blue-600 hover:bg-gray-100 font-semibold px-8 py-3"
+              >
+                <GraduationCap className="h-5 w-5 mr-2" />
+                Start Student Loan Negotiation
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
