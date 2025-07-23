@@ -19,7 +19,8 @@ import {
   Target,
   Brain,
   DollarSign,
-  Home
+  Home,
+  GraduationCap
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -92,6 +93,11 @@ export default function LandingPage() {
       icon: <Building className="h-8 w-8 text-red-600" />,
       title: "Business Credit Building",
       description: "Complete business credit profile development with funding recommendations and trade line analysis."
+    },
+    {
+      icon: <GraduationCap className="h-8 w-8 text-blue-500" />,
+      title: "Student Loan Negotiation",
+      description: "AI-powered loan negotiation strategies, payment optimization, and servicer communication management."
     }
   ];
 
@@ -186,6 +192,61 @@ export default function LandingPage() {
                 <div className="text-sm text-gray-600">{stat.label}</div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Student Loan Highlight */}
+      <section className="py-16 px-4 bg-gradient-to-r from-blue-600 to-blue-700">
+        <div className="container mx-auto">
+          <div className="max-w-4xl mx-auto text-center text-white">
+            <Badge className="mb-4 bg-white/20 text-white hover:bg-white/20 border-white/30">
+              <GraduationCap className="h-3 w-3 mr-1" />
+              New Feature
+            </Badge>
+            <h3 className="text-4xl font-bold mb-6">
+              Student Loan Negotiation Made Simple
+            </h3>
+            <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
+              AI-powered strategies to reduce your student loan payments, negotiate better terms, and optimize your repayment plan
+            </p>
+            
+            <div className="grid md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+                <Target className="h-8 w-8 text-white mx-auto mb-3" />
+                <h4 className="font-semibold mb-2">Payment Optimization</h4>
+                <p className="text-sm opacity-80">Calculate the best repayment strategy for your financial situation</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+                <MessageSquare className="h-8 w-8 text-white mx-auto mb-3" />
+                <h4 className="font-semibold mb-2">Servicer Communication</h4>
+                <p className="text-sm opacity-80">Professional templates and tracking for all loan servicer interactions</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+                <TrendingUp className="h-8 w-8 text-white mx-auto mb-3" />
+                <h4 className="font-semibold mb-2">Progress Tracking</h4>
+                <p className="text-sm opacity-80">Monitor negotiation outcomes and savings achieved over time</p>
+              </div>
+            </div>
+
+            <Button 
+              onClick={handleStartCreditRepair}
+              disabled={isSubmitting}
+              size="lg"
+              className="bg-white text-blue-600 hover:bg-gray-100 font-semibold px-8 py-3"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full mr-2" />
+                  Submitting Request...
+                </>
+              ) : (
+                <>
+                  <GraduationCap className="h-5 w-5 mr-2" />
+                  Start Student Loan Negotiation
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </section>
@@ -299,6 +360,10 @@ export default function LandingPage() {
                   <div className="flex items-center text-sm">
                     <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
                     Direct communication with specialists
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                    Student loan negotiation tools
                   </div>
                 </div>
                 <Link href="/auth">
