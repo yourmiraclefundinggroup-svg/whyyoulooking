@@ -11,6 +11,7 @@ import { FollowUpAlerts } from "@/components/follow-up-alerts";
 import { ScoreShiftHeroLogo } from "@/components/scoreshift-logo";
 import { SupportChat } from "@/components/support-chat";
 import { OnboardingProgressTracker } from "@/components/onboarding-progress-tracker";
+import { AnimatedCreditJourney } from "@/components/animated-credit-journey";
 import { formatCurrency, formatRelativeDate, getIssueTypeColor, getIssueTypeIcon, getDisputeStatusColor } from "@/lib/utils";
 import { useUserContext } from "@/hooks/use-user-context";
 import type { User, CreditReport, CreditIssue, Dispute, CreditGoal, EducationalContent, CreditBuildingAction } from "@shared/schema";
@@ -92,6 +93,16 @@ export default function Dashboard() {
       {/* Onboarding Progress Tracker */}
       <div className="mb-8">
         <OnboardingProgressTracker userId={userId} />
+      </div>
+
+      {/* Animated Credit Score Journey */}
+      <div className="mb-8">
+        <AnimatedCreditJourney 
+          userId={userId}
+          currentScore={creditReport?.creditScore || 550}
+          targetScore={creditGoal?.targetScore || 750}
+          startingScore={550}
+        />
       </div>
 
       {/* Credit Score Section */}
