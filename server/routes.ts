@@ -808,6 +808,12 @@ Format the response as a complete business letter ready to send.`;
         return res.status(400).json({ error: "Tracking number is required" });
       }
       
+      // Validate tracking number format
+      const { uspsTrackingService } = await import('./usps-api');
+      if (!uspsTrackingService.isValidTrackingNumber(trackingNumber)) {
+        return res.status(400).json({ error: "Invalid USPS tracking number format" });
+      }
+      
       const dispute = await storage.updateDispute(id, { 
         uspsTrackingNumber: trackingNumber,
         status: "SENT"
@@ -820,6 +826,127 @@ Format the response as a complete business letter ready to send.`;
       res.json(dispute);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get real-time USPS tracking information
+  app.get("/api/usps/track/:trackingNumber", authenticateToken, async (req, res) => {
+    try {
+      const trackingNumber = req.params.trackingNumber;
+      const { uspsTrackingService } = await import('./usps-api');
+      
+      if (!uspsTrackingService.isValidTrackingNumber(trackingNumber)) {
+        return res.status(400).json({ error: "Invalid USPS tracking number format" });
+      }
+      
+      const trackingData = await uspsTrackingService.trackPackage(trackingNumber);
+      const trackingStatus = uspsTrackingService.getTrackingStatus(trackingData);
+      
+      res.json({
+        trackingNumber,
+        ...trackingStatus,
+        events: trackingData.tracking_events || [],
+        rawData: trackingData
+      });
+    } catch (error: any) {
+      console.error("USPS tracking error:", error);
+      res.status(500).json({ 
+        error: "Failed to get tracking information",
+        message: error.message 
+      });
+    }
+  });
+
+  // Update dispute status from USPS tracking
+  app.post("/api/disputes/:id/update-from-tracking", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const dispute = await storage.getDispute(id);
+      
+      if (!dispute) {
+        return res.status(404).json({ error: "Dispute not found" });
+      }
+      
+      if (!dispute.uspsTrackingNumber) {
+        return res.status(400).json({ error: "No tracking number associated with this dispute" });
+      }
+      
+      const { uspsTrackingService } = await import('./usps-api');
+      const updateData = await uspsTrackingService.updateDisputeFromTracking(
+        id, 
+        dispute.uspsTrackingNumber
+      );
+      
+      // Update dispute in database
+      const updatedDispute = await storage.updateDispute(id, {
+        status: updateData.status,
+        deliveryDate: updateData.deliveryDate,
+        followUpDate: updateData.followUpDate
+      });
+      
+      res.json({
+        dispute: updatedDispute,
+        trackingUpdate: updateData
+      });
+    } catch (error: any) {
+      console.error("Dispute tracking update error:", error);
+      res.status(500).json({ 
+        error: "Failed to update dispute from tracking",
+        message: error.message 
+      });
+    }
+  });
+
+  // Bulk update all disputes with tracking numbers
+  app.post("/api/disputes/bulk-update-tracking", authenticateToken, requireAdminAccess, async (req, res) => {
+    try {
+      // Get all disputes with tracking numbers that aren't delivered yet
+      const { userId } = req.body;
+      const allDisputes = userId ? 
+        await storage.getDisputes(userId) : 
+        await storage.getAllDisputes();
+      
+      const disputesWithTracking = allDisputes.filter(dispute => 
+        dispute.uspsTrackingNumber && 
+        dispute.status !== 'DELIVERED' &&
+        dispute.status !== 'RESOLVED'
+      );
+      
+      if (disputesWithTracking.length === 0) {
+        return res.json({ message: "No disputes require tracking updates", updatedCount: 0 });
+      }
+      
+      const { uspsTrackingService } = await import('./usps-api');
+      const updates = await uspsTrackingService.bulkUpdateDisputes(
+        disputesWithTracking.map(d => ({ id: d.id, uspsTrackingNumber: d.uspsTrackingNumber! }))
+      );
+      
+      // Apply updates to database
+      let updatedCount = 0;
+      for (const update of updates) {
+        try {
+          await storage.updateDispute(update.disputeId, {
+            status: update.status,
+            deliveryDate: update.deliveryDate,
+            followUpDate: update.followUpDate
+          });
+          updatedCount++;
+        } catch (error) {
+          console.error(`Failed to update dispute ${update.disputeId}:`, error);
+        }
+      }
+      
+      res.json({
+        message: `Updated ${updatedCount} disputes from USPS tracking`,
+        updatedCount,
+        updates
+      });
+    } catch (error: any) {
+      console.error("Bulk tracking update error:", error);
+      res.status(500).json({ 
+        error: "Failed to bulk update tracking",
+        message: error.message 
+      });
     }
   });
 
@@ -1924,6 +2051,81 @@ Format the response as a complete business letter ready to send.`;
     } catch (error) {
       console.error("Error searching documents:", error);
       res.status(500).json({ error: "Failed to search documents" });
+    }
+  });
+
+  // EMERGENCY FILE ACCESS BYPASS - Direct file serving for critical client documents
+  app.get("/api/files/direct/:fileName", async (req, res) => {
+    try {
+      const fileName = req.params.fileName;
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      // Direct access to attached_assets files
+      const filePath = path.join(process.cwd(), 'attached_assets', fileName);
+      
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: "File not found" });
+      }
+      
+      const stats = fs.statSync(filePath);
+      const fileStream = fs.createReadStream(filePath);
+      
+      // Determine MIME type
+      let contentType = 'application/octet-stream';
+      if (fileName.toLowerCase().endsWith('.png')) {
+        contentType = 'image/png';
+      } else if (fileName.toLowerCase().endsWith('.pdf')) {
+        contentType = 'application/pdf';
+      } else if (fileName.toLowerCase().endsWith('.jpg') || fileName.toLowerCase().endsWith('.jpeg')) {
+        contentType = 'image/jpeg';
+      }
+      
+      // Set headers for viewing
+      res.set({
+        'Content-Type': contentType,
+        'Content-Disposition': `inline; filename="${fileName}"`,
+        'Content-Length': stats.size.toString(),
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Authorization, Content-Type'
+      });
+      
+      fileStream.pipe(res);
+    } catch (error) {
+      console.error("Direct file access error:", error);
+      res.status(500).json({ message: "File access error" });
+    }
+  });
+
+  // EMERGENCY DOWNLOAD BYPASS
+  app.get("/api/files/download/:fileName", async (req, res) => {
+    try {
+      const fileName = req.params.fileName;
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      const filePath = path.join(process.cwd(), 'attached_assets', fileName);
+      
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: "File not found" });
+      }
+      
+      const stats = fs.statSync(filePath);
+      
+      res.set({
+        'Content-Type': 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${fileName}"`,
+        'Content-Length': stats.size.toString(),
+        'Cache-Control': 'no-cache'
+      });
+      
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+    } catch (error) {
+      console.error("Direct download error:", error);
+      res.status(500).json({ message: "Download error" });
     }
   });
 
