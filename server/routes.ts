@@ -898,7 +898,7 @@ Format the response as a complete business letter ready to send.`;
   });
 
   // Bulk update all disputes with tracking numbers
-  app.post("/api/disputes/bulk-update-tracking", authenticateToken, requireAdminAccess, async (req, res) => {
+  app.post("/api/disputes/bulk-update-tracking", authenticateToken, async (req, res) => {
     try {
       // Get all disputes with tracking numbers that aren't delivered yet
       const { userId } = req.body;

@@ -69,6 +69,7 @@ export interface IStorage {
 
   // Disputes
   getDisputes(userId: number): Promise<Dispute[]>;
+  getAllDisputes(): Promise<Dispute[]>;
   getDispute(id: number): Promise<Dispute | undefined>;
   createDispute(dispute: InsertDispute): Promise<Dispute>;
   updateDispute(id: number, updates: Partial<Dispute>): Promise<Dispute | undefined>;
@@ -333,6 +334,10 @@ export class DatabaseStorage implements IStorage {
 
   async getDisputes(userId: number): Promise<Dispute[]> {
     return await db.select().from(disputes).where(eq(disputes.userId, userId));
+  }
+
+  async getAllDisputes(): Promise<Dispute[]> {
+    return await db.select().from(disputes);
   }
 
   async getDispute(id: number): Promise<Dispute | undefined> {
