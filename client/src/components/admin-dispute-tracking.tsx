@@ -19,7 +19,7 @@ interface AdminDisputeTrackingProps {
 
 export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingProps) {
   const [trackingNumber, setTrackingNumber] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState<number>(selectedClientId || 0);
+  const [selectedUserId, setSelectedUserId] = useState<number>(selectedClientId || 30); // Default to Kerise for testing
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -122,6 +122,7 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
                 <Select 
                   disabled={!trackingNumber || disputesToShow.filter(d => !d.uspsTrackingNumber).length === 0}
                   onValueChange={(value) => {
+                    console.log("Dispute selected:", value, "Tracking:", trackingNumber);
                     if (value && trackingNumber) {
                       addTrackingMutation.mutate({
                         disputeId: parseInt(value),
@@ -147,6 +148,12 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
               <p className="text-sm text-muted-foreground">
                 Enter the USPS tracking number from your certified mail receipt
               </p>
+              {/* Debug Info */}
+              <div className="text-xs text-gray-500 mt-2">
+                Debug: {selectedUserId ? `Client ${selectedUserId}` : "All clients"} - 
+                {disputesToShow.length} total disputes, 
+                {disputesToShow.filter(d => !d.uspsTrackingNumber).length} without tracking
+              </div>
             </div>
 
             {/* Quick Stats */}
