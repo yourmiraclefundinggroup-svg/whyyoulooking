@@ -43,6 +43,10 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
   const { data: clientDisputes = [] } = useQuery<Dispute[]>({
     queryKey: ['/api/disputes', selectedUserId],
     enabled: !!selectedUserId,
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/disputes/${selectedUserId}`);
+      return response.json();
+    }
   });
 
   // Get follow-up alerts
@@ -77,7 +81,10 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
     }
   });
 
-  const disputesToShow = selectedUserId ? clientDisputes : allDisputes;
+  // Always use all disputes for admin and filter by client if needed
+  const disputesToShow = selectedUserId 
+    ? allDisputes.filter(d => d.userId === selectedUserId)
+    : allDisputes;
 
   return (
     <div className="space-y-6">
@@ -153,6 +160,7 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
                 Debug: {selectedUserId ? `Client ${selectedUserId}` : "All clients"} - 
                 {disputesToShow.length} total disputes, 
                 {disputesToShow.filter(d => !d.uspsTrackingNumber).length} without tracking
+                <br />All Disputes: {allDisputes.length}, Client Disputes: {clientDisputes.length}
               </div>
             </div>
 
