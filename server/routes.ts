@@ -405,6 +405,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin endpoint to get all disputes across all users
+  app.get("/api/admin/all-disputes", authenticateToken, async (req, res) => {
+    try {
+      const disputes = await storage.getAllDisputes();
+      res.json(disputes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch all disputes" });
+    }
+  });
+
   app.post("/api/disputes", async (req, res) => {
     try {
       const validatedData = insertDisputeSchema.parse(req.body);
@@ -984,24 +994,24 @@ Format the response as a complete business letter ready to send.`;
   app.get("/api/disputes/follow-up", authenticateToken, async (req, res) => {
     try {
       const requestingUser = (req as any).user;
-      const userId = requestingUser.accessLevel === 'ADMIN' ? 1 : requestingUser.id; // Default to user 1 for admin or requesting user
-      const allDisputes = await storage.getDisputes(userId);
       
-      // Return the delivered dispute that needs follow-up
-      const followUpDispute = allDisputes.find(dispute => 
-        dispute.id === 1 && 
+      // Admin can see all disputes, regular users see only their own
+      const allDisputes = requestingUser.accessLevel === 'ADMIN' 
+        ? await storage.getAllDisputes()
+        : await storage.getDisputes(requestingUser.id);
+      
+      // Return the delivered disputes that need follow-up
+      const followUpDisputes = allDisputes.filter(dispute => 
         dispute.status === "DELIVERED" && 
-        dispute.followUpDate
+        dispute.followUpDate &&
+        new Date() >= new Date(dispute.followUpDate) &&
+        !dispute.followUpCompleted
       );
       
-      if (followUpDispute) {
-        res.json([followUpDispute]);
-      } else {
-        res.json([]);
-      }
+      res.json(followUpDisputes);
     } catch (error) {
       console.error("Follow-up error:", error);
-      res.json([]);
+      res.status(500).json({ message: "Failed to fetch disputes requiring follow-up" });
     }
   });
 

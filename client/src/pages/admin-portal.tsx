@@ -12,13 +12,13 @@ import { useToast } from "@/hooks/use-toast";
 import { DisputeLetterModal } from "@/components/dispute-letter-modal";
 import { AICreditAnalysis } from "@/components/ai-credit-analysis";
 import { CreditSimulatorModal } from "@/components/credit-simulator-modal";
-import { AdminUSPSTracking } from "@/components/admin-usps-tracking";
+import { AdminDisputeTracking } from "@/components/admin-dispute-tracking";
 import { FollowUpAlerts } from "@/components/follow-up-alerts";
 import { BureauResponseAnalysis } from "@/components/bureau-response-analysis";
 import { SecureChat } from "@/components/secure-chat";
 import { AdminSettings } from "@/components/admin-settings";
 import { User, CreditReport, CreditIssue, Dispute } from "@shared/schema";
-import { Users, FileText, AlertTriangle, Send, Settings, Menu, X, TrendingUp, Shield, UserPlus, Brain, BarChart, CheckSquare, Clock, CalendarDays, MessageCircle } from "lucide-react";
+import { Users, FileText, AlertTriangle, Send, Settings, Menu, X, TrendingUp, Shield, UserPlus, Brain, BarChart, CheckSquare, Clock, CalendarDays, MessageCircle, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AdminPortal() {
@@ -51,6 +51,7 @@ export default function AdminPortal() {
   const adminNavItems = [
     { href: "/admin-portal", label: "Client Management", icon: Users },
     { href: "/admin-portal/disputes", label: "Dispute Center", icon: Send },
+    { href: "/admin-portal/tracking", label: "USPS Tracking", icon: Package },
     { href: "/admin-portal/bureau-analysis", label: "Bureau Analysis", icon: Brain },
     { href: "/admin-portal/chat", label: "Client Communication", icon: MessageCircle },
     { href: "/admin-portal/analytics", label: "Analytics", icon: TrendingUp },
@@ -143,6 +144,10 @@ export default function AdminPortal() {
         setSelectedIssue={setSelectedIssue}
         setDisputeModalOpen={setDisputeModalOpen}
       />;
+    } else if (location === "/admin-portal/tracking") {
+      return <div className="p-6">
+        <AdminDisputeTracking selectedClientId={selectedClientId} />
+      </div>;
     } else if (location === "/admin-portal/bureau-analysis") {
       return <BureauAnalysisPage />;
     } else if (location === "/admin-portal/chat") {
