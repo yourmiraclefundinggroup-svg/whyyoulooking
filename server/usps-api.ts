@@ -141,46 +141,11 @@ export class USPSTrackingService {
       return trackingData;
     } catch (error) {
       console.error(`USPS tracking error for ${trackingNumber}:`, error);
-      
-      // Return demo tracking data for development while API credentials are being renewed
-      return this.getDemoTrackingData(trackingNumber);
+      throw error;
     }
   }
 
-  /**
-   * Get demo tracking data for development/testing
-   */
-  private getDemoTrackingData(trackingNumber: string): USPSTrackingResponse {
-    const now = new Date();
-    const deliveryDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Tomorrow
-    
-    return {
-      tracking_number: trackingNumber,
-      tracking_events: [
-        {
-          event_type: "Certified Mail",
-          event_timestamp: now.toISOString(),
-          event_city: "ATLANTA",
-          event_state: "GA",
-          event_country: "US",
-          event_description: "In Transit to Next Facility"
-        }
-      ],
-      summary: {
-        primary_status: "In Transit",
-        sub_status: "Out for Delivery",
-        status_category: "Accepted",
-        status_summary: "Your certified mail is in transit and will be delivered soon",
-        origin_city: "ATLANTA",
-        origin_state: "GA", 
-        destination_city: "ATLANTA",
-        destination_state: "GA",
-        is_delivered: false,
-        delivery_date: deliveryDate.toISOString().split('T')[0],
-        delivery_time: "11:30 AM"
-      }
-    };
-  }
+
 
   /**
    * Check if a package has been delivered
