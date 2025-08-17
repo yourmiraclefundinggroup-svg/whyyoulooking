@@ -116,6 +116,50 @@ export default function LandingPage() {
     { value: "48hrs", label: "Response Time" }
   ];
 
+  const pricingPlans = [
+    {
+      name: "Pro Plan",
+      price: 29,
+      description: "Perfect for individuals starting their credit repair journey",
+      features: [
+        "Automated AI dispute generation (monthly)",
+        "1–2 negative items handled per month",
+        "Monthly credit report analysis & alerts",
+        "Access to basic templates & resources",
+        "Email support"
+      ],
+      popular: false
+    },
+    {
+      name: "Elite Plan",
+      price: 79,
+      description: "Accelerate your results with unlimited disputes and priority support",
+      features: [
+        "Everything in Pro",
+        "Unlimited AI dispute generation",
+        "Weekly credit monitoring & updates",
+        "Advanced negative item removal tools",
+        "Priority email + live chat support",
+        "1 strategy call (15 mins) per month"
+      ],
+      popular: true
+    },
+    {
+      name: "White Label Plan",
+      price: 399,
+      description: "Run your own branded credit repair business",
+      features: [
+        "Everything in Elite",
+        "Custom branding (your logo & domain)",
+        "Client management dashboard (up to 50 users)",
+        "Resell ScoreShift under your business name",
+        "Priority tech support & dedicated account manager",
+        "Wholesale pricing on credit-building vendor referrals"
+      ],
+      popular: false
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Header */}
@@ -192,6 +236,81 @@ export default function LandingPage() {
                 <div className="text-sm text-gray-600">{stat.label}</div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Choose the perfect plan for your credit repair journey. All plans include our AI-powered dispute tools and real-time monitoring.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {pricingPlans.map((plan, index) => (
+              <Card key={plan.name} className={`relative ${plan.popular ? "border-2 border-blue-500 shadow-xl" : "border border-gray-200"}`}>
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <Badge className="bg-blue-500 text-white px-4 py-1">Most Popular</Badge>
+                  </div>
+                )}
+                <CardHeader className="text-center pb-8">
+                  <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+                  <CardDescription className="text-gray-600 mt-2">{plan.description}</CardDescription>
+                  <div className="mt-4">
+                    <span className="text-5xl font-bold text-gray-900">${plan.price}</span>
+                    <span className="text-gray-600">/month</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <ul className="space-y-3 mb-8">
+                    {plan.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-700">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/billing">
+                    <Button 
+                      className={`w-full ${plan.popular ? "bg-blue-600 hover:bg-blue-700" : ""}`}
+                      variant={plan.popular ? "default" : "outline"}
+                    >
+                      Get Started
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="text-center mt-12">
+            <p className="text-gray-600 mb-4">All plans include:</p>
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-700">
+              <span className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-green-500" />
+                Bank-level security
+              </span>
+              <span className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-green-500" />
+                GDPR compliant
+              </span>
+              <span className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-green-500" />
+                24/7 customer support
+              </span>
+              <span className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-green-500" />
+                Cancel anytime
+              </span>
+            </div>
           </div>
         </div>
       </section>

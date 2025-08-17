@@ -122,8 +122,8 @@ export default function Billing() {
         <h2 className="text-2xl font-bold text-center">Choose Your Plan</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {plans.map((plan) => (
-            <Card key={plan.id} className={`relative ${plan.name === "Premium" ? "border-blue-500 border-2" : ""}`}>
-              {plan.name === "Premium" && (
+            <Card key={plan.id} className={`relative ${plan.name === "Elite Plan" ? "border-blue-500 border-2" : ""}`}>
+              {plan.name === "Elite Plan" && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <Badge className="bg-blue-500 text-white">Most Popular</Badge>
                 </div>
@@ -147,7 +147,7 @@ export default function Billing() {
                 </ul>
                 <Button
                   className="w-full"
-                  variant={plan.name === "Premium" ? "default" : "outline"}
+                  variant={plan.name === "Elite Plan" ? "default" : "outline"}
                   onClick={() => handleSubscribe(plan.id)}
                   disabled={user?.subscriptionPlan === plan.name && user?.subscriptionStatus === "ACTIVE"}
                 >

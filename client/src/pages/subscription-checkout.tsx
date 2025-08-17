@@ -162,7 +162,7 @@ export default function SubscriptionCheckout() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 {plan.name}
-                {plan.name === "Premium" && (
+                {plan.name === "Elite Plan" && (
                   <Badge className="bg-blue-500 text-white">Most Popular</Badge>
                 )}
               </CardTitle>
