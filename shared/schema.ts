@@ -20,6 +20,14 @@ export const users = pgTable("users", {
     employmentType?: string; // for PSLF eligibility
     startDate?: string;
   }>(),
+  // Stripe billing fields
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscriptionStatus: text("subscription_status"), // ACTIVE, CANCELED, PAST_DUE, TRIALING
+  subscriptionPlan: text("subscription_plan"), // BASIC, PREMIUM, PROFESSIONAL
+  subscriptionStartDate: timestamp("subscription_start_date"),
+  subscriptionEndDate: timestamp("subscription_end_date"),
+  billingCycle: text("billing_cycle").default("monthly"), // monthly, yearly
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -120,6 +128,59 @@ export const loanDocuments = pgTable("loan_documents", {
   fileName: text("file_name").notNull(),
   content: text("content").notNull(),
   generated: boolean("generated").default(true), // true if AI generated, false if uploaded
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Billing and payment tables
+export const subscriptionPlans = pgTable("subscription_plans", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // Basic, Premium, Professional
+  description: text("description").notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  billingInterval: text("billing_interval").notNull(), // monthly, yearly
+  stripePriceId: text("stripe_price_id").notNull(),
+  features: text("features").array().notNull(),
+  maxDisputes: integer("max_disputes"),
+  maxClients: integer("max_clients"), // for admin plans
+  aiCreditsPerMonth: integer("ai_credits_per_month"),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  stripePaymentIntentId: text("stripe_payment_intent_id").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").notNull().default("usd"),
+  status: text("status").notNull(), // PENDING, SUCCEEDED, FAILED, CANCELED
+  description: text("description"),
+  paymentType: text("payment_type").notNull(), // SUBSCRIPTION, ONE_TIME, SETUP_FEE
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  paidAt: timestamp("paid_at"),
+});
+
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  stripeInvoiceId: text("stripe_invoice_id").notNull(),
+  subscriptionId: text("subscription_id"),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").notNull().default("usd"),
+  status: text("status").notNull(), // DRAFT, OPEN, PAID, VOID, UNCOLLECTIBLE
+  dueDate: timestamp("due_date"),
+  paidAt: timestamp("paid_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const usageTracking = pgTable("usage_tracking", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  month: integer("month").notNull(),
+  year: integer("year").notNull(),
+  disputesGenerated: integer("disputes_generated").default(0),
+  aiCreditsUsed: integer("ai_credits_used").default(0),
+  documentsGenerated: integer("documents_generated").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -240,6 +301,12 @@ export const insertBureauResponseAnalysisSchema = createInsertSchema(bureauRespo
 export const insertStudentLoanSchema = createInsertSchema(studentLoans).omit({ id: true, createdAt: true });
 export const insertLoanNegotiationSchema = createInsertSchema(loanNegotiations).omit({ id: true, createdAt: true, completedAt: true });
 export const insertLoanDocumentSchema = createInsertSchema(loanDocuments).omit({ id: true, createdAt: true });
+
+// Billing schema validations
+export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans).omit({ id: true, createdAt: true });
+export const insertPaymentSchema = createInsertSchema(payments).omit({ id: true, createdAt: true, paidAt: true });
+export const insertInvoiceSchema = createInsertSchema(invoices).omit({ id: true, createdAt: true, paidAt: true });
+export const insertUsageTrackingSchema = createInsertSchema(usageTracking).omit({ id: true, createdAt: true });
 
 // Gamified Onboarding Progress Tracker
 export const userOnboardingProgress = pgTable("user_onboarding_progress", {

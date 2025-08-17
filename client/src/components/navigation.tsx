@@ -21,6 +21,7 @@ export function Navigation() {
     { href: "/experian", label: "Experian Connect" },
     ...(canAccessCreditBuilding ? [{ href: "/credit-building", label: "Credit Building" }] : []),
     ...(canAccessEducation ? [{ href: "/education", label: "Education" }] : []),
+    { href: "/billing", label: "Billing" },
     ...(isAdmin ? [
       { href: "/admin", label: "Admin" }, 
       { href: "/support-admin", label: "Support Center" }

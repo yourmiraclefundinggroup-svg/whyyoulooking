@@ -4,11 +4,14 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { 
   aiConversations, studentLoans, loanNegotiations,
-  supportConversations, supportMessages, supportTickets, supportKnowledgeBase
+  supportConversations, supportMessages, supportTickets, supportKnowledgeBase,
+  subscriptionPlans, payments, invoices
 } from "@shared/schema";
 import { eq, desc, sql, or } from "drizzle-orm";
 import { aiService } from "./ai-service";
+import { stripeService } from "./stripe-service";
 import OpenAI from "openai";
+import Stripe from "stripe";
 import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
 import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema } from "@shared/schema";
@@ -4280,6 +4283,147 @@ Please contact this lead within 24 hours.
     } catch (error) {
       console.error("Error fetching badges:", error);
       res.status(500).json({ error: "Failed to fetch badges" });
+    }
+  });
+
+  // Stripe payment routes
+  app.post("/api/stripe/payment-intent", authenticateToken, async (req, res) => {
+    try {
+      const { amount, description } = req.body;
+      const userId = (req as any).user.id;
+      
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ error: "Valid amount is required" });
+      }
+      
+      const paymentIntent = await stripeService.createPaymentIntent(
+        userId, 
+        amount, 
+        description || "ScoreShift Credit Repair Service"
+      );
+      
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/stripe/subscription", authenticateToken, async (req, res) => {
+    try {
+      const { planId } = req.body;
+      const userId = (req as any).user.id;
+      
+      if (!planId) {
+        return res.status(400).json({ error: "Plan ID is required" });
+      }
+      
+      const subscription = await stripeService.createSubscription(userId, planId);
+      
+      res.json({
+        subscriptionId: subscription.id,
+        clientSecret: (subscription.latest_invoice as Stripe.Invoice)?.payment_intent?.client_secret,
+        status: subscription.status
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/stripe/subscription", authenticateToken, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      
+      const subscription = await stripeService.cancelSubscription(userId);
+      
+      res.json({ 
+        message: "Subscription cancelled successfully",
+        subscription: {
+          id: subscription.id,
+          status: subscription.status,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          currentPeriodEnd: new Date(subscription.current_period_end * 1000)
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/stripe/payment-methods", authenticateToken, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const paymentMethods = await stripeService.getPaymentMethods(userId);
+      
+      res.json(paymentMethods);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/stripe/invoices", authenticateToken, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const invoices = await stripeService.getCustomerInvoices(userId);
+      
+      res.json(invoices);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/subscription-plans", async (req, res) => {
+    try {
+      const plans = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.active, true));
+      res.json(plans);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Stripe webhook endpoint
+  app.post("/api/stripe/webhook", async (req, res) => {
+    try {
+      const event = req.body as Stripe.Event;
+      await stripeService.handleWebhook(event);
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error("Stripe webhook error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin billing management routes
+  app.get("/api/admin/billing/overview", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      // Get billing metrics
+      const totalRevenue = await db.select({ 
+        sum: sql<number>`SUM(${payments.amount}::numeric)` 
+      }).from(payments).where(eq(payments.status, "SUCCEEDED"));
+
+      const activeSubscriptions = await db.select({ 
+        count: sql<number>`COUNT(*)` 
+      }).from(users).where(eq(users.subscriptionStatus, "ACTIVE"));
+
+      const recentPayments = await db.select()
+        .from(payments)
+        .orderBy(desc(payments.createdAt))
+        .limit(10);
+
+      res.json({
+        totalRevenue: totalRevenue[0]?.sum || 0,
+        activeSubscriptions: activeSubscriptions[0]?.count || 0,
+        recentPayments
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 

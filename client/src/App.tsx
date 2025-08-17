@@ -16,6 +16,8 @@ import ExperianConnect from "@/pages/experian-connect";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AdminPortal from "@/pages/admin-portal";
 import SupportAdmin from "@/pages/support-admin";
+import Billing from "@/pages/billing";
+import SubscriptionCheckout from "@/pages/subscription-checkout";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -104,6 +106,11 @@ function Router() {
           <Navigation />
           <SupportAdmin />
         </Route>
+        <Route path="/billing">
+          <Navigation />
+          <Billing />
+        </Route>
+        <Route path="/checkout" component={SubscriptionCheckout} />
         <Route path="/login" component={Login} />
         <Route component={NotFound} />
       </Switch>
