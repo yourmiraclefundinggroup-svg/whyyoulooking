@@ -176,16 +176,10 @@ export default function LandingPage() {
               </Badge>
             </div>
             <div className="flex items-center space-x-3">
-              <Link href="/auth">
-                <Button variant="outline">
-                  <Users className="h-4 w-4 mr-2" />
-                  Client Portal
-                </Button>
-              </Link>
-              <Link href="/admin/auth">
+              <Link href="/login">
                 <Button className="bg-blue-600 hover:bg-blue-700">
-                  <Shield className="h-4 w-4 mr-2" />
-                  Admin Portal
+                  <Users className="h-4 w-4 mr-2" />
+                  Login
                 </Button>
               </Link>
             </div>
@@ -210,7 +204,7 @@ export default function LandingPage() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link href="/get-started">
+            <Link href="/billing">
               <Button 
                 size="lg" 
                 className="bg-blue-600 hover:bg-blue-700 px-8 py-4 text-lg"
@@ -220,10 +214,10 @@ export default function LandingPage() {
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
             </Link>
-            <Link href="/admin/auth">
+            <Link href="/login">
               <Button size="lg" variant="outline" className="px-8 py-4 text-lg">
-                <Shield className="h-5 w-5 mr-2" />
-                Admin Dashboard
+                <Users className="h-5 w-5 mr-2" />
+                Client Login
               </Button>
             </Link>
           </div>
@@ -430,100 +424,35 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Platform Access */}
-      <section className="py-20 px-4 bg-blue-600">
-        <div className="container mx-auto">
-          <div className="text-center text-white mb-12">
-            <h3 className="text-4xl font-bold mb-4">Choose Your Access Level</h3>
-            <p className="text-xl opacity-90">
-              Secure portals designed for professionals and their clients
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <Card className="bg-white border-0 shadow-xl">
-              <CardHeader className="text-center pb-4">
-                <Users className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                <CardTitle className="text-2xl">Client Portal</CardTitle>
-                <CardDescription>
-                  Secure access to your credit repair progress and tools
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                    View credit reports and scores
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                    Track dispute progress
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                    AI credit analysis tools
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                    Secure document uploads
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                    Direct communication with specialists
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                    Student loan negotiation tools
-                  </div>
-                </div>
-                <Link href="/auth">
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700 mt-6">
-                    <Home className="h-4 w-4 mr-2" />
-                    Access Client Portal
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border-0 shadow-xl">
-              <CardHeader className="text-center pb-4">
-                <Shield className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-                <CardTitle className="text-2xl">Admin Dashboard</CardTitle>
-                <CardDescription>
-                  Complete platform management and client oversight
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                    Manage all client accounts
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                    AI bureau response analysis
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                    Generate dispute letters
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                    Platform analytics and reporting
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                    API integration management
-                  </div>
-                </div>
-                <Link href="/admin/auth">
-                  <Button className="w-full bg-purple-600 hover:bg-purple-700 mt-6">
-                    <Shield className="h-4 w-4 mr-2" />
-                    Access Admin Dashboard
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+      {/* Call to Action */}
+      <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-blue-800">
+        <div className="container mx-auto text-center text-white">
+          <h3 className="text-4xl font-bold mb-6">Ready to Transform Your Credit?</h3>
+          <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
+            Join thousands of clients who have successfully improved their credit scores with our AI-powered platform
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link href="/billing">
+              <Button 
+                size="lg" 
+                className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold"
+              >
+                <Target className="h-5 w-5 mr-2" />
+                Get Started Today
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg"
+              >
+                <Users className="h-5 w-5 mr-2" />
+                Client Login
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -581,16 +510,16 @@ export default function LandingPage() {
               Professional Credit Repair & Financial Wellness Platform
             </p>
             <div className="flex justify-center space-x-4 mb-8">
-              <Link href="/auth">
-                <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800">
-                  <Users className="h-4 w-4 mr-2" />
-                  Client Portal
+              <Link href="/billing">
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Target className="h-4 w-4 mr-2" />
+                  Get Started
                 </Button>
               </Link>
-              <Link href="/admin/auth">
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <Shield className="h-4 w-4 mr-2" />
-                  Admin Portal
+              <Link href="/login">
+                <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800">
+                  <Users className="h-4 w-4 mr-2" />
+                  Login
                 </Button>
               </Link>
             </div>
