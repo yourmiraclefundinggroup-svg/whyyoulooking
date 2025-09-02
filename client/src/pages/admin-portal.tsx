@@ -546,7 +546,9 @@ function DisputeCenterPage({
           </Card>
 
           {/* USPS Tracking Section */}
-          <AdminUSPSTracking userId={selectedClient.id} />
+          <div className="p-6">
+            <AdminDisputeTracking selectedClientId={selectedClient.id} />
+          </div>
 
           {/* Follow-up Alerts */}
           <FollowUpAlerts />
