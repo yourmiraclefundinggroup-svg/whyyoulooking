@@ -689,8 +689,14 @@ Format the response as a complete business letter ready to send.`;
   });
 
   // AI Credit Analysis
-  app.post("/api/ai-credit-analysis", async (req, res) => {
+  app.post("/api/ai-credit-analysis", authenticateToken, async (req, res) => {
     const { userId } = req.body;
+    const requestingUser = (req as any).user;
+    
+    // Allow admins to analyze any user, or users to analyze themselves
+    if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== userId) {
+      return res.status(403).json({ message: "Access denied" });
+    }
     let creditReport: any = null;
     let creditIssues: any[] = [];
     
