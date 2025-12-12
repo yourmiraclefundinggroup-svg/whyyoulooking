@@ -173,19 +173,29 @@ export default function CreditRepair() {
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/50 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300" />
         <motion.div
-          className="absolute top-10 right-10 w-[400px] h-[400px] bg-blue-500/15 dark:bg-blue-500/25 rounded-full blur-[80px]"
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-10 right-10 w-[500px] h-[500px] bg-blue-500/20 dark:bg-blue-600/30 rounded-full blur-[100px]"
+          animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.7, 0.4], rotate: [0, 180, 360] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
-          className="absolute bottom-20 left-10 w-[350px] h-[350px] bg-purple-500/15 dark:bg-purple-500/25 rounded-full blur-[80px]"
-          animate={{ scale: [1.1, 1, 1.1], opacity: [0.4, 0.2, 0.4] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-cyan-500/10 dark:bg-cyan-500/20 rounded-full blur-[60px]"
-          animate={{ x: [-50, 50, -50], y: [-30, 30, -30] }}
+          className="absolute bottom-20 left-10 w-[450px] h-[450px] bg-purple-500/20 dark:bg-purple-600/35 rounded-full blur-[100px]"
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.3, 0.5], x: [-20, 20, -20] }}
           transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-cyan-500/15 dark:bg-cyan-500/30 rounded-full blur-[80px]"
+          animate={{ x: [-80, 80, -80], y: [-50, 50, -50], scale: [1, 1.15, 1] }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute bottom-1/3 right-1/4 w-[350px] h-[350px] bg-pink-500/10 dark:bg-pink-500/25 rounded-full blur-[70px]"
+          animate={{ x: [50, -50, 50], y: [30, -30, 30], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute top-2/3 right-10 w-[300px] h-[300px] bg-emerald-500/10 dark:bg-emerald-500/20 rounded-full blur-[60px]"
+          animate={{ scale: [1, 1.2, 1], rotate: [0, -90, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
         />
       </div>
       
@@ -374,17 +384,26 @@ export default function CreditRepair() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-3 sm:space-y-4">
-                {activeIssues.map((issue) => (
-                  <div
+                {activeIssues.map((issue, index) => (
+                  <motion.div
                     key={issue.id}
-                    className={`flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 rounded-lg border ${getIssueTypeColor(issue.type)}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    whileHover={{ scale: 1.02, boxShadow: "0 10px 40px -10px rgba(0,0,0,0.2)" }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 rounded-xl border cursor-pointer transition-all duration-200 ${getIssueTypeColor(issue.type)}`}
                   >
                     <div className="flex items-start space-x-3 sm:space-x-4">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+                      <motion.div 
+                        className="flex-shrink-0"
+                        whileHover={{ rotate: [0, -10, 10, 0] }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center shadow-lg">
                           {getIssueIcon(issue.type)}
                         </div>
-                      </div>
+                      </motion.div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -428,7 +447,7 @@ export default function CreditRepair() {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
                 {activeIssues.length === 0 && (
                   <div className="text-center py-8 sm:py-12 text-gray-500 dark:text-gray-400">
