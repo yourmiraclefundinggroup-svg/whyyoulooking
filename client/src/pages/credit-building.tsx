@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { TrendingUp, Target, ArrowUp, ListTodo, CreditCard, Percent, CalendarCheck, CheckCircle, Shield, Info, Clock, PlayCircle, Check, Trophy } from "lucide-react";
 import type { CreditReport, CreditBuildingAction, CreditGoal } from "@shared/schema";
 
 export default function CreditBuilding() {
@@ -150,7 +151,7 @@ export default function CreditBuilding() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-chart-line text-blue-600 text-sm"></i>
+                  <TrendingUp className="h-4 w-4 text-blue-600" />
                 </div>
               </div>
               <div className="ml-3">
@@ -166,7 +167,7 @@ export default function CreditBuilding() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-target text-green-600 text-sm"></i>
+                  <Target className="h-4 w-4 text-green-600" />
                 </div>
               </div>
               <div className="ml-3">
@@ -182,7 +183,7 @@ export default function CreditBuilding() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-arrow-up text-purple-600 text-sm"></i>
+                  <ArrowUp className="h-4 w-4 text-purple-600" />
                 </div>
               </div>
               <div className="ml-3">
@@ -198,7 +199,7 @@ export default function CreditBuilding() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-tasks text-orange-600 text-sm"></i>
+                  <ListTodo className="h-4 w-4 text-orange-600" />
                 </div>
               </div>
               <div className="ml-3">
@@ -269,9 +270,9 @@ export default function CreditBuilding() {
                           ? 'bg-blue-600'
                           : 'bg-gray-600'
                       }`}>
-                        {action.type === 'SECURED_CARD' && <i className="fas fa-credit-card text-white text-sm"></i>}
-                        {action.type === 'UTILIZATION_REDUCTION' && <i className="fas fa-percentage text-white text-sm"></i>}
-                        {action.type === 'PAYMENT_HISTORY' && <i className="fas fa-calendar-check text-white text-sm"></i>}
+                        {action.type === 'SECURED_CARD' && <CreditCard className="h-4 w-4 text-white" />}
+                        {action.type === 'UTILIZATION_REDUCTION' && <Percent className="h-4 w-4 text-white" />}
+                        {action.type === 'PAYMENT_HISTORY' && <CalendarCheck className="h-4 w-4 text-white" />}
                       </div>
                     </div>
                     <div className="flex-1">
@@ -329,7 +330,7 @@ export default function CreditBuilding() {
                 ))}
                 {recommendedActions.length === 0 && (
                   <div className="text-center py-12 text-gray-500">
-                    <i className="fas fa-check-circle text-green-600 text-4xl mb-4"></i>
+                    <CheckCircle className="h-10 w-10 text-green-600 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">All Caught Up!</h3>
                     <p className="text-gray-600">
                       You've started all available credit building actions. Keep up the great work!
@@ -353,7 +354,7 @@ export default function CreditBuilding() {
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                      <i className="fas fa-shield-alt text-red-600"></i>
+                      <Shield className="h-5 w-5 text-red-600" />
                     </div>
                     <div>
                       <h3 className="font-medium text-gray-900">Experian Credit Monitoring</h3>
@@ -477,7 +478,7 @@ export default function CreditBuilding() {
                 <div className="flex items-center justify-between p-4 border rounded-lg opacity-50">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <i className="fas fa-shield-alt text-blue-600"></i>
+                      <Shield className="h-5 w-5 text-blue-600" />
                     </div>
                     <div>
                       <h3 className="font-medium text-gray-900">Equifax Credit Monitoring</h3>
@@ -490,7 +491,7 @@ export default function CreditBuilding() {
                 <div className="flex items-center justify-between p-4 border rounded-lg opacity-50">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                      <i className="fas fa-shield-alt text-green-600"></i>
+                      <Shield className="h-5 w-5 text-green-600" />
                     </div>
                     <div>
                       <h3 className="font-medium text-gray-900">TransUnion Credit Monitoring</h3>
@@ -704,7 +705,7 @@ export default function CreditBuilding() {
                 {/* Disclaimer */}
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
                   <div className="flex items-start">
-                    <i className="fas fa-info-circle text-yellow-600 text-sm mt-0.5 mr-3"></i>
+                    <Info className="h-4 w-4 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
                     <div>
                       <h4 className="text-sm font-medium text-yellow-900 mb-1">Important Disclaimer</h4>
                       <p className="text-xs text-yellow-700">
@@ -737,7 +738,7 @@ export default function CreditBuilding() {
                   >
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-yellow-600 rounded-lg flex items-center justify-center">
-                        <i className="fas fa-clock text-white text-sm"></i>
+                        <Clock className="h-4 w-4 text-white" />
                       </div>
                     </div>
                     <div className="flex-1">
@@ -761,7 +762,7 @@ export default function CreditBuilding() {
                 ))}
                 {inProgressActions.length === 0 && (
                   <div className="text-center py-12 text-gray-500">
-                    <i className="fas fa-play-circle text-gray-400 text-4xl mb-4"></i>
+                    <PlayCircle className="h-10 w-10 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No Actions In Progress</h3>
                     <p className="text-gray-600">
                       Start working on recommended actions to improve your credit score.
@@ -790,7 +791,7 @@ export default function CreditBuilding() {
                   >
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                        <i className="fas fa-check text-white text-sm"></i>
+                        <Check className="h-4 w-4 text-white" />
                       </div>
                     </div>
                     <div className="flex-1">
@@ -807,7 +808,7 @@ export default function CreditBuilding() {
                 ))}
                 {completedActions.length === 0 && (
                   <div className="text-center py-12 text-gray-500">
-                    <i className="fas fa-trophy text-gray-400 text-4xl mb-4"></i>
+                    <Trophy className="h-10 w-10 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No Completed Actions Yet</h3>
                     <p className="text-gray-600">
                       Complete recommended actions to see your progress here.

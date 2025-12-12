@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Shield, Check, TrendingUp, Bell, Loader2, Info } from "lucide-react";
 
 export default function ExperianConnect() {
   const { toast } = useToast();
@@ -87,46 +88,46 @@ export default function ExperianConnect() {
   return (
     <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center">
-            <i className="fas fa-shield-alt text-red-600 text-2xl"></i>
+        <div className="flex items-center space-x-4 mb-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg">
+            <Shield className="h-8 w-8 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Connect to Experian</h1>
-            <p className="mt-2 text-gray-600">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Connect to Experian</h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
               Link your Experian account for real-time credit monitoring and automated credit report updates.
             </p>
           </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg">
-            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-              <i className="fas fa-check text-green-600"></i>
+          <div className="flex items-center space-x-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-800 rounded-xl flex items-center justify-center">
+              <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <h3 className="font-medium text-green-900">Real-Time Updates</h3>
-              <p className="text-sm text-green-700">Automatic credit report syncing</p>
+              <h3 className="font-medium text-green-900 dark:text-green-100">Real-Time Updates</h3>
+              <p className="text-sm text-green-700 dark:text-green-300">Automatic credit report syncing</p>
             </div>
           </div>
           
-          <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <i className="fas fa-chart-line text-blue-600"></i>
+          <div className="flex items-center space-x-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-xl flex items-center justify-center">
+              <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h3 className="font-medium text-blue-900">Score Monitoring</h3>
-              <p className="text-sm text-blue-700">Track credit score changes</p>
+              <h3 className="font-medium text-blue-900 dark:text-blue-100">Score Monitoring</h3>
+              <p className="text-sm text-blue-700 dark:text-blue-300">Track credit score changes</p>
             </div>
           </div>
           
-          <div className="flex items-center space-x-3 p-4 bg-purple-50 rounded-lg">
-            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-              <i className="fas fa-bell text-purple-600"></i>
+          <div className="flex items-center space-x-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-100 dark:border-purple-800">
+            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-800 rounded-xl flex items-center justify-center">
+              <Bell className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <h3 className="font-medium text-purple-900">Alerts</h3>
-              <p className="text-sm text-purple-700">Get notified of changes</p>
+              <h3 className="font-medium text-purple-900 dark:text-purple-100">Alerts</h3>
+              <p className="text-sm text-purple-700 dark:text-purple-300">Get notified of changes</p>
             </div>
           </div>
         </div>
@@ -253,17 +254,18 @@ export default function ExperianConnect() {
               <Button 
                 type="submit"
                 size="lg"
+                data-testid="button-connect-experian"
                 className="w-full md:w-auto bg-red-600 hover:bg-red-700 text-white px-8 py-3"
                 disabled={connectExperianMutation.isPending}
               >
                 {connectExperianMutation.isPending ? (
                   <>
-                    <i className="fas fa-spinner animate-spin mr-2"></i>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Connecting to Experian...
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-shield-alt mr-2"></i>
+                    <Shield className="h-4 w-4 mr-2" />
                     Connect to Experian
                   </>
                 )}
@@ -273,15 +275,15 @@ export default function ExperianConnect() {
         </CardContent>
       </Card>
 
-      <Card className="mt-8">
+      <Card className="mt-8 border-yellow-200 dark:border-yellow-800">
         <CardContent className="p-6">
           <div className="flex items-start space-x-4">
-            <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <i className="fas fa-info-circle text-yellow-600"></i>
+            <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Info className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
             </div>
             <div>
-              <h3 className="font-medium text-gray-900 mb-2">Security & Privacy Notice</h3>
-              <div className="text-sm text-gray-600 space-y-2">
+              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Security & Privacy Notice</h3>
+              <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                 <p>• All personal information is encrypted using bank-level security</p>
                 <p>• Your data is only used to connect to your Experian credit report</p>
                 <p>• We never store your SSN in plain text</p>

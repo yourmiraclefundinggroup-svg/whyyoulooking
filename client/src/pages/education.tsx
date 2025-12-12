@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { TrendingUp, Gavel, ArrowUp, Clock, Search, Percent, CalendarCheck, Eye, History } from "lucide-react";
 import type { EducationalContent } from "@shared/schema";
 
 export default function Education() {
@@ -17,9 +18,9 @@ export default function Education() {
   });
 
   const categories = [
-    { id: "CREDIT_SCORES", label: "Credit Scores", icon: "fas fa-chart-line", color: "bg-blue-500" },
-    { id: "DISPUTE_PROCESS", label: "Dispute Process", icon: "fas fa-gavel", color: "bg-red-500" },
-    { id: "CREDIT_BUILDING", label: "Credit Building", icon: "fas fa-arrow-up", color: "bg-green-500" },
+    { id: "CREDIT_SCORES", label: "Credit Scores", icon: TrendingUp, color: "bg-blue-500" },
+    { id: "DISPUTE_PROCESS", label: "Dispute Process", icon: Gavel, color: "bg-red-500" },
+    { id: "CREDIT_BUILDING", label: "Credit Building", icon: ArrowUp, color: "bg-green-500" },
   ];
 
   const filteredContent = educationalContent.filter(content => {
@@ -77,20 +78,23 @@ export default function Education() {
             >
               All Topics
             </Button>
-            {categories.map((category) => (
-              <Button
-                key={category.id}
-                variant={selectedCategory === category.id ? "default" : "outline"}
-                onClick={() => setSelectedCategory(category.id)}
-                className={cn(
-                  "flex items-center space-x-2",
-                  selectedCategory === category.id ? "bg-trust-blue hover:bg-blue-700" : ""
-                )}
-              >
-                <i className={`${category.icon} text-sm`}></i>
-                <span className="hidden sm:inline">{category.label}</span>
-              </Button>
-            ))}
+            {categories.map((category) => {
+              const IconComponent = category.icon;
+              return (
+                <Button
+                  key={category.id}
+                  variant={selectedCategory === category.id ? "default" : "outline"}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={cn(
+                    "flex items-center space-x-2",
+                    selectedCategory === category.id ? "bg-trust-blue hover:bg-blue-700" : ""
+                  )}
+                >
+                  <IconComponent className="h-4 w-4" />
+                  <span className="hidden sm:inline">{category.label}</span>
+                </Button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -125,7 +129,7 @@ export default function Education() {
                         {categories.find(cat => cat.id === content.category)?.label || content.category}
                       </Badge>
                       <span className="text-sm text-gray-500 flex items-center">
-                        <i className="fas fa-clock mr-1"></i>
+                        <Clock className="h-4 w-4 mr-1" />
                         {content.readTime} min read
                       </span>
                     </div>
@@ -171,7 +175,7 @@ export default function Education() {
                         {categories.find(cat => cat.id === content.category)?.label || content.category}
                       </Badge>
                       <span className="text-sm text-gray-500 flex items-center">
-                        <i className="fas fa-clock mr-1"></i>
+                        <Clock className="h-4 w-4 mr-1" />
                         {content.readTime} min
                       </span>
                     </div>
@@ -190,7 +194,7 @@ export default function Education() {
 
           {filteredContent.length === 0 && (
             <div className="text-center py-12 text-gray-500">
-              <i className="fas fa-search text-gray-400 text-4xl mb-4"></i>
+              <Search className="h-10 w-10 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Articles Found</h3>
               <p className="text-gray-600">
                 Try adjusting your search terms or browse different categories.
@@ -216,7 +220,7 @@ export default function Education() {
                   <div className="flex items-center justify-between">
                     <Badge className="bg-blue-500 text-white">Credit Scores</Badge>
                     <span className="text-sm text-gray-500 flex items-center">
-                      <i className="fas fa-clock mr-1"></i>
+                      <Clock className="h-4 w-4 mr-1" />
                       {content.readTime} min read
                     </span>
                   </div>
@@ -250,7 +254,7 @@ export default function Education() {
                   <div className="flex items-center justify-between">
                     <Badge className="bg-red-500 text-white">Dispute Process</Badge>
                     <span className="text-sm text-gray-500 flex items-center">
-                      <i className="fas fa-clock mr-1"></i>
+                      <Clock className="h-4 w-4 mr-1" />
                       {content.readTime} min read
                     </span>
                   </div>
@@ -284,7 +288,7 @@ export default function Education() {
                   <div className="flex items-center justify-between">
                     <Badge className="bg-green-500 text-white">Credit Building</Badge>
                     <span className="text-sm text-gray-500 flex items-center">
-                      <i className="fas fa-clock mr-1"></i>
+                      <Clock className="h-4 w-4 mr-1" />
                       {content.readTime} min read
                     </span>
                   </div>
@@ -308,7 +312,7 @@ export default function Education() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="text-center p-6">
             <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="fas fa-percentage text-blue-600 text-xl"></i>
+              <Percent className="h-6 w-6 text-blue-600" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Keep Utilization Low</h3>
             <p className="text-sm text-gray-600">
@@ -318,7 +322,7 @@ export default function Education() {
           
           <Card className="text-center p-6">
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="fas fa-calendar-check text-green-600 text-xl"></i>
+              <CalendarCheck className="h-6 w-6 text-green-600" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Pay On Time</h3>
             <p className="text-sm text-gray-600">
@@ -328,7 +332,7 @@ export default function Education() {
           
           <Card className="text-center p-6">
             <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="fas fa-eye text-purple-600 text-xl"></i>
+              <Eye className="h-6 w-6 text-purple-600" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Monitor Regularly</h3>
             <p className="text-sm text-gray-600">
@@ -338,7 +342,7 @@ export default function Education() {
           
           <Card className="text-center p-6">
             <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="fas fa-history text-orange-600 text-xl"></i>
+              <History className="h-6 w-6 text-orange-600" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Build History</h3>
             <p className="text-sm text-gray-600">

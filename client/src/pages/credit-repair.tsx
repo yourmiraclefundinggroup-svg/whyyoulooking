@@ -24,7 +24,7 @@ import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatRelativeDate, getIssueTypeColor, getDisputeStatusColor } from "@/lib/utils";
-import { X, Clock, Search, AlertCircle, CheckCircle } from "lucide-react";
+import { X, Clock, Search, AlertCircle, CheckCircle, Gavel, Check, FileText, Bot, Calculator, Eye } from "lucide-react";
 
 function getIssueIcon(type: string) {
   switch (type) {
@@ -143,11 +143,11 @@ export default function CreditRepair() {
         </div>
         {isClientViewer ? (
           <div className="mt-3 space-y-3">
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <i className="fas fa-eye mr-2"></i>
-                <strong>Client View:</strong> This shows the work being done on your credit file. 
-                You can view dispute progress and tracking but cannot create new disputes.
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-200 flex items-start">
+                <Eye className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0 text-blue-700 dark:text-blue-200" />
+                <span><strong>Client View:</strong> This shows the work being done on your credit file. 
+                You can view dispute progress and tracking but cannot create new disputes.</span>
               </p>
             </div>
             
@@ -159,8 +159,8 @@ export default function CreditRepair() {
                   {creditConnections.map((connection: any) => (
                     <div key={connection.id} className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                          <i className="fas fa-shield-alt text-green-600"></i>
+                        <div className="w-8 h-8 bg-green-100 dark:bg-green-800 rounded-lg flex items-center justify-center">
+                          <Shield className="h-4 w-4 text-green-600 dark:text-green-400" />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-green-900">{connection.provider}</p>
@@ -177,11 +177,11 @@ export default function CreditRepair() {
                   ))}
                 </div>
               ) : (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                        <i className="fas fa-shield-alt text-red-600 text-lg"></i>
+                      <div className="w-10 h-10 bg-red-100 dark:bg-red-800 rounded-lg flex items-center justify-center">
+                        <Shield className="h-5 w-5 text-red-600 dark:text-red-400" />
                       </div>
                       <div>
                         <h3 className="text-sm font-semibold text-red-900">Connect to Experian</h3>
@@ -215,8 +215,8 @@ export default function CreditRepair() {
           <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-exclamation-triangle text-red-600 text-xs sm:text-sm"></i>
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-red-100 dark:bg-red-800 rounded-lg flex items-center justify-center">
+                  <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-red-600 dark:text-red-400" />
                 </div>
               </div>
               <div className="ml-2 sm:ml-3">
@@ -232,7 +232,7 @@ export default function CreditRepair() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-6 h-6 sm:w-8 sm:h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-gavel text-yellow-600 text-xs sm:text-sm"></i>
+                  <Gavel className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
                 </div>
               </div>
               <div className="ml-2 sm:ml-3">
@@ -248,7 +248,7 @@ export default function CreditRepair() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-check-circle text-green-600 text-xs sm:text-sm"></i>
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
                 </div>
               </div>
               <div className="ml-2 sm:ml-3">
@@ -264,7 +264,7 @@ export default function CreditRepair() {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-clock text-blue-600 text-xs sm:text-sm"></i>
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
                 </div>
               </div>
               <div className="ml-2 sm:ml-3">
@@ -394,7 +394,7 @@ export default function CreditRepair() {
                     >
                       <div className="flex-shrink-0">
                         <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                          <i className="fas fa-check text-white text-sm"></i>
+                          <Check className="h-4 w-4 text-white" />
                         </div>
                       </div>
                       <div className="flex-1">
@@ -457,7 +457,7 @@ export default function CreditRepair() {
                 })}
                 {pendingDisputes.length === 0 && (
                   <div className="text-center py-12 text-gray-500">
-                    <i className="fas fa-file-alt text-gray-400 text-4xl mb-4"></i>
+                    <FileText className="h-10 w-10 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No Pending Disputes</h3>
                     <p className="text-gray-600">
                       You don't have any disputes currently pending with credit bureaus.
@@ -488,7 +488,7 @@ export default function CreditRepair() {
                       >
                         <div className="flex-shrink-0">
                           <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                            <i className="fas fa-check text-white text-sm"></i>
+                            <Check className="h-4 w-4 text-white" />
                           </div>
                         </div>
                         <div className="flex-1">
@@ -599,14 +599,14 @@ export default function CreditRepair() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 bg-white rounded border">
                     <div className="flex items-center gap-2 mb-2">
-                      <i className="fas fa-robot text-blue-600"></i>
+                      <Bot className="h-5 w-5 text-blue-600" />
                       <span className="font-medium">AI Credit Analysis</span>
                     </div>
                     <p className="text-sm text-gray-600">Your specialist runs AI analysis on your credit file to identify priority issues and optimal dispute strategies.</p>
                   </div>
                   <div className="p-4 bg-white rounded border">
                     <div className="flex items-center gap-2 mb-2">
-                      <i className="fas fa-calculator text-green-600"></i>
+                      <Calculator className="h-5 w-5 text-green-600" />
                       <span className="font-medium">Score Simulation</span>
                     </div>
                     <p className="text-sm text-gray-600">AI simulates the impact of potential credit improvements to predict your score increases.</p>
@@ -618,7 +618,7 @@ export default function CreditRepair() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <i className="fas fa-robot text-blue-600 mr-3"></i>
+                    <Bot className="h-5 w-5 text-blue-600 mr-3" />
                     Your AI Credit Analysis
                   </CardTitle>
                 </CardHeader>
@@ -641,7 +641,7 @@ export default function CreditRepair() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <i className="fas fa-robot text-blue-600 mr-3"></i>
+                    <Bot className="h-5 w-5 text-blue-600 mr-3" />
                     AI Credit Analysis
                   </CardTitle>
                 </CardHeader>
@@ -661,7 +661,7 @@ export default function CreditRepair() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <i className="fas fa-calculator text-green-600 mr-3"></i>
+                    <Calculator className="h-5 w-5 text-green-600 mr-3" />
                     Credit Score Simulator
                   </CardTitle>
                 </CardHeader>
