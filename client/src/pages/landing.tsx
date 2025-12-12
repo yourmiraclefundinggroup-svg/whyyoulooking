@@ -153,16 +153,23 @@ function TestimonialCard({ testimonial, isActive }: { testimonial: typeof testim
   );
 }
 
-function FloatingParticle({ delay, duration, size, left, top }: { delay: number; duration: number; size: number; left: string; top: string }) {
+function FloatingParticle({ delay, duration, size, left, top, color = "blue" }: { delay: number; duration: number; size: number; left: string; top: string; color?: string }) {
+  const colorClasses = {
+    blue: "from-blue-400 to-blue-600",
+    purple: "from-purple-400 to-purple-600",
+    green: "from-green-400 to-green-600",
+    cyan: "from-cyan-400 to-cyan-600",
+  };
+  
   return (
     <motion.div
-      className="absolute rounded-full bg-gradient-to-br from-blue-400/30 to-purple-400/30 dark:from-blue-500/20 dark:to-purple-500/20"
+      className={`absolute rounded-full bg-gradient-to-br ${colorClasses[color as keyof typeof colorClasses] || colorClasses.blue} shadow-lg`}
       style={{ width: size, height: size, left, top }}
       animate={{
-        y: [0, -30, 0],
-        x: [0, 15, -15, 0],
-        scale: [1, 1.1, 0.9, 1],
-        opacity: [0.4, 0.7, 0.4],
+        y: [0, -50, 0],
+        x: [0, 25, -25, 0],
+        scale: [1, 1.3, 0.8, 1],
+        opacity: [0.6, 1, 0.6],
       }}
       transition={{
         duration,
@@ -249,19 +256,22 @@ function InteractiveBackground() {
         transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Floating particles */}
-      <FloatingParticle delay={0} duration={6} size={8} left="10%" top="20%" />
-      <FloatingParticle delay={1} duration={8} size={6} left="20%" top="60%" />
-      <FloatingParticle delay={2} duration={7} size={10} left="80%" top="30%" />
-      <FloatingParticle delay={0.5} duration={9} size={5} left="70%" top="70%" />
-      <FloatingParticle delay={1.5} duration={6} size={7} left="30%" top="40%" />
-      <FloatingParticle delay={3} duration={8} size={9} left="85%" top="55%" />
-      <FloatingParticle delay={2.5} duration={7} size={6} left="15%" top="80%" />
-      <FloatingParticle delay={0.8} duration={10} size={8} left="50%" top="15%" />
-      <FloatingParticle delay={1.2} duration={6} size={5} left="40%" top="85%" />
-      <FloatingParticle delay={2.2} duration={9} size={7} left="90%" top="10%" />
-      <FloatingParticle delay={3.5} duration={7} size={6} left="5%" top="45%" />
-      <FloatingParticle delay={1.8} duration={8} size={8} left="60%" top="5%" />
+      {/* Floating particles - larger and more visible */}
+      <FloatingParticle delay={0} duration={6} size={16} left="10%" top="20%" color="blue" />
+      <FloatingParticle delay={1} duration={8} size={12} left="20%" top="60%" color="purple" />
+      <FloatingParticle delay={2} duration={7} size={20} left="80%" top="30%" color="cyan" />
+      <FloatingParticle delay={0.5} duration={9} size={14} left="70%" top="70%" color="green" />
+      <FloatingParticle delay={1.5} duration={6} size={18} left="30%" top="40%" color="blue" />
+      <FloatingParticle delay={3} duration={8} size={16} left="85%" top="55%" color="purple" />
+      <FloatingParticle delay={2.5} duration={7} size={12} left="15%" top="80%" color="cyan" />
+      <FloatingParticle delay={0.8} duration={10} size={22} left="50%" top="15%" color="blue" />
+      <FloatingParticle delay={1.2} duration={6} size={14} left="40%" top="85%" color="green" />
+      <FloatingParticle delay={2.2} duration={9} size={18} left="90%" top="10%" color="purple" />
+      <FloatingParticle delay={3.5} duration={7} size={16} left="5%" top="45%" color="cyan" />
+      <FloatingParticle delay={1.8} duration={8} size={20} left="60%" top="5%" color="blue" />
+      <FloatingParticle delay={0.3} duration={7} size={24} left="25%" top="25%" color="purple" />
+      <FloatingParticle delay={2.8} duration={9} size={18} left="75%" top="50%" color="green" />
+      <FloatingParticle delay={1.1} duration={6} size={14} left="45%" top="75%" color="cyan" />
 
       {/* Animated lines/grid */}
       <svg className="absolute inset-0 w-full h-full opacity-[0.03] dark:opacity-[0.05]" xmlns="http://www.w3.org/2000/svg">
@@ -676,15 +686,21 @@ export default function LandingPage() {
               </Button>
             </Link>
             <Link href="/login">
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="px-8 py-6 text-lg border-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300"
-                data-testid="button-client-login"
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <Users className="h-5 w-5 mr-2" />
-                Client Login
-              </Button>
+                <Button 
+                  size="lg" 
+                  className="relative px-8 py-6 text-lg bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 hover:from-purple-700 hover:via-pink-600 hover:to-orange-600 text-white border-0 shadow-xl shadow-purple-500/30 hover:shadow-2xl hover:shadow-pink-500/40 transition-all duration-300 overflow-hidden group"
+                  data-testid="button-client-login"
+                >
+                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                  <Users className="h-5 w-5 mr-2 relative z-10" />
+                  <span className="relative z-10">Client Login</span>
+                  <Sparkles className="h-4 w-4 ml-2 relative z-10 animate-pulse" />
+                </Button>
+              </motion.div>
             </Link>
           </motion.div>
 
