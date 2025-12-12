@@ -143,7 +143,7 @@ function ClientProfileForm() {
             onChange={(e) => setCreditScore(parseInt(e.target.value))}
             className="w-20"
           />
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
             ({getCreditRating(creditScore)})
           </span>
         </div>
@@ -211,10 +211,10 @@ function ClientProfileList() {
           <div className="flex-1">
             <div className="flex items-center space-x-3">
               <div>
-                <h4 className="font-medium text-gray-900">
+                <h4 className="font-medium text-gray-900 dark:text-white">
                   {profile.firstName} {profile.lastName}
                 </h4>
-                <p className="text-sm text-gray-500">{profile.email}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{profile.email}</p>
                 {profile.testingNotes && (
                   <p className="text-xs text-blue-600 mt-1">{profile.testingNotes}</p>
                 )}
@@ -240,10 +240,10 @@ function ClientProfileList() {
       ))}
       
       {clientProfiles.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           <UserPlus className="h-12 w-12 mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Client Profiles</h3>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             Create client profiles to test the application features without giving clients direct access.
           </p>
         </div>
@@ -345,8 +345,8 @@ export default function AdminDashboard() {
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600">Manage beta testing and client access</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-300">Manage beta testing and client access</p>
         </div>
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogTrigger asChild>
@@ -424,7 +424,7 @@ export default function AdminDashboard() {
                 <Users className="h-8 w-8 text-blue-600" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Test Users</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Test Users</p>
                 <p className="text-2xl font-bold text-blue-600">{testUsers.length}</p>
               </div>
             </div>
@@ -438,7 +438,7 @@ export default function AdminDashboard() {
                 <MessageSquare className="h-8 w-8 text-green-600" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Feedback Items</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Feedback Items</p>
                 <p className="text-2xl font-bold text-green-600">{feedback.length}</p>
               </div>
             </div>
@@ -452,7 +452,7 @@ export default function AdminDashboard() {
                 <Key className="h-8 w-8 text-purple-600" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Access Codes</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Access Codes</p>
                 <p className="text-2xl font-bold text-purple-600">{betaAccess.length}</p>
               </div>
             </div>
@@ -466,7 +466,7 @@ export default function AdminDashboard() {
                 <AlertCircle className="h-8 w-8 text-orange-600" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Bug Reports</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Bug Reports</p>
                 <p className="text-2xl font-bold text-orange-600">
                   {feedback.filter(f => f.bugReport).length}
                 </p>
@@ -559,7 +559,7 @@ export default function AdminDashboard() {
                   </div>
                 ))}
                 {betaAccess.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     No access codes created yet. Create one to get started.
                   </div>
                 )}
@@ -582,7 +582,7 @@ export default function AdminDashboard() {
                   >
                     <div>
                       <h4 className="font-medium">{user.firstName} {user.lastName}</h4>
-                      <p className="text-sm text-gray-600">{user.email}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">{user.email}</p>
                       <div className="flex items-center space-x-2 mt-1">
                         <Badge 
                           variant={user.accessLevel === 'BETA_TESTER' ? 'default' : 'secondary'}
@@ -612,7 +612,7 @@ export default function AdminDashboard() {
                   </div>
                 ))}
                 {testUsers.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     No test users registered yet.
                   </div>
                 )}
@@ -649,7 +649,7 @@ export default function AdminDashboard() {
                           ))}
                         </div>
                       </div>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
                         {formatRelativeDate(item.createdAt)}
                       </span>
                     </div>
@@ -667,7 +667,7 @@ export default function AdminDashboard() {
                   </div>
                 ))}
                 {feedback.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     No feedback received yet.
                   </div>
                 )}
@@ -725,7 +725,7 @@ export default function AdminDashboard() {
                               </span>
                             ))}
                           </div>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
                             {avgRating.toFixed(1)}
                           </span>
                         </div>

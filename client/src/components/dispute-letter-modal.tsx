@@ -103,8 +103,8 @@ export function DisputeLetterModal({ open, onOpenChange, issue }: DisputeLetterM
         <div className="space-y-6">
           {issue && (
             <div className="p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-medium text-gray-900">{issue.title}</h3>
-              <p className="text-sm text-gray-600">{issue.description}</p>
+              <h3 className="font-medium text-gray-900 dark:text-white">{issue.title}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{issue.description}</p>
               <p className="text-sm text-gray-500 mt-1">Creditor: {issue.creditor}</p>
             </div>
           )}

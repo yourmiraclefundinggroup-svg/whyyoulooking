@@ -123,10 +123,10 @@ export default function CreditRepair() {
       {/* Header - More compact for mobile */}
       <div className="mb-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Credit Repair</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Credit Repair</h1>
           <div className="flex items-center space-x-4">
             {user && (
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-600 dark:text-gray-300">
                 {user.firstName} {user.lastName}
               </span>
             )}
@@ -203,7 +203,7 @@ export default function CreditRepair() {
             </div>
           </div>
         ) : (
-          <p className="mt-1 text-sm sm:text-base text-gray-600">
+          <p className="mt-1 text-sm sm:text-base text-gray-600 dark:text-gray-300">
             Dispute negative items to improve your credit score.
           </p>
         )}
@@ -220,7 +220,7 @@ export default function CreditRepair() {
                 </div>
               </div>
               <div className="ml-2 sm:ml-3">
-                <p className="text-xs sm:text-sm font-medium text-gray-900">Active Issues</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Active Issues</p>
                 <p className="text-lg sm:text-2xl font-bold text-red-600">{activeIssues.length}</p>
               </div>
             </div>
@@ -236,7 +236,7 @@ export default function CreditRepair() {
                 </div>
               </div>
               <div className="ml-2 sm:ml-3">
-                <p className="text-xs sm:text-sm font-medium text-gray-900">Disputed</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Disputed</p>
                 <p className="text-lg sm:text-2xl font-bold text-yellow-600">{disputedIssues.length}</p>
               </div>
             </div>
@@ -252,7 +252,7 @@ export default function CreditRepair() {
                 </div>
               </div>
               <div className="ml-2 sm:ml-3">
-                <p className="text-xs sm:text-sm font-medium text-gray-900">Resolved</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Resolved</p>
                 <p className="text-lg sm:text-2xl font-bold text-green-600">{resolvedIssues.length}</p>
               </div>
             </div>
@@ -268,7 +268,7 @@ export default function CreditRepair() {
                 </div>
               </div>
               <div className="ml-2 sm:ml-3">
-                <p className="text-xs sm:text-sm font-medium text-gray-900">Pending</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Pending</p>
                 <p className="text-lg sm:text-2xl font-bold text-blue-600">{pendingDisputes.length}</p>
               </div>
             </div>
@@ -320,7 +320,7 @@ export default function CreditRepair() {
                           <div className="flex-1">
                             <h4 className="text-sm font-medium text-gray-900 truncate">{issue.title}</h4>
                             <p className="text-sm text-gray-600 mt-1">{issue.description}</p>
-                            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-gray-500">
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
                               <span>Creditor: {issue.creditor}</span>
                               {issue.amount && <span>Amount: {formatCurrency(issue.amount)}</span>}
                               <span>Impact: {issue.impact} points</span>
@@ -362,7 +362,7 @@ export default function CreditRepair() {
                   </div>
                 ))}
                 {activeIssues.length === 0 && (
-                  <div className="text-center py-8 sm:py-12 text-gray-500">
+                  <div className="text-center py-8 sm:py-12 text-gray-500 dark:text-gray-400">
                     <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
                       <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                     </div>
@@ -456,10 +456,10 @@ export default function CreditRepair() {
                   );
                 })}
                 {pendingDisputes.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">
+                  <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                     <FileText className="h-10 w-10 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No Pending Disputes</h3>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 dark:text-gray-300">
                       You don't have any disputes currently pending with credit bureaus.
                     </p>
                   </div>
@@ -602,14 +602,14 @@ export default function CreditRepair() {
                       <Bot className="h-5 w-5 text-blue-600" />
                       <span className="font-medium">AI Credit Analysis</span>
                     </div>
-                    <p className="text-sm text-gray-600">Your specialist runs AI analysis on your credit file to identify priority issues and optimal dispute strategies.</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Your specialist runs AI analysis on your credit file to identify priority issues and optimal dispute strategies.</p>
                   </div>
                   <div className="p-4 bg-white rounded border">
                     <div className="flex items-center gap-2 mb-2">
                       <Calculator className="h-5 w-5 text-green-600" />
                       <span className="font-medium">Score Simulation</span>
                     </div>
-                    <p className="text-sm text-gray-600">AI simulates the impact of potential credit improvements to predict your score increases.</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">AI simulates the impact of potential credit improvements to predict your score increases.</p>
                   </div>
                 </div>
               </div>
@@ -624,7 +624,7 @@ export default function CreditRepair() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       View the AI analysis results generated by your credit repair specialist.
                     </p>
                     <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
@@ -647,7 +647,7 @@ export default function CreditRepair() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       Get personalized AI-powered recommendations for your credit repair strategy.
                     </p>
                     <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
@@ -667,7 +667,7 @@ export default function CreditRepair() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       Simulate how different actions could impact your credit score.
                     </p>
                     <CreditSimulatorModal 

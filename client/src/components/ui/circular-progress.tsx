@@ -47,7 +47,7 @@ export function CircularProgress({ value, size = 'md', className = '' }: Circula
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-lg font-bold text-gray-900">{value}%</span>
+        <span className="text-lg font-bold text-gray-900 dark:text-white">{value}%</span>
       </div>
     </div>
   );

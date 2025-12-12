@@ -76,8 +76,8 @@ export default function Billing() {
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">Billing & Subscriptions</h1>
-        <p className="text-gray-600">Manage your ScoreShift subscription and billing information</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Billing & Subscriptions</h1>
+        <p className="text-gray-600 dark:text-gray-300">Manage your ScoreShift subscription and billing information</p>
       </div>
 
       {/* Current Subscription Status */}
@@ -92,17 +92,17 @@ export default function Billing() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <div className="text-sm text-gray-600">Plan</div>
+                <div className="text-sm text-gray-600 dark:text-gray-300">Plan</div>
                 <div className="font-semibold">{user.subscriptionPlan}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Status</div>
+                <div className="text-sm text-gray-600 dark:text-gray-300">Status</div>
                 <Badge variant={user.subscriptionStatus === "ACTIVE" ? "default" : "destructive"}>
                   {user.subscriptionStatus}
                 </Badge>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Billing Cycle</div>
+                <div className="text-sm text-gray-600 dark:text-gray-300">Billing Cycle</div>
                 <div className="font-semibold capitalize">{user.billingCycle}</div>
               </div>
             </div>
@@ -179,10 +179,10 @@ export default function Billing() {
               {paymentMethods.map((method: any) => (
                 <div key={method.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-gray-600" />
+                    <CreditCard className="h-5 w-5 text-gray-600 dark:text-gray-300" />
                     <div>
                       <div className="font-medium">**** **** **** {method.card.last4}</div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 dark:text-gray-300">
                         {method.card.brand.toUpperCase()} • Expires {method.card.exp_month}/{method.card.exp_year}
                       </div>
                     </div>
@@ -194,7 +194,7 @@ export default function Billing() {
               ))}
             </div>
           ) : (
-            <p className="text-gray-600">No payment methods saved</p>
+            <p className="text-gray-600 dark:text-gray-300">No payment methods saved</p>
           )}
         </CardContent>
       </Card>
@@ -222,7 +222,7 @@ export default function Billing() {
                     <DollarSign className="h-5 w-5 text-green-600" />
                     <div>
                       <div className="font-medium">${(invoice.amount_paid / 100).toFixed(2)}</div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 dark:text-gray-300">
                         {new Date(invoice.created * 1000).toLocaleDateString()}
                       </div>
                     </div>
@@ -241,7 +241,7 @@ export default function Billing() {
               ))}
             </div>
           ) : (
-            <p className="text-gray-600">No invoices found</p>
+            <p className="text-gray-600 dark:text-gray-300">No invoices found</p>
           )}
         </CardContent>
       </Card>

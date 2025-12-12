@@ -138,8 +138,8 @@ export default function CreditBuilding() {
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Credit Building</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Credit Building</h1>
+        <p className="mt-2 text-gray-600 dark:text-gray-300">
           Build and improve your credit score with personalized recommendations and strategies.
         </p>
       </div>
@@ -155,7 +155,7 @@ export default function CreditBuilding() {
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Current Score</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Current Score</p>
                 <p className="text-2xl font-bold text-blue-600">{creditReport?.creditScore || 0}</p>
               </div>
             </div>
@@ -171,7 +171,7 @@ export default function CreditBuilding() {
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Target Score</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Target Score</p>
                 <p className="text-2xl font-bold text-green-600">{creditGoal?.targetScore || 720}</p>
               </div>
             </div>
@@ -187,7 +187,7 @@ export default function CreditBuilding() {
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Potential Gain</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Potential Gain</p>
                 <p className="text-2xl font-bold text-purple-600">+{totalPotentialImprovement}</p>
               </div>
             </div>
@@ -203,7 +203,7 @@ export default function CreditBuilding() {
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Actions Completed</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Actions Completed</p>
                 <p className="text-2xl font-bold text-orange-600">{completedActions.length}</p>
               </div>
             </div>
@@ -219,13 +219,13 @@ export default function CreditBuilding() {
         <CardContent>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
                 Progress to Goal ({creditReport?.creditScore || 0} / {creditGoal?.targetScore || 720})
               </span>
-              <span className="text-sm text-gray-500">{Math.round(scoreProgress)}%</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{Math.round(scoreProgress)}%</span>
             </div>
             <Progress value={scoreProgress} className="h-3" />
-            <div className="flex justify-between text-xs text-gray-500">
+            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
               <span>Current: {creditReport?.creditScore || 0}</span>
               <span>Target: {creditGoal?.targetScore || 720}</span>
             </div>
@@ -329,10 +329,10 @@ export default function CreditBuilding() {
                   </div>
                 ))}
                 {recommendedActions.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">
+                  <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                     <CheckCircle className="h-10 w-10 text-green-600 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">All Caught Up!</h3>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 dark:text-gray-300">
                       You've started all available credit building actions. Keep up the great work!
                     </p>
                   </div>
@@ -357,8 +357,8 @@ export default function CreditBuilding() {
                       <Shield className="h-5 w-5 text-red-600" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">Experian Credit Monitoring</h3>
-                      <p className="text-sm text-gray-600">Connect to monitor your Experian credit report in real-time</p>
+                      <h3 className="font-medium text-gray-900 dark:text-white">Experian Credit Monitoring</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">Connect to monitor your Experian credit report in real-time</p>
                     </div>
                   </div>
                   <Dialog open={showExperianForm} onOpenChange={setShowExperianForm}>
@@ -481,8 +481,8 @@ export default function CreditBuilding() {
                       <Shield className="h-5 w-5 text-blue-600" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">Equifax Credit Monitoring</h3>
-                      <p className="text-sm text-gray-600">Coming soon - comprehensive Equifax integration</p>
+                      <h3 className="font-medium text-gray-900 dark:text-white">Equifax Credit Monitoring</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">Coming soon - comprehensive Equifax integration</p>
                     </div>
                   </div>
                   <Button disabled>Coming Soon</Button>
@@ -494,8 +494,8 @@ export default function CreditBuilding() {
                       <Shield className="h-5 w-5 text-green-600" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">TransUnion Credit Monitoring</h3>
-                      <p className="text-sm text-gray-600">Coming soon - real-time TransUnion data</p>
+                      <h3 className="font-medium text-gray-900 dark:text-white">TransUnion Credit Monitoring</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">Coming soon - real-time TransUnion data</p>
                     </div>
                   </div>
                   <Button disabled>Coming Soon</Button>
@@ -676,9 +676,9 @@ export default function CreditBuilding() {
                       </Button>
                     </div>
 
-                    <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                    <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-900">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold text-gray-900">Family & Friends</h4>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">Family & Friends</h4>
                         <Badge variant="outline" className="bg-gray-100 text-gray-800">Free Option</Badge>
                       </div>
                       <p className="text-sm text-gray-700 mb-3">
@@ -761,10 +761,10 @@ export default function CreditBuilding() {
                   </div>
                 ))}
                 {inProgressActions.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">
+                  <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                     <PlayCircle className="h-10 w-10 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No Actions In Progress</h3>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 dark:text-gray-300">
                       Start working on recommended actions to improve your credit score.
                     </p>
                   </div>
@@ -807,10 +807,10 @@ export default function CreditBuilding() {
                   </div>
                 ))}
                 {completedActions.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">
+                  <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                     <Trophy className="h-10 w-10 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No Completed Actions Yet</h3>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 dark:text-gray-300">
                       Complete recommended actions to see your progress here.
                     </p>
                   </div>

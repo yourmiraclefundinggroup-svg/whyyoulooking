@@ -52,8 +52,8 @@ export default function Education() {
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Learning Center</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Learning Center</h1>
+        <p className="mt-2 text-gray-600 dark:text-gray-300">
           Educational resources to help you understand and improve your credit health.
         </p>
       </div>
@@ -193,10 +193,10 @@ export default function Education() {
           </div>
 
           {filteredContent.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               <Search className="h-10 w-10 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Articles Found</h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-300">
                 Try adjusting your search terms or browse different categories.
               </p>
             </div>
@@ -315,7 +315,7 @@ export default function Education() {
               <Percent className="h-6 w-6 text-blue-600" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Keep Utilization Low</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Aim to keep your credit utilization below 30% of your available credit limit.
             </p>
           </Card>
@@ -325,7 +325,7 @@ export default function Education() {
               <CalendarCheck className="h-6 w-6 text-green-600" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Pay On Time</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Payment history is the most important factor in your credit score calculation.
             </p>
           </Card>
@@ -335,7 +335,7 @@ export default function Education() {
               <Eye className="h-6 w-6 text-purple-600" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Monitor Regularly</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Check your credit report regularly for errors and signs of identity theft.
             </p>
           </Card>
@@ -345,7 +345,7 @@ export default function Education() {
               <History className="h-6 w-6 text-orange-600" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Build History</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Keep old accounts open to maintain a longer average account age.
             </p>
           </Card>

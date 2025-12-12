@@ -252,7 +252,7 @@ export function AnimatedCreditJourney({
               </div>
               <div>
                 <CardTitle className="text-xl">Credit Score Journey</CardTitle>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
                   Your path to financial freedom
                 </p>
               </div>
@@ -305,7 +305,7 @@ export function AnimatedCreditJourney({
           <div>
             <div className="flex justify-between text-sm mb-2">
               <span>Journey Progress</span>
-              <span className="text-gray-600">
+              <span className="text-gray-600 dark:text-gray-300">
                 {Math.round(totalProgress)}% Complete
               </span>
             </div>
@@ -349,7 +349,7 @@ export function AnimatedCreditJourney({
 
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-semibold text-gray-900">{milestone.title}</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">{milestone.title}</h4>
                       <Badge 
                         className={cn(
                           "text-xs",
@@ -375,7 +375,7 @@ export function AnimatedCreditJourney({
                     <div className={cn(
                       "text-lg font-bold",
                       milestone.impact > 0 ? "text-green-600" : 
-                      milestone.impact < 0 ? "text-red-600" : "text-gray-600"
+                      milestone.impact < 0 ? "text-red-600" : "text-gray-600 dark:text-gray-300"
                     )}>
                       {milestone.impact > 0 ? "+" : ""}{milestone.impact}
                     </div>

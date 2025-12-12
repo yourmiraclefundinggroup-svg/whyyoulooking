@@ -396,32 +396,32 @@ export default function StudentLoans() {
                             {loan.loanType}
                           </Badge>
                         </CardTitle>
-                        <p className="text-sm text-gray-600">{loan.repaymentPlan}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">{loan.repaymentPlan}</p>
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold">{formatCurrency(parseFloat(loan.loanBalance))}</div>
-                        <div className="text-sm text-gray-600">{loan.interestRate}% APR</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-300">{loan.interestRate}% APR</div>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                       <div>
-                        <Label className="text-xs text-gray-500">Monthly Payment</Label>
+                        <Label className="text-xs text-gray-500 dark:text-gray-400">Monthly Payment</Label>
                         <div className="font-semibold">{formatCurrency(parseFloat(loan.monthlyPayment))}</div>
                       </div>
                       <div>
-                        <Label className="text-xs text-gray-500">Status</Label>
+                        <Label className="text-xs text-gray-500 dark:text-gray-400">Status</Label>
                         <div className="font-semibold capitalize">{loan.status.toLowerCase()}</div>
                       </div>
                       <div>
-                        <Label className="text-xs text-gray-500">Original Balance</Label>
+                        <Label className="text-xs text-gray-500 dark:text-gray-400">Original Balance</Label>
                         <div className="font-semibold">
                           {loan.originalBalance ? formatCurrency(parseFloat(loan.originalBalance)) : 'N/A'}
                         </div>
                       </div>
                       <div>
-                        <Label className="text-xs text-gray-500">Progress</Label>
+                        <Label className="text-xs text-gray-500 dark:text-gray-400">Progress</Label>
                         <div className="font-semibold">
                           {loan.originalBalance ? 
                             `${Math.round((1 - parseFloat(loan.loanBalance) / parseFloat(loan.originalBalance)) * 100)}%` : 
@@ -489,7 +489,7 @@ export default function StudentLoans() {
                 <CardContent className="p-8 text-center">
                   <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Active Negotiations</h3>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 dark:text-gray-300">
                     Start negotiating better terms for your student loans
                   </p>
                 </CardContent>
@@ -514,20 +514,20 @@ export default function StudentLoans() {
                   <CardContent>
                     {negotiation.outcome && (
                       <div className="mb-4">
-                        <Label className="text-xs text-gray-500">Outcome</Label>
+                        <Label className="text-xs text-gray-500 dark:text-gray-400">Outcome</Label>
                         <p className="text-sm">{negotiation.outcome}</p>
                       </div>
                     )}
                     {negotiation.savingsAchieved && (
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
-                          <Label className="text-xs text-gray-500">Monthly Savings</Label>
+                          <Label className="text-xs text-gray-500 dark:text-gray-400">Monthly Savings</Label>
                           <div className="font-semibold text-green-600">
                             {formatCurrency(parseFloat(negotiation.savingsAchieved))}
                           </div>
                         </div>
                         <div>
-                          <Label className="text-xs text-gray-500">Started</Label>
+                          <Label className="text-xs text-gray-500 dark:text-gray-400">Started</Label>
                           <div className="font-semibold">
                             {formatRelativeDate(negotiation.createdAt)}
                           </div>

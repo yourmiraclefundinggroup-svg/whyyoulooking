@@ -224,7 +224,7 @@ export function LoanReadinessAssessment({ userId }: LoanReadinessAssessmentProps
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Mortgage & Loan Readiness AI</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Mortgage & Loan Readiness AI</h2>
           <p className="text-sm text-gray-600 mt-1">
             AI-powered loan approval probability and debt-to-income analysis
           </p>
@@ -487,7 +487,7 @@ export function LoanReadinessAssessment({ userId }: LoanReadinessAssessmentProps
                   />
                 </div>
                 <div className="flex items-end">
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-gray-600 dark:text-gray-300">
                     Down Payment: {formData.loanAmount > 0 ? formatPercent((formData.downPayment / formData.loanAmount) * 100) : "0%"}
                   </div>
                 </div>
@@ -530,7 +530,7 @@ export function LoanReadinessAssessment({ userId }: LoanReadinessAssessmentProps
                         size="lg"
                         className={getScoreColor(latestAssessment.readinessScore)}
                       />
-                      <p className="text-sm font-medium text-gray-600">Readiness Score</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Readiness Score</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -540,27 +540,27 @@ export function LoanReadinessAssessment({ userId }: LoanReadinessAssessmentProps
                       <div className={`text-2xl font-bold ${getScoreColor(latestAssessment.approvalProbability)}`}>
                         {latestAssessment.approvalProbability}%
                       </div>
-                      <p className="text-sm font-medium text-gray-600">Approval Probability</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Approval Probability</p>
                     </div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-4 text-center">
                     <div className="space-y-2">
-                      <div className="text-2xl font-bold text-gray-900">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">
                         {latestAssessment.debtToIncomeRatio}%
                       </div>
-                      <p className="text-sm font-medium text-gray-600">Debt-to-Income</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Debt-to-Income</p>
                     </div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-4 text-center">
                     <div className="space-y-2">
-                      <div className="text-2xl font-bold text-gray-900">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">
                         {formatPercent(latestAssessment.estimatedInterestRate / 100)}
                       </div>
-                      <p className="text-sm font-medium text-gray-600">Est. Interest Rate</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Est. Interest Rate</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -630,7 +630,7 @@ export function LoanReadinessAssessment({ userId }: LoanReadinessAssessmentProps
                         </Badge>
                         <div className="flex-1 space-y-1">
                           <p className="font-medium text-sm">{action.action}</p>
-                          <div className="flex items-center space-x-4 text-xs text-gray-600">
+                          <div className="flex items-center space-x-4 text-xs text-gray-600 dark:text-gray-300">
                             <span className="flex items-center">
                               <Clock className="w-3 h-3 mr-1" />
                               {action.timeframe}
@@ -657,7 +657,7 @@ export function LoanReadinessAssessment({ userId }: LoanReadinessAssessmentProps
                     <div className="text-3xl font-bold text-blue-600 mb-2">
                       {latestAssessment.timelineToQualification}
                     </div>
-                    <p className="text-gray-600">Estimated time to loan qualification</p>
+                    <p className="text-gray-600 dark:text-gray-300">Estimated time to loan qualification</p>
                   </div>
                   <div className="space-y-2">
                     <h4 className="font-medium">Next Steps:</h4>

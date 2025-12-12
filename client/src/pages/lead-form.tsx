@@ -125,7 +125,7 @@ export default function LeadForm() {
               <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">ScoreShift</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">ScoreShift</h1>
               <Badge variant="secondary" className="bg-green-100 text-green-700">
                 Pro Platform
               </Badge>
@@ -147,7 +147,7 @@ export default function LeadForm() {
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
               Start Your Credit Repair Journey
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-gray-600 dark:text-gray-300">
               Tell us about your credit situation and we'll create a personalized plan to help you achieve your financial goals.
             </p>
           </div>
@@ -163,7 +163,7 @@ export default function LeadForm() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Personal Information */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Personal Information</h3>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="firstName" className="text-sm font-medium">
@@ -226,7 +226,7 @@ export default function LeadForm() {
 
                 {/* Credit Issues */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Credit Issues *
                     <span className="text-sm font-normal text-gray-600 ml-2">
                       (Select all that apply)
@@ -253,7 +253,7 @@ export default function LeadForm() {
 
                 {/* Additional Details */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Additional Information</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Additional Information</h3>
                   <div>
                     <Label htmlFor="additionalDetails" className="text-sm font-medium">
                       Tell us more about your situation
@@ -305,7 +305,7 @@ export default function LeadForm() {
                   </Button>
                   
                   <div className="mt-4 text-center">
-                    <div className="flex items-center justify-center text-sm text-gray-600">
+                    <div className="flex items-center justify-center text-sm text-gray-600 dark:text-gray-300">
                       <AlertCircle className="h-4 w-4 mr-1" />
                       You'll receive a call within 24 hours
                     </div>
@@ -317,7 +317,7 @@ export default function LeadForm() {
           
           {/* Trust Indicators */}
           <div className="mt-8 text-center">
-            <div className="flex justify-center space-x-8 text-sm text-gray-600">
+            <div className="flex justify-center space-x-8 text-sm text-gray-600 dark:text-gray-300">
               <div className="flex items-center">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
                 Free Consultation

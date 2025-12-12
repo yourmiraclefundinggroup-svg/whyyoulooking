@@ -63,7 +63,7 @@ export function ClientCreditProfilesView() {
         <CardContent className="flex items-center justify-center py-12">
           <div className="text-center">
             <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2 text-blue-600" />
-            <p className="text-gray-600">Loading client credit profiles...</p>
+            <p className="text-gray-600 dark:text-gray-300">Loading client credit profiles...</p>
           </div>
         </CardContent>
       </Card>
@@ -79,7 +79,7 @@ export function ClientCreditProfilesView() {
           <p className="text-gray-600 mb-4">
             No clients have connected their credit monitoring accounts yet.
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             When clients connect their Experian accounts, their credit profiles will appear here.
           </p>
         </CardContent>
@@ -135,7 +135,7 @@ function ClientCreditCard({ connection }: { connection: CreditConnection }) {
         <CardTitle className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold">{clientName}</h3>
-            <p className="text-sm text-gray-600">{connection.accountEmail}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">{connection.accountEmail}</p>
           </div>
           <div className="text-right">
             <Badge 
@@ -144,7 +144,7 @@ function ClientCreditCard({ connection }: { connection: CreditConnection }) {
             >
               {connection.provider} {connection.isActive ? "Active" : "Inactive"}
             </Badge>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               Last sync: {new Date(connection.lastSyncDate).toLocaleDateString()}
             </p>
           </div>
@@ -154,7 +154,7 @@ function ClientCreditCard({ connection }: { connection: CreditConnection }) {
         {creditLoading ? (
           <div className="flex items-center justify-center py-8">
             <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-            <span className="text-gray-600">Loading credit data...</span>
+            <span className="text-gray-600 dark:text-gray-300">Loading credit data...</span>
           </div>
         ) : creditData ? (
           <Tabs defaultValue="overview" className="w-full">
@@ -170,7 +170,7 @@ function ClientCreditCard({ connection }: { connection: CreditConnection }) {
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
                   <div className="text-2xl font-bold text-blue-600">{creditData.score}</div>
                   <div className="text-sm text-blue-800">Credit Score</div>
-                  <div className="text-xs text-gray-600">
+                  <div className="text-xs text-gray-600 dark:text-gray-300">
                     as of {new Date(creditData.reportDate).toLocaleDateString()}
                   </div>
                 </div>
@@ -191,7 +191,7 @@ function ClientCreditCard({ connection }: { connection: CreditConnection }) {
                   <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
                       <p className="font-medium">{account.accountName}</p>
-                      <p className="text-sm text-gray-600">{account.accountType}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">{account.accountType}</p>
                     </div>
                     <div className="text-right">
                       <p className="font-medium">${account.balance.toLocaleString()}</p>
@@ -213,9 +213,9 @@ function ClientCreditCard({ connection }: { connection: CreditConnection }) {
                   <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
                       <p className="font-medium">{inquiry.creditor}</p>
-                      <p className="text-sm text-gray-600">{inquiry.inquiryType}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">{inquiry.inquiryType}</p>
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
                       {new Date(inquiry.inquiryDate).toLocaleDateString()}
                     </div>
                   </div>
@@ -229,7 +229,7 @@ function ClientCreditCard({ connection }: { connection: CreditConnection }) {
                   <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
                       <p className="font-medium">{record.recordType}</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
                         Filed: {new Date(record.filedDate).toLocaleDateString()}
                       </p>
                     </div>

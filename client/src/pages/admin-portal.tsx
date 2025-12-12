@@ -39,7 +39,7 @@ export default function AdminPortal() {
           <CardContent className="pt-6">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-              <p className="text-gray-600">This portal is restricted to administrators only.</p>
+              <p className="text-gray-600 dark:text-gray-300">This portal is restricted to administrators only.</p>
             </div>
           </CardContent>
         </Card>
@@ -427,7 +427,7 @@ function ClientManagementPage({
                     {selectedClientId === client.id && (
                       <div className="text-right">
                         <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-                          <div className="w-2 h-2 rounded-full bg-white"></div>
+                          <div className="w-2 h-2 rounded-full bg-white dark:bg-gray-900"></div>
                         </div>
                       </div>
                     )}
@@ -451,25 +451,25 @@ function ClientManagementPage({
                 <div className="text-3xl font-bold text-blue-600">
                   {clientCreditReport?.creditScore || '---'}
                 </div>
-                <p className="text-sm text-gray-600">Credit Score</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Credit Score</p>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-red-600">
                   {clientIssues.length}
                 </div>
-                <p className="text-sm text-gray-600">Active Issues</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Active Issues</p>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-yellow-600">
                   {clientDisputes.filter((d: Dispute) => d.status === 'PENDING').length}
                 </div>
-                <p className="text-sm text-gray-600">Pending Disputes</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Pending Disputes</p>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600">
                   {clientDisputes.length}
                 </div>
-                <p className="text-sm text-gray-600">Total Disputes</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Total Disputes</p>
               </div>
             </div>
           </CardContent>
@@ -487,8 +487,8 @@ function DisputeCenterPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dispute Center</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dispute Center</h1>
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
           Manage disputes and track USPS delivery status for client communications.
         </p>
       </div>
@@ -512,7 +512,7 @@ function DisputeCenterPage({
                   >
                     <div className="text-center">
                       <div className="font-medium">{client.firstName} {client.lastName}</div>
-                      <div className="text-xs text-gray-600">{client.email}</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-300">{client.email}</div>
                     </div>
                   </Button>
                 ))}
@@ -599,7 +599,7 @@ function DisputeCenterPage({
                     </Button>
                   </div>
                 ) : (
-                  <div className="text-center py-4 text-gray-500">
+                  <div className="text-center py-4 text-gray-500 dark:text-gray-400">
                     No credit report available
                   </div>
                 )}
@@ -629,7 +629,7 @@ function DisputeCenterPage({
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
                               <h4 className="font-medium text-gray-900 mb-1">{issue.title}</h4>
-                              <p className="text-sm text-gray-600">{issue.creditor}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-300">{issue.creditor}</p>
                               {issue.amount && (
                                 <p className="text-sm font-medium text-red-600">
                                   ${issue.amount.toLocaleString()}
@@ -661,7 +661,7 @@ function DisputeCenterPage({
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No credit issues found for this client.</p>
                   <p className="text-sm mt-2">Credit issues will appear here once a credit report is added.</p>
@@ -680,8 +680,8 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics</h1>
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
           View performance metrics and client statistics.
         </p>
       </div>
@@ -692,8 +692,8 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
             <div className="flex items-center">
               <Users className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Clients</p>
-                <p className="text-2xl font-bold text-gray-900">{clientUsers.length}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Clients</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{clientUsers.length}</p>
               </div>
             </div>
           </CardContent>
@@ -704,8 +704,8 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
             <div className="flex items-center">
               <AlertTriangle className="h-8 w-8 text-orange-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active Issues</p>
-                <p className="text-2xl font-bold text-gray-900">12</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Active Issues</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">12</p>
               </div>
             </div>
           </CardContent>
@@ -716,8 +716,8 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
             <div className="flex items-center">
               <Send className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Disputes Sent</p>
-                <p className="text-2xl font-bold text-gray-900">8</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Disputes Sent</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">8</p>
               </div>
             </div>
           </CardContent>
@@ -746,7 +746,7 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
                 <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <p className="font-medium text-sm">{item.feature}</p>
-                    <p className="text-xs text-gray-600">{item.usage} uses this month</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300">{item.usage} uses this month</p>
                   </div>
                   <div className="text-right">
                     <Badge variant="secondary" className="text-green-700 bg-green-100">
@@ -778,7 +778,7 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
                 <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <p className="font-medium text-sm">{item.client}</p>
-                    <p className="text-xs text-gray-600">{item.timeframe}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300">{item.timeframe}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-green-600">{item.improvement}</p>
@@ -805,7 +805,7 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                 <span className="font-medium">Bank Account Integration</span>
               </div>
-              <p className="text-sm text-gray-600">18 active connections</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">18 active connections</p>
               <p className="text-xs text-green-700 mt-1">256-bit AES encrypted</p>
             </div>
             
@@ -814,7 +814,7 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                 <span className="font-medium">Tax Software Integration</span>
               </div>
-              <p className="text-sm text-gray-600">12 verified connections</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">12 verified connections</p>
               <p className="text-xs text-blue-700 mt-1">IRS-approved OAuth</p>
             </div>
             
@@ -823,7 +823,7 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
                 <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
                 <span className="font-medium">Employment Verification</span>
               </div>
-              <p className="text-sm text-gray-600">15 HR system connections</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">15 HR system connections</p>
               <p className="text-xs text-purple-700 mt-1">Document verification active</p>
             </div>
           </div>
@@ -849,7 +849,7 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
                 <div key={idx} className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{item.bureau}</span>
-                    <span className="text-sm text-gray-600">{item.success}% success rate</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-300">{item.success}% success rate</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
@@ -857,7 +857,7 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
                       style={{ width: `${item.success}%` }}
                     ></div>
                   </div>
-                  <p className="text-xs text-gray-500">{item.total} disputes processed</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{item.total} disputes processed</p>
                 </div>
               ))}
             </div>
@@ -878,7 +878,7 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
                   <span className="font-medium">Average Response Time</span>
                   <span className="text-lg font-bold text-blue-600">18 days</span>
                 </div>
-                <p className="text-sm text-gray-600">Bureau response to disputes</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Bureau response to disputes</p>
               </div>
               
               <div className="p-4 border rounded-lg">
@@ -886,7 +886,7 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
                   <span className="font-medium">Fastest Response</span>
                   <span className="text-lg font-bold text-green-600">12 days</span>
                 </div>
-                <p className="text-sm text-gray-600">TransUnion (last month)</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">TransUnion (last month)</p>
               </div>
               
               <div className="p-4 border rounded-lg">
@@ -894,7 +894,7 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
                   <span className="font-medium">Follow-up Success</span>
                   <span className="text-lg font-bold text-purple-600">89%</span>
                 </div>
-                <p className="text-sm text-gray-600">14-day follow-up protocol</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">14-day follow-up protocol</p>
               </div>
             </div>
           </CardContent>
@@ -913,25 +913,25 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-4 border rounded-lg">
               <div className="text-2xl font-bold text-blue-600">127</div>
-              <p className="text-sm text-gray-600">Total Disputes Filed</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Total Disputes Filed</p>
               <Badge variant="secondary" className="mt-1 text-green-700 bg-green-100">+23%</Badge>
             </div>
             
             <div className="text-center p-4 border rounded-lg">
               <div className="text-2xl font-bold text-green-600">96</div>
-              <p className="text-sm text-gray-600">Successful Removals</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Successful Removals</p>
               <Badge variant="secondary" className="mt-1 text-green-700 bg-green-100">+18%</Badge>
             </div>
             
             <div className="text-center p-4 border rounded-lg">
               <div className="text-2xl font-bold text-purple-600">$2.3M</div>
-              <p className="text-sm text-gray-600">Debt Removed</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Debt Removed</p>
               <Badge variant="secondary" className="mt-1 text-green-700 bg-green-100">+34%</Badge>
             </div>
             
             <div className="text-center p-4 border rounded-lg">
               <div className="text-2xl font-bold text-orange-600">67</div>
-              <p className="text-sm text-gray-600">Avg Score Improvement</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Avg Score Improvement</p>
               <Badge variant="secondary" className="mt-1 text-green-700 bg-green-100">+12%</Badge>
             </div>
           </div>
@@ -946,8 +946,8 @@ function SettingsPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Admin Settings</h1>
-        <p className="text-gray-600">Manage your admin account and system settings</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Settings</h1>
+        <p className="text-gray-600 dark:text-gray-300">Manage your admin account and system settings</p>
       </div>
       <AdminSettings />
     </div>
@@ -1028,7 +1028,7 @@ function ClientCommunicationPage({ clientUsers, selectedClientId, setSelectedCli
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   Select a Client
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-300">
                   Choose a client from the list to start secure communication
                 </p>
               </CardContent>

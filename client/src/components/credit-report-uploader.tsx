@@ -314,7 +314,7 @@ export function CreditReportUploader() {
                     <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
                         <p className="font-medium">{issue.creditor} - {issue.type.replace('_', ' ')}</p>
-                        <p className="text-sm text-gray-600">{issue.description}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">{issue.description}</p>
                       </div>
                       <Button
                         size="sm"

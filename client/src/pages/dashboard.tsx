@@ -148,7 +148,7 @@ function CreditScoreGauge({ score }: { score: number }) {
           >
             {score}
           </motion.span>
-          <span className="text-sm text-gray-500 dark:text-gray-400 mt-1">{label}</span>
+          <span className="text-sm text-muted-foreground mt-1">{label}</span>
         </div>
       </div>
     </div>
@@ -215,7 +215,7 @@ function IssueCard({ issue, onDispute }: { issue: CreditIssue; onDispute: (issue
     red: { bg: "bg-red-50 dark:bg-red-950/30", border: "border-red-200 dark:border-red-800", badge: "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300", text: "text-red-600 dark:text-red-400" },
     yellow: { bg: "bg-yellow-50 dark:bg-yellow-950/30", border: "border-yellow-200 dark:border-yellow-800", badge: "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300", text: "text-yellow-600 dark:text-yellow-400" },
     blue: { bg: "bg-blue-50 dark:bg-blue-950/30", border: "border-blue-200 dark:border-blue-800", badge: "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300", text: "text-blue-600 dark:text-blue-400" },
-    gray: { bg: "bg-gray-50 dark:bg-gray-950/30", border: "border-gray-200 dark:border-gray-800", badge: "bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300", text: "text-gray-600 dark:text-gray-400" },
+    gray: { bg: "bg-gray-50 dark:bg-gray-950/30", border: "border-gray-200 dark:border-gray-800", badge: "bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300", text: "text-muted-foreground" },
   };
   const colors = colorClasses[config.color] || colorClasses.gray;
 
@@ -231,11 +231,11 @@ function IssueCard({ issue, onDispute }: { issue: CreditIssue; onDispute: (issue
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h4 className="font-semibold text-gray-900 dark:text-white truncate">{issue.title}</h4>
+            <h4 className="font-semibold text-foreground truncate">{issue.title}</h4>
             <Badge className={`${colors.badge} text-xs`}>{config.label}</Badge>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{issue.description}</p>
-          <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500">
+          <p className="text-sm text-muted-foreground mb-2">{issue.description}</p>
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span>Impact: <strong className={colors.text}>{issue.impact} pts</strong></span>
             {issue.amount && <span>Amount: <strong>{formatCurrency(issue.amount)}</strong></span>}
             <span>{issue.creditor}</span>
@@ -272,12 +272,12 @@ function DisputeTracker({ dispute, issue }: { dispute: Dispute; issue?: CreditIs
         <div className={`w-3 h-3 rounded-full ${isPending ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`} />
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h4 className="font-medium text-gray-900 dark:text-white">{dispute.bureau}</h4>
+            <h4 className="font-medium text-foreground">{dispute.bureau}</h4>
             <Badge className={isPending ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'}>
               {dispute.status}
             </Badge>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             {issue?.title || 'Dispute'} • Sent {formatRelativeDate(dispute.dateSent)}
           </p>
           {isPending && dispute.expectedResponse && (
@@ -348,10 +348,10 @@ export default function Dashboard() {
         >
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-3xl font-bold text-foreground">
                 Welcome back, {user?.firstName || 'there'}! 👋
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1 flex items-center gap-2">
+              <p className="text-muted-foreground mt-1 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-blue-500" />
                 Your credit journey is making progress
               </p>
@@ -404,8 +404,8 @@ export default function Dashboard() {
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10" />
               <CardContent className="p-6 relative">
                 <div className="text-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Your Credit Score</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <h3 className="text-lg font-semibold text-foreground mb-1">Your Credit Score</h3>
+                  <p className="text-sm text-muted-foreground">
                     Updated {creditReport ? formatRelativeDate(creditReport.lastUpdated) : 'recently'}
                   </p>
                 </div>
@@ -424,7 +424,7 @@ export default function Dashboard() {
             {/* Goal Progress */}
             <Card className="border-0 shadow-lg bg-card text-card-foreground">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2 text-gray-900 dark:text-white">
+                <CardTitle className="text-lg flex items-center gap-2 text-foreground">
                   <Target className="h-5 w-5 text-purple-500" />
                   Score Goal
                 </CardTitle>
@@ -433,14 +433,14 @@ export default function Dashboard() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-end">
                     <div>
-                      <span className="text-3xl font-bold text-gray-900 dark:text-white">{currentScore}</span>
-                      <span className="text-gray-500 dark:text-gray-400 mx-2">/</span>
+                      <span className="text-3xl font-bold text-foreground">{currentScore}</span>
+                      <span className="text-muted-foreground mx-2">/</span>
                       <span className="text-xl text-purple-600 dark:text-purple-400 font-semibold">{targetScore}</span>
                     </div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">{Math.round(scoreProgress)}%</span>
+                    <span className="text-sm text-muted-foreground">{Math.round(scoreProgress)}%</span>
                   </div>
                   <Progress value={scoreProgress} className="h-3" />
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     {targetScore - currentScore} points to go!
                   </p>
                 </div>
@@ -450,7 +450,7 @@ export default function Dashboard() {
             {/* Quick Actions */}
             <Card className="border-0 shadow-lg bg-card text-card-foreground">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2 text-gray-900 dark:text-white">
+                <CardTitle className="text-lg flex items-center gap-2 text-foreground">
                   <Zap className="h-5 w-5 text-yellow-500" />
                   Quick Actions
                 </CardTitle>
@@ -504,7 +504,7 @@ export default function Dashboard() {
             {/* Credit Issues */}
             <Card className="border-0 shadow-lg bg-card text-card-foreground">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                <CardTitle className="flex items-center gap-2 text-foreground">
                   <Shield className="h-5 w-5 text-red-500" />
                   Credit Issues to Address
                 </CardTitle>
@@ -523,8 +523,8 @@ export default function Dashboard() {
                       <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
                         <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                       </div>
-                      <p className="font-medium text-gray-900 dark:text-white">No active issues!</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Your credit report is looking great</p>
+                      <p className="font-medium text-foreground">No active issues!</p>
+                      <p className="text-sm text-muted-foreground mt-1">Your credit report is looking great</p>
                     </div>
                   )}
                 </div>
@@ -534,7 +534,7 @@ export default function Dashboard() {
             {/* Active Disputes */}
             <Card className="border-0 shadow-lg bg-card text-card-foreground">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                <CardTitle className="flex items-center gap-2 text-foreground">
                   <Mail className="h-5 w-5 text-blue-500" />
                   Dispute Tracker
                 </CardTitle>
@@ -557,8 +557,8 @@ export default function Dashboard() {
                       <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
                         <FileText className="h-8 w-8 text-gray-400" />
                       </div>
-                      <p className="font-medium text-gray-900 dark:text-white">No disputes yet</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Start disputing negative items to improve your score</p>
+                      <p className="font-medium text-foreground">No disputes yet</p>
+                      <p className="text-sm text-muted-foreground mt-1">Start disputing negative items to improve your score</p>
                       <Button 
                         className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white"
                         onClick={() => setDisputeModalOpen(true)}
@@ -575,7 +575,7 @@ export default function Dashboard() {
             {/* Credit Utilization */}
             <Card className="border-0 shadow-lg bg-card text-card-foreground">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                <CardTitle className="flex items-center gap-2 text-foreground">
                   <CreditCard className="h-5 w-5 text-purple-500" />
                   Credit Utilization
                 </CardTitle>
@@ -583,7 +583,7 @@ export default function Dashboard() {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600 dark:text-gray-400">Current Utilization</span>
+                    <span className="text-muted-foreground">Current Utilization</span>
                     <span className={`text-2xl font-bold ${
                       (creditReport?.utilizationRate || 45) > 30 
                         ? 'text-yellow-600 dark:text-yellow-400' 
@@ -597,9 +597,9 @@ export default function Dashboard() {
                     className={`h-3 ${(creditReport?.utilizationRate || 45) > 30 ? '[&>div]:bg-yellow-500' : '[&>div]:bg-green-500'}`}
                   />
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-500">0%</span>
+                    <span className="text-muted-foreground">0%</span>
                     <span className="text-green-600 dark:text-green-400 font-medium">Ideal: Under 30%</span>
-                    <span className="text-gray-500 dark:text-gray-500">100%</span>
+                    <span className="text-muted-foreground">100%</span>
                   </div>
                   {(creditReport?.utilizationRate || 45) > 30 && (
                     <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-800">

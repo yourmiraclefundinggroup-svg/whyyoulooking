@@ -113,7 +113,7 @@ export default function SubscriptionCheckout() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-gray-600">Setting up your checkout...</p>
+          <p className="text-gray-600 dark:text-gray-300">Setting up your checkout...</p>
         </div>
       </div>
     );
@@ -215,7 +215,7 @@ export default function SubscriptionCheckout() {
               />
             </Elements>
             
-            <div className="mt-6 text-center text-sm text-gray-600">
+            <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
               <p>🔒 Your payment information is secure and encrypted</p>
               <p className="mt-2">Cancel anytime from your billing settings</p>
             </div>

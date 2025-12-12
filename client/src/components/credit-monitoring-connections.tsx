@@ -326,7 +326,7 @@ export function CreditMonitoringConnections({ userId }: CreditMonitoringConnecti
                           </div>
                           <div>
                             <h3 className="font-semibold text-lg">{providerInfo.label}</h3>
-                            <p className="text-gray-600">{connection.accountEmail}</p>
+                            <p className="text-gray-600 dark:text-gray-300">{connection.accountEmail}</p>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant={connection.isActive ? "default" : "secondary"}>
                                 {connection.isActive ? "Active" : "Inactive"}
@@ -374,11 +374,11 @@ export function CreditMonitoringConnections({ userId }: CreditMonitoringConnecti
                           <Separator className="my-4" />
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
-                              <p className="text-gray-600">Last Sync</p>
+                              <p className="text-gray-600 dark:text-gray-300">Last Sync</p>
                               <p className="font-medium">{new Date(lastSync.syncDate).toLocaleDateString()}</p>
                             </div>
                             <div>
-                              <p className="text-gray-600">Status</p>
+                              <p className="text-gray-600 dark:text-gray-300">Status</p>
                               <div className="flex items-center gap-1">
                                 {lastSync.syncStatus === "SUCCESS" ? (
                                   <CheckCircle className="h-4 w-4 text-green-600" />
@@ -391,11 +391,11 @@ export function CreditMonitoringConnections({ userId }: CreditMonitoringConnecti
                               </div>
                             </div>
                             <div>
-                              <p className="text-gray-600">Issues Found</p>
+                              <p className="text-gray-600 dark:text-gray-300">Issues Found</p>
                               <p className="font-medium">{lastSync.issuesFound}</p>
                             </div>
                             <div>
-                              <p className="text-gray-600">Score Change</p>
+                              <p className="text-gray-600 dark:text-gray-300">Score Change</p>
                               <p className={`font-medium ${lastSync.scoreChange && lastSync.scoreChange > 0 ? 'text-green-600' : lastSync.scoreChange && lastSync.scoreChange < 0 ? 'text-red-600' : 'text-gray-900'}`}>
                                 {lastSync.scoreChange ? (lastSync.scoreChange > 0 ? `+${lastSync.scoreChange}` : lastSync.scoreChange) : '0'}
                               </p>
@@ -433,18 +433,18 @@ export function CreditMonitoringConnections({ userId }: CreditMonitoringConnecti
                       </div>
                       <div>
                         <p className="font-medium">{providerInfo.label}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
                           {new Date(sync.syncDate).toLocaleDateString()} at {new Date(sync.syncDate).toLocaleTimeString()}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4 text-sm">
                       <div className="text-center">
-                        <p className="text-gray-600">Issues</p>
+                        <p className="text-gray-600 dark:text-gray-300">Issues</p>
                         <p className="font-medium">{sync.issuesFound}</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-gray-600">Score</p>
+                        <p className="text-gray-600 dark:text-gray-300">Score</p>
                         <p className={`font-medium ${sync.scoreChange && sync.scoreChange > 0 ? 'text-green-600' : sync.scoreChange && sync.scoreChange < 0 ? 'text-red-600' : 'text-gray-900'}`}>
                           {sync.scoreChange ? (sync.scoreChange > 0 ? `+${sync.scoreChange}` : sync.scoreChange) : '0'}
                         </p>

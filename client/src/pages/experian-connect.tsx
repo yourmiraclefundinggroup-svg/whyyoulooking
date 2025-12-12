@@ -141,7 +141,7 @@ export default function ExperianConnect() {
               Secure & Encrypted
             </Badge>
           </CardTitle>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             This information is used to securely connect to your Experian credit report. 
             All data is encrypted and stored securely.
           </p>
@@ -194,7 +194,7 @@ export default function ExperianConnect() {
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900">Address Information</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Address Information</h3>
               
               <div>
                 <Label htmlFor="address">Street Address *</Label>
