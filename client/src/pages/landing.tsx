@@ -2,8 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { motion, useInView, useAnimation } from "framer-motion";
-import { useRef, useEffect, useState } from "react";
+import { motion, useInView, useAnimation, AnimatePresence } from "framer-motion";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { 
   Shield, 
   TrendingUp, 
@@ -24,7 +24,9 @@ import {
   ChevronRight,
   Sparkles,
   Moon,
-  Sun
+  Sun,
+  Quote,
+  ChevronLeft
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -80,6 +82,159 @@ function FeatureCard({ feature, index }: { feature: any; index: number }) {
         </CardContent>
       </Card>
     </motion.div>
+  );
+}
+
+const testimonials = [
+  {
+    name: "Marcus J.",
+    location: "Atlanta, GA",
+    rating: 5,
+    text: "ScoreShift helped build my credit FAST! I had collections, charge-offs, and even a bankruptcy on my report. They got it ALL removed. My score went from 485 to 720 in just 6 months!",
+    scoreIncrease: "+235 points",
+    avatar: "MJ"
+  },
+  {
+    name: "Keisha W.",
+    location: "Houston, TX", 
+    rating: 5,
+    text: "Ervin at ScoreShift is amazing at getting everything done and done fast! He explained every step and kept me updated. Best decision I ever made for my credit!",
+    scoreIncrease: "+180 points",
+    avatar: "KW"
+  },
+  {
+    name: "David R.",
+    location: "Miami, FL",
+    rating: 5,
+    text: "I was drowning in negative items - late payments, collections, the works. ScoreShift's AI-powered disputes worked like magic. Now I'm approved for a mortgage!",
+    scoreIncrease: "+195 points",
+    avatar: "DR"
+  }
+];
+
+function TestimonialCard({ testimonial, isActive }: { testimonial: typeof testimonials[0]; isActive: boolean }) {
+  return (
+    <motion.div
+      className={`relative bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-2xl border border-gray-100 dark:border-gray-800 ${isActive ? 'scale-100 opacity-100' : 'scale-95 opacity-60'}`}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: isActive ? 1 : 0.6, y: 0, scale: isActive ? 1 : 0.95 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+        <Quote className="h-6 w-6 text-white" />
+      </div>
+      
+      <div className="flex items-center gap-1 mb-4 mt-2">
+        {[...Array(testimonial.rating)].map((_, i) => (
+          <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+        ))}
+      </div>
+      
+      <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-6 italic">
+        "{testimonial.text}"
+      </p>
+      
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+            {testimonial.avatar}
+          </div>
+          <div>
+            <div className="font-semibold text-gray-900 dark:text-white">{testimonial.name}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">{testimonial.location}</div>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-2xl font-bold text-green-500">{testimonial.scoreIncrease}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">Credit Score</div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function TestimonialsCarousel() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+
+  const nextSlide = useCallback(() => {
+    setActiveIndex((prev) => (prev + 1) % testimonials.length);
+  }, []);
+
+  const prevSlide = useCallback(() => {
+    setActiveIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+  }, []);
+
+  useEffect(() => {
+    if (!isAutoPlaying) return;
+    const interval = setInterval(nextSlide, 5000);
+    return () => clearInterval(interval);
+  }, [isAutoPlaying, nextSlide]);
+
+  return (
+    <div 
+      className="relative"
+      onMouseEnter={() => setIsAutoPlaying(false)}
+      onMouseLeave={() => setIsAutoPlaying(true)}
+    >
+      <div className="overflow-hidden">
+        <div className="flex justify-center">
+          <div className="w-full max-w-2xl">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeIndex}
+                initial={{ opacity: 0, x: 100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -100 }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+              >
+                <TestimonialCard testimonial={testimonials[activeIndex]} isActive={true} />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-center items-center gap-4 mt-8">
+        <motion.button
+          onClick={prevSlide}
+          className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          data-testid="button-testimonial-prev"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </motion.button>
+
+        {/* Dots */}
+        <div className="flex gap-2">
+          {testimonials.map((_, index) => (
+            <motion.button
+              key={index}
+              onClick={() => setActiveIndex(index)}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                index === activeIndex 
+                  ? 'bg-blue-600 w-8' 
+                  : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'
+              }`}
+              whileHover={{ scale: 1.2 }}
+              data-testid={`button-testimonial-dot-${index}`}
+            />
+          ))}
+        </div>
+
+        <motion.button
+          onClick={nextSlide}
+          className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          data-testid="button-testimonial-next"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </motion.button>
+      </div>
+    </div>
   );
 }
 
@@ -402,6 +557,77 @@ export default function LandingPage() {
                 </div>
               </motion.div>
             ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Client Reviews / Testimonials Section */}
+      <section className="py-24 px-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-950 relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 -z-10">
+          <motion.div
+            className="absolute top-10 right-20 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl"
+            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+            transition={{ duration: 6, repeat: Infinity }}
+          />
+          <motion.div
+            className="absolute bottom-10 left-20 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl"
+            animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.3, 0.5] }}
+            transition={{ duration: 6, repeat: Infinity }}
+          />
+        </div>
+
+        <div className="container mx-auto">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <Badge className="mb-4 px-4 py-2 bg-yellow-100 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
+              <Star className="h-3 w-3 mr-2 fill-yellow-500" />
+              Real Client Results
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+              What Our Clients Say
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+              Join thousands who have transformed their credit with ScoreShift
+            </p>
+          </motion.div>
+
+          <TestimonialsCarousel />
+
+          {/* Trust indicators */}
+          <motion.div 
+            className="flex flex-wrap justify-center gap-6 mt-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-5 py-3 rounded-full shadow-lg border border-gray-100 dark:border-gray-700">
+              <div className="flex -space-x-2">
+                {['MJ', 'KW', 'DR'].map((initials, i) => (
+                  <div key={i} className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-white dark:border-gray-800">
+                    {initials}
+                  </div>
+                ))}
+              </div>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">2,500+ Happy Clients</span>
+            </div>
+            <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-5 py-3 rounded-full shadow-lg border border-gray-100 dark:border-gray-700">
+              <div className="flex gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">4.9/5 Average Rating</span>
+            </div>
+            <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-5 py-3 rounded-full shadow-lg border border-gray-100 dark:border-gray-700">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">94% Success Rate</span>
+            </div>
           </motion.div>
         </div>
       </section>
