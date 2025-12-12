@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navigation } from "@/components/navigation";
 import { UserProvider, useUserContext } from "@/hooks/use-user-context";
+import { ThemeProvider } from "@/components/theme-provider";
 import LandingPage from "@/pages/landing";
 import LeadForm from "@/pages/lead-form";
 import Dashboard from "@/pages/dashboard";
@@ -60,7 +61,7 @@ function Router() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-200">
       <Switch>
         <Route path="/" component={LandingPage} />
         <Route path="/get-started" component={LeadForm} />
@@ -120,14 +121,16 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <UserProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </UserProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <UserProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </UserProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 

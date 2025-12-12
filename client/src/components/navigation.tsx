@@ -5,6 +5,7 @@ import { Menu, X, User, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useUserContext } from "@/hooks/use-user-context";
 import { ScoreShiftLogo } from "@/components/scoreshift-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navigation() {
   const [location] = useLocation();
@@ -29,7 +30,7 @@ export function Navigation() {
   ];
 
   return (
-    <header className="bg-white shadow-sm border-b border-blue-100">
+    <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-blue-100 dark:border-gray-800 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
@@ -74,6 +75,7 @@ export function Navigation() {
                 </span>
               )}
             </div>
+            <ThemeToggle />
             <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
               <User className="h-4 w-4 text-white" />
             </div>
@@ -81,7 +83,7 @@ export function Navigation() {
               variant="outline"
               size="sm"
               onClick={logout}
-              className="hidden sm:flex"
+              className="hidden sm:flex dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               Sign Out
             </Button>
@@ -100,7 +102,7 @@ export function Navigation() {
         {/* Mobile Navigation Menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
               {navItems.map((item) => (
                 <Link key={item.href} href={item.href}>
                   <span
