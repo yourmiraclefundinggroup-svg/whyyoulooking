@@ -54,14 +54,14 @@ export function BusinessCreditPortal({ userId }: BusinessCreditPortalProps) {
           {/* Eligibility Status */}
           {isEligible ? (
             <div className="space-y-4">
-              <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
+              <div className="p-6 bg-green-900/20 dark:bg-green-950/30 border border-green-700/30 dark:border-green-600/30 rounded-lg">
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-600 mt-1" />
+                  <CheckCircle className="h-6 w-6 text-green-500 mt-1" />
                   <div>
-                    <h3 className="text-lg font-semibold text-green-800 mb-2">
+                    <h3 className="text-lg font-semibold text-green-400 dark:text-green-300 mb-2">
                       🎉 Congratulations! You're Eligible for Business Credit
                     </h3>
-                    <p className="text-green-700 mb-4">
+                    <p className="text-green-300 dark:text-green-200 mb-4">
                       Your credit score of {currentScore} qualifies you for our comprehensive business credit building program.
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -115,23 +115,23 @@ export function BusinessCreditPortal({ userId }: BusinessCreditPortalProps) {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="p-6 bg-orange-50 border border-orange-200 rounded-lg">
+              <div className="p-6 bg-orange-900/20 dark:bg-orange-950/30 border border-orange-700/30 dark:border-orange-600/30 rounded-lg">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="h-6 w-6 text-orange-600 mt-1" />
+                  <AlertTriangle className="h-6 w-6 text-orange-500 mt-1" />
                   <div>
-                    <h3 className="text-lg font-semibold text-orange-800 mb-2">
+                    <h3 className="text-lg font-semibold text-orange-400 dark:text-orange-300 mb-2">
                       Continue Building Your Credit
                     </h3>
-                    <p className="text-orange-700 mb-4">
+                    <p className="text-orange-300 dark:text-orange-200 mb-4">
                       You need a credit score of 680+ to qualify for business credit. 
                       You're currently at {currentScore} - keep working on your personal credit first!
                     </p>
-                    <div className="bg-white p-4 rounded border">
+                    <div className="bg-card p-4 rounded border border-border">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium">Progress to Business Credit</span>
-                        <span className="text-sm text-gray-600">{Math.round((currentScore / 680) * 100)}%</span>
+                        <span className="text-sm font-medium text-foreground">Progress to Business Credit</span>
+                        <span className="text-sm text-muted-foreground">{Math.round((currentScore / 680) * 100)}%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div className="w-full bg-gray-700 rounded-full h-3">
                         <div 
                           className="bg-orange-500 h-3 rounded-full transition-all duration-300" 
                           style={{ width: `${Math.min((currentScore / 680) * 100, 100)}%` }}

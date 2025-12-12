@@ -735,7 +735,7 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
                         className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
                           msg.role === 'user'
                             ? 'bg-purple-600 text-white'
-                            : 'bg-white border shadow-sm'
+                            : 'bg-card border border-border shadow-sm text-card-foreground'
                         }`}
                       >
                         <div className="flex items-center gap-2 mb-2">

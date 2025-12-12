@@ -269,12 +269,12 @@ export function BankAccountIntegration({ userId }: BankAccountIntegrationProps) 
               </div>
 
               <div className="space-y-4">
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="p-4 bg-green-900/20 dark:bg-green-950/30 border border-green-700/30 rounded-lg">
                   <div className="flex items-start gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
                     <div className="text-sm">
-                      <p className="font-medium text-green-800">Bank-Level Security</p>
-                      <ul className="text-green-700 mt-1 space-y-1">
+                      <p className="font-medium text-green-300 dark:text-green-200">Bank-Level Security</p>
+                      <ul className="text-green-400 dark:text-green-300 mt-1 space-y-1">
                         <li>• 256-bit AES encryption for all data transmission</li>
                         <li>• PCI DSS Level 1 compliant tokenization</li>
                         <li>• SOC 2 Type II certified security controls</li>
@@ -284,12 +284,12 @@ export function BankAccountIntegration({ userId }: BankAccountIntegrationProps) 
                   </div>
                 </div>
 
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="p-4 bg-blue-900/20 dark:bg-blue-950/30 border border-blue-700/30 rounded-lg">
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-blue-600 mt-0.5" />
                     <div className="text-sm">
-                      <p className="font-medium text-blue-800">Data Protection Policy</p>
-                      <ul className="text-blue-700 mt-1 space-y-1">
+                      <p className="font-medium text-blue-300 dark:text-blue-200">Data Protection Policy</p>
+                      <ul className="text-blue-400 dark:text-blue-300 mt-1 space-y-1">
                         <li>• Account data encrypted at rest and in transit</li>
                         <li>• Zero-knowledge architecture - we cannot access raw data</li>
                         <li>• Automatic data purging after disconnection</li>
@@ -299,12 +299,12 @@ export function BankAccountIntegration({ userId }: BankAccountIntegrationProps) 
                   </div>
                 </div>
 
-                <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <div className="p-4 bg-purple-900/20 dark:bg-purple-950/30 border border-purple-700/30 rounded-lg">
                   <div className="flex items-start gap-2">
                     <Building2 className="h-4 w-4 text-purple-600 mt-0.5" />
                     <div className="text-sm">
-                      <p className="font-medium text-purple-800">Read-Only Access</p>
-                      <ul className="text-purple-700 mt-1 space-y-1">
+                      <p className="font-medium text-purple-300 dark:text-purple-200">Read-Only Access</p>
+                      <ul className="text-purple-400 dark:text-purple-300 mt-1 space-y-1">
                         <li>• Balance and transaction history only</li>
                         <li>• Cannot initiate transfers or payments</li>
                         <li>• Cannot access personal information</li>
