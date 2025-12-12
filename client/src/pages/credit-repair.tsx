@@ -40,6 +40,54 @@ function getIssueIcon(type: string) {
       return <AlertCircle className="h-4 w-4 text-white" />;
   }
 }
+
+function IssueTypeBadge({ type }: { type: string }) {
+  const config: Record<string, { label: string; icon: JSX.Element; bgColor: string; textColor: string; borderColor: string }> = {
+    'COLLECTION': {
+      label: 'Collection',
+      icon: <X className="h-3.5 w-3.5" />,
+      bgColor: 'bg-red-600 dark:bg-red-700',
+      textColor: 'text-white',
+      borderColor: 'border-red-700 dark:border-red-600'
+    },
+    'CHARGE_OFF': {
+      label: 'Charge-Off',
+      icon: <AlertCircle className="h-3.5 w-3.5" />,
+      bgColor: 'bg-rose-600 dark:bg-rose-700',
+      textColor: 'text-white',
+      borderColor: 'border-rose-700 dark:border-rose-600'
+    },
+    'LATE_PAYMENT': {
+      label: 'Late Payment',
+      icon: <Clock className="h-3.5 w-3.5" />,
+      bgColor: 'bg-orange-500 dark:bg-orange-600',
+      textColor: 'text-white',
+      borderColor: 'border-orange-600 dark:border-orange-500'
+    },
+    'INQUIRY': {
+      label: 'Inquiry',
+      icon: <Search className="h-3.5 w-3.5" />,
+      bgColor: 'bg-amber-500 dark:bg-amber-600',
+      textColor: 'text-white',
+      borderColor: 'border-amber-600 dark:border-amber-500'
+    }
+  };
+
+  const { label, icon, bgColor, textColor, borderColor } = config[type] || {
+    label: type,
+    icon: <AlertCircle className="h-3.5 w-3.5" />,
+    bgColor: 'bg-gray-500 dark:bg-gray-600',
+    textColor: 'text-white',
+    borderColor: 'border-gray-600 dark:border-gray-500'
+  };
+
+  return (
+    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${bgColor} ${textColor} border ${borderColor} shadow-sm`}>
+      {icon}
+      <span>{label}</span>
+    </div>
+  );
+}
 import type { CreditIssue, Dispute } from "@shared/schema";
 import { Shield, LogOut, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
@@ -349,9 +397,7 @@ export default function CreditRepair() {
                               <span className="hidden sm:inline">Added: {formatRelativeDate(issue.dateAdded)}</span>
                             </div>
                           </div>
-                          <Badge variant="outline" className="ml-2 text-xs">
-                            {issue.type}
-                          </Badge>
+                          <IssueTypeBadge type={issue.type} />
                         </div>
                       </div>
                     </div>
