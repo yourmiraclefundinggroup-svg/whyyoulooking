@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -18,47 +16,63 @@ import { BureauResponseAnalysis } from "@/components/bureau-response-analysis";
 import { SecureChat } from "@/components/secure-chat";
 import { AdminSettings } from "@/components/admin-settings";
 import { User, CreditReport, CreditIssue, Dispute } from "@shared/schema";
-import { Users, FileText, AlertTriangle, Send, Settings, Menu, X, TrendingUp, Shield, UserPlus, Brain, BarChart, CheckSquare, Clock, CalendarDays, MessageCircle, Package } from "lucide-react";
-import { cn } from "@/lib/utils";
+import {
+  AdminShell,
+  AdminCard,
+  AdminCardHeader,
+  AdminCardTitle,
+  AdminCardContent,
+  AdminStatCard,
+  AdminTable,
+  AdminTableHeader,
+  AdminTableRow,
+  AdminTableHead,
+  AdminTableCell,
+  AdminBadge,
+  AdminEmptyState,
+} from "@/components/admin";
+import {
+  Users,
+  FileText,
+  AlertTriangle,
+  Send,
+  TrendingUp,
+  Shield,
+  UserPlus,
+  Brain,
+  BarChart,
+  CheckSquare,
+  Clock,
+  CalendarDays,
+  MessageCircle,
+  Package,
+  Activity,
+  DollarSign,
+} from "lucide-react";
 
 export default function AdminPortal() {
-  const { user, isAdmin, logout } = useUserContext();
+  const { isAdmin } = useUserContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [location] = useLocation();
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<CreditIssue | undefined>();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Redirect non-admin users
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-              <p className="text-gray-600 dark:text-gray-300">This portal is restricted to administrators only.</p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-[hsl(230,15%,3%)] flex items-center justify-center">
+        <AdminCard className="w-full max-w-md">
+          <AdminCardContent className="pt-6 text-center">
+            <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
+            <p className="text-[hsl(var(--admin-text-muted))]">This portal is restricted to administrators only.</p>
+          </AdminCardContent>
+        </AdminCard>
       </div>
     );
   }
 
-  // Navigation items for admin portal
-  const adminNavItems = [
-    { href: "/admin-portal", label: "Client Management", icon: Users },
-    { href: "/admin-portal/disputes", label: "Dispute Center", icon: Send },
-    { href: "/admin-portal/tracking", label: "USPS Tracking", icon: Package },
-    { href: "/admin-portal/bureau-analysis", label: "Bureau Analysis", icon: Brain },
-    { href: "/admin-portal/chat", label: "Client Communication", icon: MessageCircle },
-    { href: "/admin-portal/analytics", label: "Analytics", icon: TrendingUp },
-    { href: "/admin-portal/settings", label: "Settings", icon: Settings },
-  ];
-
-  // Get all users for client management
   const { data: allUsers = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
   });
@@ -66,7 +80,6 @@ export default function AdminPortal() {
   const clientUsers = allUsers.filter(u => u.accessLevel !== "ADMIN");
   const selectedClient = selectedClientId ? allUsers.find(u => u.id === selectedClientId) : null;
 
-  // Get selected client's data
   const { data: clientCreditReport } = useQuery<CreditReport>({
     queryKey: ['/api/credit-reports', selectedClientId],
     enabled: !!selectedClientId,
@@ -82,7 +95,6 @@ export default function AdminPortal() {
     enabled: !!selectedClientId,
   });
 
-  // Create new client mutation
   const [newClient, setNewClient] = useState({ firstName: "", lastName: "", email: "", password: "" });
   const createClientMutation = useMutation({
     mutationFn: async (clientData: { firstName: string; lastName: string; email: string; password: string }) => {
@@ -117,9 +129,10 @@ export default function AdminPortal() {
     }
   };
 
-  // Determine which page content to show based on location
   const renderPageContent = () => {
     if (location === "/admin-portal" || location === "/admin-portal/") {
+      return <DashboardPage clientUsers={clientUsers} />;
+    } else if (location === "/admin-portal/clients") {
       return <ClientManagementPage 
         clientUsers={clientUsers}
         selectedClientId={selectedClientId}
@@ -145,9 +158,7 @@ export default function AdminPortal() {
         setDisputeModalOpen={setDisputeModalOpen}
       />;
     } else if (location === "/admin-portal/tracking") {
-      return <div className="p-6">
-        <AdminDisputeTracking selectedClientId={selectedClientId} />
-      </div>;
+      return <AdminDisputeTracking selectedClientId={selectedClientId} />;
     } else if (location === "/admin-portal/bureau-analysis") {
       return <BureauAnalysisPage />;
     } else if (location === "/admin-portal/chat") {
@@ -161,325 +172,366 @@ export default function AdminPortal() {
       return <AnalyticsPage clientUsers={clientUsers} />;
     } else if (location === "/admin-portal/settings") {
       return <SettingsPage />;
+    } else if (location === "/admin-portal/users") {
+      return <UsersRolesPage />;
+    } else if (location === "/admin-portal/system") {
+      return <SystemPage />;
     }
-    return <ClientManagementPage 
-      clientUsers={clientUsers}
-      selectedClientId={selectedClientId}
-      setSelectedClientId={setSelectedClientId}
-      selectedClient={selectedClient}
-      clientCreditReport={clientCreditReport}
-      clientIssues={clientIssues}
-      clientDisputes={clientDisputes}
-      newClient={newClient}
-      setNewClient={setNewClient}
-      handleCreateClient={handleCreateClient}
-      createClientMutation={createClientMutation}
-    />;
+    return <DashboardPage clientUsers={clientUsers} />;
   };
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      {/* Admin Header */}
-      <header className="bg-slate-800 shadow-lg border-b border-slate-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Link href="/admin-portal">
-                  <div className="flex items-center cursor-pointer">
-                    <Shield className="h-8 w-8 text-orange-400 mr-3" />
-                    <div>
-                      <h1 className="text-xl md:text-2xl font-bold text-white">ScoreShift</h1>
-                      <p className="text-xs text-orange-300 font-medium">ADMIN PORTAL</p>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-              {/* Desktop Navigation */}
-              <nav className="hidden md:ml-10 md:flex md:space-x-8">
-                {adminNavItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link key={item.href} href={item.href}>
-                      <span
-                        className={cn(
-                          "px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer flex items-center gap-2",
-                          location === item.href
-                            ? "bg-orange-500 text-white shadow-md"
-                            : "text-slate-300 hover:text-white hover:bg-slate-700"
-                        )}
-                      >
-                        <Icon className="h-4 w-4" />
-                        {item.label}
-                      </span>
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-            
-            {/* Admin User Menu */}
-            <div className="flex items-center gap-4">
-              <div className="hidden md:flex items-center text-sm">
-                <div className="text-right mr-3">
-                  <div className="font-medium text-white">{user?.firstName} {user?.lastName}</div>
-                  <div className="text-xs text-orange-300">Administrator</div>
-                </div>
-                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-medium text-sm">
-                    {user?.firstName?.[0]}{user?.lastName?.[0]}
-                  </span>
-                </div>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={logout}
-                className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
-              >
-                Logout
-              </Button>
-              
-              {/* Mobile menu button */}
-              <div className="md:hidden">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="text-slate-300 hover:text-white hover:bg-slate-700"
-                >
-                  {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile menu */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-slate-700 border-t border-slate-600">
-              {adminNavItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <span
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium cursor-pointer",
-                        location === item.href
-                          ? "bg-orange-500 text-white"
-                          : "text-slate-300 hover:bg-slate-600 hover:text-white"
-                      )}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <Icon className="h-5 w-5" />
-                      {item.label}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </header>
-
-      {/* Main Admin Content */}
-      <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          {renderPageContent()}
-        </div>
-      </main>
-
-      {/* Modals */}
+    <AdminShell>
+      {renderPageContent()}
       <DisputeLetterModal
         open={disputeModalOpen}
         onOpenChange={setDisputeModalOpen}
         issue={selectedIssue}
       />
+    </AdminShell>
+  );
+}
+
+function DashboardPage({ clientUsers }: { clientUsers: User[] }) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+          <p className="text-[hsl(var(--admin-text-muted))]">Welcome back. Here's your overview.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <AdminStatCard
+          label="Total Clients"
+          value={clientUsers.length}
+          icon={<Users className="h-6 w-6" />}
+          trend={{ value: 12, positive: true }}
+          color="blue"
+        />
+        <AdminStatCard
+          label="Active Disputes"
+          value={23}
+          icon={<FileText className="h-6 w-6" />}
+          trend={{ value: 8, positive: true }}
+          color="orange"
+        />
+        <AdminStatCard
+          label="Success Rate"
+          value="78%"
+          icon={<TrendingUp className="h-6 w-6" />}
+          trend={{ value: 5, positive: true }}
+          color="green"
+        />
+        <AdminStatCard
+          label="Revenue"
+          value="$24.5k"
+          icon={<DollarSign className="h-6 w-6" />}
+          trend={{ value: 18, positive: true }}
+          color="purple"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AdminCard>
+          <AdminCardHeader>
+            <AdminCardTitle icon={<Activity className="h-5 w-5" />}>Recent Activity</AdminCardTitle>
+          </AdminCardHeader>
+          <AdminCardContent>
+            <div className="space-y-4">
+              {[
+                { action: "New dispute filed", client: "Sarah M.", time: "2 min ago", type: "dispute" },
+                { action: "Letter sent via USPS", client: "Michael R.", time: "15 min ago", type: "mail" },
+                { action: "Client onboarded", client: "Jennifer L.", time: "1 hour ago", type: "client" },
+                { action: "Bureau response received", client: "David K.", time: "3 hours ago", type: "response" },
+              ].map((item, idx) => (
+                <div key={idx} className="flex items-center gap-4 p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <div className="w-10 h-10 rounded-lg bg-[hsl(var(--admin-accent))]/20 flex items-center justify-center">
+                    {item.type === "dispute" && <FileText className="h-5 w-5 text-[hsl(var(--admin-accent))]" />}
+                    {item.type === "mail" && <Package className="h-5 w-5 text-blue-400" />}
+                    {item.type === "client" && <Users className="h-5 w-5 text-green-400" />}
+                    {item.type === "response" && <MessageCircle className="h-5 w-5 text-purple-400" />}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-white">{item.action}</p>
+                    <p className="text-xs text-[hsl(var(--admin-text-muted))]">{item.client}</p>
+                  </div>
+                  <span className="text-xs text-[hsl(var(--admin-text-subtle))]">{item.time}</span>
+                </div>
+              ))}
+            </div>
+          </AdminCardContent>
+        </AdminCard>
+
+        <AdminCard>
+          <AdminCardHeader>
+            <AdminCardTitle icon={<Users className="h-5 w-5" />}>Recent Clients</AdminCardTitle>
+          </AdminCardHeader>
+          <AdminCardContent>
+            <AdminTable>
+              <AdminTableHeader>
+                <tr>
+                  <AdminTableHead>Name</AdminTableHead>
+                  <AdminTableHead>Status</AdminTableHead>
+                  <AdminTableHead>Score</AdminTableHead>
+                </tr>
+              </AdminTableHeader>
+              <tbody>
+                {clientUsers.slice(0, 5).map((client) => (
+                  <AdminTableRow key={client.id}>
+                    <AdminTableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(25,95%,45%)] flex items-center justify-center text-white text-xs font-semibold">
+                          {client.firstName?.[0]}{client.lastName?.[0]}
+                        </div>
+                        <div>
+                          <p className="font-medium text-white">{client.firstName} {client.lastName}</p>
+                          <p className="text-xs text-[hsl(var(--admin-text-muted))]">{client.email}</p>
+                        </div>
+                      </div>
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <AdminBadge variant="success">Active</AdminBadge>
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <span className="font-semibold text-[hsl(var(--admin-accent))]">---</span>
+                    </AdminTableCell>
+                  </AdminTableRow>
+                ))}
+                {clientUsers.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="px-4 py-8 text-center text-[hsl(var(--admin-text-muted))]">
+                      No clients yet
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </AdminTable>
+          </AdminCardContent>
+        </AdminCard>
+      </div>
+
+      <AdminCard>
+        <AdminCardHeader>
+          <AdminCardTitle icon={<CheckSquare className="h-5 w-5" />}>Dispute Success Rates</AdminCardTitle>
+        </AdminCardHeader>
+        <AdminCardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { bureau: "Experian", success: 78, total: 45 },
+              { bureau: "Equifax", success: 82, total: 38 },
+              { bureau: "TransUnion", success: 75, total: 42 }
+            ].map((item) => (
+              <div key={item.bureau} className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-white">{item.bureau}</span>
+                  <span className="text-sm text-[hsl(var(--admin-accent))]">{item.success}%</span>
+                </div>
+                <div className="w-full bg-[hsl(var(--admin-bg))] rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-[hsl(var(--admin-accent))] to-[hsl(25,95%,45%)] h-2 rounded-full transition-all duration-500" 
+                    style={{ width: `${item.success}%` }}
+                  />
+                </div>
+                <p className="text-xs text-[hsl(var(--admin-text-muted))]">{item.total} disputes processed</p>
+              </div>
+            ))}
+          </div>
+        </AdminCardContent>
+      </AdminCard>
     </div>
   );
 }
 
-// Client Management Page Component
 function ClientManagementPage({ 
   clientUsers, selectedClientId, setSelectedClientId, selectedClient, 
   clientCreditReport, clientIssues, clientDisputes, newClient, setNewClient, 
   handleCreateClient, createClientMutation 
 }: any) {
   return (
-    <div className="space-y-8">
-      <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-              <Users className="h-7 w-7 text-orange-500" />
-              Client Management
-            </h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Manage client accounts and access their credit repair tools.
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-orange-600">{clientUsers.length}</div>
-            <div className="text-sm text-slate-600">Active Clients</div>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <Users className="h-7 w-7 text-[hsl(var(--admin-accent))]" />
+            Client Management
+          </h1>
+          <p className="text-[hsl(var(--admin-text-muted))]">Manage client accounts and credit repair tools.</p>
+        </div>
+        <div className="text-right">
+          <div className="text-2xl font-bold text-[hsl(var(--admin-accent))]">{clientUsers.length}</div>
+          <div className="text-sm text-[hsl(var(--admin-text-muted))]">Active Clients</div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Create New Client */}
-        <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="bg-slate-50 border-b border-slate-200">
-            <CardTitle className="text-slate-800 flex items-center gap-2">
-              <Users className="h-5 w-5 text-orange-500" />
-              Add New Client
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
+        <AdminCard>
+          <AdminCardHeader>
+            <AdminCardTitle icon={<UserPlus className="h-5 w-5" />}>Add New Client</AdminCardTitle>
+          </AdminCardHeader>
+          <AdminCardContent>
             <form onSubmit={handleCreateClient} className="space-y-4">
               <div>
-                <Label htmlFor="firstName">First Name</Label>
+                <Label htmlFor="firstName" className="text-[hsl(var(--admin-text-muted))]">First Name</Label>
                 <Input
                   id="firstName"
                   value={newClient.firstName}
                   onChange={(e) => setNewClient((prev: any) => ({ ...prev, firstName: e.target.value }))}
                   placeholder="John"
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))]"
                   required
+                  data-testid="input-first-name"
                 />
               </div>
               <div>
-                <Label htmlFor="lastName">Last Name</Label>
+                <Label htmlFor="lastName" className="text-[hsl(var(--admin-text-muted))]">Last Name</Label>
                 <Input
                   id="lastName"
                   value={newClient.lastName}
                   onChange={(e) => setNewClient((prev: any) => ({ ...prev, lastName: e.target.value }))}
                   placeholder="Doe"
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))]"
                   required
+                  data-testid="input-last-name"
                 />
               </div>
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-[hsl(var(--admin-text-muted))]">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={newClient.email}
                   onChange={(e) => setNewClient((prev: any) => ({ ...prev, email: e.target.value }))}
                   placeholder="john.doe@example.com"
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))]"
                   required
+                  data-testid="input-email"
                 />
               </div>
               <div>
-                <Label htmlFor="password">Initial Password</Label>
+                <Label htmlFor="password" className="text-[hsl(var(--admin-text-muted))]">Initial Password</Label>
                 <Input
                   id="password"
                   type="password"
                   value={newClient.password}
                   onChange={(e) => setNewClient((prev: any) => ({ ...prev, password: e.target.value }))}
                   placeholder="Set a secure password"
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))]"
                   required
+                  data-testid="input-password"
                 />
               </div>
-              <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                  <UserPlus className="h-4 w-4" />
+              <div className="bg-blue-500/10 p-3 rounded-lg border border-blue-500/30">
+                <div className="flex items-center gap-2 text-blue-400">
+                  <Shield className="h-4 w-4" />
                   <span className="text-sm font-medium">Secure Setup</span>
                 </div>
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                <p className="text-xs text-blue-300/70 mt-1">
                   Client will be required to reset this password on first login.
                 </p>
               </div>
               <Button 
                 type="submit" 
                 disabled={createClientMutation.isPending}
-                className="w-full"
+                className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(25,95%,45%)] text-white"
+                data-testid="button-create-client"
               >
                 {createClientMutation.isPending ? "Creating..." : "Create Client"}
               </Button>
             </form>
-          </CardContent>
-        </Card>
+          </AdminCardContent>
+        </AdminCard>
 
-        {/* Client List */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Client Accounts ({clientUsers.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {clientUsers.map((client: User) => (
-                <Button
-                  key={client.id}
-                  variant={selectedClientId === client.id ? "default" : "outline"}
-                  className={`w-full p-4 h-auto justify-start ${
-                    selectedClientId === client.id
-                      ? 'border-blue-500 bg-blue-600 text-white'
-                      : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                  }`}
-                  onClick={() => setSelectedClientId(client.id)}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="text-left">
-                      <div className="font-medium">
-                        {client.firstName} {client.lastName}
-                      </div>
-                      <div className="text-sm opacity-75">{client.email}</div>
-                    </div>
-                    {selectedClientId === client.id && (
-                      <div className="text-right">
-                        <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-                          <div className="w-2 h-2 rounded-full bg-white dark:bg-gray-900"></div>
+        <AdminCard className="lg:col-span-2">
+          <AdminCardHeader>
+            <AdminCardTitle icon={<Users className="h-5 w-5" />}>
+              Client Accounts ({clientUsers.length})
+            </AdminCardTitle>
+          </AdminCardHeader>
+          <AdminCardContent>
+            {clientUsers.length > 0 ? (
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {clientUsers.map((client: User) => (
+                  <button
+                    key={client.id}
+                    className={`w-full p-4 rounded-lg border transition-all duration-200 text-left ${
+                      selectedClientId === client.id
+                        ? 'border-[hsl(var(--admin-accent))] bg-[hsl(var(--admin-accent))]/10'
+                        : 'border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50 hover:border-[hsl(var(--admin-border-accent))]'
+                    }`}
+                    onClick={() => setSelectedClientId(client.id)}
+                    data-testid={`button-client-${client.id}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(25,95%,45%)] flex items-center justify-center text-white font-semibold">
+                          {client.firstName?.[0]}{client.lastName?.[0]}
+                        </div>
+                        <div>
+                          <div className="font-medium text-white">{client.firstName} {client.lastName}</div>
+                          <div className="text-sm text-[hsl(var(--admin-text-muted))]">{client.email}</div>
                         </div>
                       </div>
-                    )}
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                      {selectedClientId === client.id && (
+                        <div className="w-3 h-3 rounded-full bg-[hsl(var(--admin-accent))]" />
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <AdminEmptyState
+                icon={<Users className="h-8 w-8" />}
+                title="No Clients Yet"
+                description="Create your first client using the form on the left."
+              />
+            )}
+          </AdminCardContent>
+        </AdminCard>
       </div>
 
-      {/* Selected Client Details */}
       {selectedClient && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Selected Client: {selectedClient.firstName} {selectedClient.lastName}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">
+        <AdminCard>
+          <AdminCardHeader>
+            <AdminCardTitle>
+              {selectedClient.firstName} {selectedClient.lastName}
+            </AdminCardTitle>
+          </AdminCardHeader>
+          <AdminCardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                <div className="text-3xl font-bold text-blue-400">
                   {clientCreditReport?.creditScore || '---'}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Credit Score</p>
+                <p className="text-sm text-[hsl(var(--admin-text-muted))]">Credit Score</p>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-red-600">
+              <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                <div className="text-3xl font-bold text-red-400">
                   {clientIssues.length}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Active Issues</p>
+                <p className="text-sm text-[hsl(var(--admin-text-muted))]">Active Issues</p>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-yellow-600">
+              <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                <div className="text-3xl font-bold text-amber-400">
                   {clientDisputes.filter((d: Dispute) => d.status === 'PENDING').length}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Pending Disputes</p>
+                <p className="text-sm text-[hsl(var(--admin-text-muted))]">Pending Disputes</p>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">
+              <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                <div className="text-3xl font-bold text-emerald-400">
                   {clientDisputes.length}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Total Disputes</p>
+                <p className="text-sm text-[hsl(var(--admin-text-muted))]">Total Disputes</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </AdminCardContent>
+        </AdminCard>
       )}
     </div>
   );
 }
 
-// Dispute Center Page Component
 function DisputeCenterPage({ 
   selectedClient, selectedClientId, setSelectedClientId, clientUsers, 
   clientCreditReport, clientIssues, setSelectedIssue, setDisputeModalOpen 
@@ -487,253 +539,201 @@ function DisputeCenterPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dispute Center</h1>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-          Manage disputes and track USPS delivery status for client communications.
+        <h1 className="text-2xl font-bold text-white">Dispute Center</h1>
+        <p className="text-[hsl(var(--admin-text-muted))]">
+          Manage disputes and track USPS delivery status.
         </p>
       </div>
 
       {!selectedClient ? (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardContent className="p-6">
+        <AdminCard className="border-amber-500/30 bg-amber-500/5">
+          <AdminCardContent className="py-8">
             <div className="text-center">
-              <AlertTriangle className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-yellow-800 mb-2">Select a Client First</h3>
-              <p className="text-yellow-700 mb-4">
-                Choose a client to access their dispute management and USPS tracking tools.
+              <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-white mb-2">Select a Client First</h3>
+              <p className="text-[hsl(var(--admin-text-muted))] mb-6">
+                Choose a client to access their dispute management tools.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-2xl mx-auto">
                 {clientUsers.map((client: User) => (
-                  <Button
+                  <button
                     key={client.id}
-                    variant="outline"
-                    className="p-3 h-auto"
+                    className="p-4 rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-card))]/50 hover:border-[hsl(var(--admin-accent))] transition-colors text-left"
                     onClick={() => setSelectedClientId(client.id)}
+                    data-testid={`button-select-client-${client.id}`}
                   >
-                    <div className="text-center">
-                      <div className="font-medium">{client.firstName} {client.lastName}</div>
-                      <div className="text-xs text-gray-600 dark:text-gray-300">{client.email}</div>
-                    </div>
-                  </Button>
+                    <div className="font-medium text-white">{client.firstName} {client.lastName}</div>
+                    <div className="text-xs text-[hsl(var(--admin-text-muted))]">{client.email}</div>
+                  </button>
                 ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </AdminCardContent>
+        </AdminCard>
       ) : (
         <div className="space-y-6">
-          {/* Selected Client Header */}
-          <Card className="border-blue-200 bg-blue-50">
-            <CardContent className="p-4">
+          <AdminCard className="border-blue-500/30 bg-blue-500/5">
+            <AdminCardContent>
               <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Users className="h-8 w-8 text-blue-600 mr-3" />
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold">
+                    {selectedClient.firstName?.[0]}{selectedClient.lastName?.[0]}
+                  </div>
                   <div>
-                    <h3 className="text-lg font-medium text-blue-900">
+                    <h3 className="text-lg font-medium text-white">
                       {selectedClient.firstName} {selectedClient.lastName}
                     </h3>
-                    <p className="text-sm text-blue-700">{selectedClient.email}</p>
+                    <p className="text-sm text-blue-400">{selectedClient.email}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-2xl font-bold text-blue-400">
                     {clientCreditReport?.creditScore || '---'}
                   </div>
-                  <p className="text-sm text-blue-700">Credit Score</p>
+                  <p className="text-sm text-[hsl(var(--admin-text-muted))]">Credit Score</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </AdminCardContent>
+          </AdminCard>
 
-          {/* USPS Tracking Section */}
-          <div className="p-6">
-            <AdminDisputeTracking selectedClientId={selectedClient.id} />
-          </div>
-
-          {/* Follow-up Alerts */}
+          <AdminDisputeTracking selectedClientId={selectedClient.id} />
           <FollowUpAlerts />
 
-          {/* AI Tools Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* AI Credit Analysis */}
-            <Card className="border-blue-200">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center">
-                  <TrendingUp className="text-blue-600 mr-2 h-5 w-5" />
-                  AI Credit Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  AI-powered analysis and personalized recommendations for this client's credit profile.
-                </p>
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
+            <AdminCard>
+              <AdminCardHeader>
+                <AdminCardTitle icon={<Brain className="h-5 w-5" />}>AI Credit Analysis</AdminCardTitle>
+              </AdminCardHeader>
+              <AdminCardContent>
+                {selectedClient?.id ? (
                   <AICreditAnalysis userId={selectedClient.id} />
-                </div>
-              </CardContent>
-            </Card>
+                ) : (
+                  <div className="text-center py-4 text-[hsl(var(--admin-text-muted))]">
+                    Select a client to view analysis
+                  </div>
+                )}
+              </AdminCardContent>
+            </AdminCard>
 
-            {/* Credit Score Simulator */}
-            <Card className="border-green-200">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center">
-                  <TrendingUp className="text-green-600 mr-2 h-5 w-5" />
-                  Credit Score Simulator
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  Simulate potential credit score improvements for client presentations.
-                </p>
+            <AdminCard>
+              <AdminCardHeader>
+                <AdminCardTitle icon={<TrendingUp className="h-5 w-5" />}>Credit Score Simulator</AdminCardTitle>
+              </AdminCardHeader>
+              <AdminCardContent>
                 {clientCreditReport ? (
-                  <div className="text-center">
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => {
-                        // This would open the simulator modal
-                      }}
-                    >
-                      <TrendingUp className="mr-2 h-4 w-4" />
-                      Run Score Simulation
-                    </Button>
+                  <div className="space-y-4">
+                    <p className="text-sm text-[hsl(var(--admin-text-muted))]">
+                      Test different scenarios to see potential score improvements.
+                    </p>
+                    <p className="text-2xl font-bold text-[hsl(var(--admin-accent))]">
+                      {clientCreditReport.creditScore || '---'}
+                    </p>
+                    <p className="text-xs text-[hsl(var(--admin-text-muted))]">
+                      Use the simulator to project improvements
+                    </p>
                   </div>
                 ) : (
-                  <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                  <div className="text-center py-4 text-[hsl(var(--admin-text-muted))]">
                     No credit report available
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </AdminCardContent>
+            </AdminCard>
           </div>
 
-          {/* Dispute Letter Generation */}
-          <Card className="border-purple-200">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center">
-                <FileText className="text-purple-600 mr-2 h-5 w-5" />
-                AI Dispute Letter Generator
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 mb-6">
-                Generate professional, legally compliant dispute letters using AI for each credit issue.
+          <AdminCard>
+            <AdminCardHeader>
+              <AdminCardTitle icon={<FileText className="h-5 w-5" />}>AI Dispute Letter Generator</AdminCardTitle>
+            </AdminCardHeader>
+            <AdminCardContent>
+              <p className="text-sm text-[hsl(var(--admin-text-muted))] mb-6">
+                Generate professional dispute letters for each credit issue.
               </p>
               
               {clientIssues.length > 0 ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {clientIssues.map((issue: CreditIssue) => (
-                      <Card key={issue.id} className="border-gray-200 hover:border-purple-300 transition-colors">
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-900 mb-1">{issue.title}</h4>
-                              <p className="text-sm text-gray-600 dark:text-gray-300">{issue.creditor}</p>
-                              {issue.amount && (
-                                <p className="text-sm font-medium text-red-600">
-                                  ${issue.amount.toLocaleString()}
-                                </p>
-                              )}
-                            </div>
-                            <Badge variant="outline" className="text-xs">
-                              {issue.type}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-gray-600 mb-3">
-                            Impact: <span className="font-medium text-red-600">{Math.abs(issue.impact)} points</span>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full border-purple-300 text-purple-700 hover:bg-purple-50"
-                            onClick={() => {
-                              setSelectedIssue(issue);
-                              setDisputeModalOpen(true);
-                            }}
-                          >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Generate AI Letter
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {clientIssues.map((issue: CreditIssue) => (
+                    <div key={issue.id} className="p-4 rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50 hover:border-[hsl(var(--admin-accent))]/50 transition-colors">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-white mb-1">{issue.title}</h4>
+                          <p className="text-sm text-[hsl(var(--admin-text-muted))]">{issue.creditor}</p>
+                          {issue.amount && (
+                            <p className="text-sm font-medium text-red-400">
+                              ${issue.amount.toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                        <AdminBadge variant="muted">{issue.type}</AdminBadge>
+                      </div>
+                      <div className="text-sm text-[hsl(var(--admin-text-muted))] mb-3">
+                        Impact: <span className="font-medium text-red-400">{Math.abs(issue.impact)} points</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="w-full bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-purple-500/30"
+                        onClick={() => {
+                          setSelectedIssue(issue);
+                          setDisputeModalOpen(true);
+                        }}
+                        data-testid={`button-generate-letter-${issue.id}`}
+                      >
+                        <FileText className="mr-2 h-4 w-4" />
+                        Generate AI Letter
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No credit issues found for this client.</p>
-                  <p className="text-sm mt-2">Credit issues will appear here once a credit report is added.</p>
-                </div>
+                <AdminEmptyState
+                  icon={<FileText className="h-8 w-8" />}
+                  title="No Credit Issues"
+                  description="Credit issues will appear here once a credit report is added."
+                />
               )}
-            </CardContent>
-          </Card>
+            </AdminCardContent>
+          </AdminCard>
         </div>
       )}
     </div>
   );
 }
 
-// Analytics Page Component
 function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics</h1>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-          View performance metrics and client statistics.
-        </p>
+        <h1 className="text-2xl font-bold text-white">Analytics</h1>
+        <p className="text-[hsl(var(--admin-text-muted))]">Performance metrics and client statistics.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <Users className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Clients</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{clientUsers.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <AlertTriangle className="h-8 w-8 text-orange-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Active Issues</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">12</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <Send className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Disputes Sent</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">8</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <AdminStatCard
+          label="Total Clients"
+          value={clientUsers.length}
+          icon={<Users className="h-6 w-6" />}
+          color="blue"
+        />
+        <AdminStatCard
+          label="Active Issues"
+          value={12}
+          icon={<AlertTriangle className="h-6 w-6" />}
+          color="orange"
+        />
+        <AdminStatCard
+          label="Disputes Sent"
+          value={8}
+          icon={<Send className="h-6 w-6" />}
+          color="green"
+        />
       </div>
 
-      {/* AI Features Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
-              AI Features Usage
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <AdminCard>
+          <AdminCardHeader>
+            <AdminCardTitle icon={<TrendingUp className="h-5 w-5" />}>AI Features Usage</AdminCardTitle>
+          </AdminCardHeader>
+          <AdminCardContent>
             <div className="space-y-4">
               {[
                 { feature: "Bureau Response Analysis", usage: 24, trend: "+12%" },
@@ -741,32 +741,24 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
                 { feature: "Loan Readiness Assessment", usage: 15, trend: "+15%" },
                 { feature: "Dispute Letter Generation", usage: 32, trend: "+22%" },
                 { feature: "Identity Theft Recovery", usage: 6, trend: "+3%" },
-                { feature: "Financial Behavior Coaching", usage: 11, trend: "+18%" }
               ].map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50">
                   <div>
-                    <p className="font-medium text-sm">{item.feature}</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-300">{item.usage} uses this month</p>
+                    <p className="font-medium text-sm text-white">{item.feature}</p>
+                    <p className="text-xs text-[hsl(var(--admin-text-muted))]">{item.usage} uses this month</p>
                   </div>
-                  <div className="text-right">
-                    <Badge variant="secondary" className="text-green-700 bg-green-100">
-                      {item.trend}
-                    </Badge>
-                  </div>
+                  <AdminBadge variant="success">{item.trend}</AdminBadge>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </AdminCardContent>
+        </AdminCard>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart className="h-5 w-5 text-purple-600" />
-              Credit Score Improvements
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <AdminCard>
+          <AdminCardHeader>
+            <AdminCardTitle icon={<BarChart className="h-5 w-5" />}>Credit Score Improvements</AdminCardTitle>
+          </AdminCardHeader>
+          <AdminCardContent>
             <div className="space-y-4">
               {[
                 { client: "Sarah M.", improvement: "+87 pts", timeframe: "3 months" },
@@ -775,264 +767,119 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
                 { client: "David K.", improvement: "+94 pts", timeframe: "5 months" },
                 { client: "Lisa W.", improvement: "+71 pts", timeframe: "3 months" }
               ].map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50">
                   <div>
-                    <p className="font-medium text-sm">{item.client}</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-300">{item.timeframe}</p>
+                    <p className="font-medium text-sm text-white">{item.client}</p>
+                    <p className="text-xs text-[hsl(var(--admin-text-muted))]">{item.timeframe}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-green-600">{item.improvement}</p>
-                  </div>
+                  <span className="font-bold text-emerald-400">{item.improvement}</span>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </AdminCardContent>
+        </AdminCard>
       </div>
 
-      {/* Financial Integrations Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-green-600" />
-            Secure Integrations Status
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 border rounded-lg bg-green-50">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="font-medium">Bank Account Integration</span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-300">18 active connections</p>
-              <p className="text-xs text-green-700 mt-1">256-bit AES encrypted</p>
-            </div>
-            
-            <div className="p-4 border rounded-lg bg-blue-50">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="font-medium">Tax Software Integration</span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-300">12 verified connections</p>
-              <p className="text-xs text-blue-700 mt-1">IRS-approved OAuth</p>
-            </div>
-            
-            <div className="p-4 border rounded-lg bg-purple-50">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                <span className="font-medium">Employment Verification</span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-300">15 HR system connections</p>
-              <p className="text-xs text-purple-700 mt-1">Document verification active</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Dispute Success Rates */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckSquare className="h-5 w-5 text-orange-600" />
-              Dispute Success Rates
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                { bureau: "Experian", success: 78, total: 45 },
-                { bureau: "Equifax", success: 82, total: 38 },
-                { bureau: "TransUnion", success: 75, total: 42 }
-              ].map((item, idx) => (
-                <div key={idx} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">{item.bureau}</span>
-                    <span className="text-sm text-gray-600 dark:text-gray-300">{item.success}% success rate</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-orange-500 h-2 rounded-full" 
-                      style={{ width: `${item.success}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{item.total} disputes processed</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-red-600" />
-              Response Times
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="p-4 border rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium">Average Response Time</span>
-                  <span className="text-lg font-bold text-blue-600">18 days</span>
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Bureau response to disputes</p>
-              </div>
-              
-              <div className="p-4 border rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium">Fastest Response</span>
-                  <span className="text-lg font-bold text-green-600">12 days</span>
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300">TransUnion (last month)</p>
-              </div>
-              
-              <div className="p-4 border rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium">Follow-up Success</span>
-                  <span className="text-lg font-bold text-purple-600">89%</span>
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300">14-day follow-up protocol</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Monthly Performance Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-indigo-600" />
-            Monthly Performance Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <AdminCard>
+        <AdminCardHeader>
+          <AdminCardTitle icon={<CalendarDays className="h-5 w-5" />}>Monthly Performance Summary</AdminCardTitle>
+        </AdminCardHeader>
+        <AdminCardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">127</div>
-              <p className="text-sm text-gray-600 dark:text-gray-300">Total Disputes Filed</p>
-              <Badge variant="secondary" className="mt-1 text-green-700 bg-green-100">+23%</Badge>
-            </div>
-            
-            <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-green-600">96</div>
-              <p className="text-sm text-gray-600 dark:text-gray-300">Successful Removals</p>
-              <Badge variant="secondary" className="mt-1 text-green-700 bg-green-100">+18%</Badge>
-            </div>
-            
-            <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">$2.3M</div>
-              <p className="text-sm text-gray-600 dark:text-gray-300">Debt Removed</p>
-              <Badge variant="secondary" className="mt-1 text-green-700 bg-green-100">+34%</Badge>
-            </div>
-            
-            <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold text-orange-600">67</div>
-              <p className="text-sm text-gray-600 dark:text-gray-300">Avg Score Improvement</p>
-              <Badge variant="secondary" className="mt-1 text-green-700 bg-green-100">+12%</Badge>
-            </div>
+            {[
+              { label: "Total Disputes Filed", value: "127", trend: "+23%" },
+              { label: "Successful Removals", value: "96", trend: "+18%" },
+              { label: "Debt Removed", value: "$2.3M", trend: "+34%" },
+              { label: "Avg Score Improvement", value: "67", trend: "+12%" },
+            ].map((item, idx) => (
+              <div key={idx} className="text-center p-4 rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50">
+                <div className="text-2xl font-bold text-[hsl(var(--admin-accent))]">{item.value}</div>
+                <p className="text-sm text-[hsl(var(--admin-text-muted))]">{item.label}</p>
+                <AdminBadge variant="success" className="mt-2">{item.trend}</AdminBadge>
+              </div>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </AdminCardContent>
+      </AdminCard>
     </div>
   );
 }
 
-// Settings Page Component
 function SettingsPage() {
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Settings</h1>
-        <p className="text-gray-600 dark:text-gray-300">Manage your admin account and system settings</p>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">Settings</h1>
+        <p className="text-[hsl(var(--admin-text-muted))]">Manage your admin account and system settings</p>
       </div>
       <AdminSettings />
     </div>
   );
 }
 
-// Client Communication Page Component
 function ClientCommunicationPage({ clientUsers, selectedClientId, setSelectedClientId, selectedClient }: any) {
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-              <MessageCircle className="h-7 w-7 text-orange-500" />
-              Client Communication
-            </h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Secure messaging and document exchange with clients.
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-orange-600">{clientUsers.length}</div>
-            <div className="text-sm text-slate-600">Active Clients</div>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <MessageCircle className="h-7 w-7 text-[hsl(var(--admin-accent))]" />
+            Client Communication
+          </h1>
+          <p className="text-[hsl(var(--admin-text-muted))]">Secure messaging and document exchange.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Client List */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="text-lg">Client List</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <AdminCard className="lg:col-span-1">
+          <AdminCardHeader>
+            <AdminCardTitle>Clients</AdminCardTitle>
+          </AdminCardHeader>
+          <AdminCardContent>
             <div className="space-y-2">
               {clientUsers.map((client: User) => (
-                <Button
+                <button
                   key={client.id}
-                  variant={selectedClientId === client.id ? "default" : "outline"}
-                  className={`w-full p-3 h-auto justify-start ${
+                  className={`w-full p-3 rounded-lg border transition-all duration-200 text-left ${
                     selectedClientId === client.id
-                      ? 'border-blue-500 bg-blue-600 text-white'
-                      : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                      ? 'border-[hsl(var(--admin-accent))] bg-[hsl(var(--admin-accent))]/10'
+                      : 'border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50 hover:border-[hsl(var(--admin-border-accent))]'
                   }`}
                   onClick={() => setSelectedClientId(client.id)}
+                  data-testid={`button-chat-client-${client.id}`}
                 >
-                  <div className="text-left">
-                    <div className="font-medium text-sm">
-                      {client.firstName} {client.lastName}
-                    </div>
-                    <div className="text-xs opacity-75">{client.email}</div>
+                  <div className="font-medium text-sm text-white">
+                    {client.firstName} {client.lastName}
                   </div>
-                </Button>
+                  <div className="text-xs text-[hsl(var(--admin-text-muted))]">{client.email}</div>
+                </button>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </AdminCardContent>
+        </AdminCard>
 
-        {/* Chat Interface */}
         <div className="lg:col-span-3">
           {selectedClient ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5 text-blue-600" />
+            <AdminCard>
+              <AdminCardHeader>
+                <AdminCardTitle icon={<MessageCircle className="h-5 w-5" />}>
                   Chat with {selectedClient.firstName} {selectedClient.lastName}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+                </AdminCardTitle>
+              </AdminCardHeader>
+              <AdminCardContent>
                 <SecureChat userId={selectedClient.id} userType="admin" />
-              </CardContent>
-            </Card>
+              </AdminCardContent>
+            </AdminCard>
           ) : (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <MessageCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Select a Client
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Choose a client from the list to start secure communication
-                </p>
-              </CardContent>
-            </Card>
+            <AdminCard>
+              <AdminCardContent className="py-12">
+                <AdminEmptyState
+                  icon={<MessageCircle className="h-8 w-8" />}
+                  title="Select a Client"
+                  description="Choose a client from the list to start secure communication"
+                />
+              </AdminCardContent>
+            </AdminCard>
           )}
         </div>
       </div>
@@ -1040,12 +887,89 @@ function ClientCommunicationPage({ clientUsers, selectedClientId, setSelectedCli
   );
 }
 
-// Bureau Analysis Page Component
 function BureauAnalysisPage() {
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">Bureau Analysis</h1>
+        <p className="text-[hsl(var(--admin-text-muted))]">Analyze bureau responses and track disputes.</p>
+      </div>
       <BureauResponseAnalysis userId={2} />
     </div>
   );
 }
 
+function UsersRolesPage() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">Users & Roles</h1>
+        <p className="text-[hsl(var(--admin-text-muted))]">Manage user accounts and permissions.</p>
+      </div>
+      <AdminCard>
+        <AdminCardContent className="py-12">
+          <AdminEmptyState
+            icon={<Users className="h-8 w-8" />}
+            title="User Management"
+            description="User and role management features coming soon."
+          />
+        </AdminCardContent>
+      </AdminCard>
+    </div>
+  );
+}
+
+function SystemPage() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">System</h1>
+        <p className="text-[hsl(var(--admin-text-muted))]">System health and configuration.</p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <AdminStatCard
+          label="System Status"
+          value="Online"
+          icon={<Activity className="h-6 w-6" />}
+          color="green"
+        />
+        <AdminStatCard
+          label="API Requests"
+          value="1,247"
+          icon={<TrendingUp className="h-6 w-6" />}
+          color="blue"
+        />
+        <AdminStatCard
+          label="Uptime"
+          value="99.9%"
+          icon={<Clock className="h-6 w-6" />}
+          color="purple"
+        />
+      </div>
+
+      <AdminCard>
+        <AdminCardHeader>
+          <AdminCardTitle icon={<Shield className="h-5 w-5" />}>Integrations Status</AdminCardTitle>
+        </AdminCardHeader>
+        <AdminCardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { name: "Database", status: "Connected", color: "green" },
+              { name: "USPS API", status: "Active", color: "green" },
+              { name: "OpenAI", status: "Active", color: "green" },
+            ].map((item) => (
+              <div key={item.name} className="p-4 rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`w-3 h-3 rounded-full ${item.color === 'green' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                  <span className="font-medium text-white">{item.name}</span>
+                </div>
+                <p className="text-sm text-[hsl(var(--admin-text-muted))]">{item.status}</p>
+              </div>
+            ))}
+          </div>
+        </AdminCardContent>
+      </AdminCard>
+    </div>
+  );
+}
