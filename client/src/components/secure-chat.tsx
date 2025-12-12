@@ -571,7 +571,7 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
             </CardHeader>
             <CardContent>
               {/* Messages Area */}
-              <div className="h-96 overflow-y-auto border rounded-lg p-4 mb-4 space-y-4 bg-gray-50">
+              <div className="h-96 overflow-y-auto border rounded-lg p-4 mb-4 space-y-4 bg-gray-50 dark:bg-gray-800">
                 {isLoading ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-gray-500">Loading messages...</div>
@@ -897,7 +897,7 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {userDocuments.map((doc: any) => (
-                    <Card key={doc.id} className="border-gray-200">
+                    <Card key={doc.id} className="border-gray-200 dark:border-gray-700">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
                         {getFileIcon(doc.fileType)}

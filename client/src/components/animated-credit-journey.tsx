@@ -331,7 +331,7 @@ export function AnimatedCreditJourney({
                       ? "border-purple-300 bg-purple-50 shadow-lg scale-105" 
                       : milestone.isCompleted
                       ? "border-green-200 bg-green-50"
-                      : "border-gray-200 bg-gray-50",
+                      : "border-gray-200 bg-gray-50 dark:bg-gray-800",
                     currentMilestone === index && "ring-2 ring-purple-400 animate-pulse"
                   )}
                   onClick={() => setCurrentMilestone(index)}

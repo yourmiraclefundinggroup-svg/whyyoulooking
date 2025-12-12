@@ -146,7 +146,7 @@ export function BusinessCreditPortal({ userId }: BusinessCreditPortalProps) {
               </div>
 
               {/* Locked Business Credit Platform */}
-              <Card className="border-2 border-gray-300 bg-gray-50">
+              <Card className="border-2 border-gray-300 bg-gray-50 dark:bg-gray-800">
                 <CardContent className="p-6 text-center opacity-60">
                   <Lock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-600 mb-2">
