@@ -88,7 +88,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           {/* ScoreShift Logo Design */}
@@ -97,7 +97,7 @@ export default function Login() {
               <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-3 rounded-2xl shadow-lg transform -rotate-2 hover:rotate-0 transition-transform duration-300">
                 <h1 className="text-3xl font-bold tracking-tight">Score</h1>
               </div>
-              <div className="bg-white text-blue-700 px-6 py-3 rounded-2xl shadow-lg border-2 border-blue-200 transform rotate-2 hover:rotate-0 transition-transform duration-300 -mt-3 ml-4">
+              <div className="bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-400 px-6 py-3 rounded-2xl shadow-lg border-2 border-blue-200 dark:border-blue-700 transform rotate-2 hover:rotate-0 transition-transform duration-300 -mt-3 ml-4">
                 <h1 className="text-3xl font-bold tracking-tight">Shift</h1>
               </div>
             </div>
@@ -109,24 +109,24 @@ export default function Login() {
             <div className="h-1 w-12 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full"></div>
           </div>
           
-          <h2 className="text-xl font-semibold text-blue-900 mb-2">
+          <h2 className="text-xl font-semibold text-blue-900 dark:text-blue-300 mb-2">
             {loginType === "client" ? "Client Portal" : "Admin Portal"}
           </h2>
-          <p className="text-blue-600 mt-2 font-medium">
+          <p className="text-blue-600 dark:text-blue-400 mt-2 font-medium">
             {loginType === "client" 
               ? "Track your credit score transformation" 
               : "Empower clients to shift their credit scores"}
           </p>
         </div>
 
-        <Card>
+        <Card className="dark:bg-gray-900 dark:border-gray-800">
           <CardHeader>
-            <CardTitle className="text-center">Sign In</CardTitle>
+            <CardTitle className="text-center dark:text-white">Sign In</CardTitle>
           </CardHeader>
           <CardContent>
             {/* Portal Type Selector */}
             <div className="mb-6">
-              <Label className="text-sm font-medium text-gray-700 mb-3 block">Portal Type</Label>
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 block">Portal Type</Label>
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   type="button"
@@ -211,7 +211,7 @@ export default function Login() {
           </CardContent>
         </Card>
 
-        <div className="text-center text-sm text-gray-600">
+        <div className="text-center text-sm text-gray-600 dark:text-gray-400">
           <p>Secure credit repair management system</p>
           <p className="mt-1">Protected by enterprise-grade security</p>
         </div>

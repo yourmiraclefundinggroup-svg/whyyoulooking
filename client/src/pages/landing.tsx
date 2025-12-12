@@ -154,22 +154,31 @@ function TestimonialCard({ testimonial, isActive }: { testimonial: typeof testim
 }
 
 function FloatingParticle({ delay, duration, size, left, top, color = "blue" }: { delay: number; duration: number; size: number; left: string; top: string; color?: string }) {
-  const colorClasses = {
-    blue: "from-blue-400 to-blue-600",
-    purple: "from-purple-400 to-purple-600",
-    green: "from-green-400 to-green-600",
-    cyan: "from-cyan-400 to-cyan-600",
+  const colorMap: Record<string, { bg: string; shadow: string }> = {
+    blue: { bg: "bg-blue-500", shadow: "shadow-blue-500/50" },
+    purple: { bg: "bg-purple-500", shadow: "shadow-purple-500/50" },
+    green: { bg: "bg-green-500", shadow: "shadow-green-500/50" },
+    cyan: { bg: "bg-cyan-500", shadow: "shadow-cyan-500/50" },
   };
+  
+  const colors = colorMap[color] || colorMap.blue;
   
   return (
     <motion.div
-      className={`absolute rounded-full bg-gradient-to-br ${colorClasses[color as keyof typeof colorClasses] || colorClasses.blue} shadow-lg`}
-      style={{ width: size, height: size, left, top }}
+      className={`absolute rounded-full ${colors.bg} ${colors.shadow} shadow-xl`}
+      style={{ 
+        width: size, 
+        height: size, 
+        left, 
+        top,
+        boxShadow: `0 0 ${size * 2}px ${size / 2}px currentColor`,
+        zIndex: 5,
+      }}
       animate={{
-        y: [0, -50, 0],
-        x: [0, 25, -25, 0],
-        scale: [1, 1.3, 0.8, 1],
-        opacity: [0.6, 1, 0.6],
+        y: [0, -60, 0],
+        x: [0, 30, -30, 0],
+        scale: [1, 1.4, 0.7, 1],
+        opacity: [0.7, 1, 0.7],
       }}
       transition={{
         duration,
@@ -201,12 +210,12 @@ function InteractiveBackground() {
   }, []);
 
   return (
-    <div ref={containerRef} className="absolute inset-0 -z-10 overflow-hidden">
+    <div ref={containerRef} className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
       {/* Animated gradient mesh */}
       <motion.div
         className="absolute inset-0"
         style={{
-          background: `radial-gradient(circle at ${mousePosition.x * 100}% ${mousePosition.y * 100}%, rgba(59, 130, 246, 0.15) 0%, transparent 50%)`,
+          background: `radial-gradient(circle at ${mousePosition.x * 100}% ${mousePosition.y * 100}%, rgba(59, 130, 246, 0.2) 0%, transparent 50%)`,
         }}
         transition={{ type: "spring", damping: 30 }}
       />
@@ -624,10 +633,10 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section ref={heroRef} className="pt-32 pb-20 px-4 overflow-hidden relative min-h-screen flex items-center">
+      <section ref={heroRef} className="pt-32 pb-20 px-4 relative min-h-screen flex items-center">
         <InteractiveBackground />
         
-        <div className="container mx-auto text-center relative z-10">
+        <div className="container mx-auto text-center relative" style={{ zIndex: 10 }}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={heroInView ? { opacity: 1, y: 0 } : {}}

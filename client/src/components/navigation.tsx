@@ -47,8 +47,8 @@ export function Navigation() {
                     className={cn(
                       "px-1 pb-4 text-sm font-medium border-b-2 transition-colors cursor-pointer",
                       location === item.href
-                        ? "trust-blue border-blue-600"
-                        : "text-gray-500 hover:text-gray-700 border-transparent"
+                        ? "text-blue-600 dark:text-blue-400 border-blue-600 dark:border-blue-400"
+                        : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-transparent"
                     )}
                   >
                     {item.label}
@@ -61,16 +61,16 @@ export function Navigation() {
           <div className="flex items-center space-x-4">
             {/* User Indicator */}
             <div className="hidden sm:flex items-center space-x-2 text-sm">
-              <div className="text-gray-700">
+              <div className="text-gray-700 dark:text-gray-300">
                 {displayUser.firstName} {displayUser.lastName}
               </div>
               {isClientViewer && (
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs">
                   Client View
                 </span>
               )}
               {isAdmin && (
-                <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-xs">
                   Admin
                 </span>
               )}
@@ -109,8 +109,8 @@ export function Navigation() {
                     className={cn(
                       "block px-3 py-2 rounded-md text-base font-medium cursor-pointer",
                       location === item.href
-                        ? "bg-blue-50 trust-blue"
-                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                        ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                        : "text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
                     )}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
