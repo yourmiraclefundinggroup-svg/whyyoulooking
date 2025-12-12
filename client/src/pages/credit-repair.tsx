@@ -340,8 +340,8 @@ export default function CreditRepair() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h4 className="text-sm font-medium text-gray-900 truncate">{issue.title}</h4>
-                            <p className="text-sm text-gray-600 mt-1">{issue.description}</p>
+                            <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{issue.title}</h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{issue.description}</p>
                             <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
                               <span>Creditor: {issue.creditor}</span>
                               {issue.amount && <span>Amount: {formatCurrency(issue.amount)}</span>}
@@ -412,7 +412,7 @@ export default function CreditRepair() {
                   {resolvedIssues.map((issue) => (
                     <div
                       key={issue.id}
-                      className="flex items-start space-x-4 p-4 bg-green-50 rounded-lg border border-green-200"
+                      className="flex items-start space-x-4 p-4 bg-green-50 dark:bg-green-950/50 rounded-lg border border-green-200 dark:border-green-800"
                     >
                       <div className="flex-shrink-0">
                         <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
@@ -420,9 +420,9 @@ export default function CreditRepair() {
                         </div>
                       </div>
                       <div className="flex-1">
-                        <h4 className="text-sm font-medium text-green-900">{issue.title}</h4>
-                        <p className="text-sm text-green-700">{issue.description}</p>
-                        <div className="flex items-center space-x-4 mt-2 text-xs text-green-600">
+                        <h4 className="text-sm font-medium text-green-900 dark:text-green-100">{issue.title}</h4>
+                        <p className="text-sm text-green-700 dark:text-green-300">{issue.description}</p>
+                        <div className="flex items-center space-x-4 mt-2 text-xs text-green-600 dark:text-green-400">
                           <span>Creditor: {issue.creditor}</span>
                           {issue.amount && <span>Amount: {formatCurrency(issue.amount)}</span>}
                           <span>Was impacting: {Math.abs(issue.impact)} points</span>
@@ -459,13 +459,13 @@ export default function CreditRepair() {
                           <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse mt-2"></div>
                         </div>
                         <div className="flex-1">
-                          <h4 className="text-sm font-medium text-blue-900">
+                          <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">
                             {dispute.bureau} - {issue?.title}
                           </h4>
-                          <p className="text-sm text-blue-700">
+                          <p className="text-sm text-blue-700 dark:text-blue-300">
                             {issue?.description}
                           </p>
-                          <div className="flex items-center space-x-4 mt-2 text-xs text-blue-600">
+                          <div className="flex items-center space-x-4 mt-2 text-xs text-blue-600 dark:text-blue-400">
                             <span>Sent: {formatRelativeDate(dispute.dateSent)}</span>
                             <span>Expected Response: {formatRelativeDate(dispute.expectedResponse)}</span>
                             <span>Bureau: {dispute.bureau}</span>
@@ -480,7 +480,7 @@ export default function CreditRepair() {
                 {pendingDisputes.length === 0 && (
                   <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                     <FileText className="h-10 w-10 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Pending Disputes</h3>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Pending Disputes</h3>
                     <p className="text-gray-600 dark:text-gray-300">
                       You don't have any disputes currently pending with credit bureaus.
                     </p>
@@ -506,7 +506,7 @@ export default function CreditRepair() {
                     return (
                       <div
                         key={dispute.id}
-                        className="flex items-start space-x-4 p-4 bg-green-50 rounded-lg border border-green-200"
+                        className="flex items-start space-x-4 p-4 bg-green-50 dark:bg-green-950/50 rounded-lg border border-green-200 dark:border-green-800"
                       >
                         <div className="flex-shrink-0">
                           <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
@@ -514,13 +514,13 @@ export default function CreditRepair() {
                           </div>
                         </div>
                         <div className="flex-1">
-                          <h4 className="text-sm font-medium text-green-900">
+                          <h4 className="text-sm font-medium text-green-900 dark:text-green-100">
                             {dispute.bureau} - {issue?.title}
                           </h4>
-                          <p className="text-sm text-green-700">
+                          <p className="text-sm text-green-700 dark:text-green-300">
                             Successfully resolved and removed from credit report
                           </p>
-                          <div className="flex items-center space-x-4 mt-2 text-xs text-green-600">
+                          <div className="flex items-center space-x-4 mt-2 text-xs text-green-600 dark:text-green-400">
                             <span>Sent: {formatRelativeDate(dispute.dateSent)}</span>
                             <span>Resolved: {formatRelativeDate(dispute.actualResponse || dispute.dateSent)}</span>
                             <span>Bureau: {dispute.bureau}</span>
