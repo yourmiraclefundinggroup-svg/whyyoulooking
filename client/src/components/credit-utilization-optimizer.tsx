@@ -228,7 +228,7 @@ export function CreditUtilizationOptimizer({ userId }: CreditUtilizationOptimize
       </div>
 
       {/* Overall Utilization Summary */}
-      <Card className="border-slate-200 dark:border-slate-700">
+      <Card className="bg-card text-card-foreground border-slate-200 dark:border-slate-700">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
@@ -303,7 +303,7 @@ export function CreditUtilizationOptimizer({ userId }: CreditUtilizationOptimize
 
         <TabsContent value="cards" className="space-y-4">
           {creditCards.length === 0 ? (
-            <Card className="border-slate-200 dark:border-slate-700">
+            <Card className="bg-card text-card-foreground border-slate-200 dark:border-slate-700">
               <CardContent className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <CreditCard className="mx-auto h-12 w-12 text-slate-400 mb-4" />
@@ -371,7 +371,7 @@ export function CreditUtilizationOptimizer({ userId }: CreditUtilizationOptimize
 
         <TabsContent value="alerts" className="space-y-4">
           {alerts.length === 0 ? (
-            <Card className="border-slate-200 dark:border-slate-700">
+            <Card className="bg-card text-card-foreground border-slate-200 dark:border-slate-700">
               <CardContent className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
@@ -440,7 +440,7 @@ export function CreditUtilizationOptimizer({ userId }: CreditUtilizationOptimize
           {optimizationResult ? (
             <>
               {/* Overall Optimization Summary */}
-              <Card className="border-slate-200 dark:border-slate-700">
+              <Card className="bg-card text-card-foreground border-slate-200 dark:border-slate-700">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Brain className="h-5 w-5" />
@@ -532,7 +532,7 @@ export function CreditUtilizationOptimizer({ userId }: CreditUtilizationOptimize
               </div>
             </>
           ) : (
-            <Card className="border-slate-200 dark:border-slate-700">
+            <Card className="bg-card text-card-foreground border-slate-200 dark:border-slate-700">
               <CardContent className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <Brain className="mx-auto h-12 w-12 text-slate-400 mb-4" />

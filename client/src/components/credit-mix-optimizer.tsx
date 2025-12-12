@@ -314,7 +314,7 @@ export function CreditMixOptimizer({ userId }: CreditMixOptimizerProps) {
       {/* Product Detail Modal */}
       {selectedProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-lg">
+          <Card className="bg-card text-card-foreground w-full max-w-lg">
             <CardHeader>
               <CardTitle>{selectedProduct.type} Details</CardTitle>
             </CardHeader>

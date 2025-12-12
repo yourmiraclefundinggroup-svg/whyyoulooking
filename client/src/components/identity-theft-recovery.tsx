@@ -112,7 +112,7 @@ export function IdentityTheftRecovery({ userId }: IdentityTheftRecoveryProps) {
   return (
     <div className="space-y-6">
       {/* Alert Banner */}
-      <Card className="border-red-200 bg-red-50">
+      <Card className="bg-card text-card-foreground border-red-200 bg-red-50">
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-red-600" />
@@ -344,7 +344,7 @@ export function IdentityTheftRecovery({ userId }: IdentityTheftRecoveryProps) {
       {/* Account Detail Modal */}
       {selectedAccount && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-lg">
+          <Card className="bg-card text-card-foreground w-full max-w-lg">
             <CardHeader>
               <CardTitle>Dispute Fraudulent Account</CardTitle>
             </CardHeader>

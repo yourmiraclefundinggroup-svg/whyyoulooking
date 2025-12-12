@@ -182,7 +182,7 @@ export function BureauResponseAnalysis({ userId = 2 }: BureauResponseAnalysisPro
       </div>
 
       {showAnalysisForm && (
-        <Card className="border-slate-200 dark:border-slate-700">
+        <Card className="bg-card text-card-foreground border-slate-200 dark:border-slate-700">
           <CardHeader>
             <CardTitle className="text-slate-900 dark:text-slate-100">Add Bureau Response</CardTitle>
             <CardDescription>
@@ -247,7 +247,7 @@ export function BureauResponseAnalysis({ userId = 2 }: BureauResponseAnalysisPro
 
       <div className="grid gap-6">
         {responses.length === 0 ? (
-          <Card className="border-slate-200 dark:border-slate-700">
+          <Card className="bg-card text-card-foreground border-slate-200 dark:border-slate-700">
             <CardContent className="flex items-center justify-center py-12">
               <div className="text-center">
                 <Brain className="mx-auto h-12 w-12 text-slate-400 mb-4" />
@@ -328,7 +328,7 @@ function ResponseAnalysisCard({ response, onAnalyze, isAnalyzing }: ResponseAnal
   const parsedAnalysis = analysisData ? JSON.parse(analysisData.recommendedActions) : null;
 
   return (
-    <Card className="border-slate-200 dark:border-slate-700">
+    <Card className="bg-card text-card-foreground border-slate-200 dark:border-slate-700">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { motion } from "framer-motion";
 import { DisputeLetterModal } from "@/components/dispute-letter-modal";
 import { USPSTracking } from "@/components/usps-tracking";
 import { AICreditAnalysis } from "@/components/ai-credit-analysis";
@@ -119,7 +120,28 @@ export default function CreditRepair() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+    <>
+      {/* Animated Background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/50 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300" />
+        <motion.div
+          className="absolute top-10 right-10 w-[400px] h-[400px] bg-blue-500/15 dark:bg-blue-500/25 rounded-full blur-[80px]"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute bottom-20 left-10 w-[350px] h-[350px] bg-purple-500/15 dark:bg-purple-500/25 rounded-full blur-[80px]"
+          animate={{ scale: [1.1, 1, 1.1], opacity: [0.4, 0.2, 0.4] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-cyan-500/10 dark:bg-cyan-500/20 rounded-full blur-[60px]"
+          animate={{ x: [-50, 50, -50], y: [-30, 30, -30] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </div>
+      
+      <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 relative">
       {/* Header - More compact for mobile */}
       <div className="mb-6">
         <div className="flex items-center justify-between">
@@ -690,6 +712,7 @@ export default function CreditRepair() {
           issue={selectedIssue}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 }

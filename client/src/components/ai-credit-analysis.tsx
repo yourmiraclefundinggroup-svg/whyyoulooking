@@ -73,7 +73,7 @@ export function AICreditAnalysis({ userId }: AICreditAnalysisProps) {
   };
 
   return (
-    <Card className="border-0 shadow-lg overflow-hidden">
+    <Card className="border-0 shadow-lg overflow-hidden bg-card text-card-foreground">
       <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-3 text-white">
