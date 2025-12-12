@@ -358,13 +358,13 @@ function TestimonialsCarousel() {
 
   return (
     <div 
-      className="relative"
+      className="relative py-6"
       onMouseEnter={() => setIsAutoPlaying(false)}
       onMouseLeave={() => setIsAutoPlaying(true)}
     >
-      <div className="overflow-hidden">
+      <div className="overflow-visible">
         <div className="flex justify-center">
-          <div className="w-full max-w-2xl">
+          <div className="w-full max-w-2xl px-6">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeIndex}
@@ -432,7 +432,7 @@ function PricingCard({ plan, index }: { plan: any; index: number }) {
       transition={{ duration: 0.5, delay: index * 0.15 }}
       className="relative"
     >
-      <Card className={`relative h-full overflow-hidden transition-all duration-300 hover:shadow-2xl ${
+      <Card className={`relative h-full transition-all duration-300 hover:shadow-2xl ${
         plan.popular 
           ? "border-2 border-blue-500 shadow-xl bg-gradient-to-b from-blue-50 to-white dark:from-blue-950/50 dark:to-gray-900 scale-105 z-10" 
           : "border border-gray-200 dark:border-gray-800 hover:-translate-y-2"
@@ -444,9 +444,9 @@ function PricingCard({ plan, index }: { plan: any; index: number }) {
           <motion.div 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="absolute -top-4 left-1/2 transform -translate-x-1/2"
+            className="absolute -top-5 left-1/2 transform -translate-x-1/2 z-20"
           >
-            <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-1.5 shadow-lg">
+            <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-1.5 shadow-lg whitespace-nowrap">
               <Star className="h-3 w-3 mr-1" /> Most Popular
             </Badge>
           </motion.div>
@@ -741,7 +741,7 @@ export default function LandingPage() {
       </section>
 
       {/* Client Reviews / Testimonials Section */}
-      <section className="py-24 px-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-950 relative overflow-hidden">
+      <section className="py-24 px-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-950 relative overflow-visible">
         {/* Background decoration */}
         <div className="absolute inset-0 -z-10">
           <motion.div
@@ -832,7 +832,7 @@ export default function LandingPage() {
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-start">
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-start pt-6">
             {pricingPlans.map((plan, index) => (
               <PricingCard key={plan.name} plan={plan} index={index} />
             ))}
