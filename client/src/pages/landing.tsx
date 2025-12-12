@@ -153,6 +153,172 @@ function TestimonialCard({ testimonial, isActive }: { testimonial: typeof testim
   );
 }
 
+function FloatingParticle({ delay, duration, size, left, top }: { delay: number; duration: number; size: number; left: string; top: string }) {
+  return (
+    <motion.div
+      className="absolute rounded-full bg-gradient-to-br from-blue-400/30 to-purple-400/30 dark:from-blue-500/20 dark:to-purple-500/20"
+      style={{ width: size, height: size, left, top }}
+      animate={{
+        y: [0, -30, 0],
+        x: [0, 15, -15, 0],
+        scale: [1, 1.1, 0.9, 1],
+        opacity: [0.4, 0.7, 0.4],
+      }}
+      transition={{
+        duration,
+        delay,
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
+    />
+  );
+}
+
+function InteractiveBackground() {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setMousePosition({
+          x: (e.clientX - rect.left) / rect.width,
+          y: (e.clientY - rect.top) / rect.height,
+        });
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="absolute inset-0 -z-10 overflow-hidden">
+      {/* Animated gradient mesh */}
+      <motion.div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(circle at ${mousePosition.x * 100}% ${mousePosition.y * 100}%, rgba(59, 130, 246, 0.15) 0%, transparent 50%)`,
+        }}
+        transition={{ type: "spring", damping: 30 }}
+      />
+      
+      {/* Large floating orbs */}
+      <motion.div
+        className="absolute w-[600px] h-[600px] rounded-full"
+        style={{
+          background: "radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 70%)",
+          left: "10%",
+          top: "-20%",
+        }}
+        animate={{
+          x: [0, 50, 0],
+          y: [0, 30, 0],
+          scale: [1, 1.1, 1],
+        }}
+        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+      />
+      
+      <motion.div
+        className="absolute w-[500px] h-[500px] rounded-full"
+        style={{
+          background: "radial-gradient(circle, rgba(147, 51, 234, 0.1) 0%, transparent 70%)",
+          right: "-10%",
+          bottom: "-10%",
+        }}
+        animate={{
+          x: [0, -40, 0],
+          y: [0, -20, 0],
+          scale: [1.1, 1, 1.1],
+        }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <motion.div
+        className="absolute w-[400px] h-[400px] rounded-full"
+        style={{
+          background: "radial-gradient(circle, rgba(34, 197, 94, 0.08) 0%, transparent 70%)",
+          left: "60%",
+          top: "20%",
+        }}
+        animate={{
+          x: [0, 30, -30, 0],
+          y: [0, -40, 0],
+        }}
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* Floating particles */}
+      <FloatingParticle delay={0} duration={6} size={8} left="10%" top="20%" />
+      <FloatingParticle delay={1} duration={8} size={6} left="20%" top="60%" />
+      <FloatingParticle delay={2} duration={7} size={10} left="80%" top="30%" />
+      <FloatingParticle delay={0.5} duration={9} size={5} left="70%" top="70%" />
+      <FloatingParticle delay={1.5} duration={6} size={7} left="30%" top="40%" />
+      <FloatingParticle delay={3} duration={8} size={9} left="85%" top="55%" />
+      <FloatingParticle delay={2.5} duration={7} size={6} left="15%" top="80%" />
+      <FloatingParticle delay={0.8} duration={10} size={8} left="50%" top="15%" />
+      <FloatingParticle delay={1.2} duration={6} size={5} left="40%" top="85%" />
+      <FloatingParticle delay={2.2} duration={9} size={7} left="90%" top="10%" />
+      <FloatingParticle delay={3.5} duration={7} size={6} left="5%" top="45%" />
+      <FloatingParticle delay={1.8} duration={8} size={8} left="60%" top="5%" />
+
+      {/* Animated lines/grid */}
+      <svg className="absolute inset-0 w-full h-full opacity-[0.03] dark:opacity-[0.05]" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+            <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="1" className="text-blue-600"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+      </svg>
+
+      {/* Animated glowing orbs that follow mouse slightly */}
+      <motion.div
+        className="absolute w-32 h-32 rounded-full bg-blue-500/20 blur-3xl"
+        animate={{
+          x: mousePosition.x * 100 - 50,
+          y: mousePosition.y * 100 - 50,
+        }}
+        transition={{ type: "spring", damping: 50, stiffness: 100 }}
+        style={{ left: "40%", top: "30%" }}
+      />
+      
+      <motion.div
+        className="absolute w-24 h-24 rounded-full bg-purple-500/15 blur-2xl"
+        animate={{
+          x: mousePosition.x * -80 + 40,
+          y: mousePosition.y * -60 + 30,
+        }}
+        transition={{ type: "spring", damping: 40, stiffness: 80 }}
+        style={{ right: "30%", bottom: "40%" }}
+      />
+
+      {/* Sparkle effects */}
+      {[...Array(6)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 bg-blue-400 rounded-full"
+          style={{
+            left: `${15 + i * 15}%`,
+            top: `${20 + (i % 3) * 25}%`,
+          }}
+          animate={{
+            opacity: [0, 1, 0],
+            scale: [0, 1.5, 0],
+          }}
+          transition={{
+            duration: 2,
+            delay: i * 0.5,
+            repeat: Infinity,
+            repeatDelay: 3,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function TestimonialsCarousel() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -448,22 +614,10 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section ref={heroRef} className="pt-32 pb-20 px-4 overflow-hidden">
-        <div className="container mx-auto text-center relative">
-          {/* Animated background elements */}
-          <div className="absolute inset-0 -z-10">
-            <motion.div
-              className="absolute top-20 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-              transition={{ duration: 8, repeat: Infinity }}
-            />
-            <motion.div
-              className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"
-              animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.3, 0.5] }}
-              transition={{ duration: 8, repeat: Infinity }}
-            />
-          </div>
-
+      <section ref={heroRef} className="pt-32 pb-20 px-4 overflow-hidden relative min-h-screen flex items-center">
+        <InteractiveBackground />
+        
+        <div className="container mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={heroInView ? { opacity: 1, y: 0 } : {}}
