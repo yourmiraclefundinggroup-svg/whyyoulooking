@@ -177,7 +177,7 @@ function StatCard({ icon: Icon, label, value, trend, color }: {
       whileHover={{ scale: 1.02, y: -4 }}
       transition={{ type: "spring", stiffness: 400 }}
     >
-      <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-900 dark:border dark:border-gray-800">
+      <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-card text-card-foreground">
         <CardContent className="p-5">
           <div className="flex items-center gap-4">
             <div className={`w-12 h-12 ${colors.bg} rounded-xl flex items-center justify-center`}>
@@ -400,7 +400,7 @@ export default function Dashboard() {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             {/* Credit Score Card */}
-            <Card className="border-0 shadow-xl bg-white dark:bg-gray-900 dark:border dark:border-gray-800 overflow-hidden">
+            <Card className="border-0 shadow-xl bg-card text-card-foreground overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10" />
               <CardContent className="p-6 relative">
                 <div className="text-center mb-4">
@@ -422,7 +422,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Goal Progress */}
-            <Card className="border-0 shadow-lg bg-white dark:bg-gray-900 dark:border dark:border-gray-800">
+            <Card className="border-0 shadow-lg bg-card text-card-foreground">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2 text-gray-900 dark:text-white">
                   <Target className="h-5 w-5 text-purple-500" />
@@ -448,7 +448,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Quick Actions */}
-            <Card className="border-0 shadow-lg bg-white dark:bg-gray-900 dark:border dark:border-gray-800">
+            <Card className="border-0 shadow-lg bg-card text-card-foreground">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2 text-gray-900 dark:text-white">
                   <Zap className="h-5 w-5 text-yellow-500" />
@@ -502,7 +502,7 @@ export default function Dashboard() {
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             {/* Credit Issues */}
-            <Card className="border-0 shadow-lg bg-white dark:bg-gray-900 dark:border dark:border-gray-800">
+            <Card className="border-0 shadow-lg bg-card text-card-foreground">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
                   <Shield className="h-5 w-5 text-red-500" />
@@ -532,7 +532,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Active Disputes */}
-            <Card className="border-0 shadow-lg bg-white dark:bg-gray-900 dark:border dark:border-gray-800">
+            <Card className="border-0 shadow-lg bg-card text-card-foreground">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
                   <Mail className="h-5 w-5 text-blue-500" />
@@ -573,7 +573,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Credit Utilization */}
-            <Card className="border-0 shadow-lg bg-white dark:bg-gray-900 dark:border dark:border-gray-800">
+            <Card className="border-0 shadow-lg bg-card text-card-foreground">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
                   <CreditCard className="h-5 w-5 text-purple-500" />

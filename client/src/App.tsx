@@ -45,14 +45,14 @@ function Router() {
   if (user && location === "/") {
     if (user.accessLevel === "ADMIN") {
       return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
           <Navigation />
           <AdminPortal />
         </div>
       );
     } else {
       return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
           <Navigation />
           <CreditRepair />
         </div>
@@ -61,7 +61,7 @@ function Router() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-200">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
       <Switch>
         <Route path="/" component={LandingPage} />
         <Route path="/get-started" component={LeadForm} />
