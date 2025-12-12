@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useUserContext } from "@/hooks/use-user-context";
 import { ScoreShiftLogo } from "@/components/scoreshift-logo";
@@ -74,8 +74,8 @@ export function Navigation() {
                 </span>
               )}
             </div>
-            <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-              <i className="fas fa-user text-gray-600"></i>
+            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+              <User className="h-4 w-4 text-white" />
             </div>
             <Button
               variant="outline"

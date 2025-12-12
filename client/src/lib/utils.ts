@@ -71,17 +71,31 @@ export function getIssueTypeColor(type: string): string {
   }
 }
 
+export function getIssueTypeIconName(type: string): 'X' | 'Clock' | 'Search' | 'AlertCircle' {
+  switch (type) {
+    case 'COLLECTION':
+    case 'CHARGE_OFF':
+      return 'X'
+    case 'LATE_PAYMENT':
+      return 'Clock'
+    case 'INQUIRY':
+      return 'Search'
+    default:
+      return 'AlertCircle'
+  }
+}
+
 export function getIssueTypeIcon(type: string): string {
   switch (type) {
     case 'COLLECTION':
     case 'CHARGE_OFF':
-      return 'fas fa-times'
+      return 'X'
     case 'LATE_PAYMENT':
-      return 'fas fa-clock'
+      return 'Clock'
     case 'INQUIRY':
-      return 'fas fa-search'
+      return 'Search'
     default:
-      return 'fas fa-exclamation'
+      return 'AlertCircle'
   }
 }
 

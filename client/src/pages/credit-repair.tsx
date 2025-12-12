@@ -23,7 +23,22 @@ import { PasswordReset } from "@/components/password-reset";
 import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { formatCurrency, formatRelativeDate, getIssueTypeColor, getIssueTypeIcon, getDisputeStatusColor } from "@/lib/utils";
+import { formatCurrency, formatRelativeDate, getIssueTypeColor, getDisputeStatusColor } from "@/lib/utils";
+import { X, Clock, Search, AlertCircle, CheckCircle } from "lucide-react";
+
+function getIssueIcon(type: string) {
+  switch (type) {
+    case 'COLLECTION':
+    case 'CHARGE_OFF':
+      return <X className="h-4 w-4 text-white" />;
+    case 'LATE_PAYMENT':
+      return <Clock className="h-4 w-4 text-white" />;
+    case 'INQUIRY':
+      return <Search className="h-4 w-4 text-white" />;
+    default:
+      return <AlertCircle className="h-4 w-4 text-white" />;
+  }
+}
 import type { CreditIssue, Dispute } from "@shared/schema";
 import { Shield, LogOut, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
@@ -297,7 +312,7 @@ export default function CreditRepair() {
                     <div className="flex items-start space-x-3 sm:space-x-4">
                       <div className="flex-shrink-0">
                         <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
-                          <i className={`${getIssueTypeIcon(issue.type)} text-white text-sm`}></i>
+                          {getIssueIcon(issue.type)}
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -348,9 +363,11 @@ export default function CreditRepair() {
                 ))}
                 {activeIssues.length === 0 && (
                   <div className="text-center py-8 sm:py-12 text-gray-500">
-                    <i className="fas fa-check-circle text-green-600 text-3xl sm:text-4xl mb-3 sm:mb-4"></i>
-                    <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No Active Issues</h3>
-                    <p className="text-sm sm:text-base text-gray-600">
+                    <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Active Issues</h3>
+                    <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
                       Great! You don't have any active credit issues to address.
                     </p>
                   </div>

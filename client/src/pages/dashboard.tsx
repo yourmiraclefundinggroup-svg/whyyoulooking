@@ -12,9 +12,24 @@ import { ScoreShiftHeroLogo } from "@/components/scoreshift-logo";
 import { SupportChat } from "@/components/support-chat";
 import { OnboardingProgressTracker } from "@/components/onboarding-progress-tracker";
 import { AnimatedCreditJourney } from "@/components/animated-credit-journey";
-import { formatCurrency, formatRelativeDate, getIssueTypeColor, getIssueTypeIcon, getDisputeStatusColor } from "@/lib/utils";
+import { formatCurrency, formatRelativeDate, getIssueTypeColor, getDisputeStatusColor } from "@/lib/utils";
 import { useUserContext } from "@/hooks/use-user-context";
+import { TrendingUp, AlertTriangle, Clock, CheckCircle, FileText, RefreshCw, Calculator, CreditCard, X, Search, AlertCircle } from "lucide-react";
 import type { User, CreditReport, CreditIssue, Dispute, CreditGoal, EducationalContent, CreditBuildingAction } from "@shared/schema";
+
+function getIssueIcon(type: string) {
+  switch (type) {
+    case 'COLLECTION':
+    case 'CHARGE_OFF':
+      return <X className="h-3 w-3 text-white" />;
+    case 'LATE_PAYMENT':
+      return <Clock className="h-3 w-3 text-white" />;
+    case 'INQUIRY':
+      return <Search className="h-3 w-3 text-white" />;
+    default:
+      return <AlertCircle className="h-3 w-3 text-white" />;
+  }
+}
 
 export default function Dashboard() {
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
@@ -127,7 +142,7 @@ export default function Dashboard() {
               </div>
               
               <div className="flex items-center space-x-2">
-                <i className="fas fa-arrow-up text-green-600"></i>
+                <TrendingUp className="h-4 w-4 text-green-600" />
                 <span className="text-sm text-green-600 font-medium">+23 points this month</span>
               </div>
             </CardContent>
@@ -135,49 +150,49 @@ export default function Dashboard() {
 
           {/* Quick Stats */}
           <div className="space-y-4">
-            <Card>
+            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
               <CardContent className="p-4">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                      <i className="fas fa-exclamation-triangle text-red-600 text-sm"></i>
+                    <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
+                      <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
                     </div>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-900">Active Issues</p>
-                    <p className="text-2xl font-bold text-red-600">{activeIssues.length}</p>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Issues</p>
+                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">{activeIssues.length}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
               <CardContent className="p-4">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                      <i className="fas fa-clock text-yellow-600 text-sm"></i>
+                    <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center">
+                      <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                     </div>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-900">Pending Disputes</p>
-                    <p className="text-2xl font-bold text-yellow-600">{pendingDisputes.length}</p>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Disputes</p>
+                    <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{pendingDisputes.length}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
               <CardContent className="p-4">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                      <i className="fas fa-check-circle text-green-600 text-sm"></i>
+                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                     </div>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-900">Items Removed</p>
-                    <p className="text-2xl font-bold text-green-600">{resolvedIssues.length}</p>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Items Removed</p>
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{resolvedIssues.length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -206,23 +221,25 @@ export default function Dashboard() {
                 {activeIssues.map((issue) => (
                   <div
                     key={issue.id}
-                    className={`flex items-start space-x-4 p-4 rounded-lg border ${getIssueTypeColor(issue.type)}`}
+                    data-testid={`card-issue-${issue.id}`}
+                    className={`flex items-start space-x-4 p-4 rounded-xl border ${getIssueTypeColor(issue.type)} hover:shadow-md transition-shadow`}
                   >
                     <div className="flex-shrink-0">
-                      <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center">
-                        <i className={`${getIssueTypeIcon(issue.type)} text-white text-xs`}></i>
+                      <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+                        {getIssueIcon(issue.type)}
                       </div>
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-sm font-medium">{issue.title}</h4>
-                      <p className="text-sm">{issue.description}</p>
-                      <p className="text-xs mt-1">
-                        Impact: {issue.impact} points • Added: {formatRelativeDate(issue.dateAdded)}
+                      <h4 className="text-sm font-semibold">{issue.title}</h4>
+                      <p className="text-sm opacity-80">{issue.description}</p>
+                      <p className="text-xs mt-2 opacity-70">
+                        Impact: <span className="font-medium">{issue.impact} points</span> • Added: {formatRelativeDate(issue.dateAdded)}
                       </p>
                     </div>
                     <Button
                       size="sm"
-                      className="bg-red-600 hover:bg-red-700 text-white"
+                      data-testid={`button-dispute-${issue.id}`}
+                      className="bg-red-600 hover:bg-red-700 text-white shadow-sm"
                       onClick={() => handleDispute(issue)}
                     >
                       Dispute
@@ -230,9 +247,12 @@ export default function Dashboard() {
                   </div>
                 ))}
                 {activeIssues.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <i className="fas fa-check-circle text-green-600 text-2xl mb-2"></i>
-                    <p>No active credit issues found!</p>
+                  <div className="text-center py-12 text-gray-500">
+                    <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                    </div>
+                    <p className="font-medium">No active credit issues found!</p>
+                    <p className="text-sm text-gray-400 mt-1">Your credit report is looking great</p>
                   </div>
                 )}
               </div>
@@ -278,9 +298,12 @@ export default function Dashboard() {
                   </div>
                 ))}
                 {disputes.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <i className="fas fa-file-alt text-gray-400 text-2xl mb-2"></i>
-                    <p>No disputes filed yet</p>
+                  <div className="text-center py-12 text-gray-500">
+                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <FileText className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <p className="font-medium">No disputes filed yet</p>
+                    <p className="text-sm text-gray-400 mt-1">Start disputing negative items to improve your score</p>
                   </div>
                 )}
               </div>
@@ -305,10 +328,10 @@ export default function Dashboard() {
                     }`}
                   >
                     <div className="flex-shrink-0">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                         action.priority === 'HIGH' ? 'bg-green-600' : 'bg-blue-600'
                       }`}>
-                        <i className="fas fa-credit-card text-white text-sm"></i>
+                        <CreditCard className="h-5 w-5 text-white" />
                       </div>
                     </div>
                     <div className="flex-1">
@@ -386,25 +409,28 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
-                className="w-full bg-trust-blue hover:bg-blue-700 flex items-center justify-center space-x-2"
+                className="w-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2"
+                data-testid="button-generate-dispute"
                 onClick={() => setDisputeModalOpen(true)}
               >
-                <i className="fas fa-file-alt"></i>
+                <FileText className="h-4 w-4" />
                 <span>Generate Dispute Letter</span>
               </Button>
               <Button
                 variant="secondary"
-                className="w-full flex items-center justify-center space-x-2"
+                data-testid="button-update-report"
+                className="w-full flex items-center justify-center gap-2"
               >
-                <i className="fas fa-sync-alt"></i>
+                <RefreshCw className="h-4 w-4" />
                 <span>Update Credit Report</span>
               </Button>
               <Button
                 variant="secondary"
-                className="w-full flex items-center justify-center space-x-2"
+                data-testid="button-score-simulator"
+                className="w-full flex items-center justify-center gap-2"
                 onClick={() => setSimulatorModalOpen(true)}
               >
-                <i className="fas fa-calculator"></i>
+                <Calculator className="h-4 w-4" />
                 <span>Score Simulator</span>
               </Button>
             </CardContent>
