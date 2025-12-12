@@ -693,7 +693,7 @@ export function SecureChat({ userId, userType }: SecureChatProps) {
             </CardHeader>
             <CardContent>
               {/* AI Messages Area */}
-              <div className="h-96 overflow-y-auto border rounded-lg p-4 mb-4 space-y-4 bg-gradient-to-b from-purple-50 to-blue-50">
+              <div className="h-96 overflow-y-auto border rounded-lg p-4 mb-4 space-y-4 bg-card">
                 {aiLoading ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-gray-500">Loading AI conversation...</div>

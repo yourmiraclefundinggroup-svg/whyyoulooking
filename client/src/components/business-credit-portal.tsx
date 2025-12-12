@@ -38,7 +38,7 @@ export function BusinessCreditPortal({ userId }: BusinessCreditPortalProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Current Score Display */}
-          <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg">
+          <div className="text-center p-6 bg-card rounded-lg">
             <div className="text-4xl font-bold text-blue-600 mb-2">
               {currentScore}
             </div>
@@ -87,7 +87,7 @@ export function BusinessCreditPortal({ userId }: BusinessCreditPortalProps) {
               </div>
 
               {/* Call to Action */}
-              <Card className="border-2 border-green-300 bg-gradient-to-r from-green-50 to-blue-50">
+              <Card className="border-2 border-green-300 bg-card">
                 <CardContent className="p-6 text-center">
                   <Building2 className="h-12 w-12 text-green-600 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-800 mb-2">
