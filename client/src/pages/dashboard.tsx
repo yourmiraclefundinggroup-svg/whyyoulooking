@@ -14,7 +14,8 @@ import { OnboardingProgressTracker } from "@/components/onboarding-progress-trac
 import { AnimatedCreditJourney } from "@/components/animated-credit-journey";
 import { formatCurrency, formatRelativeDate, getIssueTypeColor, getDisputeStatusColor } from "@/lib/utils";
 import { useUserContext } from "@/hooks/use-user-context";
-import { TrendingUp, AlertTriangle, Clock, CheckCircle, FileText, RefreshCw, Calculator, CreditCard, X, Search, AlertCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { TrendingUp, AlertTriangle, Clock, CheckCircle, FileText, RefreshCw, Calculator, CreditCard, X, Search, AlertCircle, Sparkles } from "lucide-react";
 import type { User, CreditReport, CreditIssue, Dispute, CreditGoal, EducationalContent, CreditBuildingAction } from "@shared/schema";
 
 function getIssueIcon(type: string) {
@@ -81,29 +82,42 @@ export default function Dashboard() {
     <>
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       {/* Hero Section with ScoreShift Branding */}
-      <div className="mb-8 bg-gradient-to-r from-blue-50 to-white rounded-2xl p-6 border border-blue-100">
+      <motion.div 
+        className="mb-8 bg-gradient-to-r from-blue-50 via-white to-purple-50 dark:from-blue-950/50 dark:via-gray-900 dark:to-purple-950/50 rounded-2xl p-6 border border-blue-100 dark:border-blue-900 shadow-lg"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="flex flex-col md:flex-row items-center justify-between">
           <div className="text-center md:text-left mb-4 md:mb-0">
             <ScoreShiftHeroLogo className="mb-4" />
-            <h2 className="text-2xl font-bold leading-7 text-blue-900 sm:text-3xl">
+            <h2 className="text-2xl font-bold leading-7 text-blue-900 dark:text-blue-100 sm:text-3xl">
               Welcome back, {user?.firstName || 'User'}!
             </h2>
-            <p className="mt-2 text-blue-600 font-medium">Transform your credit score with AI-powered insights</p>
+            <p className="mt-2 text-blue-600 dark:text-blue-400 font-medium flex items-center">
+              <Sparkles className="h-4 w-4 mr-2" />
+              Transform your credit score with AI-powered insights
+            </p>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-700">{creditReport?.creditScore || '---'}</div>
-              <div className="text-sm text-blue-600">Current Score</div>
-            </div>
-            <div className="h-12 w-px bg-blue-200"></div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">+23</div>
-              <div className="text-sm text-green-600">This Month</div>
-            </div>
+          <div className="flex items-center space-x-6">
+            <motion.div 
+              className="text-center bg-white dark:bg-gray-800 rounded-xl px-6 py-3 shadow-md"
+              whileHover={{ scale: 1.05 }}
+            >
+              <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">{creditReport?.creditScore || '---'}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Current Score</div>
+            </motion.div>
+            <motion.div 
+              className="text-center bg-green-50 dark:bg-green-900/30 rounded-xl px-6 py-3 shadow-md border border-green-200 dark:border-green-800"
+              whileHover={{ scale: 1.05 }}
+            >
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">+23</div>
+              <div className="text-sm text-green-600 dark:text-green-400">This Month</div>
+            </motion.div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Onboarding Progress Tracker */}
       <div className="mb-8">
@@ -123,81 +137,79 @@ export default function Dashboard() {
       {/* Credit Score Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Primary Credit Score Card */}
-          <Card className="md:col-span-2">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Current Credit Score</h3>
-                <span className="text-xs text-gray-500">
-                  Last updated: {creditReport ? formatRelativeDate(creditReport.lastUpdated) : 'N/A'}
-                </span>
-              </div>
-              
-              <div className="flex items-center justify-center mb-6">
-                {creditReport && <CreditScoreCircle score={creditReport.creditScore} />}
-              </div>
-              
-              <div className="flex justify-between text-sm mb-4">
-                <span className="text-gray-500">Poor (300-579)</span>
-                <span className="text-gray-500">Excellent (740-850)</span>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="h-4 w-4 text-green-600" />
-                <span className="text-sm text-green-600 font-medium">+23 points this month</span>
-              </div>
-            </CardContent>
-          </Card>
+          <motion.div 
+            className="md:col-span-2"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <Card className="border-0 shadow-xl bg-white dark:bg-gray-900 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5" />
+              <CardContent className="p-6 relative">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Current Credit Score</h3>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
+                    Updated: {creditReport ? formatRelativeDate(creditReport.lastUpdated) : 'N/A'}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-center mb-6">
+                  {creditReport && <CreditScoreCircle score={creditReport.creditScore} />}
+                </div>
+                
+                <div className="flex justify-between text-sm mb-4">
+                  <span className="text-gray-500 dark:text-gray-400">Poor (300-579)</span>
+                  <span className="text-gray-500 dark:text-gray-400">Excellent (740-850)</span>
+                </div>
+                
+                <motion.div 
+                  className="flex items-center space-x-2 bg-green-50 dark:bg-green-900/30 p-3 rounded-lg"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <span className="text-sm text-green-600 dark:text-green-400 font-medium">+23 points this month</span>
+                </motion.div>
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Quick Stats */}
-          <div className="space-y-4">
-            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
-                      <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+          <motion.div 
+            className="space-y-4"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            {[
+              { icon: AlertTriangle, label: "Active Issues", value: activeIssues.length, color: "red", bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-600 dark:text-red-400" },
+              { icon: Clock, label: "Pending Disputes", value: pendingDisputes.length, color: "yellow", bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-600 dark:text-yellow-400" },
+              { icon: CheckCircle, label: "Items Removed", value: resolvedIssues.length, color: "green", bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-600 dark:text-green-400" }
+            ].map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ type: "spring", stiffness: 400 }}
+              >
+                <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-900 cursor-pointer">
+                  <CardContent className="p-4">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <div className={`w-12 h-12 ${stat.bg} rounded-xl flex items-center justify-center`}>
+                          <stat.icon className={`h-6 w-6 ${stat.text}`} />
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.label}</p>
+                        <p className={`text-3xl font-bold ${stat.text}`}>{stat.value}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Issues</p>
-                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">{activeIssues.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center">
-                      <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Disputes</p>
-                    <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{pendingDisputes.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
-                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Items Removed</p>
-                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{resolvedIssues.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </div>
 
