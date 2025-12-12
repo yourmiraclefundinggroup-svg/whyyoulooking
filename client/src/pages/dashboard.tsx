@@ -36,32 +36,66 @@ import type { CreditReport, CreditIssue, Dispute, CreditGoal } from "@shared/sch
 function InteractiveDashboardBackground() {
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-gray-950 dark:via-blue-950/20 dark:to-purple-950/10 transition-colors duration-300" />
+      {/* Base gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/50 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300" />
       
+      {/* Animated orbs - more visible in dark mode */}
       <motion.div
-        className="absolute top-20 right-20 w-96 h-96 bg-blue-400/10 dark:bg-blue-500/5 rounded-full blur-3xl"
+        className="absolute top-10 right-10 w-[500px] h-[500px] bg-blue-500/20 dark:bg-blue-500/30 rounded-full blur-[100px]"
         animate={{ 
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3],
+          scale: [1, 1.3, 1],
+          opacity: [0.4, 0.7, 0.4],
+        }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute bottom-10 left-10 w-[400px] h-[400px] bg-purple-500/20 dark:bg-purple-500/30 rounded-full blur-[100px]"
+        animate={{ 
+          scale: [1.2, 1, 1.2],
+          opacity: [0.5, 0.3, 0.5],
         }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute bottom-20 left-20 w-80 h-80 bg-purple-400/10 dark:bg-purple-500/5 rounded-full blur-3xl"
+        className="absolute top-1/2 left-1/3 w-[300px] h-[300px] bg-cyan-500/15 dark:bg-cyan-500/25 rounded-full blur-[80px]"
         animate={{ 
-          scale: [1.2, 1, 1.2],
-          opacity: [0.4, 0.2, 0.4],
+          x: [-50, 100, -50],
+          y: [-30, 50, -30],
+          scale: [1, 1.2, 1],
+        }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute bottom-1/3 right-1/4 w-[250px] h-[250px] bg-green-500/10 dark:bg-green-500/20 rounded-full blur-[60px]"
+        animate={{ 
+          x: [0, -80, 0],
+          y: [0, 60, 0],
         }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
       />
-      <motion.div
-        className="absolute top-1/2 left-1/2 w-64 h-64 bg-green-400/5 dark:bg-green-500/3 rounded-full blur-3xl"
-        animate={{ 
-          x: [-100, 100, -100],
-          y: [-50, 50, -50],
-        }}
-        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-      />
+      
+      {/* Floating particles */}
+      {[...Array(8)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-2 h-2 bg-blue-400 dark:bg-blue-300 rounded-full"
+          style={{
+            left: `${10 + i * 12}%`,
+            top: `${20 + (i % 4) * 20}%`,
+          }}
+          animate={{
+            y: [0, -30, 0],
+            opacity: [0.3, 0.8, 0.3],
+            scale: [1, 1.5, 1],
+          }}
+          transition={{
+            duration: 4 + i * 0.5,
+            delay: i * 0.3,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
     </div>
   );
 }
@@ -143,14 +177,14 @@ function StatCard({ icon: Icon, label, value, trend, color }: {
       whileHover={{ scale: 1.02, y: -4 }}
       transition={{ type: "spring", stiffness: 400 }}
     >
-      <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+      <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-900 dark:border dark:border-gray-800">
         <CardContent className="p-5">
           <div className="flex items-center gap-4">
             <div className={`w-12 h-12 ${colors.bg} rounded-xl flex items-center justify-center`}>
               <Icon className={`h-6 w-6 ${colors.icon}`} />
             </div>
             <div className="flex-1">
-              <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{label}</p>
               <p className={`text-2xl font-bold ${colors.text}`}>{value}</p>
             </div>
             {trend && (
@@ -366,7 +400,7 @@ export default function Dashboard() {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             {/* Credit Score Card */}
-            <Card className="border-0 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm overflow-hidden">
+            <Card className="border-0 shadow-xl bg-white dark:bg-gray-900 dark:border dark:border-gray-800 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10" />
               <CardContent className="p-6 relative">
                 <div className="text-center mb-4">
@@ -388,7 +422,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Goal Progress */}
-            <Card className="border-0 shadow-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+            <Card className="border-0 shadow-lg bg-white dark:bg-gray-900 dark:border dark:border-gray-800">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2 text-gray-900 dark:text-white">
                   <Target className="h-5 w-5 text-purple-500" />
@@ -414,7 +448,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Quick Actions */}
-            <Card className="border-0 shadow-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+            <Card className="border-0 shadow-lg bg-white dark:bg-gray-900 dark:border dark:border-gray-800">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2 text-gray-900 dark:text-white">
                   <Zap className="h-5 w-5 text-yellow-500" />
@@ -468,7 +502,7 @@ export default function Dashboard() {
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             {/* Credit Issues */}
-            <Card className="border-0 shadow-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+            <Card className="border-0 shadow-lg bg-white dark:bg-gray-900 dark:border dark:border-gray-800">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
                   <Shield className="h-5 w-5 text-red-500" />
@@ -498,7 +532,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Active Disputes */}
-            <Card className="border-0 shadow-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+            <Card className="border-0 shadow-lg bg-white dark:bg-gray-900 dark:border dark:border-gray-800">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
                   <Mail className="h-5 w-5 text-blue-500" />
@@ -539,7 +573,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Credit Utilization */}
-            <Card className="border-0 shadow-lg bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+            <Card className="border-0 shadow-lg bg-white dark:bg-gray-900 dark:border dark:border-gray-800">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
                   <CreditCard className="h-5 w-5 text-purple-500" />
