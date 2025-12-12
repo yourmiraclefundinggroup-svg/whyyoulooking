@@ -1,0 +1,218 @@
+You are a senior full-stack engineer + product designer. Your job is to COMPLETELY REDESIGN my existing Admin Portal UI (NOT the backend logic), while keeping every existing feature, route, permission rule, and API integration working.
+
+GOALS
+
+Total Dark Mode: true “ink black” UI (#05060A / near-black), high contrast, premium fintech look, no gray washed theme.
+
+Neat + Visible Tabs: every admin tab must be clearly visible, logically grouped, and easy to scan. No hidden features. Add a left sidebar + top command bar.
+
+Interactive + Animated Background: subtle motion background (particles / gradient mesh / noise + parallax) that does NOT hurt performance. Must respect prefers-reduced-motion.
+
+Everything Still Works: do not break any API calls, forms, CRUD actions, uploads, auth, role checks, analytics, notifications, etc.
+
+Thorough QA Check: add automated checks + manual verification list and fix all issues found.
+
+NON-NEGOTIABLES
+
+Keep all existing backend endpoints unchanged.
+
+Keep existing database schema unchanged.
+
+Keep all existing environment variables unchanged.
+
+Preserve all admin features/tabs/functions. If anything is missing, it’s a bug.
+
+Do not remove validations, permission checks, error handling, or logging.
+
+Any redesign that changes behavior must be corrected back to the original behavior.
+
+STEP 1 — AUDIT THE CURRENT ADMIN PORTAL
+
+Scan the repository and identify:
+
+all admin routes/pages
+
+all admin tabs/sections
+
+role/permission checks
+
+API calls and data models used by the admin portal
+
+reusable UI components
+
+Produce a map like:
+
+Admin Tabs: [TabName] → [Route] → [Key components] → [API endpoints]
+
+If you find duplicate/outdated UI components, mark them for consolidation (UI only).
+
+STEP 2 — DESIGN SYSTEM (CREATE ONCE, USE EVERYWHERE)
+
+Implement a consistent design system:
+
+Layout: fixed left sidebar, collapsible, with grouped navigation + icons; top bar with search/command palette + notifications + user menu.
+
+Typography: clear hierarchy (H1, H2, body, label). Ensure labels are readable.
+
+Spacing: 8px grid. Cards and tables must have breathing room.
+
+Components:
+
+Buttons (primary/secondary/ghost/destructive)
+
+Inputs (text/select/date/file upload)
+
+Tabs + breadcrumbs
+
+Cards
+
+Tables with sticky header, row hover, sorting, filtering
+
+Modals + drawers
+
+Toast notifications
+
+Loading skeletons
+
+Empty states
+
+Confirm dialogs for destructive actions
+
+Accessibility: keyboard navigation, focus rings, ARIA labels, contrast compliance.
+
+If the project uses React, use shadcn/ui + Tailwind. If it uses Next.js, use App Router conventions. If it is another stack, use the closest equivalent and keep it consistent.
+
+STEP 3 — INFORMATION ARCHITECTURE (MAKE TABS NEAT)
+
+Reorganize all admin tabs into these groups (DO NOT REMOVE ANY):
+
+Dashboard (overview, KPIs, recent activity)
+
+Leads / Clients (list, details, status, notes)
+
+Applications / Deals (pipeline, underwriting, documents)
+
+Brokers / Partners (broker list, broker detail)
+
+Messages (SMS, email threads, templates, automations)
+
+Documents (uploads, verification, required docs, storage)
+
+Users & Roles (accounts, permissions, audit logs)
+
+Settings (integrations, webhooks, API keys, branding)
+
+System (logs, jobs/queues, health checks)
+
+If my current admin has different tabs, map them into the correct group and preserve exact functionality.
+
+STEP 4 — ANIMATED BACKGROUND (SUBTLE + PERFORMANCE SAFE)
+
+Add a background animation that is:
+
+subtle (not distracting)
+
+GPU-friendly
+
+disabled when prefers-reduced-motion is on
+
+doesn’t interfere with scrolling or clicking
+Options:
+
+CSS animated gradient mesh + noise overlay
+
+lightweight canvas particles in a single component behind content
+
+parallax noise texture layer
+
+Implement it as <AnimatedBackdrop /> placed behind the admin layout, with a toggle in settings: “Background motion: On/Off”.
+
+STEP 5 — REFACTOR UI WITHOUT BREAKING LOGIC
+
+Rules:
+
+Move existing logic into hooks/services and keep function names the same where possible.
+
+Do not change request/response shapes.
+
+Do not change auth flow.
+
+Replace messy pages with clean components:
+
+<AdminLayout />
+
+<SidebarNav />
+
+<TopBar />
+
+<DataTable />
+
+<DetailDrawer />
+
+<FormModal />
+
+Ensure all forms still submit correctly and all tables still fetch/display correctly.
+
+STEP 6 — ADD “HEALTH CHECK” + QA
+
+Create a /admin/system/health page that checks:
+
+API connectivity (ping key endpoints)
+
+authentication state
+
+database access (via existing backend health endpoint if present)
+
+storage/doc upload test (safe dry-run)
+
+webhooks/integrations status (if applicable)
+
+Automated tests (minimum)
+
+Add Playwright (or Cypress) E2E tests for:
+
+login → admin dashboard loads
+
+each admin tab renders
+
+one CRUD flow (create/update/delete) for at least 2 major entities
+
+document upload flow (if exists)
+
+permission/role restriction test
+
+Add unit tests where already used (don’t introduce a new framework unless necessary)
+
+Manual verification checklist
+
+Generate a checklist and run through it. Fix everything you find.
+
+STEP 7 — DELIVERABLES
+
+When finished, output:
+
+A list of every admin tab and its status: ✅ working / ❌ fixed
+
+Screenshots (if possible) or a description of each major screen
+
+Test results (pass/fail) and how to run them
+
+Any required environment variables (should be NONE new)
+
+A final “Regression Summary” noting what changed (UI only) and confirming all functions work.
+
+CODING RULES
+
+Keep code clean, typed if TypeScript exists.
+
+No console spam; use a logger wrapper if needed.
+
+Handle loading/error/empty states everywhere.
+
+Keep responsiveness: desktop + tablet + mobile admin view.
+
+Use optimistic UI where safe (with rollback on failure).
+
+Ensure tables are fast: pagination/virtualization if large lists exist.
+
+START NOW: audit the repo first, then implement redesign incrementally with working checkpoints. Do not stop until every tab is verified working and the UI is fully redesigned.

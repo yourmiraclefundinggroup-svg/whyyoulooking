@@ -63,6 +63,26 @@
   --ring: 207 70% 60%; /* #3B82F6 */
 }
 
+/* Admin Portal - Ink Black Premium Theme */
+.admin-theme {
+  --admin-bg: 230 15% 3%; /* True ink black #05060A */
+  --admin-bg-elevated: 230 15% 6%; /* Slightly elevated #0D0E12 */
+  --admin-sidebar: 230 15% 5%; /* Sidebar #08090D */
+  --admin-card: 230 15% 8%; /* Card surface #12131A */
+  --admin-card-hover: 230 15% 10%; /* Card hover #181A22 */
+  --admin-border: 230 10% 15%; /* Subtle border #222530 */
+  --admin-border-accent: 230 10% 20%; /* Accent border #2E3240 */
+  --admin-text: 0 0% 98%; /* Primary text #FAFAFA */
+  --admin-text-muted: 230 10% 55%; /* Muted text #888AA0 */
+  --admin-text-subtle: 230 10% 40%; /* Subtle text #606275 */
+  --admin-accent: 25 95% 55%; /* Orange accent #F5820B */
+  --admin-accent-hover: 25 95% 60%; /* Orange hover #F79624 */
+  --admin-success: 142 70% 45%; /* Success green #2DD36F */
+  --admin-warning: 38 92% 50%; /* Warning amber #F59E0B */
+  --admin-danger: 0 84% 60%; /* Danger red #EF4444 */
+  --admin-info: 210 100% 60%; /* Info blue #3B82F6 */
+}
+
 @layer base {
   * {
     @apply border-border;
