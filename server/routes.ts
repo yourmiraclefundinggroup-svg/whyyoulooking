@@ -14,6 +14,7 @@ import OpenAI from "openai";
 import Stripe from "stripe";
 import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
+import * as pdfParse from "pdf-parse";
 import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users } from "@shared/schema";
 import { z } from "zod";
 
@@ -4679,66 +4680,90 @@ Please contact this lead within 24 hours.
       if (fileContent && process.env.OPENAI_API_KEY) {
         (async () => {
           try {
-            console.log("Starting AI parsing for upload:", upload.id);
+            console.log("Starting AI parsing for upload:", upload.id, "Format:", restData.sourceFormat);
             
-            const parsePrompt = `You are a credit report parser. Analyze this credit report content and extract all data in JSON format.
+            const parseSystemPrompt = `You are an expert credit report parser. Extract structured data from credit reports accurately. 
 
-Extract the following structure:
+ALWAYS respond with ONLY valid JSON in this exact structure:
 {
-  "creditScore": number or null,
+  "creditScore": <number or null>,
   "accounts": [
     {
-      "creditorName": "string",
-      "accountNumberMasked": "last 4 digits or partial",
-      "accountType": "Credit Card, Auto Loan, Mortgage, etc",
-      "status": "Open, Closed, Derogatory, etc",
-      "balance": number or null,
-      "creditLimit": number or null,
-      "paymentStatus": "Current, Late 30, Late 60, Late 90, etc",
-      "dateOpened": "YYYY-MM-DD or null",
-      "derogatoryFlags": ["Late Payment", "Collection", "Charge-off", etc],
-      "remarks": "any remarks or null"
+      "creditorName": "<string>",
+      "accountNumberMasked": "<last 4 digits or null>",
+      "accountType": "<Credit Card, Auto Loan, Mortgage, Personal Loan, etc>",
+      "status": "<Open, Closed, Derogatory, Charged-off, etc>",
+      "balance": <number or null>,
+      "creditLimit": <number or null>,
+      "paymentStatus": "<Current, Late 30, Late 60, Late 90, Collection, etc>",
+      "dateOpened": "<YYYY-MM-DD or null>",
+      "derogatoryFlags": ["<Late Payment>", "<Collection>", "<Charge-off>"],
+      "remarks": "<any remarks or null>"
     }
   ],
   "inquiries": [
     {
-      "creditorName": "string",
-      "inquiryDate": "YYYY-MM-DD or null",
-      "inquiryType": "hard" or "soft"
+      "creditorName": "<string>",
+      "inquiryDate": "<YYYY-MM-DD or null>",
+      "inquiryType": "<hard or soft>"
     }
   ],
   "collections": [
     {
-      "agencyName": "collection agency name",
-      "originalCreditor": "original creditor name or null",
-      "amount": number or null,
-      "dateOpened": "YYYY-MM-DD or null",
-      "status": "Open, Paid, etc"
+      "agencyName": "<collection agency name>",
+      "originalCreditor": "<original creditor name or null>",
+      "amount": <number or null>,
+      "dateOpened": "<YYYY-MM-DD or null>",
+      "status": "<Open, Paid, etc>"
     }
   ],
   "publicRecords": [
     {
-      "recordType": "Bankruptcy, Judgment, Tax Lien, etc",
-      "court": "court name or null",
-      "dateFiled": "YYYY-MM-DD or null",
-      "status": "Filed, Dismissed, Discharged, etc"
+      "recordType": "<Bankruptcy, Judgment, Tax Lien, etc>",
+      "court": "<court name or null>",
+      "dateFiled": "<YYYY-MM-DD or null>",
+      "status": "<Filed, Dismissed, Discharged, etc>"
     }
   ]
 }
 
-IMPORTANT: Return ONLY valid JSON, no markdown formatting or explanation. If you cannot find data for a section, return an empty array.
+Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a section has no data, use an empty array [].`;
 
-Credit Report Content (base64 decoded text):
-${Buffer.from(fileContent, 'base64').toString('utf-8').substring(0, 50000)}`;
-
+            let textContent: string;
+            const sourceFormat = restData.sourceFormat || 'pdf';
+            
+            // Extract text from file based on format
+            if (sourceFormat === 'pdf') {
+              // Use pdf-parse to extract text from PDF
+              try {
+                const pdfBuffer = Buffer.from(fileContent, 'base64');
+                const pdfData = await (pdfParse as any).default(pdfBuffer);
+                textContent = pdfData.text;
+                console.log("PDF text extracted, length:", textContent.length);
+              } catch (pdfErr: any) {
+                throw new Error(`Failed to parse PDF: ${pdfErr.message}`);
+              }
+            } else {
+              // For text/html/csv formats, decode as text
+              try {
+                textContent = Buffer.from(fileContent, 'base64').toString('utf-8');
+              } catch (decodeErr) {
+                throw new Error("Failed to decode file content as text");
+              }
+            }
+            
+            if (!textContent || textContent.trim().length < 50) {
+              throw new Error("Extracted text is too short or empty - unable to parse credit report");
+            }
+            
             const aiResponse = await openai.chat.completions.create({
               model: "gpt-4o",
               messages: [
-                { role: "system", content: "You are an expert credit report parser. Extract structured data from credit reports accurately." },
-                { role: "user", content: parsePrompt }
+                { role: "system", content: parseSystemPrompt },
+                { role: "user", content: `Extract all credit report data from this content:\n\n${textContent.substring(0, 50000)}` }
               ],
               max_tokens: 4000,
-              temperature: 0.2
+              temperature: 0.1
             });
 
             const responseContent = aiResponse.choices[0]?.message?.content || "{}";
