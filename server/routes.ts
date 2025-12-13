@@ -2939,7 +2939,7 @@ END OF DOCUMENT
 
       const { userId, fileName, fileData, fileType, description } = req.body;
       
-      // Store the uploaded file info (in production, you'd save to cloud storage)
+      // Store the uploaded file info
       const uploadData = {
         id: Date.now(),
         userId: parseInt(userId),
@@ -2952,44 +2952,101 @@ END OF DOCUMENT
         processed: false
       };
 
-      // For demo purposes, return a mock AI analysis
-      const aiAnalysis = {
-        creditScore: Math.floor(Math.random() * 200) + 600, // Random score 600-800
-        issuesFound: [
-          {
-            type: 'COLLECTION',
-            creditor: 'Medical Collections LLC',
-            amount: Math.floor(Math.random() * 5000) + 500,
-            description: 'Medical collection account affecting credit score',
-            impact: 'HIGH',
-            suggestedAction: 'Dispute for lack of verification'
-          },
-          {
-            type: 'LATE_PAYMENT',
-            creditor: 'Chase Bank',
-            description: '30-day late payment reported',
-            impact: 'MEDIUM',
-            suggestedAction: 'Request goodwill letter removal'
-          },
-          {
-            type: 'INQUIRY',
-            creditor: 'Capital One',
-            description: 'Hard inquiry from unauthorized credit check',
-            impact: 'LOW',
-            suggestedAction: 'Dispute as unauthorized inquiry'
-          }
-        ],
-        recommendations: [
-          'Focus on collection account removal first - highest impact',
-          'Send goodwill letters for late payments',
-          'Dispute hard inquiries not authorized by client'
-        ]
-      };
+      // Use OpenAI Vision API to analyze the actual credit report content
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ 
+          message: "OpenAI API key not configured. Please add your API key for AI credit report analysis." 
+        });
+      }
+
+      let aiAnalysis;
+      
+      try {
+        // Use GPT-4o vision to analyze the credit report image/PDF
+        const isImage = fileType.startsWith('image/');
+        const mimeType = fileType || 'image/png';
+        
+        const analysisPrompt = `You are a professional credit repair specialist analyzing a credit report. Analyze this credit report image/document carefully and extract:
+
+1. The credit score if visible
+2. ALL negative items including:
+   - Collections (creditor name, amount, date opened)
+   - Late payments (creditor, dates, severity)
+   - Charge-offs (creditor, amount)
+   - Hard inquiries (company name, date)
+   - Public records (bankruptcies, judgments, liens)
+   - High utilization accounts
+
+For EACH issue found, provide:
+- The exact creditor/company name as shown on the report
+- The exact amount if shown
+- A specific description based on what you see
+- Impact level (HIGH/MEDIUM/LOW)
+- A specific dispute strategy for that exact item
+
+Return your analysis as valid JSON in this exact format:
+{
+  "creditScore": <number or null if not visible>,
+  "issuesFound": [
+    {
+      "type": "COLLECTION" | "LATE_PAYMENT" | "CHARGE_OFF" | "INQUIRY" | "PUBLIC_RECORD" | "HIGH_UTILIZATION",
+      "creditor": "<exact creditor name from report>",
+      "amount": <number or null>,
+      "description": "<specific description of what you see>",
+      "impact": "HIGH" | "MEDIUM" | "LOW",
+      "suggestedAction": "<specific dispute strategy for this item>"
+    }
+  ],
+  "recommendations": ["<specific recommendation based on findings>"]
+}
+
+Be thorough - extract EVERY negative item you can see. Use the EXACT names and amounts from the report.`;
+
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: analysisPrompt },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:${mimeType};base64,${fileData}`,
+                    detail: "high"
+                  }
+                }
+              ]
+            }
+          ],
+          max_tokens: 4000,
+          temperature: 0.3
+        });
+
+        const aiResponseText = response.choices[0]?.message?.content || '';
+        
+        // Parse the JSON from the response
+        const jsonMatch = aiResponseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          aiAnalysis = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error("Could not parse AI response");
+        }
+
+      } catch (aiError: any) {
+        console.error("AI analysis error:", aiError);
+        
+        // Fallback if AI fails - return error message
+        return res.status(500).json({ 
+          error: "Failed to analyze credit report. Please ensure the image is clear and try again.",
+          details: aiError.message
+        });
+      }
 
       res.json({
         upload: uploadData,
         aiAnalysis,
-        message: 'Credit report analyzed successfully. AI recommendations generated.'
+        message: 'Credit report analyzed successfully using AI. Custom recommendations generated based on your actual report.'
       });
 
     } catch (error) {
@@ -3009,28 +3066,99 @@ END OF DOCUMENT
 
       const { issue, clientName, clientAddress } = req.body;
       
-      // Generate dispute letter based on issue type
-      const disputeLetter = generateDemoDisputeLetter({
-        issueType: issue.type,
-        creditor: issue.creditor,
-        amount: issue.amount,
-        description: issue.description,
-        bureau: 'EXPERIAN', // Default to Experian
-        dateAdded: new Date(),
-        impact: 1,
-        currentDate: new Date().toLocaleDateString()
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ 
+          message: "OpenAI API key not configured for AI dispute letter generation." 
+        });
+      }
+
+      // Generate a truly custom dispute letter using AI based on the specific issue
+      const letterPrompt = `You are a professional credit repair specialist. Generate a highly personalized, legally-compliant dispute letter for the following SPECIFIC credit issue:
+
+CLIENT NAME: ${clientName}
+${clientAddress ? `CLIENT ADDRESS: ${clientAddress}` : ''}
+
+ISSUE DETAILS:
+- Type: ${issue.type}
+- Creditor/Company: ${issue.creditor}
+- Amount: ${issue.amount ? '$' + issue.amount.toLocaleString() : 'Not specified'}
+- Description: ${issue.description}
+- Suggested Action: ${issue.suggestedAction}
+
+Generate a professional dispute letter that:
+1. Is addressed to the appropriate credit bureau (Experian, Equifax, or TransUnion)
+2. Specifically mentions the EXACT creditor name "${issue.creditor}" 
+3. References the EXACT amount if provided
+4. Uses the specific dispute strategy: ${issue.suggestedAction}
+5. Cites relevant FCRA sections (§609, §611, §623)
+6. Includes proper legal language for maximum effectiveness
+7. Is personalized to this specific situation, NOT a generic template
+8. Requests verification, validation, or deletion as appropriate
+9. Sets a clear timeline for response (30 days per FCRA)
+
+Format as a complete, ready-to-send business letter with:
+- Today's date
+- Client name and address placeholder if not provided
+- Bureau address placeholder
+- Subject line with account reference
+- Professional salutation and closing
+- Signature line
+
+Make this letter SPECIFIC to the "${issue.creditor}" account and "${issue.type}" issue type.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert credit repair specialist with extensive knowledge of FCRA laws and successful dispute strategies. Generate professional, personalized dispute letters that are specific to each unique credit issue. Never use generic templates - always customize based on the exact creditor, amount, and issue type provided."
+          },
+          {
+            role: "user",
+            content: letterPrompt
+          }
+        ],
+        max_tokens: 2000,
+        temperature: 0.4
       });
 
+      const letter = response.choices[0]?.message?.content || '';
+
       res.json({
-        letter: disputeLetter,
+        letter,
         clientName,
         issueType: issue.type,
         creditor: issue.creditor,
         generatedAt: new Date().toISOString()
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating dispute letter:", error);
+      
+      // If AI fails, fall back to demo letter
+      if (error.status === 429 || error.message?.includes('quota')) {
+        const currentDate = new Date().toLocaleDateString();
+        const disputeLetter = generateDemoDisputeLetter({
+          issueType: issue.type,
+          creditor: issue.creditor,
+          amount: issue.amount,
+          description: issue.description,
+          bureau: 'EXPERIAN',
+          dateAdded: new Date(),
+          impact: 1,
+          currentDate
+        });
+        
+        return res.json({
+          letter: disputeLetter,
+          clientName,
+          issueType: issue.type,
+          creditor: issue.creditor,
+          generatedAt: new Date().toISOString(),
+          note: "Generated using template due to API limits"
+        });
+      }
+      
       res.status(500).json({ error: "Failed to generate dispute letter" });
     }
   });
