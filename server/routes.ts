@@ -14,9 +14,6 @@ import OpenAI from "openai";
 import Stripe from "stripe";
 import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
 import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users } from "@shared/schema";
 import { z } from "zod";
 
@@ -4736,10 +4733,12 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
             
             // Extract text from file based on format
             if (sourceFormat === 'pdf') {
-              // Use pdf-parse to extract text from PDF
+              // Use pdf-parse to extract text from PDF (dynamic import for ESM compatibility)
               try {
                 const pdfBuffer = Buffer.from(fileContent, 'base64');
-                const pdfData = await pdfParse(pdfBuffer);
+                const pdfParseModule = await import('pdf-parse');
+                const pdfParseFn = pdfParseModule.default || pdfParseModule;
+                const pdfData = await pdfParseFn(pdfBuffer);
                 textContent = pdfData.text;
                 console.log("PDF text extracted, length:", textContent.length);
               } catch (pdfErr: any) {
