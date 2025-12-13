@@ -883,6 +883,54 @@ export type InsertSupportTicket = z.infer<typeof insertSupportTicketSchema>;
 export type SupportKnowledgeBase = typeof supportKnowledgeBase.$inferSelect;
 export type InsertSupportKnowledgeBase = z.infer<typeof insertSupportKnowledgeBaseSchema>;
 
+// Credit Report Analysis (Admin Feature)
+export const creditReportUploads = pgTable("credit_report_uploads", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  uploadedBy: integer("uploaded_by").references(() => users.id).notNull(),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type").notNull(),
+  bureau: text("bureau").default("EXPERIAN"),
+  creditScore: integer("credit_score"),
+  analysisComplete: boolean("analysis_complete").default(false),
+  rawAnalysis: text("raw_analysis"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const creditReportFindings = pgTable("credit_report_findings", {
+  id: serial("id").primaryKey(),
+  uploadId: integer("upload_id").references(() => creditReportUploads.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  findingType: text("finding_type").notNull(),
+  creditor: text("creditor").notNull(),
+  amount: real("amount"),
+  description: text("description").notNull(),
+  impact: text("impact").notNull(),
+  suggestedAction: text("suggested_action").notNull(),
+  status: text("status").default("PENDING"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const creditReportLetters = pgTable("credit_report_letters", {
+  id: serial("id").primaryKey(),
+  findingId: integer("finding_id").references(() => creditReportFindings.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  letterContent: text("letter_content").notNull(),
+  bureau: text("bureau").notNull(),
+  generatedAt: timestamp("generated_at").defaultNow().notNull(),
+});
+
+export const insertCreditReportUploadSchema = createInsertSchema(creditReportUploads).omit({ id: true, createdAt: true });
+export const insertCreditReportFindingSchema = createInsertSchema(creditReportFindings).omit({ id: true, createdAt: true });
+export const insertCreditReportLetterSchema = createInsertSchema(creditReportLetters).omit({ id: true, generatedAt: true });
+
+export type CreditReportUpload = typeof creditReportUploads.$inferSelect;
+export type InsertCreditReportUpload = z.infer<typeof insertCreditReportUploadSchema>;
+export type CreditReportFinding = typeof creditReportFindings.$inferSelect;
+export type InsertCreditReportFinding = z.infer<typeof insertCreditReportFindingSchema>;
+export type CreditReportLetter = typeof creditReportLetters.$inferSelect;
+export type InsertCreditReportLetter = z.infer<typeof insertCreditReportLetterSchema>;
+
 // Gamification schema inserts and types
 export const insertUserOnboardingProgressSchema = createInsertSchema(userOnboardingProgress).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertOnboardingStepSchema = createInsertSchema(onboardingSteps).omit({ id: true, createdAt: true });
