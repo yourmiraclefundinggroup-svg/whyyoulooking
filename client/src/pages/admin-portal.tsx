@@ -1049,7 +1049,20 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
   const [isDragging, setIsDragging] = useState(false);
 
   const createUploadMutation = useMutation({
-    mutationFn: async (data: typeof newUpload) => {
+    mutationFn: async (data: typeof newUpload & { file: File | null }) => {
+      let fileContent = "";
+      if (data.file) {
+        const reader = new FileReader();
+        fileContent = await new Promise<string>((resolve) => {
+          reader.onload = () => {
+            const result = reader.result as string;
+            const base64 = result.split(',')[1] || result;
+            resolve(base64);
+          };
+          reader.readAsDataURL(data.file);
+        });
+      }
+      
       const response = await apiRequest("POST", "/api/admin/credit-report-uploads", {
         userId: parseInt(data.userId),
         uploadedBy: 1,
@@ -1058,14 +1071,15 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
         bureau: data.bureau,
         sourceFormat: data.sourceFormat,
         creditScore: data.creditScore ? parseInt(data.creditScore) : null,
-        parseStatus: "queued",
+        parseStatus: "processing",
+        fileContent: fileContent,
       });
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Credit report upload created successfully",
+        title: "Processing",
+        description: "Credit report uploaded! AI is now extracting the data...",
       });
       setUploadDialogOpen(false);
       setNewUpload({ userId: "", fileName: "", fileType: "pdf", bureau: "EXPERIAN", sourceFormat: "pdf", creditScore: "" });
@@ -1084,7 +1098,7 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
   const handleCreateUpload = (e: React.FormEvent) => {
     e.preventDefault();
     if (newUpload.userId && newUpload.fileName) {
-      createUploadMutation.mutate(newUpload);
+      createUploadMutation.mutate({ ...newUpload, file: selectedFile });
     }
   };
 
