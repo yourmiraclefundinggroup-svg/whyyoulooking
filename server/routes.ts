@@ -4744,43 +4744,84 @@ IMPORTANT EXTRACTION RULES:
 
 Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a section has no data, use an empty array [].`;
 
-            let textContent: string;
             const sourceFormat = restData.sourceFormat || 'pdf';
+            const isImageFormat = ['png', 'jpg', 'jpeg', 'image'].includes(sourceFormat.toLowerCase());
             
-            // Extract text from file based on format
-            if (sourceFormat === 'pdf') {
-              try {
-                const pdfBuffer = Buffer.from(fileContent, 'base64');
-                const parser = new PDFParse({ data: pdfBuffer });
-                const pdfData = await parser.getText();
-                textContent = pdfData.text;
-                await parser.destroy();
-                console.log("PDF text extracted, length:", textContent.length);
-              } catch (pdfErr: any) {
-                console.error("PDF parse error:", pdfErr);
-                throw new Error(`Failed to parse PDF: ${pdfErr.message}`);
+            let aiResponse;
+            
+            if (isImageFormat) {
+              // Use Claude Vision for image files (screenshots)
+              console.log("Processing image file with Claude Vision, format:", sourceFormat);
+              
+              // Determine media type
+              let mediaType = 'image/png';
+              if (sourceFormat === 'jpg' || sourceFormat === 'jpeg') {
+                mediaType = 'image/jpeg';
               }
+              
+              aiResponse = await anthropic.messages.create({
+                model: "claude-sonnet-4-20250514",
+                max_tokens: 4000,
+                system: parseSystemPrompt,
+                messages: [
+                  { 
+                    role: "user", 
+                    content: [
+                      {
+                        type: "image",
+                        source: {
+                          type: "base64",
+                          media_type: mediaType,
+                          data: fileContent
+                        }
+                      },
+                      {
+                        type: "text",
+                        text: "Extract all credit report data from this credit report screenshot. Pay special attention to the INQUIRIES section - extract ALL inquiries with their creditor names, dates, and types (hard/soft)."
+                      }
+                    ]
+                  }
+                ]
+              });
+              console.log("Image parsing complete");
             } else {
-              // For text/html/csv formats, decode as text
-              try {
-                textContent = Buffer.from(fileContent, 'base64').toString('utf-8');
-              } catch (decodeErr) {
-                throw new Error("Failed to decode file content as text");
+              // Extract text from PDF or text files
+              let textContent: string;
+              
+              if (sourceFormat === 'pdf') {
+                try {
+                  const pdfBuffer = Buffer.from(fileContent, 'base64');
+                  const parser = new PDFParse({ data: pdfBuffer });
+                  const pdfData = await parser.getText();
+                  textContent = pdfData.text;
+                  await parser.destroy();
+                  console.log("PDF text extracted, length:", textContent.length);
+                } catch (pdfErr: any) {
+                  console.error("PDF parse error:", pdfErr);
+                  throw new Error(`Failed to parse PDF: ${pdfErr.message}`);
+                }
+              } else {
+                // For text/html/csv formats, decode as text
+                try {
+                  textContent = Buffer.from(fileContent, 'base64').toString('utf-8');
+                } catch (decodeErr) {
+                  throw new Error("Failed to decode file content as text");
+                }
               }
+              
+              if (!textContent || textContent.trim().length < 50) {
+                throw new Error("Extracted text is too short or empty - unable to parse credit report");
+              }
+              
+              aiResponse = await anthropic.messages.create({
+                model: "claude-sonnet-4-20250514",
+                max_tokens: 4000,
+                system: parseSystemPrompt,
+                messages: [
+                  { role: "user", content: `Extract all credit report data from this content:\n\n${textContent.substring(0, 50000)}` }
+                ]
+              });
             }
-            
-            if (!textContent || textContent.trim().length < 50) {
-              throw new Error("Extracted text is too short or empty - unable to parse credit report");
-            }
-            
-            const aiResponse = await anthropic.messages.create({
-              model: "claude-sonnet-4-20250514",
-              max_tokens: 4000,
-              system: parseSystemPrompt,
-              messages: [
-                { role: "user", content: `Extract all credit report data from this content:\n\n${textContent.substring(0, 50000)}` }
-              ]
-            });
 
             const responseContent = aiResponse.content[0]?.type === 'text' ? aiResponse.content[0].text : "{}";
             console.log("AI response length:", responseContent.length);
@@ -4804,14 +4845,48 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
               // Try a second API call with smaller context for better JSON
               try {
                 console.log("Retrying with simplified prompt...");
-                const retryResponse = await anthropic.messages.create({
-                  model: "claude-sonnet-4-20250514",
-                  max_tokens: 4000,
-                  system: "You are a JSON extraction expert. Extract credit data and return ONLY valid JSON. No markdown, no code blocks.",
-                  messages: [
-                    { role: "user", content: `Extract credit report data as JSON with these keys: creditScore (number), accounts (array with creditorName, accountType, status, balance, paymentStatus, derogatoryFlags array like ["Late Payment"], latePayments object like {days30:0,days60:0,days90:0}), inquiries (array with creditorName, inquiryDate, inquiryType), collections (array with agencyName, amount), publicRecords (array with recordType, status). For accounts with past due amounts, add "Late Payment" to derogatoryFlags. Content:\n\n${textContent.substring(0, 30000)}` }
-                  ]
-                });
+                let retryResponse;
+                
+                if (isImageFormat) {
+                  // Retry with image
+                  let mediaType = 'image/png';
+                  if (sourceFormat === 'jpg' || sourceFormat === 'jpeg') {
+                    mediaType = 'image/jpeg';
+                  }
+                  retryResponse = await anthropic.messages.create({
+                    model: "claude-sonnet-4-20250514",
+                    max_tokens: 4000,
+                    system: "You are a JSON extraction expert. Extract credit data and return ONLY valid JSON. No markdown, no code blocks.",
+                    messages: [
+                      { 
+                        role: "user", 
+                        content: [
+                          {
+                            type: "image",
+                            source: {
+                              type: "base64",
+                              media_type: mediaType,
+                              data: fileContent
+                            }
+                          },
+                          {
+                            type: "text",
+                            text: "Extract credit report data as JSON with these keys: creditScore (number), accounts (array with creditorName, accountType, status, balance, paymentStatus, derogatoryFlags, latePayments), inquiries (array with creditorName, inquiryDate, inquiryType), collections (array with agencyName, amount), publicRecords (array with recordType, status). Return ONLY JSON."
+                          }
+                        ]
+                      }
+                    ]
+                  });
+                } else {
+                  retryResponse = await anthropic.messages.create({
+                    model: "claude-sonnet-4-20250514",
+                    max_tokens: 4000,
+                    system: "You are a JSON extraction expert. Extract credit data and return ONLY valid JSON. No markdown, no code blocks.",
+                    messages: [
+                      { role: "user", content: `Extract credit report data as JSON with these keys: creditScore (number), accounts (array with creditorName, accountType, status, balance, paymentStatus, derogatoryFlags array like ["Late Payment"], latePayments object like {days30:0,days60:0,days90:0}), inquiries (array with creditorName, inquiryDate, inquiryType), collections (array with agencyName, amount), publicRecords (array with recordType, status). For accounts with past due amounts, add "Late Payment" to derogatoryFlags. Content:\n\n${responseContent}` }
+                    ]
+                  });
+                }
                 const retryContent = retryResponse.content[0]?.type === 'text' ? retryResponse.content[0].text : "{}";
                 const retryMatch = retryContent.match(/\{[\s\S]*\}/);
                 parsedData = JSON.parse(retryMatch ? retryMatch[0] : "{}");
