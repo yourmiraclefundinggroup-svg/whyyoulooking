@@ -25,7 +25,7 @@ import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatRelativeDate, getIssueTypeColor, getDisputeStatusColor } from "@/lib/utils";
-import { X, Clock, Search, AlertCircle, CheckCircle, Gavel, Check, FileText, Bot, Calculator, Eye } from "lucide-react";
+import { X, Clock, Search, AlertCircle, CheckCircle, Gavel, Check, FileText, Bot, Calculator, Eye, CreditCard, Calendar, ArrowUpCircle, ArrowDownCircle, Building2, Users, Wallet, FileWarning, Mail, ChevronRight } from "lucide-react";
 
 function getIssueIcon(type: string) {
   switch (type) {
@@ -88,9 +88,394 @@ function IssueTypeBadge({ type }: { type: string }) {
     </div>
   );
 }
-import type { CreditIssue, Dispute } from "@shared/schema";
+import type { CreditIssue, Dispute, CreditReportUpload, CreditReportAccount, CreditReportInquiry, CreditReportCollection, DisputeLetterNew, DisputeCalendarEvent } from "@shared/schema";
 import { Shield, LogOut, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
+import { Progress } from "@/components/ui/progress";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
+// Client Credit Reports Tab - Read-only view of credit reports
+function ClientCreditReportsTab({ userId }: { userId: number }) {
+  const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
+
+  // Fetch client's credit report uploads
+  const { data: uploads = [], isLoading: uploadsLoading } = useQuery<CreditReportUpload[]>({
+    queryKey: ['/api/client/credit-report-uploads'],
+  });
+
+  // Fetch details for selected report
+  const { data: reportDetails, isLoading: detailsLoading } = useQuery<{
+    upload: CreditReportUpload;
+    accounts: CreditReportAccount[];
+    inquiries: CreditReportInquiry[];
+    collections: CreditReportCollection[];
+    publicRecords: any[];
+    disputeItems: any[];
+    letters: DisputeLetterNew[];
+  }>({
+    queryKey: ['/api/client/credit-report-uploads', selectedReportId],
+    enabled: !!selectedReportId,
+  });
+
+  // Fetch client's dispute calendar
+  const { data: calendarEvents = [] } = useQuery<DisputeCalendarEvent[]>({
+    queryKey: ['/api/client/dispute-calendar'],
+  });
+
+  if (uploadsLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (uploads.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Credit Reports Yet</h3>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
+            Your admin will upload your credit report data. Once available, you'll be able to view your accounts, disputes, and progress here.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Report Selection */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center text-lg">
+            <CreditCard className="h-5 w-5 mr-2 text-blue-600" />
+            Your Credit Reports
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {uploads.map((upload) => (
+              <motion.div
+                key={upload.id}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSelectedReportId(upload.id)}
+                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  selectedReportId === upload.id 
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                    : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      upload.bureau === 'EXPERIAN' ? 'bg-blue-100 dark:bg-blue-900/50' :
+                      upload.bureau === 'EQUIFAX' ? 'bg-red-100 dark:bg-red-900/50' :
+                      'bg-green-100 dark:bg-green-900/50'
+                    }`}>
+                      <Building2 className={`h-5 w-5 ${
+                        upload.bureau === 'EXPERIAN' ? 'text-blue-600' :
+                        upload.bureau === 'EQUIFAX' ? 'text-red-600' :
+                        'text-green-600'
+                      }`} />
+                    </div>
+                    <div className="ml-3">
+                      <p className="font-medium text-gray-900 dark:text-white">{upload.bureau}</p>
+                      <p className="text-xs text-gray-500">{new Date(upload.createdAt).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <ChevronRight className={`h-5 w-5 transition-transform ${
+                    selectedReportId === upload.id ? 'rotate-90 text-blue-500' : 'text-gray-400'
+                  }`} />
+                </div>
+                
+                {/* Credit Score */}
+                {upload.creditScore && (
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                    <span className="text-sm text-gray-500">Score</span>
+                    <span className={`text-lg font-bold ${
+                      (upload.creditScore || 0) >= 700 ? 'text-green-600' :
+                      (upload.creditScore || 0) >= 600 ? 'text-yellow-600' :
+                      'text-red-600'
+                    }`}>
+                      {upload.creditScore}
+                    </span>
+                  </div>
+                )}
+
+                <Badge 
+                  className={`mt-2 ${
+                    upload.parseStatus === 'succeeded' ? 'bg-green-100 text-green-700' :
+                    upload.parseStatus === 'processing' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {upload.parseStatus}
+                </Badge>
+              </motion.div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Report Details */}
+      {selectedReportId && reportDetails && (
+        <div className="space-y-6">
+          {/* Overview Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
+                    <Wallet className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs text-gray-500">Accounts</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{reportDetails.accounts.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center">
+                    <Search className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs text-gray-500">Inquiries</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{reportDetails.inquiries.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-red-100 dark:bg-red-900/50 rounded-lg flex items-center justify-center">
+                    <FileWarning className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs text-gray-500">Collections</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{reportDetails.collections.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
+                    <Mail className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs text-gray-500">Letters</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{reportDetails.letters.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Accounts Section */}
+          {reportDetails.accounts.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center">
+                  <Wallet className="h-5 w-5 mr-2 text-purple-600" />
+                  Accounts ({reportDetails.accounts.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Accordion type="single" collapsible className="space-y-2">
+                  {reportDetails.accounts.map((account, index) => (
+                    <AccordionItem key={account.id} value={`account-${account.id}`} className="border rounded-lg px-4">
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center justify-between w-full pr-4">
+                          <div className="flex items-center">
+                            <span className="font-medium">{account.creditorName}</span>
+                            <Badge className="ml-2" variant={account.status === 'Open' ? 'default' : 'secondary'}>
+                              {account.status || 'Unknown'}
+                            </Badge>
+                          </div>
+                          <span className="text-sm text-gray-500">{formatCurrency(account.balance || 0)}</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid grid-cols-2 gap-4 py-2 text-sm">
+                          <div>
+                            <span className="text-gray-500">Account Type:</span>
+                            <span className="ml-2 font-medium">{account.accountType}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Credit Limit:</span>
+                            <span className="ml-2 font-medium">{formatCurrency(account.creditLimit || 0)}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Payment Status:</span>
+                            <span className="ml-2 font-medium">{account.paymentStatus}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Opened:</span>
+                            <span className="ml-2 font-medium">{account.dateOpened ? new Date(account.dateOpened).toLocaleDateString() : 'N/A'}</span>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Inquiries Section */}
+          {reportDetails.inquiries.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center">
+                  <Search className="h-5 w-5 mr-2 text-orange-600" />
+                  Credit Inquiries ({reportDetails.inquiries.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {reportDetails.inquiries.map((inquiry) => (
+                    <div key={inquiry.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white">{inquiry.creditorName}</p>
+                        <p className="text-sm text-gray-500">{inquiry.inquiryDate ? new Date(inquiry.inquiryDate).toLocaleDateString() : 'N/A'}</p>
+                      </div>
+                      <Badge variant={inquiry.inquiryType === 'hard' ? 'destructive' : 'secondary'}>
+                        {inquiry.inquiryType}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Collections Section */}
+          {reportDetails.collections.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center">
+                  <FileWarning className="h-5 w-5 mr-2 text-red-600" />
+                  Collections ({reportDetails.collections.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {reportDetails.collections.map((collection) => (
+                    <div key={collection.id} className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium text-red-900 dark:text-red-200">{collection.agencyName}</p>
+                          <p className="text-sm text-red-700 dark:text-red-300">Original: {collection.originalCreditor}</p>
+                        </div>
+                        <span className="text-lg font-bold text-red-600">{formatCurrency(collection.amount || 0)}</span>
+                      </div>
+                      <div className="flex items-center mt-2 text-sm text-red-600 dark:text-red-400">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        <span>Reported: {collection.dateReported ? new Date(collection.dateReported).toLocaleDateString() : 'N/A'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Dispute Letters Section */}
+          {reportDetails.letters.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center">
+                  <Mail className="h-5 w-5 mr-2 text-blue-600" />
+                  Dispute Letters ({reportDetails.letters.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {reportDetails.letters.map((letter) => (
+                    <div key={letter.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">{letter.letterType} - {letter.bureau}</p>
+                          <p className="text-sm text-gray-500">Created: {new Date(letter.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <Badge className={
+                          letter.status === 'approved' ? 'bg-green-100 text-green-700' :
+                          letter.status === 'sent' ? 'bg-blue-100 text-blue-700' :
+                          letter.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-gray-100 text-gray-700'
+                        }>
+                          {letter.status}
+                        </Badge>
+                      </div>
+                      
+                      {letter.downloadUrl && (
+                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mt-2">
+                          <Mail className="h-4 w-4 mr-1" />
+                          Download available
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Dispute Calendar */}
+      {calendarEvents.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center">
+              <Calendar className="h-5 w-5 mr-2 text-green-600" />
+              Dispute Timeline
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {calendarEvents.map((event) => (
+                <div key={event.id} className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div className={`w-3 h-3 rounded-full mr-4 ${
+                    event.status === 'completed' ? 'bg-green-500' :
+                    event.status === 'sent' ? 'bg-blue-500' :
+                    event.status === 'overdue' ? 'bg-red-500' :
+                    'bg-yellow-500'
+                  }`} />
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900 dark:text-white">Round {event.round}</p>
+                    <p className="text-sm text-gray-500">
+                      {event.scheduledSendDate ? `Scheduled: ${new Date(event.scheduledSendDate).toLocaleDateString()}` : ''}
+                    </p>
+                  </div>
+                  <Badge variant="outline">{event.status}</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
 
 export default function CreditRepair() {
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
@@ -371,6 +756,7 @@ export default function CreditRepair() {
           <TabsTrigger value="chat" className="text-xs px-2 py-2">Chat</TabsTrigger>
           <TabsTrigger value="password-reset" className="text-xs px-2 py-2">Password</TabsTrigger>
           <TabsTrigger value="ai-tools" className="text-xs px-2 py-2">AI Tools</TabsTrigger>
+          <TabsTrigger value="credit-reports" className="text-xs px-2 py-2">Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="issues" className="space-y-4 sm:space-y-6">
@@ -768,6 +1154,10 @@ export default function CreditRepair() {
               </Card>
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="credit-reports" className="space-y-6">
+          <ClientCreditReportsTab userId={userId} />
         </TabsContent>
       </Tabs>
 

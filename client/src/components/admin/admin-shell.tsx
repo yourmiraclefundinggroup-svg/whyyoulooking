@@ -56,6 +56,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: "/admin-portal", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin-portal/clients", label: "Clients", icon: Users },
+  { href: "/admin-portal/credit-reports", label: "Credit Reports", icon: FolderOpen },
   { href: "/admin-portal/disputes", label: "Disputes", icon: FileText, badge: "3" },
   { href: "/admin-portal/tracking", label: "USPS Tracking", icon: Package },
   { href: "/admin-portal/bureau-analysis", label: "Bureau Analysis", icon: Brain },

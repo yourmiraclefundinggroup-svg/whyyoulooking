@@ -103,6 +103,10 @@ function Router() {
           <Navigation />
           <AdminPortal />
         </Route>
+        <Route path="/admin-portal/credit-reports/:id">
+          <Navigation />
+          <AdminPortal />
+        </Route>
         <Route path="/support-admin">
           <Navigation />
           <SupportAdmin />

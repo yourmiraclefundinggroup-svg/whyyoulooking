@@ -1,0 +1,682 @@
+You are a senior full-stack engineer + data extraction engineer + product designer. Implement a complete, production-ready feature set inside my existing app: Admin Portal + Client Dashboard.
+
+PROJECT GOAL
+
+Add Credit Report Ingestion + Dispute Hub + Letters + Diff View + Dispute Calendar while preserving all existing functionality.
+
+0) NON-NEGOTIABLES
+
+Do NOT break existing auth, roles, routes, APIs, DB schema (unless adding NEW tables is required).
+
+Keep current client IDs, relationships, and permissions unchanged.
+
+Keep existing backend endpoints unchanged unless you’re ADDING new endpoints for this feature.
+
+All new UI must match my redesigned Admin Portal style: total dark (ink black), high contrast, premium fintech.
+
+Performance matters: no heavy animations that lag. Respect prefers-reduced-motion.
+
+Security is mandatory: uploads restricted to Admin roles; clients can only access their own data.
+
+1) USER STORIES
+Admin
+
+Admin goes to: Admin → Credit Reports
+
+Admin uploads an Experian credit report (PDF/HTML/TXT; optionally CSV if present) and assigns it to a Client.
+
+System parses the report, extracts all relevant data, normalizes it, and stores it.
+
+Admin reviews it in a Dispute Hub:
+
+Negative items (accounts/tradelines)
+
+Inquiries
+
+Collections
+
+Public records (if present)
+
+Summary
+
+Strategy suggestions per item
+
+Dispute item selection toggles
+
+Admin generates dispute letters (Round 1 / Round 2 / Validation / Goodwill optional) and exports PDF.
+
+Admin schedules dispute actions via a Dispute Calendar.
+
+Admin compares report uploads via a Diff View (“what changed since last report”).
+
+Client
+
+Client dashboard shows their latest report snapshot and disputable items.
+
+Client sees “What changed since last report” (read-only).
+
+Client sees a read-only timeline of upcoming/previous disputes (calendar view simplified).
+
+2) REPO AUDIT FIRST (REQUIRED)
+
+Before coding, scan the repo and create a feature map:
+
+all existing admin routes/pages
+
+all existing client dashboard routes/pages
+
+the client model fields (name/address/contact) for letter merge
+
+auth/role middleware
+
+existing upload/storage mechanism (if any)
+
+existing table/list components
+
+Output a map:
+
+Admin Tabs: TabName → Route → Components → API endpoints
+
+Client Dashboard: SectionName → Route → Components → API endpoints
+
+If anything is unclear, infer from code structure and implement safely.
+
+3) DATABASE / MODELS (ADD MIGRATIONS)
+
+Add these new tables/collections (adapt to the project’s DB: Postgres/Prisma, Mongo, etc.):
+
+credit_report_uploads
+
+id (uuid)
+
+client_id (fk)
+
+bureau (enum: experian/equifax/transunion) default experian
+
+source_format (pdf/html/txt/csv)
+
+file_url (private)
+
+uploaded_by_admin_id
+
+uploaded_at
+
+parse_status (queued/processing/succeeded/failed)
+
+parse_error (text)
+
+raw_extraction_json (json)
+
+report_date (date, if detected)
+
+credit_report_accounts (tradelines)
+
+id, upload_id, client_id
+
+creditor_name
+
+account_number_masked
+
+account_type
+
+status
+
+balance, credit_limit, high_balance
+
+payment_status
+
+date_opened, date_reported, date_last_payment
+
+derogatory_flags (json)
+
+late_payments_30_60_90 (json)
+
+remarks (text)
+
+credit_report_inquiries
+
+id, upload_id, client_id
+
+creditor_name
+
+inquiry_date
+
+inquiry_type (hard/soft if detected)
+
+credit_report_collections
+
+id, upload_id, client_id
+
+agency_name
+
+original_creditor
+
+amount
+
+date_opened, date_reported, date_last_payment
+
+status
+
+remarks
+
+credit_report_public_records (optional)
+
+id, upload_id, client_id
+
+type, court, date_filed, status, remarks
+
+dispute_items
+
+id, client_id, upload_id
+
+item_type (account/inquiry/collection/public_record)
+
+item_ref_id (fk)
+
+negative_reason_tags (array)
+
+severity_score (0-100)
+
+recommended_strategy (string/enum)
+
+recommended_letter_type (string/enum)
+
+selected (bool)
+
+admin_notes
+
+status (draft/ready/sent/awaiting_response/resolved)
+
+dispute_letters
+
+id, client_id, upload_id
+
+letter_type (round1/round2/validation/goodwill/inquiry)
+
+content (text)
+
+generated_by_admin_id
+
+created_at
+
+status (draft/approved/sent)
+
+download_url (pdf optional)
+
+dispute_calendar_events (FEATURE #2)
+
+id
+
+client_id
+
+dispute_item_ids (array)
+
+letter_id (optional)
+
+round (1|2|validation)
+
+scheduled_send_date
+
+follow_up_date
+
+expected_response_by
+
+status (scheduled/sent/follow-up/completed/overdue)
+
+created_by_admin_id
+
+Add indexes for client_id, upload_id, and dates.
+
+4) SECURE UPLOAD + STORAGE
+
+Implement Admin-only upload:
+
+Allowed file types: PDF/HTML/TXT/CSV
+
+Max file size: set a safe limit (ex: 15–25MB)
+
+Store privately (S3/private bucket if present; otherwise local private storage with signed access)
+
+Never expose raw file publicly
+
+Add an audit log entry on upload
+
+Mask sensitive data:
+
+Never store full SSN
+
+Never store full account numbers (store only masked last4)
+
+Remove/avoid storing DOB unless required and secured
+
+5) PARSING PIPELINE (ROBUST)
+
+Experian formats vary. Build a pipeline with fallbacks + manual mapping screen.
+
+5.1 Extraction
+
+If Node app: use pdf-parse (fallback pdfjs-dist)
+
+If Python exists: optionally use pdfplumber
+
+Convert PDF → extracted text
+
+Store extracted text in memory only (do NOT store raw text unless necessary; prefer structured JSON)
+
+5.2 Normalize
+
+Create:
+normalizeExperianReport(extractedText) -> NormalizedReport
+
+Return:
+
+accounts[]
+
+inquiries[]
+
+collections[]
+
+publicRecords[]
+
+summary {}
+
+Use heuristics + anchors:
+
+“Personal Information”
+
+“Accounts”
+
+“Collections”
+
+“Inquiries”
+
+“Public Records”
+
+Normalize:
+
+money to numbers
+
+dates to ISO
+
+status strings to enums where possible
+
+mask account numbers automatically
+
+5.3 Validation + Errors
+
+If key sections missing:
+
+mark parse_status=failed
+
+store parse_error
+
+route admin to /admin/credit-reports/:uploadId/manual-map
+
+5.4 Manual Mapping Screen (SAFETY NET)
+
+Admin can:
+
+see extracted text on left
+
+see editable parsed fields on right
+
+correct creditor names, dates, balances, statuses
+
+re-save normalized structures
+
+then mark parse_status=succeeded
+
+6) DISPUTE HUB (ADMIN)
+
+Create a Dispute Hub UI for each upload:
+
+Route:
+/admin/credit-reports/:uploadId
+
+Tabs:
+
+Overview / Summary
+
+Negative Items (Accounts/Tradelines)
+
+Inquiries
+
+Collections
+
+Public Records
+
+Letters
+
+Changes Since Last Report (FEATURE #1)
+
+Requirements:
+
+Tables with: search, filters, sorting, pagination, sticky headers
+
+Item detail drawer: show all fields + admin notes + toggles
+
+“Select for dispute” toggle per item
+
+Bulk actions: select all, clear, export selection
+
+Severity scoring with badges
+
+Recommended strategy shown with editable override
+
+All actions must persist to DB
+
+7) DISPUTE CANDIDATE + STRATEGY ENGINE
+
+Generate dispute_items from parsed data:
+
+Candidates:
+
+late payments, charge-offs, collections, repos, derogatory remarks
+
+contradictory statuses (closed but reporting open, etc.)
+
+missing/invalid dates
+
+duplicate collections (same debt repeated)
+
+hard inquiries
+
+Severity scoring (0–100) based on:
+
+derogatory weight
+
+recency
+
+amount
+
+number of late marks
+
+Recommended strategies (non-legal):
+
+“request verification / reinvestigation”
+
+“date inconsistency”
+
+“duplicate reporting”
+
+“not mine / unauthorized inquiry”
+
+“validation request (collections)”
+
+Add disclaimer in UI: “Not legal advice.”
+
+8) LETTER GENERATION + EXPORT
+
+Admin flow:
+
+Select dispute_items → “Generate Round 1”
+
+Create letter content that merges:
+
+client name/address from client profile
+
+bureau address (Experian default; allow bureau selection)
+
+list disputed items clearly with identifiers and dates
+
+neutral language requesting investigation and correction/deletion if unverifiable
+
+Letters must be editable before saving.
+
+Save to dispute_letters table with status draft.
+
+Add:
+
+Approve → status approved
+
+Mark Sent → status sent
+
+Export PDF:
+
+Use existing PDF tool if repo has one
+
+Otherwise implement a safe PDF export library in the current stack
+
+Include “attachments checklist” UI (admin marks which docs will be attached).
+
+9) CLIENT DASHBOARD DISPLAY
+
+Add client dashboard section:
+/dashboard/credit-report
+
+Must show:
+
+Latest upload date + bureau + summary
+
+Disputable items list (read-only unless an approval flow exists)
+
+Letters (read-only; show status)
+
+“What Changed Since Last Report” (Feature #1 simplified)
+
+Dispute timeline (Feature #2 read-only)
+
+Security:
+
+Client may ONLY query their own client_id.
+
+10) FEATURE #1 — DIFF VIEW (CHANGE TRACKING)
+
+Implement report comparison:
+
+Admin UI
+
+Add:
+
+“Compare Reports” action under Credit Reports for a client
+
+Admin selects Report A and Report B
+
+Diff output shows:
+
+Added (🟢)
+
+Removed (🔴)
+
+Modified (🟡)
+
+Compare using stable identifiers:
+
+Accounts: creditor_name + account_number_masked
+
+Inquiries: creditor_name + inquiry_date
+
+Collections: agency_name + amount + date_opened (plus original_creditor if present)
+
+Modified field changes to detect:
+
+balance changes
+
+status changes
+
+new derogatory flags
+
+date changes
+
+late payment pattern changes
+
+Add tab in Dispute Hub:
+“Changes Since Last Report”
+
+show only meaningful changes by default
+
+filter “only negative changes”
+
+filter “only disputable changes”
+
+Store diff results optionally (cache) OR compute on demand safely.
+
+Client UI
+
+Show simplified diff:
+
+new inquiries
+
+new collections
+
+worsening status/balance changes
+
+11) FEATURE #2 — DISPUTE CALENDAR (ROUND TRACKING)
+
+Create Admin section:
+/admin/dispute-calendar
+
+Calendar views:
+
+month / week
+
+client timeline view
+
+Calendar event:
+
+links to dispute items + letter
+
+supports drag/drop reschedule
+
+dark UI with glow accents
+
+respects performance
+
+Automation rules:
+
+when scheduled_send_date passes: auto status → sent (or prompt admin to confirm)
+
+after expected_response_by: status → overdue/awaiting_response
+
+prompt admin when Round 2 is ready based on schedule
+
+Client side:
+
+read-only timeline of their disputes:
+
+scheduled
+
+sent
+
+awaiting response
+
+overdue
+
+12) UI / DESIGN REQUIREMENTS
+
+Total dark “ink” theme background (#05060A or similar)
+
+High-contrast text, crisp borders, premium fintech
+
+Layout:
+
+left sidebar grouped nav
+
+top bar with search + notifications
+
+Animated background:
+
+subtle animated gradient mesh/noise OR lightweight particles
+
+must be disabled for prefers-reduced-motion
+
+must NOT interfere with clicks/scroll
+
+setting toggle: “Background motion on/off”
+
+Use consistent components (tables, drawers, modals, toasts, skeletons, empty states)
+
+13) SECURITY / AUDIT LOGGING
+
+Add audit entries for:
+
+report upload
+
+parse success/failure
+
+manual mapping changes
+
+dispute item selection changes
+
+letter generation + edits + approvals + sent
+
+calendar event created/updated
+
+Ensure:
+
+admin-only endpoints protected
+
+client endpoints filtered by authenticated client_id
+
+file access is signed/private
+
+Add rate limiting to upload endpoint.
+
+14) TESTING + THOROUGH CHECK (REQUIRED)
+
+Add automated tests (use what the repo already uses; if none, add Playwright for E2E):
+
+E2E minimum:
+
+admin login → upload report → parse → view dispute hub
+
+select dispute items → generate letter → export PDF
+
+create calendar event → reschedule → status updates
+
+diff view compares two uploads correctly
+
+client login → can only see their own report, diff, timeline
+
+Parser tests:
+
+sample fixtures (sanitized) must parse into expected schema
+
+Add a System Health page:
+/admin/system/health
+Checks:
+
+storage write/read
+
+parser availability
+
+DB read/write
+
+key feature endpoints ping
+
+Create a final manual verification checklist and run it.
+
+15) FINAL DELIVERABLES
+
+When done, output:
+
+Route list (admin + client) and ✅ status
+
+DB migrations summary
+
+How to run tests
+
+Known limitations (if any) and the manual mapping fallback
+
+Confirmation: “no regressions to existing features”
+
+START NOW
+
+Audit repo and map routes
+
+Add migrations/models
+
+Implement secure upload + parsing + normalization
+
+Build admin dispute hub UI
+
+Build letter generation + export
+
+Build client dashboard section
+
+Implement diff view
+
+Implement dispute calendar
+
+Add tests + health check + QA pass
+Do not stop until everything works and tests pass.

@@ -7,6 +7,8 @@ import {
   creditCardPredictions, financialBehaviorProfiles, bankAccountConnections, taxIntegrations,
   employmentVerifications, disputeSuccessPredictions, mlTrainingData, chatMessages, chatDocuments, documentTags, aiConversations,
   studentLoans, loanNegotiations, loanDocuments,
+  creditReportUploads, creditReportAccounts, creditReportInquiries, creditReportCollections,
+  creditReportPublicRecords, disputeItems, disputeLettersNew, disputeCalendarEvents,
   type User,
   type InsertUser,
   type CreditReport, type InsertCreditReport,
@@ -43,7 +45,15 @@ import {
   type AiConversation, type InsertAiConversation,
   type StudentLoan, type InsertStudentLoan,
   type LoanNegotiation, type InsertLoanNegotiation,
-  type LoanDocument, type InsertLoanDocument
+  type LoanDocument, type InsertLoanDocument,
+  type CreditReportUpload, type InsertCreditReportUpload,
+  type CreditReportAccount, type InsertCreditReportAccount,
+  type CreditReportInquiry, type InsertCreditReportInquiry,
+  type CreditReportCollection, type InsertCreditReportCollection,
+  type CreditReportPublicRecord, type InsertCreditReportPublicRecord,
+  type DisputeItem, type InsertDisputeItem,
+  type DisputeLetterNew, type InsertDisputeLetterNew,
+  type DisputeCalendarEvent, type InsertDisputeCalendarEvent
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
@@ -239,6 +249,50 @@ export interface IStorage {
   getLoanNegotiationsByUserId(userId: number): Promise<LoanNegotiation[]>;
   createLoanNegotiation(data: InsertLoanNegotiation): Promise<LoanNegotiation>;
   updateLoanNegotiation(id: number, data: Partial<LoanNegotiation>): Promise<LoanNegotiation>;
+
+  // Credit Report Uploads (Dispute Hub)
+  getCreditReportUploads(clientId: number): Promise<CreditReportUpload[]>;
+  getAllCreditReportUploads(): Promise<CreditReportUpload[]>;
+  getCreditReportUpload(id: number): Promise<CreditReportUpload | undefined>;
+  createCreditReportUpload(upload: InsertCreditReportUpload): Promise<CreditReportUpload>;
+  updateCreditReportUpload(id: number, updates: Partial<CreditReportUpload>): Promise<CreditReportUpload | undefined>;
+
+  // Credit Report Accounts
+  getCreditReportAccounts(uploadId: number): Promise<CreditReportAccount[]>;
+  createCreditReportAccount(account: InsertCreditReportAccount): Promise<CreditReportAccount>;
+  updateCreditReportAccount(id: number, updates: Partial<CreditReportAccount>): Promise<CreditReportAccount | undefined>;
+
+  // Credit Report Inquiries
+  getCreditReportInquiries(uploadId: number): Promise<CreditReportInquiry[]>;
+  createCreditReportInquiry(inquiry: InsertCreditReportInquiry): Promise<CreditReportInquiry>;
+
+  // Credit Report Collections
+  getCreditReportCollections(uploadId: number): Promise<CreditReportCollection[]>;
+  createCreditReportCollection(collection: InsertCreditReportCollection): Promise<CreditReportCollection>;
+
+  // Credit Report Public Records
+  getCreditReportPublicRecords(uploadId: number): Promise<CreditReportPublicRecord[]>;
+  createCreditReportPublicRecord(record: InsertCreditReportPublicRecord): Promise<CreditReportPublicRecord>;
+
+  // Dispute Items
+  getDisputeItems(uploadId: number): Promise<DisputeItem[]>;
+  getDisputeItemsByClient(clientId: number): Promise<DisputeItem[]>;
+  getDisputeItem(id: number): Promise<DisputeItem | undefined>;
+  createDisputeItem(item: InsertDisputeItem): Promise<DisputeItem>;
+  updateDisputeItem(id: number, updates: Partial<DisputeItem>): Promise<DisputeItem | undefined>;
+
+  // Dispute Letters (New)
+  getDisputeLettersNew(uploadId: number): Promise<DisputeLetterNew[]>;
+  getDisputeLetterNew(id: number): Promise<DisputeLetterNew | undefined>;
+  createDisputeLetterNew(letter: InsertDisputeLetterNew): Promise<DisputeLetterNew>;
+  updateDisputeLetterNew(id: number, updates: Partial<DisputeLetterNew>): Promise<DisputeLetterNew | undefined>;
+
+  // Dispute Calendar Events
+  getDisputeCalendarEvents(clientId: number): Promise<DisputeCalendarEvent[]>;
+  getAllDisputeCalendarEvents(): Promise<DisputeCalendarEvent[]>;
+  getDisputeCalendarEvent(id: number): Promise<DisputeCalendarEvent | undefined>;
+  createDisputeCalendarEvent(event: InsertDisputeCalendarEvent): Promise<DisputeCalendarEvent>;
+  updateDisputeCalendarEvent(id: number, updates: Partial<DisputeCalendarEvent>): Promise<DisputeCalendarEvent | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1963,6 +2017,143 @@ export class MemStorage implements IStorage {
       .where(eq(loanNegotiations.id, id))
       .returning();
     return negotiation;
+  }
+
+  // Credit Report Uploads (Dispute Hub)
+  async getCreditReportUploads(clientId: number): Promise<CreditReportUpload[]> {
+    return await db.select().from(creditReportUploads).where(eq(creditReportUploads.userId, clientId));
+  }
+
+  async getAllCreditReportUploads(): Promise<CreditReportUpload[]> {
+    return await db.select().from(creditReportUploads);
+  }
+
+  async getCreditReportUpload(id: number): Promise<CreditReportUpload | undefined> {
+    const [upload] = await db.select().from(creditReportUploads).where(eq(creditReportUploads.id, id));
+    return upload || undefined;
+  }
+
+  async createCreditReportUpload(upload: InsertCreditReportUpload): Promise<CreditReportUpload> {
+    const [result] = await db.insert(creditReportUploads).values(upload).returning();
+    return result;
+  }
+
+  async updateCreditReportUpload(id: number, updates: Partial<CreditReportUpload>): Promise<CreditReportUpload | undefined> {
+    const [result] = await db.update(creditReportUploads).set(updates).where(eq(creditReportUploads.id, id)).returning();
+    return result || undefined;
+  }
+
+  // Credit Report Accounts
+  async getCreditReportAccounts(uploadId: number): Promise<CreditReportAccount[]> {
+    return await db.select().from(creditReportAccounts).where(eq(creditReportAccounts.uploadId, uploadId));
+  }
+
+  async createCreditReportAccount(account: InsertCreditReportAccount): Promise<CreditReportAccount> {
+    const [result] = await db.insert(creditReportAccounts).values(account).returning();
+    return result;
+  }
+
+  async updateCreditReportAccount(id: number, updates: Partial<CreditReportAccount>): Promise<CreditReportAccount | undefined> {
+    const [result] = await db.update(creditReportAccounts).set(updates).where(eq(creditReportAccounts.id, id)).returning();
+    return result || undefined;
+  }
+
+  // Credit Report Inquiries
+  async getCreditReportInquiries(uploadId: number): Promise<CreditReportInquiry[]> {
+    return await db.select().from(creditReportInquiries).where(eq(creditReportInquiries.uploadId, uploadId));
+  }
+
+  async createCreditReportInquiry(inquiry: InsertCreditReportInquiry): Promise<CreditReportInquiry> {
+    const [result] = await db.insert(creditReportInquiries).values(inquiry).returning();
+    return result;
+  }
+
+  // Credit Report Collections
+  async getCreditReportCollections(uploadId: number): Promise<CreditReportCollection[]> {
+    return await db.select().from(creditReportCollections).where(eq(creditReportCollections.uploadId, uploadId));
+  }
+
+  async createCreditReportCollection(collection: InsertCreditReportCollection): Promise<CreditReportCollection> {
+    const [result] = await db.insert(creditReportCollections).values(collection).returning();
+    return result;
+  }
+
+  // Credit Report Public Records
+  async getCreditReportPublicRecords(uploadId: number): Promise<CreditReportPublicRecord[]> {
+    return await db.select().from(creditReportPublicRecords).where(eq(creditReportPublicRecords.uploadId, uploadId));
+  }
+
+  async createCreditReportPublicRecord(record: InsertCreditReportPublicRecord): Promise<CreditReportPublicRecord> {
+    const [result] = await db.insert(creditReportPublicRecords).values(record).returning();
+    return result;
+  }
+
+  // Dispute Items
+  async getDisputeItems(uploadId: number): Promise<DisputeItem[]> {
+    return await db.select().from(disputeItems).where(eq(disputeItems.uploadId, uploadId));
+  }
+
+  async getDisputeItemsByClient(clientId: number): Promise<DisputeItem[]> {
+    return await db.select().from(disputeItems).where(eq(disputeItems.clientId, clientId));
+  }
+
+  async getDisputeItem(id: number): Promise<DisputeItem | undefined> {
+    const [item] = await db.select().from(disputeItems).where(eq(disputeItems.id, id));
+    return item || undefined;
+  }
+
+  async createDisputeItem(item: InsertDisputeItem): Promise<DisputeItem> {
+    const [result] = await db.insert(disputeItems).values(item).returning();
+    return result;
+  }
+
+  async updateDisputeItem(id: number, updates: Partial<DisputeItem>): Promise<DisputeItem | undefined> {
+    const [result] = await db.update(disputeItems).set(updates).where(eq(disputeItems.id, id)).returning();
+    return result || undefined;
+  }
+
+  // Dispute Letters (New)
+  async getDisputeLettersNew(uploadId: number): Promise<DisputeLetterNew[]> {
+    return await db.select().from(disputeLettersNew).where(eq(disputeLettersNew.uploadId, uploadId));
+  }
+
+  async getDisputeLetterNew(id: number): Promise<DisputeLetterNew | undefined> {
+    const [letter] = await db.select().from(disputeLettersNew).where(eq(disputeLettersNew.id, id));
+    return letter || undefined;
+  }
+
+  async createDisputeLetterNew(letter: InsertDisputeLetterNew): Promise<DisputeLetterNew> {
+    const [result] = await db.insert(disputeLettersNew).values(letter).returning();
+    return result;
+  }
+
+  async updateDisputeLetterNew(id: number, updates: Partial<DisputeLetterNew>): Promise<DisputeLetterNew | undefined> {
+    const [result] = await db.update(disputeLettersNew).set(updates).where(eq(disputeLettersNew.id, id)).returning();
+    return result || undefined;
+  }
+
+  // Dispute Calendar Events
+  async getDisputeCalendarEvents(clientId: number): Promise<DisputeCalendarEvent[]> {
+    return await db.select().from(disputeCalendarEvents).where(eq(disputeCalendarEvents.clientId, clientId));
+  }
+
+  async getAllDisputeCalendarEvents(): Promise<DisputeCalendarEvent[]> {
+    return await db.select().from(disputeCalendarEvents);
+  }
+
+  async getDisputeCalendarEvent(id: number): Promise<DisputeCalendarEvent | undefined> {
+    const [event] = await db.select().from(disputeCalendarEvents).where(eq(disputeCalendarEvents.id, id));
+    return event || undefined;
+  }
+
+  async createDisputeCalendarEvent(event: InsertDisputeCalendarEvent): Promise<DisputeCalendarEvent> {
+    const [result] = await db.insert(disputeCalendarEvents).values(event).returning();
+    return result;
+  }
+
+  async updateDisputeCalendarEvent(id: number, updates: Partial<DisputeCalendarEvent>): Promise<DisputeCalendarEvent | undefined> {
+    const [result] = await db.update(disputeCalendarEvents).set(updates).where(eq(disputeCalendarEvents.id, id)).returning();
+    return result || undefined;
   }
 }
 

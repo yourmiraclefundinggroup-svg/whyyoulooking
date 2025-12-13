@@ -890,8 +890,13 @@ export const creditReportUploads = pgTable("credit_report_uploads", {
   uploadedBy: integer("uploaded_by").references(() => users.id).notNull(),
   fileName: text("file_name").notNull(),
   fileType: text("file_type").notNull(),
-  bureau: text("bureau").default("EXPERIAN"),
+  bureau: text("bureau", { enum: ["EXPERIAN", "EQUIFAX", "TRANSUNION"] }).default("EXPERIAN").notNull(),
+  sourceFormat: text("source_format", { enum: ["pdf", "html", "txt", "csv"] }).notNull(),
   creditScore: integer("credit_score"),
+  parseStatus: text("parse_status", { enum: ["queued", "processing", "succeeded", "failed"] }).default("queued").notNull(),
+  parseError: text("parse_error"),
+  rawExtractionJson: jsonb("raw_extraction_json"),
+  reportDate: date("report_date"),
   analysisComplete: boolean("analysis_complete").default(false),
   rawAnalysis: text("raw_analysis"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -920,9 +925,125 @@ export const creditReportLetters = pgTable("credit_report_letters", {
   generatedAt: timestamp("generated_at").defaultNow().notNull(),
 });
 
+// Credit Report Accounts (Tradelines) - NEW for Dispute Hub
+export const creditReportAccounts = pgTable("credit_report_accounts", {
+  id: serial("id").primaryKey(),
+  uploadId: integer("upload_id").references(() => creditReportUploads.id).notNull(),
+  clientId: integer("client_id").references(() => users.id).notNull(),
+  creditorName: text("creditor_name").notNull(),
+  accountNumberMasked: text("account_number_masked"),
+  accountType: text("account_type"),
+  status: text("status"),
+  balance: integer("balance"),
+  creditLimit: integer("credit_limit"),
+  highBalance: integer("high_balance"),
+  paymentStatus: text("payment_status"),
+  dateOpened: date("date_opened"),
+  dateReported: date("date_reported"),
+  dateLastPayment: date("date_last_payment"),
+  derogatoryFlags: jsonb("derogatory_flags").$type<string[]>(),
+  latePayments: jsonb("late_payments_30_60_90").$type<{ days30?: number; days60?: number; days90?: number }>(),
+  remarks: text("remarks"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Credit Report Inquiries - NEW for Dispute Hub
+export const creditReportInquiries = pgTable("credit_report_inquiries", {
+  id: serial("id").primaryKey(),
+  uploadId: integer("upload_id").references(() => creditReportUploads.id).notNull(),
+  clientId: integer("client_id").references(() => users.id).notNull(),
+  creditorName: text("creditor_name").notNull(),
+  inquiryDate: date("inquiry_date"),
+  inquiryType: text("inquiry_type", { enum: ["hard", "soft", "unknown"] }).default("unknown"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Credit Report Collections - NEW for Dispute Hub
+export const creditReportCollections = pgTable("credit_report_collections", {
+  id: serial("id").primaryKey(),
+  uploadId: integer("upload_id").references(() => creditReportUploads.id).notNull(),
+  clientId: integer("client_id").references(() => users.id).notNull(),
+  agencyName: text("agency_name").notNull(),
+  originalCreditor: text("original_creditor"),
+  amount: integer("amount"),
+  dateOpened: date("date_opened"),
+  dateReported: date("date_reported"),
+  dateLastPayment: date("date_last_payment"),
+  status: text("status"),
+  remarks: text("remarks"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Credit Report Public Records - NEW for Dispute Hub
+export const creditReportPublicRecords = pgTable("credit_report_public_records", {
+  id: serial("id").primaryKey(),
+  uploadId: integer("upload_id").references(() => creditReportUploads.id).notNull(),
+  clientId: integer("client_id").references(() => users.id).notNull(),
+  recordType: text("record_type"),
+  court: text("court"),
+  dateFiled: date("date_filed"),
+  status: text("status"),
+  remarks: text("remarks"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Dispute Items - NEW for Dispute Hub selection and tracking
+export const disputeItems = pgTable("dispute_items", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").references(() => users.id).notNull(),
+  uploadId: integer("upload_id").references(() => creditReportUploads.id).notNull(),
+  itemType: text("item_type", { enum: ["account", "inquiry", "collection", "public_record"] }).notNull(),
+  itemRefId: integer("item_ref_id").notNull(),
+  negativeReasonTags: text("negative_reason_tags").array(),
+  severityScore: integer("severity_score").default(0),
+  recommendedStrategy: text("recommended_strategy"),
+  recommendedLetterType: text("recommended_letter_type", { enum: ["round1", "round2", "validation", "goodwill", "inquiry"] }),
+  selected: boolean("selected").default(false),
+  adminNotes: text("admin_notes"),
+  status: text("status", { enum: ["draft", "ready", "sent", "awaiting_response", "resolved"] }).default("draft"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Dispute Letters - NEW for letter generation and tracking
+export const disputeLettersNew = pgTable("dispute_letters_new", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").references(() => users.id).notNull(),
+  uploadId: integer("upload_id").references(() => creditReportUploads.id).notNull(),
+  letterType: text("letter_type", { enum: ["round1", "round2", "validation", "goodwill", "inquiry"] }).notNull(),
+  bureau: text("bureau", { enum: ["EXPERIAN", "EQUIFAX", "TRANSUNION"] }).notNull(),
+  content: text("content").notNull(),
+  generatedByAdminId: integer("generated_by_admin_id").references(() => users.id),
+  status: text("status", { enum: ["draft", "approved", "sent"] }).default("draft"),
+  downloadUrl: text("download_url"),
+  disputeItemIds: integer("dispute_item_ids").array(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Dispute Calendar Events - NEW for scheduling and round tracking
+export const disputeCalendarEvents = pgTable("dispute_calendar_events", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").references(() => users.id).notNull(),
+  disputeItemIds: integer("dispute_item_ids").array(),
+  letterId: integer("letter_id").references(() => disputeLettersNew.id),
+  round: text("round", { enum: ["1", "2", "validation"] }).notNull(),
+  scheduledSendDate: date("scheduled_send_date").notNull(),
+  followUpDate: date("follow_up_date"),
+  expectedResponseBy: date("expected_response_by"),
+  status: text("status", { enum: ["scheduled", "sent", "follow-up", "completed", "overdue"] }).default("scheduled"),
+  createdByAdminId: integer("created_by_admin_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertCreditReportUploadSchema = createInsertSchema(creditReportUploads).omit({ id: true, createdAt: true });
 export const insertCreditReportFindingSchema = createInsertSchema(creditReportFindings).omit({ id: true, createdAt: true });
 export const insertCreditReportLetterSchema = createInsertSchema(creditReportLetters).omit({ id: true, generatedAt: true });
+export const insertCreditReportAccountSchema = createInsertSchema(creditReportAccounts).omit({ id: true, createdAt: true });
+export const insertCreditReportInquirySchema = createInsertSchema(creditReportInquiries).omit({ id: true, createdAt: true });
+export const insertCreditReportCollectionSchema = createInsertSchema(creditReportCollections).omit({ id: true, createdAt: true });
+export const insertCreditReportPublicRecordSchema = createInsertSchema(creditReportPublicRecords).omit({ id: true, createdAt: true });
+export const insertDisputeItemSchema = createInsertSchema(disputeItems).omit({ id: true, createdAt: true });
+export const insertDisputeLetterNewSchema = createInsertSchema(disputeLettersNew).omit({ id: true, createdAt: true });
+export const insertDisputeCalendarEventSchema = createInsertSchema(disputeCalendarEvents).omit({ id: true, createdAt: true });
 
 export type CreditReportUpload = typeof creditReportUploads.$inferSelect;
 export type InsertCreditReportUpload = z.infer<typeof insertCreditReportUploadSchema>;
@@ -930,6 +1051,20 @@ export type CreditReportFinding = typeof creditReportFindings.$inferSelect;
 export type InsertCreditReportFinding = z.infer<typeof insertCreditReportFindingSchema>;
 export type CreditReportLetter = typeof creditReportLetters.$inferSelect;
 export type InsertCreditReportLetter = z.infer<typeof insertCreditReportLetterSchema>;
+export type CreditReportAccount = typeof creditReportAccounts.$inferSelect;
+export type InsertCreditReportAccount = z.infer<typeof insertCreditReportAccountSchema>;
+export type CreditReportInquiry = typeof creditReportInquiries.$inferSelect;
+export type InsertCreditReportInquiry = z.infer<typeof insertCreditReportInquirySchema>;
+export type CreditReportCollection = typeof creditReportCollections.$inferSelect;
+export type InsertCreditReportCollection = z.infer<typeof insertCreditReportCollectionSchema>;
+export type CreditReportPublicRecord = typeof creditReportPublicRecords.$inferSelect;
+export type InsertCreditReportPublicRecord = z.infer<typeof insertCreditReportPublicRecordSchema>;
+export type DisputeItem = typeof disputeItems.$inferSelect;
+export type InsertDisputeItem = z.infer<typeof insertDisputeItemSchema>;
+export type DisputeLetterNew = typeof disputeLettersNew.$inferSelect;
+export type InsertDisputeLetterNew = z.infer<typeof insertDisputeLetterNewSchema>;
+export type DisputeCalendarEvent = typeof disputeCalendarEvents.$inferSelect;
+export type InsertDisputeCalendarEvent = z.infer<typeof insertDisputeCalendarEventSchema>;
 
 // Gamification schema inserts and types
 export const insertUserOnboardingProgressSchema = createInsertSchema(userOnboardingProgress).omit({ id: true, createdAt: true, updatedAt: true });

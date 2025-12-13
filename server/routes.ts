@@ -14,7 +14,7 @@ import OpenAI from "openai";
 import Stripe from "stripe";
 import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
-import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema } from "@shared/schema";
+import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users } from "@shared/schema";
 import { z } from "zod";
 
 // Initialize OpenAI for support AI
@@ -4558,6 +4558,734 @@ Please contact this lead within 24 hours.
         recentPayments
       });
     } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============================================
+  // DISPUTE HUB API ROUTES
+  // ============================================
+
+  // Get all credit report uploads (admin only)
+  app.get("/api/admin/credit-report-uploads", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const uploads = await storage.getAllCreditReportUploads();
+      
+      // Join with user data to get client names
+      const uploadsWithClients = await Promise.all(uploads.map(async (upload) => {
+        const client = await storage.getUser(upload.userId);
+        const uploadedByUser = await storage.getUser(upload.uploadedBy);
+        return {
+          ...upload,
+          clientName: client ? `${client.firstName} ${client.lastName}` : 'Unknown',
+          clientEmail: client?.email || '',
+          uploadedByName: uploadedByUser ? `${uploadedByUser.firstName} ${uploadedByUser.lastName}` : 'Unknown'
+        };
+      }));
+
+      res.json(uploadsWithClients);
+    } catch (error: any) {
+      console.error("Error fetching credit report uploads:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get uploads for a specific client
+  app.get("/api/admin/credit-report-uploads/client/:clientId", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const clientId = parseInt(req.params.clientId);
+      const uploads = await storage.getCreditReportUploads(clientId);
+      res.json(uploads);
+    } catch (error: any) {
+      console.error("Error fetching client credit report uploads:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get single credit report upload with all parsed data
+  app.get("/api/admin/credit-report-uploads/:id", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const uploadId = parseInt(req.params.id);
+      const upload = await storage.getCreditReportUpload(uploadId);
+      
+      if (!upload) {
+        return res.status(404).json({ error: "Upload not found" });
+      }
+
+      // Get client info
+      const client = await storage.getUser(upload.userId);
+
+      // Get all parsed data
+      const [accounts, inquiries, collections, publicRecords, disputeItems, letters] = await Promise.all([
+        storage.getCreditReportAccounts(uploadId),
+        storage.getCreditReportInquiries(uploadId),
+        storage.getCreditReportCollections(uploadId),
+        storage.getCreditReportPublicRecords(uploadId),
+        storage.getDisputeItems(uploadId),
+        storage.getDisputeLettersNew(uploadId)
+      ]);
+
+      res.json({
+        upload,
+        client: client ? { id: client.id, firstName: client.firstName, lastName: client.lastName, email: client.email } : null,
+        accounts,
+        inquiries,
+        collections,
+        publicRecords,
+        disputeItems,
+        letters
+      });
+    } catch (error: any) {
+      console.error("Error fetching credit report upload:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create new credit report upload record
+  app.post("/api/admin/credit-report-uploads", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const uploadData = {
+        ...req.body,
+        uploadedBy: user.id
+      };
+
+      const validatedData = insertCreditReportUploadSchema.parse(uploadData);
+      const upload = await storage.createCreditReportUpload(validatedData);
+      res.status(201).json(upload);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid upload data", details: error.errors });
+      }
+      console.error("Error creating credit report upload:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update credit report upload
+  app.patch("/api/admin/credit-report-uploads/:id", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const uploadId = parseInt(req.params.id);
+      const updates = req.body;
+      const updated = await storage.updateCreditReportUpload(uploadId, updates);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Upload not found" });
+      }
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating credit report upload:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create credit report account
+  app.post("/api/admin/credit-report-accounts", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const validatedData = insertCreditReportAccountSchema.parse(req.body);
+      const account = await storage.createCreditReportAccount(validatedData);
+      res.status(201).json(account);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid account data", details: error.errors });
+      }
+      console.error("Error creating credit report account:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get credit report accounts for upload
+  app.get("/api/admin/credit-report-accounts/:uploadId", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const uploadId = parseInt(req.params.uploadId);
+      const accounts = await storage.getCreditReportAccounts(uploadId);
+      res.json(accounts);
+    } catch (error: any) {
+      console.error("Error fetching credit report accounts:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create credit report inquiry
+  app.post("/api/admin/credit-report-inquiries", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const validatedData = insertCreditReportInquirySchema.parse(req.body);
+      const inquiry = await storage.createCreditReportInquiry(validatedData);
+      res.status(201).json(inquiry);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid inquiry data", details: error.errors });
+      }
+      console.error("Error creating credit report inquiry:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get credit report inquiries for upload
+  app.get("/api/admin/credit-report-inquiries/:uploadId", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const uploadId = parseInt(req.params.uploadId);
+      const inquiries = await storage.getCreditReportInquiries(uploadId);
+      res.json(inquiries);
+    } catch (error: any) {
+      console.error("Error fetching credit report inquiries:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create credit report collection
+  app.post("/api/admin/credit-report-collections", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const validatedData = insertCreditReportCollectionSchema.parse(req.body);
+      const collection = await storage.createCreditReportCollection(validatedData);
+      res.status(201).json(collection);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid collection data", details: error.errors });
+      }
+      console.error("Error creating credit report collection:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get credit report collections for upload
+  app.get("/api/admin/credit-report-collections/:uploadId", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const uploadId = parseInt(req.params.uploadId);
+      const collections = await storage.getCreditReportCollections(uploadId);
+      res.json(collections);
+    } catch (error: any) {
+      console.error("Error fetching credit report collections:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create credit report public record
+  app.post("/api/admin/credit-report-public-records", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const validatedData = insertCreditReportPublicRecordSchema.parse(req.body);
+      const record = await storage.createCreditReportPublicRecord(validatedData);
+      res.status(201).json(record);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid public record data", details: error.errors });
+      }
+      console.error("Error creating credit report public record:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get credit report public records for upload
+  app.get("/api/admin/credit-report-public-records/:uploadId", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const uploadId = parseInt(req.params.uploadId);
+      const records = await storage.getCreditReportPublicRecords(uploadId);
+      res.json(records);
+    } catch (error: any) {
+      console.error("Error fetching credit report public records:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============================================
+  // DISPUTE ITEMS API ROUTES
+  // ============================================
+
+  // Get dispute items for upload
+  app.get("/api/admin/dispute-items/:uploadId", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const uploadId = parseInt(req.params.uploadId);
+      const items = await storage.getDisputeItems(uploadId);
+      res.json(items);
+    } catch (error: any) {
+      console.error("Error fetching dispute items:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create dispute item
+  app.post("/api/admin/dispute-items", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const validatedData = insertDisputeItemSchema.parse(req.body);
+      const item = await storage.createDisputeItem(validatedData);
+      res.status(201).json(item);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid dispute item data", details: error.errors });
+      }
+      console.error("Error creating dispute item:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update dispute item
+  app.patch("/api/admin/dispute-items/:id", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const itemId = parseInt(req.params.id);
+      const updates = req.body;
+      const updated = await storage.updateDisputeItem(itemId, updates);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Dispute item not found" });
+      }
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating dispute item:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Batch update dispute items (for selecting multiple items)
+  app.post("/api/admin/dispute-items/batch-update", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { itemIds, updates } = req.body;
+      
+      if (!Array.isArray(itemIds) || itemIds.length === 0) {
+        return res.status(400).json({ error: "itemIds must be a non-empty array" });
+      }
+
+      const results = await Promise.all(
+        itemIds.map((id: number) => storage.updateDisputeItem(id, updates))
+      );
+
+      res.json({ updated: results.filter(Boolean).length, items: results.filter(Boolean) });
+    } catch (error: any) {
+      console.error("Error batch updating dispute items:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============================================
+  // DISPUTE LETTERS API ROUTES
+  // ============================================
+
+  // Get dispute letters for upload
+  app.get("/api/admin/dispute-letters-new/:uploadId", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const uploadId = parseInt(req.params.uploadId);
+      const letters = await storage.getDisputeLettersNew(uploadId);
+      res.json(letters);
+    } catch (error: any) {
+      console.error("Error fetching dispute letters:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create dispute letter
+  app.post("/api/admin/dispute-letters-new", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const letterData = {
+        ...req.body,
+        generatedByAdminId: user.id
+      };
+
+      const validatedData = insertDisputeLetterNewSchema.parse(letterData);
+      const letter = await storage.createDisputeLetterNew(validatedData);
+      res.status(201).json(letter);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid letter data", details: error.errors });
+      }
+      console.error("Error creating dispute letter:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update dispute letter
+  app.patch("/api/admin/dispute-letters-new/:id", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const letterId = parseInt(req.params.id);
+      const updates = req.body;
+      const updated = await storage.updateDisputeLetterNew(letterId, updates);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Dispute letter not found" });
+      }
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating dispute letter:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Generate AI-powered dispute letter for selected items
+  app.post("/api/admin/dispute-letters-new/generate", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { uploadId, clientId, bureau, letterType, disputeItemIds, clientInfo } = req.body;
+
+      // Get the dispute items
+      const allItems = await storage.getDisputeItems(uploadId);
+      const selectedItems = allItems.filter(item => disputeItemIds.includes(item.id));
+
+      if (selectedItems.length === 0) {
+        return res.status(400).json({ error: "No dispute items selected" });
+      }
+
+      // Build the prompt for AI letter generation
+      const itemsDescription = selectedItems.map(item => {
+        return `- ${item.itemType}: ${item.negativeReasonTags?.join(', ') || 'General dispute'} (Strategy: ${item.recommendedStrategy || 'Standard dispute'})`;
+      }).join('\n');
+
+      const letterPrompt = `Generate a professional credit dispute letter for the following:
+
+CLIENT: ${clientInfo?.name || 'Client Name'}
+ADDRESS: ${clientInfo?.address || 'Client Address'}
+BUREAU: ${bureau}
+LETTER TYPE: ${letterType} (${letterType === 'round1' ? 'Initial Dispute' : letterType === 'round2' ? 'Follow-up Dispute' : letterType === 'validation' ? 'Debt Validation' : letterType === 'goodwill' ? 'Goodwill Request' : 'Inquiry Removal'})
+
+ITEMS TO DISPUTE:
+${itemsDescription}
+
+Generate a complete, professional dispute letter that:
+1. Follows FCRA guidelines
+2. Uses appropriate legal language for a ${letterType} letter
+3. Lists all disputed items clearly
+4. Requests proper verification/investigation
+5. Sets a 30-day response deadline
+6. Is ready to print and mail`;
+
+      let letterContent = '';
+
+      if (process.env.OPENAI_API_KEY) {
+        try {
+          const response = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+              {
+                role: "system",
+                content: "You are an expert credit repair specialist. Generate professional, legally-compliant dispute letters."
+              },
+              { role: "user", content: letterPrompt }
+            ],
+            max_tokens: 2000,
+            temperature: 0.4
+          });
+          letterContent = response.choices[0]?.message?.content || '';
+        } catch (aiError) {
+          console.error("AI generation failed, using template:", aiError);
+        }
+      }
+
+      // Fallback template if AI fails
+      if (!letterContent) {
+        const currentDate = new Date().toLocaleDateString();
+        letterContent = `${currentDate}
+
+${bureau} Credit Bureau
+Consumer Dispute Department
+
+RE: Formal Credit Report Dispute - ${letterType === 'round1' ? 'Initial Request' : letterType === 'round2' ? 'Second Request - No Response' : 'Dispute Request'}
+
+Dear ${bureau} Credit Bureau,
+
+I am writing to formally dispute the following items on my credit report as inaccurate, unverifiable, or incomplete under the Fair Credit Reporting Act (FCRA).
+
+DISPUTED ITEMS:
+${selectedItems.map((item, idx) => `${idx + 1}. ${item.itemType.toUpperCase()} - ${item.negativeReasonTags?.join(', ') || 'Disputed item'}`).join('\n')}
+
+Under 15 U.S.C. § 1681i, you are required to conduct a reasonable investigation within 30 days and notify me of the results.
+
+Please investigate these items and provide me with:
+1. Written confirmation of your investigation
+2. Updated credit report if changes are made
+3. Names and contact information of information providers
+
+If you cannot verify these items, they must be promptly deleted from my credit report.
+
+Sincerely,
+
+${clientInfo?.name || '[Your Name]'}
+${clientInfo?.address || '[Your Address]'}
+
+Enclosures: Copy of ID, Proof of Address`;
+      }
+
+      // Save the letter
+      const letter = await storage.createDisputeLetterNew({
+        clientId,
+        uploadId,
+        letterType,
+        bureau,
+        content: letterContent,
+        generatedByAdminId: user.id,
+        status: 'draft',
+        disputeItemIds
+      });
+
+      res.status(201).json(letter);
+    } catch (error: any) {
+      console.error("Error generating dispute letter:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============================================
+  // DISPUTE CALENDAR API ROUTES
+  // ============================================
+
+  // Get all calendar events (admin)
+  app.get("/api/admin/dispute-calendar", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const events = await storage.getAllDisputeCalendarEvents();
+      
+      // Enrich with client info
+      const enrichedEvents = await Promise.all(events.map(async (event) => {
+        const client = await storage.getUser(event.clientId);
+        return {
+          ...event,
+          clientName: client ? `${client.firstName} ${client.lastName}` : 'Unknown'
+        };
+      }));
+
+      res.json(enrichedEvents);
+    } catch (error: any) {
+      console.error("Error fetching dispute calendar events:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get calendar events for a client
+  app.get("/api/admin/dispute-calendar/client/:clientId", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const clientId = parseInt(req.params.clientId);
+      const events = await storage.getDisputeCalendarEvents(clientId);
+      res.json(events);
+    } catch (error: any) {
+      console.error("Error fetching client calendar events:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create calendar event
+  app.post("/api/admin/dispute-calendar", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const eventData = {
+        ...req.body,
+        createdByAdminId: user.id
+      };
+
+      const validatedData = insertDisputeCalendarEventSchema.parse(eventData);
+      const event = await storage.createDisputeCalendarEvent(validatedData);
+      res.status(201).json(event);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid calendar event data", details: error.errors });
+      }
+      console.error("Error creating dispute calendar event:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update calendar event
+  app.patch("/api/admin/dispute-calendar/:id", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const eventId = parseInt(req.params.id);
+      const updates = req.body;
+      const updated = await storage.updateDisputeCalendarEvent(eventId, updates);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Calendar event not found" });
+      }
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating dispute calendar event:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============================================
+  // CLIENT CREDIT REPORT API ROUTES (Read-only)
+  // ============================================
+
+  // Get client's own credit report uploads
+  app.get("/api/client/credit-report-uploads", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const uploads = await storage.getCreditReportUploads(user.id);
+      res.json(uploads);
+    } catch (error: any) {
+      console.error("Error fetching client credit report uploads:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get single credit report with details (client's own)
+  app.get("/api/client/credit-report-uploads/:id", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const uploadId = parseInt(req.params.id);
+      const upload = await storage.getCreditReportUpload(uploadId);
+      
+      if (!upload) {
+        return res.status(404).json({ error: "Upload not found" });
+      }
+
+      // Ensure client can only access their own data
+      if (upload.userId !== user.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      // Get all parsed data
+      const [accounts, inquiries, collections, publicRecords, disputeItems, letters] = await Promise.all([
+        storage.getCreditReportAccounts(uploadId),
+        storage.getCreditReportInquiries(uploadId),
+        storage.getCreditReportCollections(uploadId),
+        storage.getCreditReportPublicRecords(uploadId),
+        storage.getDisputeItems(uploadId),
+        storage.getDisputeLettersNew(uploadId)
+      ]);
+
+      res.json({
+        upload,
+        accounts,
+        inquiries,
+        collections,
+        publicRecords,
+        disputeItems,
+        letters
+      });
+    } catch (error: any) {
+      console.error("Error fetching client credit report:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get client's dispute calendar events
+  app.get("/api/client/dispute-calendar", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const events = await storage.getDisputeCalendarEvents(user.id);
+      res.json(events);
+    } catch (error: any) {
+      console.error("Error fetching client calendar events:", error);
       res.status(500).json({ error: error.message });
     }
   });

@@ -16,7 +16,12 @@ import AdminCreditAnalysis from "@/pages/admin-credit-analysis";
 import { BureauResponseAnalysis } from "@/components/bureau-response-analysis";
 import { SecureChat } from "@/components/secure-chat";
 import { AdminSettings } from "@/components/admin-settings";
-import { User, CreditReport, CreditIssue, Dispute } from "@shared/schema";
+import { User, CreditReport, CreditIssue, Dispute, CreditReportUpload, CreditReportAccount, CreditReportInquiry, CreditReportCollection, CreditReportPublicRecord, DisputeLetterNew, DisputeCalendarEvent } from "@shared/schema";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Link } from "wouter";
 import {
   AdminShell,
   AdminCard,
@@ -49,6 +54,25 @@ import {
   Package,
   Activity,
   DollarSign,
+  Upload,
+  FolderOpen,
+  Filter,
+  Plus,
+  Eye,
+  ArrowLeft,
+  CreditCard,
+  Search as SearchIcon,
+  AlertCircle,
+  Landmark,
+  Mail,
+  Target,
+  Sparkles,
+  GitCompare,
+  ArrowRight,
+  ArrowUp,
+  ArrowDown,
+  Minus,
+  Calendar,
 } from "lucide-react";
 
 export default function AdminPortal() {
@@ -147,6 +171,11 @@ export default function AdminPortal() {
         handleCreateClient={handleCreateClient}
         createClientMutation={createClientMutation}
       />;
+    } else if (location === "/admin-portal/credit-reports") {
+      return <CreditReportsPage clientUsers={clientUsers} />;
+    } else if (location.startsWith("/admin-portal/credit-reports/")) {
+      const reportId = parseInt(location.split("/").pop() || "0");
+      return <DisputeHubPage reportId={reportId} clientUsers={clientUsers} />;
     } else if (location === "/admin-portal/disputes") {
       return <DisputeCenterPage 
         selectedClient={selectedClient}
@@ -973,6 +1002,1867 @@ function SystemPage() {
           </div>
         </AdminCardContent>
       </AdminCard>
+    </div>
+  );
+}
+
+interface CreditReportWithClient extends CreditReportUpload {
+  clientName?: string;
+}
+
+function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [filterClient, setFilterClient] = useState<string>("all");
+  const [filterBureau, setFilterBureau] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+
+  const { data: creditReports = [], isLoading } = useQuery<CreditReportWithClient[]>({
+    queryKey: ['/api/admin/credit-report-uploads'],
+  });
+
+  const reportsWithClientNames = creditReports.map(report => {
+    const client = clientUsers.find(u => u.id === report.userId);
+    return {
+      ...report,
+      clientName: client ? `${client.firstName} ${client.lastName}` : 'Unknown Client'
+    };
+  });
+
+  const filteredReports = reportsWithClientNames.filter(report => {
+    if (filterClient !== "all" && report.userId.toString() !== filterClient) return false;
+    if (filterBureau !== "all" && report.bureau !== filterBureau) return false;
+    if (filterStatus !== "all" && report.parseStatus !== filterStatus) return false;
+    return true;
+  });
+
+  const [newUpload, setNewUpload] = useState({
+    userId: "",
+    fileName: "",
+    fileType: "pdf",
+    bureau: "EXPERIAN" as "EXPERIAN" | "EQUIFAX" | "TRANSUNION",
+    sourceFormat: "pdf" as "pdf" | "html" | "txt" | "csv",
+    creditScore: "",
+  });
+
+  const createUploadMutation = useMutation({
+    mutationFn: async (data: typeof newUpload) => {
+      const response = await apiRequest("POST", "/api/admin/credit-report-uploads", {
+        userId: parseInt(data.userId),
+        uploadedBy: 1,
+        fileName: data.fileName,
+        fileType: data.fileType,
+        bureau: data.bureau,
+        sourceFormat: data.sourceFormat,
+        creditScore: data.creditScore ? parseInt(data.creditScore) : null,
+        parseStatus: "queued",
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Credit report upload created successfully",
+      });
+      setUploadDialogOpen(false);
+      setNewUpload({ userId: "", fileName: "", fileType: "pdf", bureau: "EXPERIAN", sourceFormat: "pdf", creditScore: "" });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/credit-report-uploads'] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create credit report upload",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateUpload = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newUpload.userId && newUpload.fileName) {
+      createUploadMutation.mutate(newUpload);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "succeeded":
+        return <AdminBadge variant="success">Parsed</AdminBadge>;
+      case "processing":
+        return <AdminBadge variant="warning">Processing</AdminBadge>;
+      case "failed":
+        return <AdminBadge variant="danger">Failed</AdminBadge>;
+      default:
+        return <AdminBadge variant="default">Queued</AdminBadge>;
+    }
+  };
+
+  const getBureauBadge = (bureau: string) => {
+    switch (bureau) {
+      case "EXPERIAN":
+        return <span className="px-2 py-1 rounded text-xs font-medium bg-blue-500/20 text-blue-400">Experian</span>;
+      case "EQUIFAX":
+        return <span className="px-2 py-1 rounded text-xs font-medium bg-red-500/20 text-red-400">Equifax</span>;
+      case "TRANSUNION":
+        return <span className="px-2 py-1 rounded text-xs font-medium bg-purple-500/20 text-purple-400">TransUnion</span>;
+      default:
+        return <span className="px-2 py-1 rounded text-xs font-medium bg-gray-500/20 text-gray-400">{bureau}</span>;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Credit Reports</h1>
+          <p className="text-[hsl(var(--admin-text-muted))]">Manage client credit report uploads and analysis.</p>
+        </div>
+        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+          <DialogTrigger asChild>
+            <Button 
+              className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
+              data-testid="button-upload-credit-report"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Upload Report
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+            <DialogHeader>
+              <DialogTitle className="text-white">Upload Credit Report</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreateUpload} className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-[hsl(var(--admin-text))]">Client</Label>
+                <Select value={newUpload.userId} onValueChange={(v) => setNewUpload({ ...newUpload, userId: v })}>
+                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white" data-testid="select-client">
+                    <SelectValue placeholder="Select a client" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                    {clientUsers.map(client => (
+                      <SelectItem key={client.id} value={client.id.toString()} className="text-white hover:bg-[hsl(var(--admin-bg))]">
+                        {client.firstName} {client.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[hsl(var(--admin-text))]">File Name</Label>
+                <Input
+                  value={newUpload.fileName}
+                  onChange={(e) => setNewUpload({ ...newUpload, fileName: e.target.value })}
+                  placeholder="e.g., experian_report_2024.pdf"
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white"
+                  data-testid="input-file-name"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[hsl(var(--admin-text))]">Bureau</Label>
+                  <Select value={newUpload.bureau} onValueChange={(v: "EXPERIAN" | "EQUIFAX" | "TRANSUNION") => setNewUpload({ ...newUpload, bureau: v })}>
+                    <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white" data-testid="select-bureau">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                      <SelectItem value="EXPERIAN" className="text-white hover:bg-[hsl(var(--admin-bg))]">Experian</SelectItem>
+                      <SelectItem value="EQUIFAX" className="text-white hover:bg-[hsl(var(--admin-bg))]">Equifax</SelectItem>
+                      <SelectItem value="TRANSUNION" className="text-white hover:bg-[hsl(var(--admin-bg))]">TransUnion</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[hsl(var(--admin-text))]">Format</Label>
+                  <Select value={newUpload.sourceFormat} onValueChange={(v: "pdf" | "html" | "txt" | "csv") => setNewUpload({ ...newUpload, sourceFormat: v })}>
+                    <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white" data-testid="select-format">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                      <SelectItem value="pdf" className="text-white hover:bg-[hsl(var(--admin-bg))]">PDF</SelectItem>
+                      <SelectItem value="html" className="text-white hover:bg-[hsl(var(--admin-bg))]">HTML</SelectItem>
+                      <SelectItem value="txt" className="text-white hover:bg-[hsl(var(--admin-bg))]">TXT</SelectItem>
+                      <SelectItem value="csv" className="text-white hover:bg-[hsl(var(--admin-bg))]">CSV</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[hsl(var(--admin-text))]">Credit Score (optional)</Label>
+                <Input
+                  type="number"
+                  value={newUpload.creditScore}
+                  onChange={(e) => setNewUpload({ ...newUpload, creditScore: e.target.value })}
+                  placeholder="e.g., 720"
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white"
+                  data-testid="input-credit-score"
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
+                disabled={createUploadMutation.isPending}
+                data-testid="button-submit-upload"
+              >
+                {createUploadMutation.isPending ? "Creating..." : "Create Upload Record"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <AdminCard>
+        <AdminCardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full">
+            <AdminCardTitle icon={<Filter className="h-5 w-5" />}>Filters</AdminCardTitle>
+            <div className="flex flex-wrap gap-3">
+              <Select value={filterClient} onValueChange={setFilterClient}>
+                <SelectTrigger className="w-[160px] bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white" data-testid="filter-client">
+                  <SelectValue placeholder="All Clients" />
+                </SelectTrigger>
+                <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                  <SelectItem value="all" className="text-white hover:bg-[hsl(var(--admin-bg))]">All Clients</SelectItem>
+                  {clientUsers.map(client => (
+                    <SelectItem key={client.id} value={client.id.toString()} className="text-white hover:bg-[hsl(var(--admin-bg))]">
+                      {client.firstName} {client.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterBureau} onValueChange={setFilterBureau}>
+                <SelectTrigger className="w-[140px] bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white" data-testid="filter-bureau">
+                  <SelectValue placeholder="All Bureaus" />
+                </SelectTrigger>
+                <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                  <SelectItem value="all" className="text-white hover:bg-[hsl(var(--admin-bg))]">All Bureaus</SelectItem>
+                  <SelectItem value="EXPERIAN" className="text-white hover:bg-[hsl(var(--admin-bg))]">Experian</SelectItem>
+                  <SelectItem value="EQUIFAX" className="text-white hover:bg-[hsl(var(--admin-bg))]">Equifax</SelectItem>
+                  <SelectItem value="TRANSUNION" className="text-white hover:bg-[hsl(var(--admin-bg))]">TransUnion</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-[140px] bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white" data-testid="filter-status">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                  <SelectItem value="all" className="text-white hover:bg-[hsl(var(--admin-bg))]">All Statuses</SelectItem>
+                  <SelectItem value="queued" className="text-white hover:bg-[hsl(var(--admin-bg))]">Queued</SelectItem>
+                  <SelectItem value="processing" className="text-white hover:bg-[hsl(var(--admin-bg))]">Processing</SelectItem>
+                  <SelectItem value="succeeded" className="text-white hover:bg-[hsl(var(--admin-bg))]">Parsed</SelectItem>
+                  <SelectItem value="failed" className="text-white hover:bg-[hsl(var(--admin-bg))]">Failed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </AdminCardHeader>
+      </AdminCard>
+
+      <AdminCard>
+        <AdminCardHeader>
+          <AdminCardTitle icon={<FolderOpen className="h-5 w-5" />}>
+            Credit Report Uploads ({filteredReports.length})
+          </AdminCardTitle>
+        </AdminCardHeader>
+        <AdminCardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--admin-accent))]" />
+            </div>
+          ) : filteredReports.length === 0 ? (
+            <AdminEmptyState
+              icon={<FolderOpen className="h-8 w-8" />}
+              title="No Credit Reports"
+              description="Upload a credit report to get started with dispute analysis."
+            />
+          ) : (
+            <AdminTable>
+              <AdminTableHeader>
+                <tr>
+                  <AdminTableHead>Client</AdminTableHead>
+                  <AdminTableHead>File</AdminTableHead>
+                  <AdminTableHead>Bureau</AdminTableHead>
+                  <AdminTableHead>Score</AdminTableHead>
+                  <AdminTableHead>Status</AdminTableHead>
+                  <AdminTableHead>Date</AdminTableHead>
+                  <AdminTableHead>Actions</AdminTableHead>
+                </tr>
+              </AdminTableHeader>
+              <tbody>
+                {filteredReports.map((report) => (
+                  <AdminTableRow key={report.id} data-testid={`row-credit-report-${report.id}`}>
+                    <AdminTableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(25,95%,45%)] flex items-center justify-center text-white text-xs font-semibold">
+                          {report.clientName?.split(' ').map(n => n[0]).join('') || '?'}
+                        </div>
+                        <span className="font-medium text-white">{report.clientName}</span>
+                      </div>
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <div className="text-sm">
+                        <p className="text-white font-medium truncate max-w-[180px]">{report.fileName}</p>
+                        <p className="text-[hsl(var(--admin-text-muted))] text-xs uppercase">{report.sourceFormat}</p>
+                      </div>
+                    </AdminTableCell>
+                    <AdminTableCell>{getBureauBadge(report.bureau)}</AdminTableCell>
+                    <AdminTableCell>
+                      {report.creditScore ? (
+                        <span className="text-lg font-bold text-white">{report.creditScore}</span>
+                      ) : (
+                        <span className="text-[hsl(var(--admin-text-muted))]">--</span>
+                      )}
+                    </AdminTableCell>
+                    <AdminTableCell>{getStatusBadge(report.parseStatus)}</AdminTableCell>
+                    <AdminTableCell>
+                      <span className="text-[hsl(var(--admin-text-muted))] text-sm">
+                        {report.createdAt ? new Date(report.createdAt).toLocaleDateString() : '--'}
+                      </span>
+                    </AdminTableCell>
+                    <AdminTableCell>
+                      <Link href={`/admin-portal/credit-reports/${report.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/10"
+                          data-testid={`button-view-report-${report.id}`}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                      </Link>
+                    </AdminTableCell>
+                  </AdminTableRow>
+                ))}
+              </tbody>
+            </AdminTable>
+          )}
+        </AdminCardContent>
+      </AdminCard>
+    </div>
+  );
+}
+
+type SelectedItem = {
+  id: number;
+  type: 'account' | 'inquiry' | 'collection' | 'public_record';
+  name: string;
+  severity: number;
+  strategy: string;
+  reason: string;
+};
+
+function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUsers: User[] }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
+  const [generateLetterOpen, setGenerateLetterOpen] = useState(false);
+  const [letterType, setLetterType] = useState<'round1' | 'round2' | 'validation' | 'goodwill' | 'inquiry'>('round1');
+  const [letterBureau, setLetterBureau] = useState<'EXPERIAN' | 'EQUIFAX' | 'TRANSUNION'>('EXPERIAN');
+  const [generatedLetter, setGeneratedLetter] = useState<DisputeLetterNew | null>(null);
+  const [viewLetterOpen, setViewLetterOpen] = useState(false);
+  const [selectedLetter, setSelectedLetter] = useState<DisputeLetterNew | null>(null);
+  const [compareReportId, setCompareReportId] = useState<number | null>(null);
+  const [createEventOpen, setCreateEventOpen] = useState(false);
+  const [newEventDate, setNewEventDate] = useState('');
+  const [newEventRound, setNewEventRound] = useState<'1' | '2' | 'validation'>('1');
+  
+  const { data: report, isLoading: reportLoading } = useQuery<CreditReportUpload & { clientName?: string }>({
+    queryKey: ['/api/admin/credit-report-uploads', reportId],
+  });
+
+  const { data: accounts = [], isLoading: accountsLoading } = useQuery<CreditReportAccount[]>({
+    queryKey: ['/api/admin/credit-report-accounts', reportId],
+    enabled: !!reportId,
+  });
+
+  const { data: inquiries = [], isLoading: inquiriesLoading } = useQuery<CreditReportInquiry[]>({
+    queryKey: ['/api/admin/credit-report-inquiries', reportId],
+    enabled: !!reportId,
+  });
+
+  const { data: collections = [], isLoading: collectionsLoading } = useQuery<CreditReportCollection[]>({
+    queryKey: ['/api/admin/credit-report-collections', reportId],
+    enabled: !!reportId,
+  });
+
+  const { data: publicRecords = [], isLoading: publicRecordsLoading } = useQuery<CreditReportPublicRecord[]>({
+    queryKey: ['/api/admin/credit-report-public-records', reportId],
+    enabled: !!reportId,
+  });
+
+  const { data: letters = [], isLoading: lettersLoading } = useQuery<DisputeLetterNew[]>({
+    queryKey: ['/api/admin/dispute-letters-new', reportId],
+    enabled: !!reportId,
+  });
+
+  const { data: allClientReports = [] } = useQuery<(CreditReportUpload & { clientName?: string })[]>({
+    queryKey: ['/api/admin/credit-report-uploads'],
+    select: (data) => data.filter(r => r.userId === report?.userId && r.id !== reportId),
+    enabled: !!report?.userId,
+  });
+
+  const { data: compareAccounts = [] } = useQuery<CreditReportAccount[]>({
+    queryKey: ['/api/admin/credit-report-accounts', compareReportId],
+    enabled: !!compareReportId,
+  });
+
+  const { data: calendarEvents = [], isLoading: calendarLoading } = useQuery<DisputeCalendarEvent[]>({
+    queryKey: ['/api/admin/dispute-calendar/client', report?.userId],
+    enabled: !!report?.userId,
+  });
+
+  const createCalendarEventMutation = useMutation({
+    mutationFn: async (data: { scheduledSendDate: string; round: '1' | '2' | 'validation' }) => {
+      const response = await apiRequest('POST', '/api/admin/dispute-calendar', {
+        clientId: report?.userId,
+        round: data.round,
+        scheduledSendDate: data.scheduledSendDate,
+        followUpDate: new Date(new Date(data.scheduledSendDate).getTime() + 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        expectedResponseBy: new Date(new Date(data.scheduledSendDate).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: 'scheduled'
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/dispute-calendar/client', report?.userId] });
+      setCreateEventOpen(false);
+      setNewEventDate('');
+      toast({ title: 'Success', description: 'Calendar event created' });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to create calendar event', variant: 'destructive' });
+    }
+  });
+
+  const updateCalendarEventMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      const response = await apiRequest('PATCH', `/api/admin/dispute-calendar/${id}`, { status });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/dispute-calendar/client', report?.userId] });
+      toast({ title: 'Success', description: 'Event status updated' });
+    }
+  });
+
+  const generateLetterMutation = useMutation({
+    mutationFn: async (data: { items: SelectedItem[]; letterType: string; bureau: string }) => {
+      const response = await apiRequest('POST', '/api/admin/dispute-letters-new/generate', {
+        uploadId: reportId,
+        clientId: report?.clientId,
+        items: data.items.map(item => ({
+          type: item.type,
+          id: item.id,
+          name: item.name,
+          reason: item.reason,
+          strategy: item.strategy
+        })),
+        letterType: data.letterType,
+        bureau: data.bureau
+      });
+      return response.json();
+    },
+    onSuccess: (letter: DisputeLetterNew) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/dispute-letters-new', reportId] });
+      setGeneratedLetter(letter);
+      toast({ title: 'Success', description: 'Dispute letter generated successfully' });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to generate letter', variant: 'destructive' });
+    }
+  });
+
+  const updateLetterMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: 'draft' | 'approved' | 'sent' }) => {
+      const response = await apiRequest('PATCH', `/api/admin/dispute-letters-new/${id}`, { status });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/dispute-letters-new', reportId] });
+      toast({ title: 'Success', description: 'Letter status updated' });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to update letter status', variant: 'destructive' });
+    }
+  });
+
+  const downloadLetterAsPdf = (letter: DisputeLetterNew) => {
+    const content = letter.content;
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Dispute Letter - ${letter.bureau}</title>
+        <style>
+          body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.6; padding: 40px; max-width: 800px; margin: 0 auto; }
+          h1 { font-size: 16pt; margin-bottom: 20px; }
+          .header { margin-bottom: 30px; }
+          .date { margin-bottom: 20px; }
+          .content { white-space: pre-wrap; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Credit Dispute Letter</h1>
+          <div>Bureau: ${letter.bureau}</div>
+          <div>Type: ${letter.letterType}</div>
+          <div class="date">Date: ${new Date().toLocaleDateString()}</div>
+        </div>
+        <div class="content">${content.replace(/\n/g, '<br>')}</div>
+      </body>
+      </html>
+    `;
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    }
+  };
+
+  const calculateAccountSeverity = (account: CreditReportAccount): { score: number; strategy: string; reason: string } => {
+    let score = 0;
+    const reasons: string[] = [];
+    if (account.derogatoryFlags && account.derogatoryFlags.length > 0) {
+      score += 40;
+      reasons.push('Derogatory marks');
+    }
+    const lateCount = (account.latePayments?.days30 || 0) + (account.latePayments?.days60 || 0) + (account.latePayments?.days90 || 0);
+    if (lateCount > 0) {
+      score += Math.min(lateCount * 5, 30);
+      reasons.push(`${lateCount} late payments`);
+    }
+    if (account.status?.toLowerCase().includes('chargeoff')) {
+      score += 50;
+      reasons.push('Charge-off status');
+    }
+    if (account.status?.toLowerCase().includes('collection')) {
+      score += 45;
+      reasons.push('In collections');
+    }
+    if (account.balance && account.balance > 1000) {
+      score += 10;
+      reasons.push('High balance');
+    }
+    let strategy = 'Request Validation';
+    if (score >= 50) strategy = 'Dispute as Inaccurate';
+    if (score >= 70) strategy = 'Request Deletion - FCRA Violation';
+    if (score >= 85) strategy = 'Escalate to CFPB';
+    return { score: Math.min(score, 100), strategy, reason: reasons.join(', ') || 'Standard dispute' };
+  };
+
+  const calculateInquirySeverity = (inquiry: CreditReportInquiry): { score: number; strategy: string; reason: string } => {
+    let score = 0;
+    const reasons: string[] = [];
+    if (inquiry.inquiryType === 'hard') {
+      score += 30;
+      reasons.push('Hard inquiry');
+      const inquiryDate = inquiry.inquiryDate ? new Date(inquiry.inquiryDate) : null;
+      if (inquiryDate) {
+        const monthsAgo = (Date.now() - inquiryDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        if (monthsAgo < 6) { score += 20; reasons.push('Recent inquiry'); }
+        else if (monthsAgo < 12) { score += 10; reasons.push('Within last year'); }
+      }
+    } else {
+      score += 5;
+      reasons.push('Soft inquiry');
+    }
+    let strategy = 'Monitor Only';
+    if (inquiry.inquiryType === 'hard') {
+      strategy = 'Request Written Authorization';
+      if (score >= 40) strategy = 'Dispute Unauthorized Inquiry';
+    }
+    return { score: Math.min(score, 100), strategy, reason: reasons.join(', ') || 'Standard inquiry' };
+  };
+
+  const calculateCollectionSeverity = (collection: CreditReportCollection): { score: number; strategy: string; reason: string } => {
+    let score = 60;
+    const reasons: string[] = ['Collection account'];
+    if (collection.amount && collection.amount > 500) {
+      score += 15;
+      reasons.push(`$${collection.amount.toLocaleString()} balance`);
+    }
+    if (collection.amount && collection.amount > 2000) {
+      score += 15;
+    }
+    const dateOpened = collection.dateOpened ? new Date(collection.dateOpened) : null;
+    if (dateOpened) {
+      const yearsAgo = (Date.now() - dateOpened.getTime()) / (1000 * 60 * 60 * 24 * 365);
+      if (yearsAgo > 5) { score -= 20; reasons.push('Older than 5 years'); }
+      else if (yearsAgo < 2) { score += 10; reasons.push('Recent collection'); }
+    }
+    let strategy = 'Request Debt Validation';
+    if (score >= 70) strategy = 'Dispute Collection Validity';
+    if (score >= 85) strategy = 'Challenge with Pay-for-Delete Negotiation';
+    return { score: Math.min(score, 100), strategy, reason: reasons.join(', ') };
+  };
+
+  const calculatePublicRecordSeverity = (record: CreditReportPublicRecord): { score: number; strategy: string; reason: string } => {
+    let score = 70;
+    const reasons: string[] = [];
+    if (record.recordType?.toLowerCase().includes('bankruptcy')) {
+      score = 90;
+      reasons.push('Bankruptcy filing');
+    } else if (record.recordType?.toLowerCase().includes('judgment')) {
+      score = 85;
+      reasons.push('Civil judgment');
+    } else if (record.recordType?.toLowerCase().includes('lien')) {
+      score = 80;
+      reasons.push('Tax lien');
+    } else {
+      reasons.push('Public record');
+    }
+    let strategy = 'Verify Court Records';
+    if (score >= 80) strategy = 'Request Documentation Proof';
+    if (score >= 90) strategy = 'Dispute Reporting Accuracy';
+    return { score: Math.min(score, 100), strategy, reason: reasons.join(', ') || 'Public record item' };
+  };
+
+  const toggleItemSelection = (id: number, type: SelectedItem['type'], name: string, severityData: { score: number; strategy: string; reason: string }) => {
+    setSelectedItems(prev => {
+      const exists = prev.find(item => item.id === id && item.type === type);
+      if (exists) {
+        return prev.filter(item => !(item.id === id && item.type === type));
+      }
+      return [...prev, { id, type, name, severity: severityData.score, strategy: severityData.strategy, reason: severityData.reason }];
+    });
+  };
+
+  const isItemSelected = (id: number, type: SelectedItem['type']) => {
+    return selectedItems.some(item => item.id === id && item.type === type);
+  };
+
+  const getSeverityBadge = (score: number) => {
+    if (score >= 80) return <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">Critical</span>;
+    if (score >= 60) return <span className="px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-400">High</span>;
+    if (score >= 40) return <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-yellow-400">Medium</span>;
+    return <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-400">Low</span>;
+  };
+
+  const getBureauBadge = (bureau: string) => {
+    switch (bureau) {
+      case "EXPERIAN":
+        return <span className="px-2 py-1 rounded text-xs font-medium bg-blue-500/20 text-blue-400">Experian</span>;
+      case "EQUIFAX":
+        return <span className="px-2 py-1 rounded text-xs font-medium bg-red-500/20 text-red-400">Equifax</span>;
+      case "TRANSUNION":
+        return <span className="px-2 py-1 rounded text-xs font-medium bg-purple-500/20 text-purple-400">TransUnion</span>;
+      default:
+        return <span className="px-2 py-1 rounded text-xs font-medium bg-gray-500/20 text-gray-400">{bureau}</span>;
+    }
+  };
+
+  const getAccountStatusBadge = (status: string | null) => {
+    if (!status) return <span className="text-[hsl(var(--admin-text-muted))]">--</span>;
+    const lowerStatus = status.toLowerCase();
+    if (lowerStatus.includes('open') || lowerStatus.includes('current')) {
+      return <AdminBadge variant="success">{status}</AdminBadge>;
+    } else if (lowerStatus.includes('closed')) {
+      return <AdminBadge variant="default">{status}</AdminBadge>;
+    } else if (lowerStatus.includes('collection') || lowerStatus.includes('chargeoff') || lowerStatus.includes('delinquent')) {
+      return <AdminBadge variant="danger">{status}</AdminBadge>;
+    }
+    return <AdminBadge variant="warning">{status}</AdminBadge>;
+  };
+
+  if (reportLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[hsl(var(--admin-accent))]" />
+      </div>
+    );
+  }
+
+  const derogatoryCount = accounts.filter(a => a.derogatoryFlags && a.derogatoryFlags.length > 0).length;
+  const latePaymentCount = accounts.reduce((sum, a) => sum + ((a.latePayments?.days30 || 0) + (a.latePayments?.days60 || 0) + (a.latePayments?.days90 || 0)), 0);
+  const sortedSelectedItems = [...selectedItems].sort((a, b) => b.severity - a.severity);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Link href="/admin-portal/credit-reports">
+          <Button variant="ghost" size="sm" className="text-[hsl(var(--admin-text-muted))] hover:text-white" data-testid="button-back">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Reports
+          </Button>
+        </Link>
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <Target className="h-7 w-7 text-[hsl(var(--admin-accent))]" />
+            Dispute Hub
+          </h1>
+          <p className="text-[hsl(var(--admin-text-muted))]">
+            {report?.clientName || 'Client'} • {getBureauBadge(report?.bureau || '')}
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          {report?.creditScore && (
+            <div className="text-center px-4 py-2 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+              <div className="text-2xl font-bold text-white">{report.creditScore}</div>
+              <div className="text-xs text-[hsl(var(--admin-text-muted))]">Credit Score</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <AdminStatCard
+          label="Accounts"
+          value={accounts.length}
+          icon={<CreditCard className="h-5 w-5" />}
+          color="blue"
+        />
+        <AdminStatCard
+          label="Inquiries"
+          value={inquiries.length}
+          icon={<SearchIcon className="h-5 w-5" />}
+          color="orange"
+        />
+        <AdminStatCard
+          label="Collections"
+          value={collections.length}
+          icon={<AlertCircle className="h-5 w-5" />}
+          color="red"
+        />
+        <AdminStatCard
+          label="Derogatory"
+          value={derogatoryCount}
+          icon={<AlertTriangle className="h-5 w-5" />}
+          color="purple"
+        />
+        <AdminStatCard
+          label="Late Payments"
+          value={latePaymentCount}
+          icon={<Clock className="h-5 w-5" />}
+          color="green"
+        />
+      </div>
+
+      {selectedItems.length > 0 && (
+        <AdminCard className="border-[hsl(var(--admin-accent))]/50">
+          <AdminCardHeader>
+            <div className="flex items-center justify-between w-full">
+              <AdminCardTitle icon={<CheckSquare className="h-5 w-5" />}>
+                Selected for Dispute ({selectedItems.length})
+              </AdminCardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedItems([])}
+                  className="text-[hsl(var(--admin-text-muted))] border-[hsl(var(--admin-border))]"
+                  data-testid="button-clear-selection"
+                >
+                  Clear All
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setGenerateLetterOpen(true)}
+                  className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
+                  data-testid="button-generate-from-selection"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Letter
+                </Button>
+              </div>
+            </div>
+          </AdminCardHeader>
+          <AdminCardContent>
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              {sortedSelectedItems.map((item) => (
+                <div 
+                  key={`${item.type}-${item.id}`}
+                  className="flex items-center justify-between p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))] hover:border-[hsl(var(--admin-accent))]/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={true}
+                      onCheckedChange={() => {
+                        setSelectedItems(prev => prev.filter(i => !(i.id === item.id && i.type === item.type)));
+                      }}
+                      data-testid={`checkbox-selected-${item.type}-${item.id}`}
+                    />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-white">{item.name}</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-[hsl(var(--admin-bg))] text-[hsl(var(--admin-text-muted))] capitalize">
+                          {item.type.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[hsl(var(--admin-text-muted))]">{item.reason}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="flex items-center gap-2">
+                        {getSeverityBadge(item.severity)}
+                        <span className="text-xs text-[hsl(var(--admin-text-muted))]">{item.severity}%</span>
+                      </div>
+                      <p className="text-xs text-[hsl(var(--admin-accent))]">{item.strategy}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 p-3 rounded-lg bg-[hsl(var(--admin-accent))]/10 border border-[hsl(var(--admin-accent))]/30">
+              <div className="flex items-center gap-2 text-[hsl(var(--admin-accent))]">
+                <Brain className="h-4 w-4" />
+                <span className="text-sm font-medium">AI Strategy Recommendation</span>
+              </div>
+              <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-1">
+                {sortedSelectedItems.length > 0 && sortedSelectedItems[0].severity >= 70 
+                  ? "High priority items detected. Recommend starting with FCRA violation disputes for maximum impact."
+                  : sortedSelectedItems.length >= 3 
+                    ? "Multiple items selected. Consider grouping by type for more effective dispute letters."
+                    : "Items ready for dispute. Generate a letter to begin the dispute process."
+                }
+              </p>
+            </div>
+          </AdminCardContent>
+        </AdminCard>
+      )}
+
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] p-1">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="accounts" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            Accounts ({accounts.length})
+          </TabsTrigger>
+          <TabsTrigger value="inquiries" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            Inquiries ({inquiries.length})
+          </TabsTrigger>
+          <TabsTrigger value="collections" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            Collections ({collections.length})
+          </TabsTrigger>
+          <TabsTrigger value="public-records" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            Public Records ({publicRecords.length})
+          </TabsTrigger>
+          <TabsTrigger value="letters" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            Letters ({letters.length})
+          </TabsTrigger>
+          <TabsTrigger value="diff-view" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            <GitCompare className="h-4 w-4 mr-1" />
+            Compare
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            <Calendar className="h-4 w-4 mr-1" />
+            Calendar
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AdminCard>
+              <AdminCardHeader>
+                <AdminCardTitle icon={<FileText className="h-5 w-5" />}>Report Summary</AdminCardTitle>
+              </AdminCardHeader>
+              <AdminCardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                    <span className="text-[hsl(var(--admin-text-muted))]">File Name</span>
+                    <span className="text-white font-medium">{report?.fileName}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                    <span className="text-[hsl(var(--admin-text-muted))]">Bureau</span>
+                    <span>{getBureauBadge(report?.bureau || '')}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                    <span className="text-[hsl(var(--admin-text-muted))]">Parse Status</span>
+                    <AdminBadge variant={report?.parseStatus === 'succeeded' ? 'success' : report?.parseStatus === 'failed' ? 'danger' : 'warning'}>
+                      {report?.parseStatus}
+                    </AdminBadge>
+                  </div>
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                    <span className="text-[hsl(var(--admin-text-muted))]">Uploaded</span>
+                    <span className="text-white">{report?.createdAt ? new Date(report.createdAt).toLocaleDateString() : '--'}</span>
+                  </div>
+                </div>
+              </AdminCardContent>
+            </AdminCard>
+
+            <AdminCard>
+              <AdminCardHeader>
+                <AdminCardTitle icon={<AlertTriangle className="h-5 w-5" />}>Issues Found</AdminCardTitle>
+              </AdminCardHeader>
+              <AdminCardContent>
+                <div className="space-y-3">
+                  {derogatoryCount > 0 && (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+                      <div className="flex items-center gap-3">
+                        <AlertCircle className="h-5 w-5 text-red-400" />
+                        <span className="text-white">Derogatory Accounts</span>
+                      </div>
+                      <span className="text-lg font-bold text-red-400">{derogatoryCount}</span>
+                    </div>
+                  )}
+                  {collections.length > 0 && (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
+                      <div className="flex items-center gap-3">
+                        <Landmark className="h-5 w-5 text-orange-400" />
+                        <span className="text-white">Collection Accounts</span>
+                      </div>
+                      <span className="text-lg font-bold text-orange-400">{collections.length}</span>
+                    </div>
+                  )}
+                  {latePaymentCount > 0 && (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                      <div className="flex items-center gap-3">
+                        <Clock className="h-5 w-5 text-yellow-400" />
+                        <span className="text-white">Late Payments</span>
+                      </div>
+                      <span className="text-lg font-bold text-yellow-400">{latePaymentCount}</span>
+                    </div>
+                  )}
+                  {inquiries.filter(i => i.inquiryType === 'hard').length > 0 && (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+                      <div className="flex items-center gap-3">
+                        <SearchIcon className="h-5 w-5 text-purple-400" />
+                        <span className="text-white">Hard Inquiries</span>
+                      </div>
+                      <span className="text-lg font-bold text-purple-400">{inquiries.filter(i => i.inquiryType === 'hard').length}</span>
+                    </div>
+                  )}
+                  {derogatoryCount === 0 && collections.length === 0 && latePaymentCount === 0 && inquiries.filter(i => i.inquiryType === 'hard').length === 0 && (
+                    <AdminEmptyState
+                      icon={<CheckSquare className="h-6 w-6" />}
+                      title="No Major Issues"
+                      description="This credit report looks clean!"
+                    />
+                  )}
+                </div>
+              </AdminCardContent>
+            </AdminCard>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="accounts" className="mt-6">
+          <AdminCard>
+            <AdminCardHeader>
+              <AdminCardTitle icon={<CreditCard className="h-5 w-5" />}>Tradelines & Accounts</AdminCardTitle>
+            </AdminCardHeader>
+            <AdminCardContent>
+              {accountsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--admin-accent))]" />
+                </div>
+              ) : accounts.length === 0 ? (
+                <AdminEmptyState
+                  icon={<CreditCard className="h-8 w-8" />}
+                  title="No Accounts Found"
+                  description="No tradeline data has been parsed from this report."
+                />
+              ) : (
+                <AdminTable>
+                  <AdminTableHeader>
+                    <tr>
+                      <AdminTableHead className="w-10"></AdminTableHead>
+                      <AdminTableHead>Creditor</AdminTableHead>
+                      <AdminTableHead>Balance</AdminTableHead>
+                      <AdminTableHead>Status</AdminTableHead>
+                      <AdminTableHead>Severity</AdminTableHead>
+                      <AdminTableHead>Strategy</AdminTableHead>
+                    </tr>
+                  </AdminTableHeader>
+                  <tbody>
+                    {accounts.map((account) => {
+                      const severity = calculateAccountSeverity(account);
+                      return (
+                        <AdminTableRow key={account.id} data-testid={`row-account-${account.id}`} className={isItemSelected(account.id, 'account') ? 'bg-[hsl(var(--admin-accent))]/10' : ''}>
+                          <AdminTableCell>
+                            <Checkbox
+                              checked={isItemSelected(account.id, 'account')}
+                              onCheckedChange={() => toggleItemSelection(account.id, 'account', account.creditorName || 'Unknown', severity)}
+                              data-testid={`checkbox-account-${account.id}`}
+                            />
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <div>
+                              <span className="font-medium text-white">{account.creditorName}</span>
+                              <p className="text-xs text-[hsl(var(--admin-text-muted))]">{account.accountNumberMasked || account.accountType}</p>
+                            </div>
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <span className="text-white font-medium">
+                              {account.balance ? `$${account.balance.toLocaleString()}` : '--'}
+                            </span>
+                          </AdminTableCell>
+                          <AdminTableCell>{getAccountStatusBadge(account.status)}</AdminTableCell>
+                          <AdminTableCell>{getSeverityBadge(severity.score)}</AdminTableCell>
+                          <AdminTableCell>
+                            <span className="text-xs text-[hsl(var(--admin-accent))]">{severity.strategy}</span>
+                          </AdminTableCell>
+                        </AdminTableRow>
+                      );
+                    })}
+                  </tbody>
+                </AdminTable>
+              )}
+            </AdminCardContent>
+          </AdminCard>
+        </TabsContent>
+
+        <TabsContent value="inquiries" className="mt-6">
+          <AdminCard>
+            <AdminCardHeader>
+              <AdminCardTitle icon={<SearchIcon className="h-5 w-5" />}>Credit Inquiries</AdminCardTitle>
+            </AdminCardHeader>
+            <AdminCardContent>
+              {inquiriesLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--admin-accent))]" />
+                </div>
+              ) : inquiries.length === 0 ? (
+                <AdminEmptyState
+                  icon={<SearchIcon className="h-8 w-8" />}
+                  title="No Inquiries Found"
+                  description="No inquiry data has been parsed from this report."
+                />
+              ) : (
+                <AdminTable>
+                  <AdminTableHeader>
+                    <tr>
+                      <AdminTableHead className="w-10"></AdminTableHead>
+                      <AdminTableHead>Creditor</AdminTableHead>
+                      <AdminTableHead>Type</AdminTableHead>
+                      <AdminTableHead>Date</AdminTableHead>
+                      <AdminTableHead>Severity</AdminTableHead>
+                      <AdminTableHead>Strategy</AdminTableHead>
+                    </tr>
+                  </AdminTableHeader>
+                  <tbody>
+                    {inquiries.map((inquiry) => {
+                      const severity = calculateInquirySeverity(inquiry);
+                      return (
+                        <AdminTableRow key={inquiry.id} data-testid={`row-inquiry-${inquiry.id}`} className={isItemSelected(inquiry.id, 'inquiry') ? 'bg-[hsl(var(--admin-accent))]/10' : ''}>
+                          <AdminTableCell>
+                            <Checkbox
+                              checked={isItemSelected(inquiry.id, 'inquiry')}
+                              onCheckedChange={() => toggleItemSelection(inquiry.id, 'inquiry', inquiry.creditorName || 'Unknown', severity)}
+                              data-testid={`checkbox-inquiry-${inquiry.id}`}
+                            />
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <span className="font-medium text-white">{inquiry.creditorName}</span>
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            {inquiry.inquiryType === 'hard' ? (
+                              <AdminBadge variant="danger">Hard</AdminBadge>
+                            ) : (
+                              <AdminBadge variant="success">Soft</AdminBadge>
+                            )}
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <span className="text-white">
+                              {inquiry.inquiryDate ? new Date(inquiry.inquiryDate).toLocaleDateString() : '--'}
+                            </span>
+                          </AdminTableCell>
+                          <AdminTableCell>{getSeverityBadge(severity.score)}</AdminTableCell>
+                          <AdminTableCell>
+                            <span className="text-xs text-[hsl(var(--admin-accent))]">{severity.strategy}</span>
+                          </AdminTableCell>
+                        </AdminTableRow>
+                      );
+                    })}
+                  </tbody>
+                </AdminTable>
+              )}
+            </AdminCardContent>
+          </AdminCard>
+        </TabsContent>
+
+        <TabsContent value="collections" className="mt-6">
+          <AdminCard>
+            <AdminCardHeader>
+              <AdminCardTitle icon={<Landmark className="h-5 w-5" />}>Collection Accounts</AdminCardTitle>
+            </AdminCardHeader>
+            <AdminCardContent>
+              {collectionsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--admin-accent))]" />
+                </div>
+              ) : collections.length === 0 ? (
+                <AdminEmptyState
+                  icon={<Landmark className="h-8 w-8" />}
+                  title="No Collections Found"
+                  description="No collection accounts found in this report."
+                />
+              ) : (
+                <AdminTable>
+                  <AdminTableHeader>
+                    <tr>
+                      <AdminTableHead className="w-10"></AdminTableHead>
+                      <AdminTableHead>Agency</AdminTableHead>
+                      <AdminTableHead>Balance</AdminTableHead>
+                      <AdminTableHead>Status</AdminTableHead>
+                      <AdminTableHead>Severity</AdminTableHead>
+                      <AdminTableHead>Strategy</AdminTableHead>
+                    </tr>
+                  </AdminTableHeader>
+                  <tbody>
+                    {collections.map((collection) => {
+                      const severity = calculateCollectionSeverity(collection);
+                      return (
+                        <AdminTableRow key={collection.id} data-testid={`row-collection-${collection.id}`} className={isItemSelected(collection.id, 'collection') ? 'bg-[hsl(var(--admin-accent))]/10' : ''}>
+                          <AdminTableCell>
+                            <Checkbox
+                              checked={isItemSelected(collection.id, 'collection')}
+                              onCheckedChange={() => toggleItemSelection(collection.id, 'collection', collection.agencyName || 'Unknown', severity)}
+                              data-testid={`checkbox-collection-${collection.id}`}
+                            />
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <div>
+                              <span className="font-medium text-white">{collection.agencyName}</span>
+                              <p className="text-xs text-[hsl(var(--admin-text-muted))]">{collection.originalCreditor || '--'}</p>
+                            </div>
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <span className="text-red-400 font-medium">
+                              {collection.amount ? `$${collection.amount.toLocaleString()}` : '--'}
+                            </span>
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <AdminBadge variant={collection.status === 'paid' ? 'success' : 'danger'}>
+                              {collection.status || 'Open'}
+                            </AdminBadge>
+                          </AdminTableCell>
+                          <AdminTableCell>{getSeverityBadge(severity.score)}</AdminTableCell>
+                          <AdminTableCell>
+                            <span className="text-xs text-[hsl(var(--admin-accent))]">{severity.strategy}</span>
+                          </AdminTableCell>
+                        </AdminTableRow>
+                      );
+                    })}
+                  </tbody>
+                </AdminTable>
+              )}
+            </AdminCardContent>
+          </AdminCard>
+        </TabsContent>
+
+        <TabsContent value="public-records" className="mt-6">
+          <AdminCard>
+            <AdminCardHeader>
+              <AdminCardTitle icon={<FileText className="h-5 w-5" />}>Public Records</AdminCardTitle>
+            </AdminCardHeader>
+            <AdminCardContent>
+              {publicRecordsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--admin-accent))]" />
+                </div>
+              ) : publicRecords.length === 0 ? (
+                <AdminEmptyState
+                  icon={<FileText className="h-8 w-8" />}
+                  title="No Public Records"
+                  description="No public records found in this credit report."
+                />
+              ) : (
+                <AdminTable>
+                  <AdminTableHeader>
+                    <tr>
+                      <AdminTableHead className="w-10"></AdminTableHead>
+                      <AdminTableHead>Type</AdminTableHead>
+                      <AdminTableHead>Court</AdminTableHead>
+                      <AdminTableHead>Status</AdminTableHead>
+                      <AdminTableHead>Severity</AdminTableHead>
+                      <AdminTableHead>Strategy</AdminTableHead>
+                    </tr>
+                  </AdminTableHeader>
+                  <tbody>
+                    {publicRecords.map((record) => {
+                      const severity = calculatePublicRecordSeverity(record);
+                      return (
+                        <AdminTableRow key={record.id} data-testid={`row-public-record-${record.id}`} className={isItemSelected(record.id, 'public_record') ? 'bg-[hsl(var(--admin-accent))]/10' : ''}>
+                          <AdminTableCell>
+                            <Checkbox
+                              checked={isItemSelected(record.id, 'public_record')}
+                              onCheckedChange={() => toggleItemSelection(record.id, 'public_record', record.recordType || 'Unknown', severity)}
+                              data-testid={`checkbox-public-record-${record.id}`}
+                            />
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <span className="font-medium text-white capitalize">{record.recordType}</span>
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <span className="text-[hsl(var(--admin-text-muted))]">{record.court || '--'}</span>
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <AdminBadge variant={record.status === 'dismissed' ? 'success' : 'danger'}>
+                              {record.status || 'Active'}
+                            </AdminBadge>
+                          </AdminTableCell>
+                          <AdminTableCell>{getSeverityBadge(severity.score)}</AdminTableCell>
+                          <AdminTableCell>
+                            <span className="text-xs text-[hsl(var(--admin-accent))]">{severity.strategy}</span>
+                          </AdminTableCell>
+                        </AdminTableRow>
+                      );
+                    })}
+                  </tbody>
+                </AdminTable>
+              )}
+            </AdminCardContent>
+          </AdminCard>
+        </TabsContent>
+
+        <TabsContent value="letters" className="mt-6">
+          <AdminCard>
+            <AdminCardHeader>
+              <div className="flex items-center justify-between w-full">
+                <AdminCardTitle icon={<Mail className="h-5 w-5" />}>Dispute Letters</AdminCardTitle>
+                <Button 
+                  className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
+                  data-testid="button-generate-letter"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Letter
+                </Button>
+              </div>
+            </AdminCardHeader>
+            <AdminCardContent>
+              {lettersLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--admin-accent))]" />
+                </div>
+              ) : letters.length === 0 ? (
+                <AdminEmptyState
+                  icon={<Mail className="h-8 w-8" />}
+                  title="No Letters Yet"
+                  description="Generate dispute letters for items found in this report."
+                />
+              ) : (
+                <AdminTable>
+                  <AdminTableHeader>
+                    <tr>
+                      <AdminTableHead>Round</AdminTableHead>
+                      <AdminTableHead>Bureau</AdminTableHead>
+                      <AdminTableHead>Status</AdminTableHead>
+                      <AdminTableHead>Created</AdminTableHead>
+                      <AdminTableHead>Actions</AdminTableHead>
+                    </tr>
+                  </AdminTableHeader>
+                  <tbody>
+                    {letters.map((letter) => (
+                      <AdminTableRow key={letter.id} data-testid={`row-letter-${letter.id}`}>
+                        <AdminTableCell>
+                          <span className="text-white font-medium capitalize">{letter.letterType}</span>
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          {getBureauBadge(letter.bureau || '')}
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          <AdminBadge variant={
+                            letter.status === 'approved' ? 'success' : 
+                            letter.status === 'sent' ? 'success' : 'warning'
+                          }>
+                            {letter.status}
+                          </AdminBadge>
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          <span className="text-white">
+                            {letter.createdAt ? new Date(letter.createdAt).toLocaleDateString() : '--'}
+                          </span>
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/10"
+                              onClick={() => { setSelectedLetter(letter); setViewLetterOpen(true); }}
+                              data-testid={`button-view-letter-${letter.id}`}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-blue-400 hover:bg-blue-400/10"
+                              onClick={() => downloadLetterAsPdf(letter)}
+                              data-testid={`button-download-letter-${letter.id}`}
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </AdminTableCell>
+                      </AdminTableRow>
+                    ))}
+                  </tbody>
+                </AdminTable>
+              )}
+            </AdminCardContent>
+          </AdminCard>
+        </TabsContent>
+
+        <TabsContent value="diff-view" className="mt-6">
+          <AdminCard>
+            <AdminCardHeader>
+              <div className="flex items-center justify-between w-full">
+                <AdminCardTitle icon={<GitCompare className="h-5 w-5" />}>Compare Credit Reports</AdminCardTitle>
+                <div className="flex items-center gap-4">
+                  <Select value={compareReportId?.toString() || ''} onValueChange={(v) => setCompareReportId(v ? parseInt(v) : null)}>
+                    <SelectTrigger className="w-[250px] bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white">
+                      <SelectValue placeholder="Select report to compare" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                      {allClientReports.map((r) => (
+                        <SelectItem key={r.id} value={r.id.toString()}>
+                          {r.bureau} - {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Unknown date'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </AdminCardHeader>
+            <AdminCardContent>
+              {allClientReports.length === 0 ? (
+                <AdminEmptyState
+                  icon={<GitCompare className="h-8 w-8" />}
+                  title="No Other Reports"
+                  description="Upload another credit report for this client to compare changes over time."
+                />
+              ) : !compareReportId ? (
+                <AdminEmptyState
+                  icon={<GitCompare className="h-8 w-8" />}
+                  title="Select a Report to Compare"
+                  description="Choose an older report to see what has changed."
+                />
+              ) : (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))] text-center">
+                      <p className="text-[hsl(var(--admin-text-muted))] text-xs mb-1">Current Report</p>
+                      <p className="text-2xl font-bold text-white">{report?.creditScore || '--'}</p>
+                      <p className="text-xs text-[hsl(var(--admin-text-muted))]">{report?.createdAt ? new Date(report.createdAt).toLocaleDateString() : '--'}</p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))] text-center flex items-center justify-center">
+                      {report?.creditScore && allClientReports.find(r => r.id === compareReportId)?.creditScore ? (
+                        <div className="flex items-center gap-2">
+                          {(report.creditScore - (allClientReports.find(r => r.id === compareReportId)?.creditScore || 0)) > 0 ? (
+                            <ArrowUp className="h-6 w-6 text-green-400" />
+                          ) : (report.creditScore - (allClientReports.find(r => r.id === compareReportId)?.creditScore || 0)) < 0 ? (
+                            <ArrowDown className="h-6 w-6 text-red-400" />
+                          ) : (
+                            <Minus className="h-6 w-6 text-gray-400" />
+                          )}
+                          <span className={`text-2xl font-bold ${
+                            (report.creditScore - (allClientReports.find(r => r.id === compareReportId)?.creditScore || 0)) > 0 ? 'text-green-400' :
+                            (report.creditScore - (allClientReports.find(r => r.id === compareReportId)?.creditScore || 0)) < 0 ? 'text-red-400' : 'text-gray-400'
+                          }`}>
+                            {Math.abs(report.creditScore - (allClientReports.find(r => r.id === compareReportId)?.creditScore || 0))} pts
+                          </span>
+                        </div>
+                      ) : (
+                        <Minus className="h-6 w-6 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))] text-center">
+                      <p className="text-[hsl(var(--admin-text-muted))] text-xs mb-1">Previous Report</p>
+                      <p className="text-2xl font-bold text-white">{allClientReports.find(r => r.id === compareReportId)?.creditScore || '--'}</p>
+                      <p className="text-xs text-[hsl(var(--admin-text-muted))]">{allClientReports.find(r => r.id === compareReportId)?.createdAt ? new Date(allClientReports.find(r => r.id === compareReportId)!.createdAt).toLocaleDateString() : '--'}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-medium text-white">Account Changes</h4>
+                    <AdminTable>
+                      <AdminTableHeader>
+                        <tr>
+                          <AdminTableHead>Account</AdminTableHead>
+                          <AdminTableHead>Current Balance</AdminTableHead>
+                          <AdminTableHead>Previous Balance</AdminTableHead>
+                          <AdminTableHead>Change</AdminTableHead>
+                          <AdminTableHead>Status</AdminTableHead>
+                        </tr>
+                      </AdminTableHeader>
+                      <tbody>
+                        {accounts.map((account) => {
+                          const prevAccount = compareAccounts.find(a => a.creditorName === account.creditorName);
+                          const balanceChange = (account.balance || 0) - (prevAccount?.balance || 0);
+                          return (
+                            <AdminTableRow key={account.id}>
+                              <AdminTableCell>
+                                <span className="font-medium text-white">{account.creditorName}</span>
+                              </AdminTableCell>
+                              <AdminTableCell>
+                                <span className="text-white">${(account.balance || 0).toLocaleString()}</span>
+                              </AdminTableCell>
+                              <AdminTableCell>
+                                <span className="text-[hsl(var(--admin-text-muted))]">${(prevAccount?.balance || 0).toLocaleString()}</span>
+                              </AdminTableCell>
+                              <AdminTableCell>
+                                {balanceChange !== 0 ? (
+                                  <span className={`flex items-center gap-1 ${balanceChange < 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                    {balanceChange < 0 ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />}
+                                    ${Math.abs(balanceChange).toLocaleString()}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">No change</span>
+                                )}
+                              </AdminTableCell>
+                              <AdminTableCell>
+                                {prevAccount ? (
+                                  account.status !== prevAccount.status ? (
+                                    <span className="flex items-center gap-2">
+                                      <span className="text-[hsl(var(--admin-text-muted))]">{prevAccount.status}</span>
+                                      <ArrowRight className="h-4 w-4 text-[hsl(var(--admin-accent))]" />
+                                      <span className="text-white">{account.status}</span>
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-400">Unchanged</span>
+                                  )
+                                ) : (
+                                  <AdminBadge variant="success">New</AdminBadge>
+                                )}
+                              </AdminTableCell>
+                            </AdminTableRow>
+                          );
+                        })}
+                      </tbody>
+                    </AdminTable>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30">
+                      <h5 className="text-green-400 font-medium mb-2">Improvements</h5>
+                      <ul className="text-sm text-[hsl(var(--admin-text-muted))] space-y-1">
+                        {accounts.filter(a => {
+                          const prev = compareAccounts.find(p => p.creditorName === a.creditorName);
+                          return prev && (a.balance || 0) < (prev.balance || 0);
+                        }).length > 0 ? (
+                          accounts.filter(a => {
+                            const prev = compareAccounts.find(p => p.creditorName === a.creditorName);
+                            return prev && (a.balance || 0) < (prev.balance || 0);
+                          }).map(a => <li key={a.id}>{a.creditorName} balance decreased</li>)
+                        ) : (
+                          <li>No balance improvements detected</li>
+                        )}
+                      </ul>
+                    </div>
+                    <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30">
+                      <h5 className="text-red-400 font-medium mb-2">Areas of Concern</h5>
+                      <ul className="text-sm text-[hsl(var(--admin-text-muted))] space-y-1">
+                        {accounts.filter(a => {
+                          const prev = compareAccounts.find(p => p.creditorName === a.creditorName);
+                          return prev && (a.balance || 0) > (prev.balance || 0);
+                        }).length > 0 ? (
+                          accounts.filter(a => {
+                            const prev = compareAccounts.find(p => p.creditorName === a.creditorName);
+                            return prev && (a.balance || 0) > (prev.balance || 0);
+                          }).map(a => <li key={a.id}>{a.creditorName} balance increased</li>)
+                        ) : (
+                          <li>No balance increases detected</li>
+                        )}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </AdminCardContent>
+          </AdminCard>
+        </TabsContent>
+
+        <TabsContent value="calendar" className="mt-6">
+          <AdminCard>
+            <AdminCardHeader>
+              <div className="flex items-center justify-between w-full">
+                <AdminCardTitle icon={<Calendar className="h-5 w-5" />}>Dispute Calendar</AdminCardTitle>
+                <Button
+                  onClick={() => setCreateEventOpen(true)}
+                  className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
+                  data-testid="button-create-event"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Schedule Event
+                </Button>
+              </div>
+            </AdminCardHeader>
+            <AdminCardContent>
+              {calendarLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--admin-accent))]" />
+                </div>
+              ) : calendarEvents.length === 0 ? (
+                <AdminEmptyState
+                  icon={<Calendar className="h-8 w-8" />}
+                  title="No Scheduled Events"
+                  description="Create dispute calendar events to track sending dates and follow-ups."
+                />
+              ) : (
+                <div className="space-y-4">
+                  {calendarEvents.sort((a, b) => new Date(a.scheduledSendDate).getTime() - new Date(b.scheduledSendDate).getTime()).map((event) => {
+                    const sendDate = new Date(event.scheduledSendDate);
+                    const followUpDate = event.followUpDate ? new Date(event.followUpDate) : null;
+                    const today = new Date();
+                    const daysUntilSend = Math.ceil((sendDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                    const isOverdue = daysUntilSend < 0 && event.status === 'scheduled';
+                    
+                    return (
+                      <div key={event.id} className={`p-4 rounded-lg border ${
+                        isOverdue ? 'bg-red-500/10 border-red-500/30' : 
+                        event.status === 'sent' ? 'bg-green-500/10 border-green-500/30' :
+                        event.status === 'completed' ? 'bg-blue-500/10 border-blue-500/30' :
+                        'bg-[hsl(var(--admin-bg))]/50 border-[hsl(var(--admin-border))]'
+                      }`} data-testid={`calendar-event-${event.id}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                              isOverdue ? 'bg-red-500/20' : 
+                              event.status === 'sent' ? 'bg-green-500/20' :
+                              'bg-[hsl(var(--admin-accent))]/20'
+                            }`}>
+                              <CalendarDays className={`h-6 w-6 ${
+                                isOverdue ? 'text-red-400' : 
+                                event.status === 'sent' ? 'text-green-400' :
+                                'text-[hsl(var(--admin-accent))]'
+                              }`} />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-white">Round {event.round}</span>
+                                <AdminBadge variant={
+                                  isOverdue ? 'danger' :
+                                  event.status === 'sent' ? 'success' :
+                                  event.status === 'completed' ? 'success' :
+                                  event.status === 'follow-up' ? 'warning' :
+                                  'default'
+                                }>
+                                  {isOverdue ? 'Overdue' : event.status}
+                                </AdminBadge>
+                              </div>
+                              <div className="flex items-center gap-4 mt-1 text-sm text-[hsl(var(--admin-text-muted))]">
+                                <span>Send: {sendDate.toLocaleDateString()}</span>
+                                {followUpDate && <span>Follow-up: {followUpDate.toLocaleDateString()}</span>}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {event.status === 'scheduled' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateCalendarEventMutation.mutate({ id: event.id, status: 'sent' })}
+                                className="border-green-500/50 text-green-400 hover:bg-green-500/10"
+                                data-testid={`button-mark-sent-${event.id}`}
+                              >
+                                <Send className="h-4 w-4 mr-1" />
+                                Mark Sent
+                              </Button>
+                            )}
+                            {event.status === 'sent' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateCalendarEventMutation.mutate({ id: event.id, status: 'follow-up' })}
+                                className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+                                data-testid={`button-follow-up-${event.id}`}
+                              >
+                                <Clock className="h-4 w-4 mr-1" />
+                                Follow Up
+                              </Button>
+                            )}
+                            {event.status === 'follow-up' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateCalendarEventMutation.mutate({ id: event.id, status: 'completed' })}
+                                className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+                                data-testid={`button-complete-${event.id}`}
+                              >
+                                <CheckSquare className="h-4 w-4 mr-1" />
+                                Complete
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        {daysUntilSend > 0 && event.status === 'scheduled' && (
+                          <div className="mt-3 text-xs text-[hsl(var(--admin-text-muted))]">
+                            {daysUntilSend} days until scheduled send date
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </AdminCardContent>
+          </AdminCard>
+        </TabsContent>
+      </Tabs>
+
+      <Dialog open={createEventOpen} onOpenChange={setCreateEventOpen}>
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
+              Schedule Dispute Event
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-[hsl(var(--admin-text-muted))]">Dispute Round</Label>
+              <Select value={newEventRound} onValueChange={(v: '1' | '2' | 'validation') => setNewEventRound(v)}>
+                <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                  <SelectItem value="1">Round 1 - Initial</SelectItem>
+                  <SelectItem value="2">Round 2 - Follow-up</SelectItem>
+                  <SelectItem value="validation">Validation Request</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[hsl(var(--admin-text-muted))]">Scheduled Send Date</Label>
+              <Input
+                type="date"
+                value={newEventDate}
+                onChange={(e) => setNewEventDate(e.target.value)}
+                className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white"
+                data-testid="input-event-date"
+              />
+            </div>
+            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+              <p className="text-xs text-blue-300">
+                Follow-up date will automatically be set to 45 days after the send date, and expected response by 30 days.
+              </p>
+            </div>
+            <div className="flex gap-3 justify-end pt-4 border-t border-[hsl(var(--admin-border))]">
+              <Button
+                variant="outline"
+                onClick={() => setCreateEventOpen(false)}
+                className="border-[hsl(var(--admin-border))] text-white hover:bg-[hsl(var(--admin-bg))]"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => createCalendarEventMutation.mutate({ scheduledSendDate: newEventDate, round: newEventRound })}
+                disabled={!newEventDate || createCalendarEventMutation.isPending}
+                className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
+                data-testid="button-save-event"
+              >
+                {createCalendarEventMutation.isPending ? 'Creating...' : 'Create Event'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={generateLetterOpen} onOpenChange={setGenerateLetterOpen}>
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Sparkles className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
+              Generate Dispute Letter
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[hsl(var(--admin-text-muted))]">Letter Type</Label>
+                <Select value={letterType} onValueChange={(v: any) => setLetterType(v)}>
+                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                    <SelectItem value="round1">Round 1 - Initial Dispute</SelectItem>
+                    <SelectItem value="round2">Round 2 - Follow-up</SelectItem>
+                    <SelectItem value="validation">Debt Validation</SelectItem>
+                    <SelectItem value="goodwill">Goodwill Letter</SelectItem>
+                    <SelectItem value="inquiry">Inquiry Removal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[hsl(var(--admin-text-muted))]">Target Bureau</Label>
+                <Select value={letterBureau} onValueChange={(v: any) => setLetterBureau(v)}>
+                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                    <SelectItem value="EXPERIAN">Experian</SelectItem>
+                    <SelectItem value="EQUIFAX">Equifax</SelectItem>
+                    <SelectItem value="TRANSUNION">TransUnion</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+              <h4 className="font-medium text-white mb-2">Items to Dispute ({selectedItems.length})</h4>
+              <div className="space-y-2 max-h-[150px] overflow-y-auto">
+                {selectedItems.map((item) => (
+                  <div key={`${item.type}-${item.id}`} className="flex items-center justify-between text-sm">
+                    <span className="text-white">{item.name}</span>
+                    <span className="text-xs px-2 py-0.5 rounded bg-[hsl(var(--admin-accent))]/20 text-[hsl(var(--admin-accent))] capitalize">{item.type.replace('_', ' ')}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {generatedLetter && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-white">Generated Letter Preview</h4>
+                  <AdminBadge variant="success">Generated</AdminBadge>
+                </div>
+                <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] max-h-[200px] overflow-y-auto">
+                  <pre className="text-sm text-[hsl(var(--admin-text-muted))] whitespace-pre-wrap font-sans">{generatedLetter.content}</pre>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => downloadLetterAsPdf(generatedLetter)}
+                    className="border-[hsl(var(--admin-border))] text-white hover:bg-[hsl(var(--admin-bg))]"
+                    data-testid="button-download-generated"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      updateLetterMutation.mutate({ id: generatedLetter.id, status: 'approved' });
+                      setGeneratedLetter(null);
+                      setGenerateLetterOpen(false);
+                      setSelectedItems([]);
+                    }}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    data-testid="button-approve-letter"
+                  >
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    Approve Letter
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3 justify-end pt-4 border-t border-[hsl(var(--admin-border))]">
+              <Button
+                variant="outline"
+                onClick={() => { setGenerateLetterOpen(false); setGeneratedLetter(null); }}
+                className="border-[hsl(var(--admin-border))] text-white hover:bg-[hsl(var(--admin-bg))]"
+                data-testid="button-cancel-generate"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => generateLetterMutation.mutate({ items: selectedItems, letterType, bureau: letterBureau })}
+                disabled={generateLetterMutation.isPending || selectedItems.length === 0}
+                className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
+                data-testid="button-generate"
+              >
+                {generateLetterMutation.isPending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Brain className="h-4 w-4 mr-2" />
+                    Generate with AI
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={viewLetterOpen} onOpenChange={setViewLetterOpen}>
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Mail className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
+              Dispute Letter
+            </DialogTitle>
+          </DialogHeader>
+          {selectedLetter && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <span className="text-[hsl(var(--admin-text-muted))] text-xs">Type</span>
+                  <p className="text-white font-medium capitalize">{selectedLetter.letterType}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <span className="text-[hsl(var(--admin-text-muted))] text-xs">Bureau</span>
+                  <p className="text-white font-medium">{selectedLetter.bureau}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <span className="text-[hsl(var(--admin-text-muted))] text-xs">Status</span>
+                  <AdminBadge variant={selectedLetter.status === 'approved' || selectedLetter.status === 'sent' ? 'success' : 'warning'}>
+                    {selectedLetter.status}
+                  </AdminBadge>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] max-h-[400px] overflow-y-auto">
+                <pre className="text-sm text-white whitespace-pre-wrap font-sans leading-relaxed">{selectedLetter.content}</pre>
+              </div>
+
+              <div className="flex gap-3 justify-between pt-4 border-t border-[hsl(var(--admin-border))]">
+                <div className="flex gap-2">
+                  {selectedLetter.status === 'draft' && (
+                    <Button
+                      size="sm"
+                      onClick={() => { updateLetterMutation.mutate({ id: selectedLetter.id, status: 'approved' }); setViewLetterOpen(false); }}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      disabled={updateLetterMutation.isPending}
+                      data-testid="button-approve-view"
+                    >
+                      <CheckSquare className="h-4 w-4 mr-2" />
+                      Approve
+                    </Button>
+                  )}
+                  {selectedLetter.status === 'approved' && (
+                    <Button
+                      size="sm"
+                      onClick={() => { updateLetterMutation.mutate({ id: selectedLetter.id, status: 'sent' }); setViewLetterOpen(false); }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      disabled={updateLetterMutation.isPending}
+                      data-testid="button-mark-sent"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Mark as Sent
+                    </Button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => downloadLetterAsPdf(selectedLetter)}
+                    className="border-[hsl(var(--admin-border))] text-white hover:bg-[hsl(var(--admin-bg))]"
+                    data-testid="button-download-view"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setViewLetterOpen(false)}
+                    className="border-[hsl(var(--admin-border))] text-white hover:bg-[hsl(var(--admin-bg))]"
+                    data-testid="button-close-view"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
