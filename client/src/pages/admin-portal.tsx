@@ -1045,6 +1045,8 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
     sourceFormat: "pdf" as "pdf" | "html" | "txt" | "csv",
     creditScore: "",
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const createUploadMutation = useMutation({
     mutationFn: async (data: typeof newUpload) => {
@@ -1067,6 +1069,7 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
       });
       setUploadDialogOpen(false);
       setNewUpload({ userId: "", fileName: "", fileType: "pdf", bureau: "EXPERIAN", sourceFormat: "pdf", creditScore: "" });
+      setSelectedFile(null);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/credit-report-uploads'] });
     },
     onError: () => {
@@ -1149,14 +1152,83 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-[hsl(var(--admin-text))]">File Name</Label>
-                <Input
-                  value={newUpload.fileName}
-                  onChange={(e) => setNewUpload({ ...newUpload, fileName: e.target.value })}
-                  placeholder="e.g., experian_report_2024.pdf"
-                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white"
-                  data-testid="input-file-name"
-                />
+                <Label className="text-[hsl(var(--admin-text))]">Select Credit Report File</Label>
+                <div 
+                  className={`relative border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer ${
+                    isDragging 
+                      ? 'border-[hsl(var(--admin-accent))] bg-[hsl(var(--admin-accent))]/10' 
+                      : 'border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))] hover:border-[hsl(var(--admin-accent))]/50'
+                  }`}
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    const file = e.dataTransfer.files[0];
+                    if (file) {
+                      setSelectedFile(file);
+                      setNewUpload({ ...newUpload, fileName: file.name });
+                      const ext = file.name.split('.').pop()?.toLowerCase() as "pdf" | "html" | "txt" | "csv";
+                      if (['pdf', 'html', 'txt', 'csv'].includes(ext)) {
+                        setNewUpload(prev => ({ ...prev, fileName: file.name, sourceFormat: ext }));
+                      }
+                    }
+                  }}
+                  onClick={() => document.getElementById('file-upload-input')?.click()}
+                >
+                  <input
+                    id="file-upload-input"
+                    type="file"
+                    accept=".pdf,.html,.txt,.csv"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setSelectedFile(file);
+                        setNewUpload({ ...newUpload, fileName: file.name });
+                        const ext = file.name.split('.').pop()?.toLowerCase() as "pdf" | "html" | "txt" | "csv";
+                        if (['pdf', 'html', 'txt', 'csv'].includes(ext)) {
+                          setNewUpload(prev => ({ ...prev, fileName: file.name, sourceFormat: ext }));
+                        }
+                      }
+                    }}
+                    data-testid="input-file-upload"
+                  />
+                  <div className="text-center">
+                    {selectedFile ? (
+                      <div className="space-y-2">
+                        <FileText className="h-10 w-10 mx-auto text-[hsl(var(--admin-accent))]" />
+                        <p className="text-sm font-medium text-white">{selectedFile.name}</p>
+                        <p className="text-xs text-[hsl(var(--admin-text-muted))]">
+                          {(selectedFile.size / 1024).toFixed(1)} KB
+                        </p>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setSelectedFile(null); 
+                            setNewUpload({ ...newUpload, fileName: "" }); 
+                          }}
+                          className="text-xs border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))] hover:text-white"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Upload className="h-10 w-10 mx-auto text-[hsl(var(--admin-text-muted))]" />
+                        <p className="text-sm text-white">
+                          <span className="text-[hsl(var(--admin-accent))] font-medium">Click to upload</span> or drag and drop
+                        </p>
+                        <p className="text-xs text-[hsl(var(--admin-text-muted))]">
+                          PDF, HTML, TXT, or CSV files supported
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
