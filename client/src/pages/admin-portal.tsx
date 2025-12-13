@@ -1517,27 +1517,27 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   });
 
   const { data: accounts = [], isLoading: accountsLoading } = useQuery<CreditReportAccount[]>({
-    queryKey: ['/api/admin/credit-report-accounts', reportId],
+    queryKey: [`/api/admin/credit-report-accounts?uploadId=${reportId}`],
     enabled: !!reportId,
   });
 
   const { data: inquiries = [], isLoading: inquiriesLoading } = useQuery<CreditReportInquiry[]>({
-    queryKey: ['/api/admin/credit-report-inquiries', reportId],
+    queryKey: [`/api/admin/credit-report-inquiries?uploadId=${reportId}`],
     enabled: !!reportId,
   });
 
   const { data: collections = [], isLoading: collectionsLoading } = useQuery<CreditReportCollection[]>({
-    queryKey: ['/api/admin/credit-report-collections', reportId],
+    queryKey: [`/api/admin/credit-report-collections?uploadId=${reportId}`],
     enabled: !!reportId,
   });
 
   const { data: publicRecords = [], isLoading: publicRecordsLoading } = useQuery<CreditReportPublicRecord[]>({
-    queryKey: ['/api/admin/credit-report-public-records', reportId],
+    queryKey: [`/api/admin/credit-report-public-records?uploadId=${reportId}`],
     enabled: !!reportId,
   });
 
   const { data: letters = [], isLoading: lettersLoading } = useQuery<DisputeLetterNew[]>({
-    queryKey: ['/api/admin/dispute-letters-new', reportId],
+    queryKey: [`/api/admin/dispute-letters-new?uploadId=${reportId}`],
     enabled: !!reportId,
   });
 
@@ -1548,7 +1548,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   });
 
   const { data: compareAccounts = [] } = useQuery<CreditReportAccount[]>({
-    queryKey: ['/api/admin/credit-report-accounts', compareReportId],
+    queryKey: [`/api/admin/credit-report-accounts?uploadId=${compareReportId}`],
     enabled: !!compareReportId,
   });
 

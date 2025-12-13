@@ -4970,7 +4970,28 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
     }
   });
 
-  // Get credit report accounts for upload
+  // Get credit report accounts - with optional uploadId query param
+  app.get("/api/admin/credit-report-accounts", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const uploadId = req.query.uploadId ? parseInt(req.query.uploadId as string) : null;
+      if (uploadId) {
+        const accounts = await storage.getCreditReportAccounts(uploadId);
+        res.json(accounts);
+      } else {
+        res.json([]);
+      }
+    } catch (error: any) {
+      console.error("Error fetching credit report accounts:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Get credit report accounts for upload (legacy path param)
   app.get("/api/admin/credit-report-accounts/:uploadId", authenticateToken, async (req, res) => {
     try {
       const user = (req as any).user;
@@ -5007,7 +5028,28 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
     }
   });
 
-  // Get credit report inquiries for upload
+  // Get credit report inquiries - with optional uploadId query param
+  app.get("/api/admin/credit-report-inquiries", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const uploadId = req.query.uploadId ? parseInt(req.query.uploadId as string) : null;
+      if (uploadId) {
+        const inquiries = await storage.getCreditReportInquiries(uploadId);
+        res.json(inquiries);
+      } else {
+        res.json([]);
+      }
+    } catch (error: any) {
+      console.error("Error fetching credit report inquiries:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get credit report inquiries for upload (legacy path param)
   app.get("/api/admin/credit-report-inquiries/:uploadId", authenticateToken, async (req, res) => {
     try {
       const user = (req as any).user;
@@ -5044,7 +5086,28 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
     }
   });
 
-  // Get credit report collections for upload
+  // Get credit report collections - with optional uploadId query param
+  app.get("/api/admin/credit-report-collections", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const uploadId = req.query.uploadId ? parseInt(req.query.uploadId as string) : null;
+      if (uploadId) {
+        const collections = await storage.getCreditReportCollections(uploadId);
+        res.json(collections);
+      } else {
+        res.json([]);
+      }
+    } catch (error: any) {
+      console.error("Error fetching credit report collections:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get credit report collections for upload (legacy path param)
   app.get("/api/admin/credit-report-collections/:uploadId", authenticateToken, async (req, res) => {
     try {
       const user = (req as any).user;
@@ -5081,7 +5144,28 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
     }
   });
 
-  // Get credit report public records for upload
+  // Get credit report public records - with optional uploadId query param
+  app.get("/api/admin/credit-report-public-records", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const uploadId = req.query.uploadId ? parseInt(req.query.uploadId as string) : null;
+      if (uploadId) {
+        const records = await storage.getCreditReportPublicRecords(uploadId);
+        res.json(records);
+      } else {
+        res.json([]);
+      }
+    } catch (error: any) {
+      console.error("Error fetching credit report public records:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get credit report public records for upload (legacy path param)
   app.get("/api/admin/credit-report-public-records/:uploadId", authenticateToken, async (req, res) => {
     try {
       const user = (req as any).user;
@@ -5191,7 +5275,28 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
   // DISPUTE LETTERS API ROUTES
   // ============================================
 
-  // Get dispute letters for upload
+  // Get dispute letters - with optional uploadId query param
+  app.get("/api/admin/dispute-letters-new", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const uploadId = req.query.uploadId ? parseInt(req.query.uploadId as string) : null;
+      if (uploadId) {
+        const letters = await storage.getDisputeLettersNew(uploadId);
+        res.json(letters);
+      } else {
+        res.json([]);
+      }
+    } catch (error: any) {
+      console.error("Error fetching dispute letters:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get dispute letters for upload (legacy path param)
   app.get("/api/admin/dispute-letters-new/:uploadId", authenticateToken, async (req, res) => {
     try {
       const user = (req as any).user;
