@@ -4738,8 +4738,10 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
             if (sourceFormat === 'pdf') {
               try {
                 const pdfBuffer = Buffer.from(fileContent, 'base64');
-                const pdfData = await PDFParse(pdfBuffer);
+                const parser = new PDFParse({ data: pdfBuffer });
+                const pdfData = await parser.getText();
                 textContent = pdfData.text;
+                await parser.destroy();
                 console.log("PDF text extracted, length:", textContent.length);
               } catch (pdfErr: any) {
                 console.error("PDF parse error:", pdfErr);
