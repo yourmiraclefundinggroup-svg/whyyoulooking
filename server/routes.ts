@@ -4699,13 +4699,14 @@ ALWAYS respond with ONLY valid JSON in this exact structure:
     {
       "creditorName": "<string>",
       "accountNumberMasked": "<last 4 digits or null>",
-      "accountType": "<Credit Card, Auto Loan, Mortgage, Personal Loan, etc>",
+      "accountType": "<Credit Card, Auto Loan, Mortgage, Personal Loan, Education, etc>",
       "status": "<Open, Closed, Derogatory, Charged-off, etc>",
       "balance": <number or null>,
       "creditLimit": <number or null>,
-      "paymentStatus": "<Current, Late 30, Late 60, Late 90, Collection, etc>",
+      "paymentStatus": "<Current, Late 30, Late 60, Late 90, Late 120+, Collection, etc>",
       "dateOpened": "<YYYY-MM-DD or null>",
-      "derogatoryFlags": ["<Late Payment>", "<Collection>", "<Charge-off>"],
+      "derogatoryFlags": ["Late Payment", "Collection", "Charge-off", "Past Due"],
+      "latePayments": {"days30": <number>, "days60": <number>, "days90": <number>},
       "remarks": "<any remarks or null>"
     }
   ],
@@ -4734,6 +4735,12 @@ ALWAYS respond with ONLY valid JSON in this exact structure:
     }
   ]
 }
+
+IMPORTANT EXTRACTION RULES:
+1. For accounts with "past due" or late payments, add "Late Payment" to derogatoryFlags
+2. Count late payment history from payment history grid (30/60/90 day marks)
+3. Extract ALL hard inquiries from the inquiries section
+4. Any account in collections should also be in the collections array
 
 Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a section has no data, use an empty array [].`;
 
@@ -4802,7 +4809,7 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
                   max_tokens: 4000,
                   system: "You are a JSON extraction expert. Extract credit data and return ONLY valid JSON. No markdown, no code blocks.",
                   messages: [
-                    { role: "user", content: `Extract credit report data as JSON with these keys: creditScore (number), accounts (array with creditorName, accountType, status, balance, paymentStatus), inquiries (array with creditorName, inquiryDate), collections (array with agencyName, amount), publicRecords (array with recordType, status). Content:\n\n${textContent.substring(0, 30000)}` }
+                    { role: "user", content: `Extract credit report data as JSON with these keys: creditScore (number), accounts (array with creditorName, accountType, status, balance, paymentStatus, derogatoryFlags array like ["Late Payment"], latePayments object like {days30:0,days60:0,days90:0}), inquiries (array with creditorName, inquiryDate, inquiryType), collections (array with agencyName, amount), publicRecords (array with recordType, status). For accounts with past due amounts, add "Late Payment" to derogatoryFlags. Content:\n\n${textContent.substring(0, 30000)}` }
                   ]
                 });
                 const retryContent = retryResponse.content[0]?.type === 'text' ? retryResponse.content[0].text : "{}";
@@ -4835,7 +4842,8 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
                     creditLimit: account.creditLimit ? parseInt(account.creditLimit) : null,
                     paymentStatus: account.paymentStatus || null,
                     dateOpened: account.dateOpened || null,
-                    derogatoryFlags: account.derogatoryFlags || null,
+                    derogatoryFlags: account.derogatoryFlags || [],
+                    latePayments: account.latePayments || null,
                     remarks: account.remarks || null
                   });
                 } catch (accErr) {
