@@ -12,6 +12,7 @@ import { AICreditAnalysis } from "@/components/ai-credit-analysis";
 import { CreditSimulatorModal } from "@/components/credit-simulator-modal";
 import { AdminDisputeTracking } from "@/components/admin-dispute-tracking";
 import { FollowUpAlerts } from "@/components/follow-up-alerts";
+import AdminCreditAnalysis from "@/pages/admin-credit-analysis";
 import { BureauResponseAnalysis } from "@/components/bureau-response-analysis";
 import { SecureChat } from "@/components/secure-chat";
 import { AdminSettings } from "@/components/admin-settings";
@@ -161,6 +162,8 @@ export default function AdminPortal() {
       return <AdminDisputeTracking selectedClientId={selectedClientId} />;
     } else if (location === "/admin-portal/bureau-analysis") {
       return <BureauAnalysisPage />;
+    } else if (location === "/admin-portal/credit-analysis") {
+      return <AdminCreditAnalysis />;
     } else if (location === "/admin-portal/chat") {
       return <ClientCommunicationPage 
         clientUsers={clientUsers}

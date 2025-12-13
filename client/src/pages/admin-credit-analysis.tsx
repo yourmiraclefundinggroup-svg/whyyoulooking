@@ -78,7 +78,7 @@ export default function AdminCreditAnalysis() {
 
   const uploadMutation = useMutation({
     mutationFn: async (data: { userId: string; fileName: string; fileData: string; fileType: string }) => {
-      const response = await apiRequest("POST", "/api/admin/analyze-credit-report", JSON.stringify(data));
+      const response = await apiRequest("POST", "/api/admin/upload-credit-report", JSON.stringify(data));
       return response.json();
     },
     onSuccess: (result) => {
@@ -100,9 +100,9 @@ export default function AdminCreditAnalysis() {
   });
 
   const generateLetterMutation = useMutation({
-    mutationFn: async (finding: CreditReportFinding) => {
-      const response = await apiRequest("POST", "/api/admin/generate-finding-letter", JSON.stringify({
-        findingId: finding.id,
+    mutationFn: async (issue: { type: string; creditor: string; amount: number | null; description: string; suggestedAction: string }) => {
+      const response = await apiRequest("POST", "/api/admin/generate-dispute-letter", JSON.stringify({
+        issue,
         clientName: selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : "Client",
       }));
       return response.json();
@@ -364,14 +364,12 @@ export default function AdminCreditAnalysis() {
                           className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(25,95%,45%)]"
                           onClick={() => {
                             generateLetterMutation.mutate({
-                              id: idx,
-                              findingType: issue.type,
+                              type: issue.type,
                               creditor: issue.creditor,
                               amount: issue.amount,
                               description: issue.description,
-                              impact: issue.impact,
                               suggestedAction: issue.suggestedAction,
-                            } as any);
+                            });
                           }}
                           disabled={generateLetterMutation.isPending}
                           data-testid={`generate-letter-${idx}`}

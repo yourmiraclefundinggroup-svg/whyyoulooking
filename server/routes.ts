@@ -3137,12 +3137,13 @@ Make this letter SPECIFIC to the "${issue.creditor}" account and "${issue.type}"
       
       // If AI fails, fall back to demo letter
       if (error.status === 429 || error.message?.includes('quota')) {
+        const { issue: fallbackIssue, clientName: fallbackClientName } = req.body;
         const currentDate = new Date().toLocaleDateString();
         const disputeLetter = generateDemoDisputeLetter({
-          issueType: issue.type,
-          creditor: issue.creditor,
-          amount: issue.amount,
-          description: issue.description,
+          issueType: fallbackIssue?.type || 'UNKNOWN',
+          creditor: fallbackIssue?.creditor || 'Unknown Creditor',
+          amount: fallbackIssue?.amount,
+          description: fallbackIssue?.description || '',
           bureau: 'EXPERIAN',
           dateAdded: new Date(),
           impact: 1,
@@ -3151,9 +3152,9 @@ Make this letter SPECIFIC to the "${issue.creditor}" account and "${issue.type}"
         
         return res.json({
           letter: disputeLetter,
-          clientName,
-          issueType: issue.type,
-          creditor: issue.creditor,
+          clientName: fallbackClientName || 'Client',
+          issueType: fallbackIssue?.type || 'UNKNOWN',
+          creditor: fallbackIssue?.creditor || 'Unknown Creditor',
           generatedAt: new Date().toISOString(),
           note: "Generated using template due to API limits"
         });

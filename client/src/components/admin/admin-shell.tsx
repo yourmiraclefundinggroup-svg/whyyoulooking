@@ -27,6 +27,7 @@ import {
   Package,
   Brain,
   TrendingUp,
+  FileSearch,
 } from "lucide-react";
 
 interface AdminShellContextType {
@@ -58,6 +59,7 @@ const navItems: NavItem[] = [
   { href: "/admin-portal/disputes", label: "Disputes", icon: FileText, badge: "3" },
   { href: "/admin-portal/tracking", label: "USPS Tracking", icon: Package },
   { href: "/admin-portal/bureau-analysis", label: "Bureau Analysis", icon: Brain },
+  { href: "/admin-portal/credit-analysis", label: "Credit Analysis", icon: FileSearch },
   { href: "/admin-portal/chat", label: "Messages", icon: MessageSquare },
   { href: "/admin-portal/analytics", label: "Analytics", icon: TrendingUp },
   { href: "/admin-portal/users", label: "Users & Roles", icon: UserCog },
