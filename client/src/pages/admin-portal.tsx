@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -1017,10 +1017,70 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
   const [filterClient, setFilterClient] = useState<string>("all");
   const [filterBureau, setFilterBureau] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [processingProgress, setProcessingProgress] = useState<Record<number, number>>({});
 
   const { data: creditReports = [], isLoading } = useQuery<CreditReportWithClient[]>({
     queryKey: ['/api/admin/credit-report-uploads'],
+    refetchInterval: (query) => {
+      const data = query.state.data as CreditReportWithClient[] | undefined;
+      return data?.some((r: CreditReportWithClient) => r.parseStatus === 'processing') ? 3000 : false;
+    },
   });
+
+  const hasProcessingReports = creditReports.some((r: CreditReportWithClient) => r.parseStatus === 'processing');
+
+  const getEstimatedTime = (progress: number) => {
+    if (progress >= 90) return "Almost done...";
+    if (progress >= 70) return "~15 seconds left";
+    if (progress >= 50) return "~30 seconds left";
+    if (progress >= 30) return "~45 seconds left";
+    return "~1 minute left";
+  };
+
+  useEffect(() => {
+    if (!hasProcessingReports) return;
+    
+    const interval = setInterval(() => {
+      setProcessingProgress(prev => {
+        const newProgress = { ...prev };
+        creditReports.forEach(report => {
+          if (report.parseStatus === 'processing') {
+            const currentProgress = newProgress[report.id] || 5;
+            if (currentProgress < 90) {
+              newProgress[report.id] = Math.min(currentProgress + Math.random() * 5 + 2, 90);
+            }
+          } else if (report.parseStatus === 'succeeded') {
+            newProgress[report.id] = 100;
+          }
+        });
+        return newProgress;
+      });
+    }, 800);
+    
+    return () => clearInterval(interval);
+  }, [hasProcessingReports, creditReports]);
+
+  const getProcessingStatus = (reportId: number, status: string) => {
+    if (status === 'processing') {
+      const progress = processingProgress[reportId] || 5;
+      return (
+        <div className="min-w-[140px]">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-amber-400 font-medium">AI Parsing...</span>
+            <span className="text-xs text-[hsl(var(--admin-text-muted))]">{Math.round(progress)}%</span>
+          </div>
+          <div className="w-full bg-[hsl(var(--admin-bg))] rounded-full h-2 overflow-hidden">
+            <div 
+              className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-1">{getEstimatedTime(progress)}</p>
+        </div>
+      );
+    }
+    return getStatusBadge(status);
+  };
 
   const reportsWithClientNames = creditReports.map(report => {
     const client = clientUsers.find(u => u.id === report.userId);
@@ -1398,7 +1458,7 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
                         <span className="text-[hsl(var(--admin-text-muted))]">--</span>
                       )}
                     </AdminTableCell>
-                    <AdminTableCell>{getStatusBadge(report.parseStatus)}</AdminTableCell>
+                    <AdminTableCell>{getProcessingStatus(report.id, report.parseStatus)}</AdminTableCell>
                     <AdminTableCell>
                       <span className="text-[hsl(var(--admin-text-muted))] text-sm">
                         {report.createdAt ? new Date(report.createdAt).toLocaleDateString() : '--'}
