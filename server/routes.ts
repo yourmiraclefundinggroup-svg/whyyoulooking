@@ -14,7 +14,9 @@ import OpenAI from "openai";
 import Stripe from "stripe";
 import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
-import * as pdfParse from "pdf-parse";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users } from "@shared/schema";
 import { z } from "zod";
 
@@ -4737,7 +4739,7 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
               // Use pdf-parse to extract text from PDF
               try {
                 const pdfBuffer = Buffer.from(fileContent, 'base64');
-                const pdfData = await (pdfParse as any).default(pdfBuffer);
+                const pdfData = await pdfParse(pdfBuffer);
                 textContent = pdfData.text;
                 console.log("PDF text extracted, length:", textContent.length);
               } catch (pdfErr: any) {
