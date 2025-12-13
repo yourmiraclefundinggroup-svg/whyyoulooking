@@ -4656,7 +4656,7 @@ Please contact this lead within 24 hours.
     }
   });
 
-  // Create new credit report upload record
+  // Create new credit report upload record with AI parsing
   app.post("/api/admin/credit-report-uploads", authenticateToken, async (req, res) => {
     try {
       const user = (req as any).user;
@@ -4664,13 +4664,195 @@ Please contact this lead within 24 hours.
         return res.status(403).json({ error: "Admin access required" });
       }
 
+      const { fileContent, ...restData } = req.body;
+      
       const uploadData = {
-        ...req.body,
-        uploadedBy: user.id
+        ...restData,
+        uploadedBy: user.id,
+        parseStatus: "processing" as const
       };
 
       const validatedData = insertCreditReportUploadSchema.parse(uploadData);
       const upload = await storage.createCreditReportUpload(validatedData);
+
+      // If file content provided, parse with AI in the background
+      if (fileContent && process.env.OPENAI_API_KEY) {
+        (async () => {
+          try {
+            console.log("Starting AI parsing for upload:", upload.id);
+            
+            const parsePrompt = `You are a credit report parser. Analyze this credit report content and extract all data in JSON format.
+
+Extract the following structure:
+{
+  "creditScore": number or null,
+  "accounts": [
+    {
+      "creditorName": "string",
+      "accountNumberMasked": "last 4 digits or partial",
+      "accountType": "Credit Card, Auto Loan, Mortgage, etc",
+      "status": "Open, Closed, Derogatory, etc",
+      "balance": number or null,
+      "creditLimit": number or null,
+      "paymentStatus": "Current, Late 30, Late 60, Late 90, etc",
+      "dateOpened": "YYYY-MM-DD or null",
+      "derogatoryFlags": ["Late Payment", "Collection", "Charge-off", etc],
+      "remarks": "any remarks or null"
+    }
+  ],
+  "inquiries": [
+    {
+      "creditorName": "string",
+      "inquiryDate": "YYYY-MM-DD or null",
+      "inquiryType": "hard" or "soft"
+    }
+  ],
+  "collections": [
+    {
+      "agencyName": "collection agency name",
+      "originalCreditor": "original creditor name or null",
+      "amount": number or null,
+      "dateOpened": "YYYY-MM-DD or null",
+      "status": "Open, Paid, etc"
+    }
+  ],
+  "publicRecords": [
+    {
+      "recordType": "Bankruptcy, Judgment, Tax Lien, etc",
+      "court": "court name or null",
+      "dateFiled": "YYYY-MM-DD or null",
+      "status": "Filed, Dismissed, Discharged, etc"
+    }
+  ]
+}
+
+IMPORTANT: Return ONLY valid JSON, no markdown formatting or explanation. If you cannot find data for a section, return an empty array.
+
+Credit Report Content (base64 decoded text):
+${Buffer.from(fileContent, 'base64').toString('utf-8').substring(0, 50000)}`;
+
+            const aiResponse = await openai.chat.completions.create({
+              model: "gpt-4o",
+              messages: [
+                { role: "system", content: "You are an expert credit report parser. Extract structured data from credit reports accurately." },
+                { role: "user", content: parsePrompt }
+              ],
+              max_tokens: 4000,
+              temperature: 0.2
+            });
+
+            const responseContent = aiResponse.choices[0]?.message?.content || "{}";
+            let parsedData;
+            try {
+              const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
+              parsedData = JSON.parse(jsonMatch ? jsonMatch[0] : "{}");
+            } catch (parseErr) {
+              console.error("Failed to parse AI response:", parseErr);
+              parsedData = { accounts: [], inquiries: [], collections: [], publicRecords: [] };
+            }
+
+            console.log("Parsed credit report data:", JSON.stringify(parsedData).substring(0, 500));
+
+            // Save extracted data to database
+            const clientId = upload.userId;
+
+            // Save accounts
+            if (parsedData.accounts && Array.isArray(parsedData.accounts)) {
+              for (const account of parsedData.accounts) {
+                try {
+                  await storage.createCreditReportAccount({
+                    uploadId: upload.id,
+                    clientId,
+                    creditorName: account.creditorName || "Unknown Creditor",
+                    accountNumberMasked: account.accountNumberMasked || null,
+                    accountType: account.accountType || null,
+                    status: account.status || null,
+                    balance: account.balance ? parseInt(account.balance) : null,
+                    creditLimit: account.creditLimit ? parseInt(account.creditLimit) : null,
+                    paymentStatus: account.paymentStatus || null,
+                    dateOpened: account.dateOpened || null,
+                    derogatoryFlags: account.derogatoryFlags || null,
+                    remarks: account.remarks || null
+                  });
+                } catch (accErr) {
+                  console.error("Error saving account:", accErr);
+                }
+              }
+            }
+
+            // Save inquiries
+            if (parsedData.inquiries && Array.isArray(parsedData.inquiries)) {
+              for (const inquiry of parsedData.inquiries) {
+                try {
+                  await storage.createCreditReportInquiry({
+                    uploadId: upload.id,
+                    clientId,
+                    creditorName: inquiry.creditorName || "Unknown",
+                    inquiryDate: inquiry.inquiryDate || null,
+                    inquiryType: inquiry.inquiryType || "unknown"
+                  });
+                } catch (inqErr) {
+                  console.error("Error saving inquiry:", inqErr);
+                }
+              }
+            }
+
+            // Save collections
+            if (parsedData.collections && Array.isArray(parsedData.collections)) {
+              for (const collection of parsedData.collections) {
+                try {
+                  await storage.createCreditReportCollection({
+                    uploadId: upload.id,
+                    clientId,
+                    agencyName: collection.agencyName || "Unknown Agency",
+                    originalCreditor: collection.originalCreditor || null,
+                    amount: collection.amount ? parseInt(collection.amount) : null,
+                    dateOpened: collection.dateOpened || null,
+                    status: collection.status || null
+                  });
+                } catch (colErr) {
+                  console.error("Error saving collection:", colErr);
+                }
+              }
+            }
+
+            // Save public records
+            if (parsedData.publicRecords && Array.isArray(parsedData.publicRecords)) {
+              for (const record of parsedData.publicRecords) {
+                try {
+                  await storage.createCreditReportPublicRecord({
+                    uploadId: upload.id,
+                    clientId,
+                    recordType: record.recordType || "Unknown",
+                    court: record.court || null,
+                    dateFiled: record.dateFiled || null,
+                    status: record.status || null
+                  });
+                } catch (recErr) {
+                  console.error("Error saving public record:", recErr);
+                }
+              }
+            }
+
+            // Update upload status to succeeded
+            await storage.updateCreditReportUpload(upload.id, {
+              parseStatus: "succeeded",
+              creditScore: parsedData.creditScore || null,
+              rawExtractionJson: parsedData
+            });
+
+            console.log("AI parsing completed successfully for upload:", upload.id);
+
+          } catch (aiError: any) {
+            console.error("AI parsing error:", aiError);
+            await storage.updateCreditReportUpload(upload.id, {
+              parseStatus: "failed",
+              parseError: aiError.message || "AI parsing failed"
+            });
+          }
+        })();
+      }
+
       res.status(201).json(upload);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
