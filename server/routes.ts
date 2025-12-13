@@ -18,7 +18,7 @@ import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchem
 import { z } from "zod";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
+const { PDFParse } = require("pdf-parse");
 
 // Initialize OpenAI for support AI
 const openai = new OpenAI({
@@ -4738,7 +4738,7 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
             if (sourceFormat === 'pdf') {
               try {
                 const pdfBuffer = Buffer.from(fileContent, 'base64');
-                const pdfData = await pdfParse(pdfBuffer);
+                const pdfData = await PDFParse(pdfBuffer);
                 textContent = pdfData.text;
                 console.log("PDF text extracted, length:", textContent.length);
               } catch (pdfErr: any) {
