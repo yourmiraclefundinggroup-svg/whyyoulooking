@@ -4776,13 +4776,43 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
             });
 
             const responseContent = aiResponse.content[0]?.type === 'text' ? aiResponse.content[0].text : "{}";
+            console.log("AI response length:", responseContent.length);
+            
             let parsedData;
             try {
               const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
-              parsedData = JSON.parse(jsonMatch ? jsonMatch[0] : "{}");
+              let jsonStr = jsonMatch ? jsonMatch[0] : "{}";
+              
+              // Clean up common JSON issues
+              jsonStr = jsonStr
+                .replace(/,\s*]/g, ']')  // Remove trailing commas in arrays
+                .replace(/,\s*}/g, '}')  // Remove trailing commas in objects
+                .replace(/[\x00-\x1F\x7F]/g, ' '); // Remove control characters
+              
+              parsedData = JSON.parse(jsonStr);
             } catch (parseErr) {
               console.error("Failed to parse AI response:", parseErr);
-              parsedData = { accounts: [], inquiries: [], collections: [], publicRecords: [] };
+              console.error("Raw response preview:", responseContent.substring(0, 2000));
+              
+              // Try a second API call with smaller context for better JSON
+              try {
+                console.log("Retrying with simplified prompt...");
+                const retryResponse = await anthropic.messages.create({
+                  model: "claude-sonnet-4-20250514",
+                  max_tokens: 4000,
+                  system: "You are a JSON extraction expert. Extract credit data and return ONLY valid JSON. No markdown, no code blocks.",
+                  messages: [
+                    { role: "user", content: `Extract credit report data as JSON with these keys: creditScore (number), accounts (array with creditorName, accountType, status, balance, paymentStatus), inquiries (array with creditorName, inquiryDate), collections (array with agencyName, amount), publicRecords (array with recordType, status). Content:\n\n${textContent.substring(0, 30000)}` }
+                  ]
+                });
+                const retryContent = retryResponse.content[0]?.type === 'text' ? retryResponse.content[0].text : "{}";
+                const retryMatch = retryContent.match(/\{[\s\S]*\}/);
+                parsedData = JSON.parse(retryMatch ? retryMatch[0] : "{}");
+                console.log("Retry parsing succeeded");
+              } catch (retryErr) {
+                console.error("Retry also failed:", retryErr);
+                parsedData = { accounts: [], inquiries: [], collections: [], publicRecords: [] };
+              }
             }
 
             console.log("Parsed credit report data:", JSON.stringify(parsedData).substring(0, 500));
