@@ -16,6 +16,9 @@ import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
 import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users } from "@shared/schema";
 import { z } from "zod";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 
 // Initialize OpenAI for support AI
 const openai = new OpenAI({
@@ -4733,15 +4736,13 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
             
             // Extract text from file based on format
             if (sourceFormat === 'pdf') {
-              // Use pdf-parse to extract text from PDF (dynamic import for ESM compatibility)
               try {
                 const pdfBuffer = Buffer.from(fileContent, 'base64');
-                const pdfParseModule = await import('pdf-parse');
-                const pdfParseFn = pdfParseModule.default || pdfParseModule;
-                const pdfData = await pdfParseFn(pdfBuffer);
+                const pdfData = await pdfParse(pdfBuffer);
                 textContent = pdfData.text;
                 console.log("PDF text extracted, length:", textContent.length);
               } catch (pdfErr: any) {
+                console.error("PDF parse error:", pdfErr);
                 throw new Error(`Failed to parse PDF: ${pdfErr.message}`);
               }
             } else {
