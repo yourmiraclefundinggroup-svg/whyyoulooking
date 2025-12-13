@@ -11,6 +11,7 @@ import { eq, desc, sql, or } from "drizzle-orm";
 import { aiService } from "./ai-service";
 import { stripeService } from "./stripe-service";
 import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
 import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
@@ -23,6 +24,11 @@ const { PDFParse } = require("pdf-parse");
 // Initialize OpenAI for support AI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Initialize Anthropic for credit report parsing (more reliable)
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 // Authentication middleware (using existing implementation)
@@ -4679,7 +4685,7 @@ Please contact this lead within 24 hours.
       const upload = await storage.createCreditReportUpload(validatedData);
 
       // If file content provided, parse with AI in the background
-      if (fileContent && process.env.OPENAI_API_KEY) {
+      if (fileContent && process.env.ANTHROPIC_API_KEY) {
         (async () => {
           try {
             console.log("Starting AI parsing for upload:", upload.id, "Format:", restData.sourceFormat);
@@ -4760,17 +4766,16 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
               throw new Error("Extracted text is too short or empty - unable to parse credit report");
             }
             
-            const aiResponse = await openai.chat.completions.create({
-              model: "gpt-4o",
-              messages: [
-                { role: "system", content: parseSystemPrompt },
-                { role: "user", content: `Extract all credit report data from this content:\n\n${textContent.substring(0, 50000)}` }
-              ],
+            const aiResponse = await anthropic.messages.create({
+              model: "claude-sonnet-4-20250514",
               max_tokens: 4000,
-              temperature: 0.1
+              system: parseSystemPrompt,
+              messages: [
+                { role: "user", content: `Extract all credit report data from this content:\n\n${textContent.substring(0, 50000)}` }
+              ]
             });
 
-            const responseContent = aiResponse.choices[0]?.message?.content || "{}";
+            const responseContent = aiResponse.content[0]?.type === 'text' ? aiResponse.content[0].text : "{}";
             let parsedData;
             try {
               const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
