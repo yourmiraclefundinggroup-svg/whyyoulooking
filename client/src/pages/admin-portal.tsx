@@ -2039,41 +2039,94 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 <AdminCardTitle icon={<AlertTriangle className="h-5 w-5" />}>Issues Found</AdminCardTitle>
               </AdminCardHeader>
               <AdminCardContent>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {derogatoryCount > 0 && (
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-red-500/10 border border-red-500/30">
-                      <div className="flex items-center gap-3">
-                        <AlertCircle className="h-5 w-5 text-red-400" />
-                        <span className="text-white">Derogatory Accounts</span>
+                    <div className="rounded-lg bg-red-500/10 border border-red-500/30 overflow-hidden">
+                      <div className="flex items-center justify-between p-3 border-b border-red-500/20">
+                        <div className="flex items-center gap-3">
+                          <AlertCircle className="h-5 w-5 text-red-400" />
+                          <span className="text-white font-medium">Derogatory Accounts</span>
+                        </div>
+                        <span className="text-lg font-bold text-red-400">{derogatoryCount}</span>
                       </div>
-                      <span className="text-lg font-bold text-red-400">{derogatoryCount}</span>
+                      <div className="p-3 space-y-2">
+                        {accounts.filter(a => a.derogatoryFlags && a.derogatoryFlags.length > 0).map((account) => (
+                          <div key={account.id} className="flex items-center justify-between py-2 px-3 rounded bg-red-500/5">
+                            <div>
+                              <span className="text-white text-sm font-medium">{account.creditorName}</span>
+                              <p className="text-xs text-red-300">{account.derogatoryFlags?.join(', ')}</p>
+                            </div>
+                            <span className="text-red-400 text-sm">{account.balance ? `$${account.balance.toLocaleString()}` : '--'}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                   {collections.length > 0 && (
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
-                      <div className="flex items-center gap-3">
-                        <Landmark className="h-5 w-5 text-orange-400" />
-                        <span className="text-white">Collection Accounts</span>
+                    <div className="rounded-lg bg-orange-500/10 border border-orange-500/30 overflow-hidden">
+                      <div className="flex items-center justify-between p-3 border-b border-orange-500/20">
+                        <div className="flex items-center gap-3">
+                          <Landmark className="h-5 w-5 text-orange-400" />
+                          <span className="text-white font-medium">Collection Accounts</span>
+                        </div>
+                        <span className="text-lg font-bold text-orange-400">{collections.length}</span>
                       </div>
-                      <span className="text-lg font-bold text-orange-400">{collections.length}</span>
+                      <div className="p-3 space-y-2">
+                        {collections.map((collection) => (
+                          <div key={collection.id} className="flex items-center justify-between py-2 px-3 rounded bg-orange-500/5">
+                            <div>
+                              <span className="text-white text-sm font-medium">{collection.agencyName}</span>
+                              {collection.originalCreditor && <p className="text-xs text-orange-300">Original: {collection.originalCreditor}</p>}
+                            </div>
+                            <span className="text-orange-400 text-sm font-medium">{collection.amount ? `$${collection.amount.toLocaleString()}` : '--'}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                   {latePaymentCount > 0 && (
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
-                      <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5 text-yellow-400" />
-                        <span className="text-white">Late Payments</span>
+                    <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/30 overflow-hidden">
+                      <div className="flex items-center justify-between p-3 border-b border-yellow-500/20">
+                        <div className="flex items-center gap-3">
+                          <Clock className="h-5 w-5 text-yellow-400" />
+                          <span className="text-white font-medium">Late Payments</span>
+                        </div>
+                        <span className="text-lg font-bold text-yellow-400">{latePaymentCount}</span>
                       </div>
-                      <span className="text-lg font-bold text-yellow-400">{latePaymentCount}</span>
+                      <div className="p-3 space-y-2">
+                        {accounts.filter(a => (a.latePayments?.days30 || 0) + (a.latePayments?.days60 || 0) + (a.latePayments?.days90 || 0) > 0).map((account) => (
+                          <div key={account.id} className="flex items-center justify-between py-2 px-3 rounded bg-yellow-500/5">
+                            <div>
+                              <span className="text-white text-sm font-medium">{account.creditorName}</span>
+                              <p className="text-xs text-yellow-300">
+                                {account.latePayments?.days30 ? `30-day: ${account.latePayments.days30}` : ''} 
+                                {account.latePayments?.days60 ? ` | 60-day: ${account.latePayments.days60}` : ''} 
+                                {account.latePayments?.days90 ? ` | 90-day: ${account.latePayments.days90}` : ''}
+                              </p>
+                            </div>
+                            <span className="text-yellow-400 text-sm">{account.balance ? `$${account.balance.toLocaleString()}` : '--'}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                   {inquiries.filter(i => i.inquiryType === 'hard').length > 0 && (
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
-                      <div className="flex items-center gap-3">
-                        <SearchIcon className="h-5 w-5 text-purple-400" />
-                        <span className="text-white">Hard Inquiries</span>
+                    <div className="rounded-lg bg-purple-500/10 border border-purple-500/30 overflow-hidden">
+                      <div className="flex items-center justify-between p-3 border-b border-purple-500/20">
+                        <div className="flex items-center gap-3">
+                          <SearchIcon className="h-5 w-5 text-purple-400" />
+                          <span className="text-white font-medium">Hard Inquiries</span>
+                        </div>
+                        <span className="text-lg font-bold text-purple-400">{inquiries.filter(i => i.inquiryType === 'hard').length}</span>
                       </div>
-                      <span className="text-lg font-bold text-purple-400">{inquiries.filter(i => i.inquiryType === 'hard').length}</span>
+                      <div className="p-3 space-y-2">
+                        {inquiries.filter(i => i.inquiryType === 'hard').map((inquiry) => (
+                          <div key={inquiry.id} className="flex items-center justify-between py-2 px-3 rounded bg-purple-500/5">
+                            <span className="text-white text-sm font-medium">{inquiry.creditorName}</span>
+                            <span className="text-purple-300 text-xs">{inquiry.inquiryDate ? new Date(inquiry.inquiryDate).toLocaleDateString() : '--'}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                   {derogatoryCount === 0 && collections.length === 0 && latePaymentCount === 0 && inquiries.filter(i => i.inquiryType === 'hard').length === 0 && (
