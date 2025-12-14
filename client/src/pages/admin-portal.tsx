@@ -1982,6 +1982,12 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
           <TabsTrigger value="accounts" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             Accounts ({accounts.length})
           </TabsTrigger>
+          <TabsTrigger value="derogatory" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white text-red-400">
+            Derogatory ({derogatoryCount})
+          </TabsTrigger>
+          <TabsTrigger value="late-payments" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white text-yellow-400">
+            Late Payments ({latePaymentCount})
+          </TabsTrigger>
           <TabsTrigger value="inquiries" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             Inquiries ({inquiries.length})
           </TabsTrigger>
@@ -2195,6 +2201,160 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                           </AdminTableCell>
                           <AdminTableCell>{getAccountStatusBadge(account.status)}</AdminTableCell>
                           <AdminTableCell>{getSeverityBadge(severity.score)}</AdminTableCell>
+                          <AdminTableCell>
+                            <span className="text-xs text-[hsl(var(--admin-accent))]">{severity.strategy}</span>
+                          </AdminTableCell>
+                        </AdminTableRow>
+                      );
+                    })}
+                  </tbody>
+                </AdminTable>
+              )}
+            </AdminCardContent>
+          </AdminCard>
+        </TabsContent>
+
+        <TabsContent value="derogatory" className="mt-6">
+          <AdminCard>
+            <AdminCardHeader>
+              <AdminCardTitle icon={<AlertCircle className="h-5 w-5 text-red-400" />}>Derogatory Accounts</AdminCardTitle>
+            </AdminCardHeader>
+            <AdminCardContent>
+              {accountsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-400" />
+                </div>
+              ) : accounts.filter(a => a.derogatoryFlags && a.derogatoryFlags.length > 0).length === 0 ? (
+                <AdminEmptyState
+                  icon={<CheckSquare className="h-8 w-8" />}
+                  title="No Derogatory Accounts"
+                  description="No accounts with derogatory marks found in this report."
+                />
+              ) : (
+                <AdminTable>
+                  <AdminTableHeader>
+                    <tr>
+                      <AdminTableHead className="w-10"></AdminTableHead>
+                      <AdminTableHead>Creditor</AdminTableHead>
+                      <AdminTableHead>Balance</AdminTableHead>
+                      <AdminTableHead>Status</AdminTableHead>
+                      <AdminTableHead>Derogatory Flags</AdminTableHead>
+                      <AdminTableHead>Strategy</AdminTableHead>
+                    </tr>
+                  </AdminTableHeader>
+                  <tbody>
+                    {accounts.filter(a => a.derogatoryFlags && a.derogatoryFlags.length > 0).map((account) => {
+                      const severity = calculateAccountSeverity(account);
+                      return (
+                        <AdminTableRow key={account.id} data-testid={`row-derogatory-${account.id}`} className={`bg-red-500/5 ${isItemSelected(account.id, 'account') ? 'bg-red-500/20' : ''}`}>
+                          <AdminTableCell>
+                            <Checkbox
+                              checked={isItemSelected(account.id, 'account')}
+                              onCheckedChange={() => toggleItemSelection(account.id, 'account', account.creditorName || 'Unknown', severity)}
+                              data-testid={`checkbox-derogatory-${account.id}`}
+                            />
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <div>
+                              <span className="font-medium text-white">{account.creditorName}</span>
+                              <p className="text-xs text-[hsl(var(--admin-text-muted))]">{account.accountNumberMasked || account.accountType}</p>
+                            </div>
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <span className="text-white font-medium">
+                              {account.balance ? `$${account.balance.toLocaleString()}` : '--'}
+                            </span>
+                          </AdminTableCell>
+                          <AdminTableCell>{getAccountStatusBadge(account.status)}</AdminTableCell>
+                          <AdminTableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {account.derogatoryFlags?.map((flag, i) => (
+                                <span key={i} className="px-2 py-0.5 rounded text-xs bg-red-500/20 text-red-400 border border-red-500/30">
+                                  {flag}
+                                </span>
+                              ))}
+                            </div>
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <span className="text-xs text-[hsl(var(--admin-accent))]">{severity.strategy}</span>
+                          </AdminTableCell>
+                        </AdminTableRow>
+                      );
+                    })}
+                  </tbody>
+                </AdminTable>
+              )}
+            </AdminCardContent>
+          </AdminCard>
+        </TabsContent>
+
+        <TabsContent value="late-payments" className="mt-6">
+          <AdminCard>
+            <AdminCardHeader>
+              <AdminCardTitle icon={<Clock className="h-5 w-5 text-yellow-400" />}>Accounts with Late Payments</AdminCardTitle>
+            </AdminCardHeader>
+            <AdminCardContent>
+              {accountsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400" />
+                </div>
+              ) : accounts.filter(a => (a.latePayments?.days30 || 0) + (a.latePayments?.days60 || 0) + (a.latePayments?.days90 || 0) > 0).length === 0 ? (
+                <AdminEmptyState
+                  icon={<CheckSquare className="h-8 w-8" />}
+                  title="No Late Payments"
+                  description="No accounts with late payment history found in this report."
+                />
+              ) : (
+                <AdminTable>
+                  <AdminTableHeader>
+                    <tr>
+                      <AdminTableHead className="w-10"></AdminTableHead>
+                      <AdminTableHead>Creditor</AdminTableHead>
+                      <AdminTableHead>Balance</AdminTableHead>
+                      <AdminTableHead>30 Days</AdminTableHead>
+                      <AdminTableHead>60 Days</AdminTableHead>
+                      <AdminTableHead>90+ Days</AdminTableHead>
+                      <AdminTableHead>Strategy</AdminTableHead>
+                    </tr>
+                  </AdminTableHeader>
+                  <tbody>
+                    {accounts.filter(a => (a.latePayments?.days30 || 0) + (a.latePayments?.days60 || 0) + (a.latePayments?.days90 || 0) > 0).map((account) => {
+                      const severity = calculateAccountSeverity(account);
+                      return (
+                        <AdminTableRow key={account.id} data-testid={`row-late-payment-${account.id}`} className={`bg-yellow-500/5 ${isItemSelected(account.id, 'account') ? 'bg-yellow-500/20' : ''}`}>
+                          <AdminTableCell>
+                            <Checkbox
+                              checked={isItemSelected(account.id, 'account')}
+                              onCheckedChange={() => toggleItemSelection(account.id, 'account', account.creditorName || 'Unknown', severity)}
+                              data-testid={`checkbox-late-payment-${account.id}`}
+                            />
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <div>
+                              <span className="font-medium text-white">{account.creditorName}</span>
+                              <p className="text-xs text-[hsl(var(--admin-text-muted))]">{account.accountNumberMasked || account.accountType}</p>
+                            </div>
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <span className="text-white font-medium">
+                              {account.balance ? `$${account.balance.toLocaleString()}` : '--'}
+                            </span>
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <span className={`font-medium ${account.latePayments?.days30 ? 'text-yellow-400' : 'text-[hsl(var(--admin-text-muted))]'}`}>
+                              {account.latePayments?.days30 || 0}
+                            </span>
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <span className={`font-medium ${account.latePayments?.days60 ? 'text-orange-400' : 'text-[hsl(var(--admin-text-muted))]'}`}>
+                              {account.latePayments?.days60 || 0}
+                            </span>
+                          </AdminTableCell>
+                          <AdminTableCell>
+                            <span className={`font-medium ${account.latePayments?.days90 ? 'text-red-400' : 'text-[hsl(var(--admin-text-muted))]'}`}>
+                              {account.latePayments?.days90 || 0}
+                            </span>
+                          </AdminTableCell>
                           <AdminTableCell>
                             <span className="text-xs text-[hsl(var(--admin-accent))]">{severity.strategy}</span>
                           </AdminTableCell>
