@@ -2000,7 +2000,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
       )}
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] p-1">
+        <TabsList className="bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] p-1 flex-wrap h-auto gap-1">
           <TabsTrigger value="overview" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             Overview
           </TabsTrigger>
