@@ -1502,7 +1502,8 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   const queryClient = useQueryClient();
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [generateLetterOpen, setGenerateLetterOpen] = useState(false);
-  const [letterType, setLetterType] = useState<'round1' | 'round2' | 'validation' | 'goodwill' | 'inquiry'>('round1');
+  const [letterType, setLetterType] = useState<'round1' | 'round2' | 'validation' | 'goodwill' | 'inquiry' | 'fraud'>('round1');
+  const [isFraudDispute, setIsFraudDispute] = useState(false);
   const [letterBureau, setLetterBureau] = useState<'EXPERIAN' | 'EQUIFAX' | 'TRANSUNION'>('EXPERIAN');
   const [generatedLetter, setGeneratedLetter] = useState<DisputeLetterNew | null>(null);
   const [viewLetterOpen, setViewLetterOpen] = useState(false);
@@ -1592,10 +1593,10 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   });
 
   const generateLetterMutation = useMutation({
-    mutationFn: async (data: { items: SelectedItem[]; letterType: string; bureau: string }) => {
+    mutationFn: async (data: { items: SelectedItem[]; letterType: string; bureau: string; isFraud: boolean }) => {
       const response = await apiRequest('POST', '/api/admin/dispute-letters-new/generate', {
         uploadId: reportId,
-        clientId: report?.clientId,
+        clientId: report?.userId,
         items: data.items.map(item => ({
           type: item.type,
           id: item.id,
@@ -1604,7 +1605,8 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
           strategy: item.strategy
         })),
         letterType: data.letterType,
-        bureau: data.bureau
+        bureau: data.bureau,
+        isFraud: data.isFraud
       });
       return response.json();
     },
@@ -3039,6 +3041,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                     <SelectItem value="validation">Debt Validation</SelectItem>
                     <SelectItem value="goodwill">Goodwill Letter</SelectItem>
                     <SelectItem value="inquiry">Inquiry Removal</SelectItem>
+                    <SelectItem value="fraud">Fraud/Identity Theft</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -3054,6 +3057,23 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                     <SelectItem value="TRANSUNION">TransUnion</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-3 p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+              <Checkbox 
+                id="fraud-disclosure" 
+                checked={isFraudDispute || letterType === 'fraud'}
+                onCheckedChange={(checked) => setIsFraudDispute(checked as boolean)}
+                data-testid="checkbox-fraud-disclosure"
+              />
+              <div className="flex-1">
+                <Label htmlFor="fraud-disclosure" className="text-red-400 font-medium cursor-pointer">
+                  Fraud/Identity Theft Disclosure
+                </Label>
+                <p className="text-xs text-[hsl(var(--admin-text-muted))]">
+                  Check this if these accounts were opened fraudulently. The letter will include identity theft affidavit language.
+                </p>
               </div>
             </div>
 
@@ -3117,7 +3137,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 Cancel
               </Button>
               <Button
-                onClick={() => generateLetterMutation.mutate({ items: selectedItems, letterType, bureau: letterBureau })}
+                onClick={() => generateLetterMutation.mutate({ items: selectedItems, letterType, bureau: letterBureau, isFraud: isFraudDispute || letterType === 'fraud' })}
                 disabled={generateLetterMutation.isPending || selectedItems.length === 0}
                 className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
                 data-testid="button-generate"

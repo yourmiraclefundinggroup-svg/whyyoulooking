@@ -5452,28 +5452,60 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
         return res.status(403).json({ error: "Admin access required" });
       }
 
-      const { uploadId, clientId, bureau, letterType, disputeItemIds, clientInfo } = req.body;
+      const { uploadId, clientId, bureau, letterType, disputeItemIds, clientInfo, items, isFraud } = req.body;
 
-      // Get the dispute items
-      const allItems = await storage.getDisputeItems(uploadId);
-      const selectedItems = allItems.filter(item => disputeItemIds.includes(item.id));
+      // Support both old format (disputeItemIds) and new format (items array)
+      let selectedItems: any[] = [];
+      
+      if (items && items.length > 0) {
+        // New format: items array from frontend with name, type, reason, strategy
+        selectedItems = items;
+      } else if (disputeItemIds && disputeItemIds.length > 0) {
+        // Old format: get dispute items by ID
+        const allItems = await storage.getDisputeItems(uploadId);
+        selectedItems = allItems.filter((item: any) => disputeItemIds.includes(item.id));
+      }
 
       if (selectedItems.length === 0) {
         return res.status(400).json({ error: "No dispute items selected" });
       }
 
       // Build the prompt for AI letter generation
-      const itemsDescription = selectedItems.map(item => {
+      const itemsDescription = selectedItems.map((item: any) => {
+        // Handle both old and new formats
+        if (item.name) {
+          return `- ${item.type?.toUpperCase() || 'ACCOUNT'}: ${item.name} - ${item.reason || 'Disputed item'} (Strategy: ${item.strategy || 'Standard dispute'})`;
+        }
         return `- ${item.itemType}: ${item.negativeReasonTags?.join(', ') || 'General dispute'} (Strategy: ${item.recommendedStrategy || 'Standard dispute'})`;
       }).join('\n');
 
+      // Get client info for the letter
+      let clientName = clientInfo?.name || '';
+      let clientAddress = clientInfo?.address || '';
+      
+      if (clientId && !clientName) {
+        const client = await storage.getUser(clientId);
+        if (client) {
+          clientName = `${client.firstName || ''} ${client.lastName || ''}`.trim() || 'Client Name';
+        }
+      }
+
+      // Add fraud disclosure language if requested
+      const fraudDisclosure = isFraud ? `
+IMPORTANT: This is an IDENTITY THEFT/FRAUD dispute. The accounts listed below were opened fraudulently without my knowledge or consent. I am a victim of identity theft.
+
+I am disputing these fraudulent accounts under the Fair Credit Reporting Act (FCRA) Section 605B, which requires you to block the reporting of any information resulting from identity theft within 4 business days.
+
+I have filed a police report and/or FTC Identity Theft Report regarding this fraud. Please block these fraudulent accounts immediately.
+` : '';
+
       const letterPrompt = `Generate a professional credit dispute letter for the following:
 
-CLIENT: ${clientInfo?.name || 'Client Name'}
-ADDRESS: ${clientInfo?.address || 'Client Address'}
+CLIENT: ${clientName || clientInfo?.name || 'Client Name'}
+ADDRESS: ${clientAddress || clientInfo?.address || 'Client Address'}
 BUREAU: ${bureau}
-LETTER TYPE: ${letterType} (${letterType === 'round1' ? 'Initial Dispute' : letterType === 'round2' ? 'Follow-up Dispute' : letterType === 'validation' ? 'Debt Validation' : letterType === 'goodwill' ? 'Goodwill Request' : 'Inquiry Removal'})
-
+LETTER TYPE: ${letterType} (${letterType === 'round1' ? 'Initial Dispute' : letterType === 'round2' ? 'Follow-up Dispute' : letterType === 'validation' ? 'Debt Validation' : letterType === 'goodwill' ? 'Goodwill Request' : letterType === 'fraud' ? 'Identity Theft/Fraud Dispute' : 'Inquiry Removal'})
+${isFraud ? '\n**THIS IS A FRAUD/IDENTITY THEFT DISPUTE** - Include FCRA Section 605B language for identity theft blocking.\n' : ''}
 ITEMS TO DISPUTE:
 ${itemsDescription}
 
@@ -5482,8 +5514,9 @@ Generate a complete, professional dispute letter that:
 2. Uses appropriate legal language for a ${letterType} letter
 3. Lists all disputed items clearly
 4. Requests proper verification/investigation
-5. Sets a 30-day response deadline
-6. Is ready to print and mail`;
+5. Sets a ${isFraud ? '4 business day (identity theft)' : '30-day'} response deadline
+6. Is ready to print and mail
+${isFraud ? '7. Includes identity theft affidavit language and references FCRA Section 605B\n8. Mentions that a police report/FTC Identity Theft Report has been filed' : ''}`;
 
       let letterContent = '';
 
@@ -5510,35 +5543,53 @@ Generate a complete, professional dispute letter that:
       // Fallback template if AI fails
       if (!letterContent) {
         const currentDate = new Date().toLocaleDateString();
+        const fraudSection = isFraud ? `
+
+IDENTITY THEFT NOTICE:
+I am a victim of identity theft. The accounts listed below were opened fraudulently without my knowledge or consent.
+
+Under FCRA Section 605B (15 U.S.C. § 1681c-2), you are required to block the reporting of any information resulting from identity theft within 4 business days of receiving this notice along with:
+- A copy of an identity theft report
+- Proof of identity
+- A statement identifying the fraudulent information
+
+I have filed a police report and/or FTC Identity Theft Report regarding this fraud.
+` : '';
+
         letterContent = `${currentDate}
 
 ${bureau} Credit Bureau
 Consumer Dispute Department
 
-RE: Formal Credit Report Dispute - ${letterType === 'round1' ? 'Initial Request' : letterType === 'round2' ? 'Second Request - No Response' : 'Dispute Request'}
+RE: ${isFraud ? 'IDENTITY THEFT DISPUTE - URGENT' : 'Formal Credit Report Dispute'} - ${letterType === 'round1' ? 'Initial Request' : letterType === 'round2' ? 'Second Request - No Response' : letterType === 'fraud' ? 'Fraud Dispute' : 'Dispute Request'}
 
 Dear ${bureau} Credit Bureau,
-
-I am writing to formally dispute the following items on my credit report as inaccurate, unverifiable, or incomplete under the Fair Credit Reporting Act (FCRA).
+${fraudSection}
+I am writing to formally dispute the following items on my credit report as ${isFraud ? 'fraudulent accounts opened without my authorization' : 'inaccurate, unverifiable, or incomplete'} under the Fair Credit Reporting Act (FCRA).
 
 DISPUTED ITEMS:
-${selectedItems.map((item, idx) => `${idx + 1}. ${item.itemType.toUpperCase()} - ${item.negativeReasonTags?.join(', ') || 'Disputed item'}`).join('\n')}
+${selectedItems.map((item: any, idx: number) => {
+  if (item.name) {
+    return `${idx + 1}. ${item.type?.toUpperCase() || 'ACCOUNT'}: ${item.name} - ${item.reason || 'Disputed item'}`;
+  }
+  return `${idx + 1}. ${item.itemType?.toUpperCase() || 'ACCOUNT'} - ${item.negativeReasonTags?.join(', ') || 'Disputed item'}`;
+}).join('\n')}
 
-Under 15 U.S.C. § 1681i, you are required to conduct a reasonable investigation within 30 days and notify me of the results.
+Under 15 U.S.C. § 1681i, you are required to conduct a reasonable investigation within ${isFraud ? '4 business days' : '30 days'} and notify me of the results.
 
 Please investigate these items and provide me with:
 1. Written confirmation of your investigation
 2. Updated credit report if changes are made
 3. Names and contact information of information providers
 
-If you cannot verify these items, they must be promptly deleted from my credit report.
+If you cannot verify these items, they must be promptly ${isFraud ? 'blocked' : 'deleted'} from my credit report.
 
 Sincerely,
 
-${clientInfo?.name || '[Your Name]'}
-${clientInfo?.address || '[Your Address]'}
+${clientName || clientInfo?.name || '[Your Name]'}
+${clientAddress || clientInfo?.address || '[Your Address]'}
 
-Enclosures: Copy of ID, Proof of Address`;
+Enclosures: Copy of ID, Proof of Address${isFraud ? ', Identity Theft Report/Police Report' : ''}`;
       }
 
       // Save the letter
