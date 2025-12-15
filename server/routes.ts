@@ -4690,29 +4690,33 @@ Please contact this lead within 24 hours.
           try {
             console.log("Starting AI parsing for upload:", upload.id, "Format:", restData.sourceFormat);
             
-            const parseSystemPrompt = `You are an expert credit report parser. Extract structured data from credit reports accurately. 
+            const parseSystemPrompt = `You are an expert credit report parser. Your job is to extract EVERY SINGLE item from credit reports with 100% completeness. Missing items is unacceptable.
+
+CRITICAL: Extract ALL items. Credit reports often have 10-50+ accounts, 5-20+ inquiries, multiple collections. Do NOT skip any.
 
 ALWAYS respond with ONLY valid JSON in this exact structure:
 {
   "creditScore": <number or null>,
   "accounts": [
     {
-      "creditorName": "<string>",
+      "creditorName": "<string - REQUIRED>",
       "accountNumberMasked": "<last 4 digits or null>",
-      "accountType": "<Credit Card, Auto Loan, Mortgage, Personal Loan, Education, etc>",
-      "status": "<Open, Closed, Derogatory, Charged-off, etc>",
-      "balance": <number or null>,
-      "creditLimit": <number or null>,
-      "paymentStatus": "<Current, Late 30, Late 60, Late 90, Late 120+, Collection, etc>",
+      "accountType": "<Credit Card, Auto Loan, Mortgage, Personal Loan, Student Loan, HELOC, Retail Card, Medical, Utility, etc>",
+      "status": "<Open, Closed, Derogatory, Charged-off, Paid, Transferred, etc>",
+      "balance": <number or null - current balance owed>,
+      "creditLimit": <number or null - credit limit or high credit>,
+      "paymentStatus": "<Current, Late 30, Late 60, Late 90, Late 120+, Late 150+, Collection, Charge-off, etc>",
       "dateOpened": "<YYYY-MM-DD or null>",
-      "derogatoryFlags": ["Late Payment", "Collection", "Charge-off", "Past Due"],
-      "latePayments": {"days30": <number>, "days60": <number>, "days90": <number>},
-      "remarks": "<any remarks or null>"
+      "dateLastActive": "<YYYY-MM-DD or null>",
+      "derogatoryFlags": ["Late Payment", "Collection", "Charge-off", "Past Due", "Bankruptcy", "Foreclosure", "Repossession"],
+      "latePayments": {"days30": <number>, "days60": <number>, "days90": <number>, "days120": <number>, "days150": <number>},
+      "monthsReviewed": <number or null - total months of payment history>,
+      "remarks": "<any remarks, comments, or special codes - null if none>"
     }
   ],
   "inquiries": [
     {
-      "creditorName": "<string>",
+      "creditorName": "<string - company that pulled credit>",
       "inquiryDate": "<YYYY-MM-DD or null>",
       "inquiryType": "<hard or soft>"
     }
@@ -4721,26 +4725,41 @@ ALWAYS respond with ONLY valid JSON in this exact structure:
     {
       "agencyName": "<collection agency name>",
       "originalCreditor": "<original creditor name or null>",
-      "amount": <number or null>,
+      "amount": <number or null - collection amount>,
       "dateOpened": "<YYYY-MM-DD or null>",
-      "status": "<Open, Paid, etc>"
+      "dateReported": "<YYYY-MM-DD or null>",
+      "status": "<Open, Paid, Settled, Disputed, etc>"
     }
   ],
   "publicRecords": [
     {
-      "recordType": "<Bankruptcy, Judgment, Tax Lien, etc>",
+      "recordType": "<Bankruptcy Chapter 7, Bankruptcy Chapter 13, Judgment, Tax Lien, Civil Judgment, etc>",
       "court": "<court name or null>",
       "dateFiled": "<YYYY-MM-DD or null>",
-      "status": "<Filed, Dismissed, Discharged, etc>"
+      "dateResolved": "<YYYY-MM-DD or null>",
+      "amount": <number or null>,
+      "status": "<Filed, Dismissed, Discharged, Released, Satisfied, etc>"
     }
-  ]
+  ],
+  "personalInfo": {
+    "name": "<consumer name or null>",
+    "ssn": "<last 4 digits only or null>",
+    "addresses": ["<address 1>", "<address 2>"],
+    "employers": ["<employer 1>", "<employer 2>"]
+  }
 }
 
-IMPORTANT EXTRACTION RULES:
-1. For accounts with "past due" or late payments, add "Late Payment" to derogatoryFlags
-2. Count late payment history from payment history grid (30/60/90 day marks)
-3. Extract ALL hard inquiries from the inquiries section
-4. Any account in collections should also be in the collections array
+EXTRACTION RULES - FOLLOW EXACTLY:
+1. Extract EVERY account - credit cards, loans, mortgages, student loans, retail cards, medical accounts, utility accounts, authorized user accounts
+2. Extract EVERY inquiry - both hard and soft pulls, promotional inquiries, account review inquiries
+3. Any account marked "Collection", "Charged Off", or sent to collections MUST appear in BOTH accounts AND collections arrays
+4. For late payments: Look for payment history grids (30/60/90/120+ day late markers), "Past Due" amounts, or payment status indicators
+5. Add "Late Payment" to derogatoryFlags if ANY late payments exist (even 30 days once)
+6. Add "Collection" to derogatoryFlags if account was sent to collections
+7. Add "Charge-off" if account was charged off
+8. Look for derogatory indicators: negative, adverse, delinquent, past due, charge-off, collection, bankruptcy, foreclosure, repossession
+9. If the document has multiple pages/sections, extract from ALL of them
+10. Personal info: Extract name, last 4 of SSN, all addresses shown, all employers
 
 Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a section has no data, use an empty array [].`;
 
@@ -4761,7 +4780,7 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
               
               aiResponse = await anthropic.messages.create({
                 model: "claude-sonnet-4-20250514",
-                max_tokens: 4000,
+                max_tokens: 8000,
                 system: parseSystemPrompt,
                 messages: [
                   { 
@@ -4777,7 +4796,7 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
                       },
                       {
                         type: "text",
-                        text: "Extract all credit report data from this credit report screenshot. Pay special attention to the INQUIRIES section - extract ALL inquiries with their creditor names, dates, and types (hard/soft)."
+                        text: "Extract ALL credit report data from this credit report. Be thorough - extract EVERY account, EVERY inquiry, EVERY collection. Do not skip any items. If this appears to be a multi-page document, extract from all visible sections. Count everything carefully."
                       }
                     ]
                   }
@@ -4815,10 +4834,10 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
               
               aiResponse = await anthropic.messages.create({
                 model: "claude-sonnet-4-20250514",
-                max_tokens: 4000,
+                max_tokens: 8000,
                 system: parseSystemPrompt,
                 messages: [
-                  { role: "user", content: `Extract all credit report data from this content:\n\n${textContent.substring(0, 50000)}` }
+                  { role: "user", content: `Extract ALL credit report data from this document. Be thorough - extract EVERY account, EVERY inquiry, EVERY collection. Do not skip any items. Count everything carefully.\n\nCREDIT REPORT CONTENT:\n\n${textContent.substring(0, 80000)}` }
                 ]
               });
             }
