@@ -1516,9 +1516,9 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   // Create Dispute tab state
   type DisputeItem = {
     id: number;
-    type: 'account' | 'inquiry' | 'collection' | 'public_record';
+    type: 'account' | 'inquiry' | 'collection' | 'public_record' | 'late_payment';
     name: string;
-    reason: 'fraud' | 'late_payment_error' | 'closed_account' | 'not_my_inquiry' | 'balance_incorrect' | 'account_not_mine' | 'paid_collection' | 'other';
+    reason: 'fraud' | 'late_payment_error' | 'closed_account' | 'not_my_inquiry' | 'balance_incorrect' | 'account_not_mine' | 'paid_collection' | 'payment_made_on_time' | 'creditor_error' | 'goodwill' | 'disaster_relief' | 'other';
     customReason: string;
     selected: boolean;
   };
@@ -2712,6 +2712,95 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                                           onChange={(e) => {
                                             setDisputeItems(prev => prev.map(d => 
                                               d.id === account.id && d.type === 'account' ? {...d, customReason: e.target.value} : d
+                                            ));
+                                          }}
+                                          className="w-full px-3 py-1.5 rounded bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white text-sm"
+                                        />
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="border border-[hsl(var(--admin-border))] rounded-lg overflow-hidden border-yellow-500/30">
+                      <div className="bg-yellow-500/10 p-3 border-b border-[hsl(var(--admin-border))]">
+                        <span className="text-yellow-400 font-medium">Late Payments ({accounts.filter(a => (a.latePayments?.days30 || 0) + (a.latePayments?.days60 || 0) + (a.latePayments?.days90 || 0) > 0 || a.derogatoryFlags?.includes('Late Payment')).length})</span>
+                      </div>
+                      <div className="max-h-[200px] overflow-y-auto">
+                        {accounts.filter(a => (a.latePayments?.days30 || 0) + (a.latePayments?.days60 || 0) + (a.latePayments?.days90 || 0) > 0 || a.derogatoryFlags?.includes('Late Payment')).length === 0 ? (
+                          <div className="p-4 text-center text-[hsl(var(--admin-text-muted))]">No accounts with late payments</div>
+                        ) : accounts.filter(a => (a.latePayments?.days30 || 0) + (a.latePayments?.days60 || 0) + (a.latePayments?.days90 || 0) > 0 || a.derogatoryFlags?.includes('Late Payment')).map((account) => {
+                          const item = disputeItems.find(d => d.id === account.id && d.type === 'late_payment');
+                          const totalLates = (account.latePayments?.days30 || 0) + (account.latePayments?.days60 || 0) + (account.latePayments?.days90 || 0);
+                          return (
+                            <div key={`late-${account.id}`} className={`p-3 border-b border-[hsl(var(--admin-border))] last:border-b-0 ${item?.selected ? 'bg-yellow-500/10' : ''}`}>
+                              <div className="flex items-start gap-3">
+                                <Checkbox
+                                  checked={item?.selected || false}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setDisputeItems(prev => [...prev.filter(d => !(d.id === account.id && d.type === 'late_payment')), {
+                                        id: account.id,
+                                        type: 'late_payment',
+                                        name: account.creditorName || 'Unknown',
+                                        reason: 'late_payment_error',
+                                        customReason: '',
+                                        selected: true
+                                      }]);
+                                    } else {
+                                      setDisputeItems(prev => prev.filter(d => !(d.id === account.id && d.type === 'late_payment')));
+                                    }
+                                  }}
+                                  data-testid={`checkbox-dispute-late-${account.id}`}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-white font-medium">{account.creditorName}</span>
+                                    <div className="flex gap-1">
+                                      {account.latePayments?.days30 ? <span className="px-1.5 py-0.5 rounded text-xs bg-yellow-500/20 text-yellow-400">30d: {account.latePayments.days30}</span> : null}
+                                      {account.latePayments?.days60 ? <span className="px-1.5 py-0.5 rounded text-xs bg-orange-500/20 text-orange-400">60d: {account.latePayments.days60}</span> : null}
+                                      {account.latePayments?.days90 ? <span className="px-1.5 py-0.5 rounded text-xs bg-red-500/20 text-red-400">90d: {account.latePayments.days90}</span> : null}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-sm text-[hsl(var(--admin-text-muted))]">{account.accountType}</span>
+                                    <span className="text-xs text-yellow-400">{totalLates} late payment{totalLates !== 1 ? 's' : ''}</span>
+                                  </div>
+                                  {item?.selected && (
+                                    <div className="mt-2 space-y-2">
+                                      <Select 
+                                        value={item.reason} 
+                                        onValueChange={(v: any) => {
+                                          setDisputeItems(prev => prev.map(d => 
+                                            d.id === account.id && d.type === 'late_payment' ? {...d, reason: v} : d
+                                          ));
+                                        }}
+                                      >
+                                        <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm">
+                                          <SelectValue placeholder="Select dispute reason" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                                          <SelectItem value="late_payment_error">Late Payment Reported in Error</SelectItem>
+                                          <SelectItem value="payment_made_on_time">Payment Was Made On Time</SelectItem>
+                                          <SelectItem value="creditor_error">Creditor Reporting Error</SelectItem>
+                                          <SelectItem value="goodwill">Goodwill Adjustment Request</SelectItem>
+                                          <SelectItem value="disaster_relief">Natural Disaster/COVID Relief</SelectItem>
+                                          <SelectItem value="other">Other (specify below)</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      {item.reason === 'other' && (
+                                        <input
+                                          type="text"
+                                          placeholder="Describe the issue..."
+                                          value={item.customReason}
+                                          onChange={(e) => {
+                                            setDisputeItems(prev => prev.map(d => 
+                                              d.id === account.id && d.type === 'late_payment' ? {...d, customReason: e.target.value} : d
                                             ));
                                           }}
                                           className="w-full px-3 py-1.5 rounded bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white text-sm"
