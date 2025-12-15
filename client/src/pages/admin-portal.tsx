@@ -1515,6 +1515,12 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   
   const { data: report, isLoading: reportLoading } = useQuery<CreditReportUpload & { clientName?: string }>({
     queryKey: ['/api/admin/credit-report-uploads', reportId],
+    select: (data: any) => {
+      if (Array.isArray(data)) {
+        return data.find((r: any) => r.id === reportId);
+      }
+      return data;
+    }
   });
 
   const { data: accounts = [], isLoading: accountsLoading } = useQuery<CreditReportAccount[]>({
