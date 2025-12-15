@@ -5520,21 +5520,18 @@ ${isFraud ? '7. Includes identity theft affidavit language and references FCRA S
 
       let letterContent = '';
 
-      if (process.env.OPENAI_API_KEY) {
+      if (process.env.ANTHROPIC_API_KEY) {
         try {
-          const response = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-              {
-                role: "system",
-                content: "You are an expert credit repair specialist. Generate professional, legally-compliant dispute letters."
-              },
-              { role: "user", content: letterPrompt }
-            ],
+          const response = await anthropic.messages.create({
+            model: "claude-sonnet-4-20250514",
             max_tokens: 2000,
-            temperature: 0.4
+            system: "You are an expert credit repair specialist with extensive knowledge of FCRA, FDCPA, and consumer protection laws. Generate professional, legally-compliant dispute letters that are ready to print and mail.",
+            messages: [
+              { role: "user", content: letterPrompt }
+            ]
           });
-          letterContent = response.choices[0]?.message?.content || '';
+          const textBlock = response.content.find((block: any) => block.type === 'text');
+          letterContent = textBlock?.text || '';
         } catch (aiError) {
           console.error("AI generation failed, using template:", aiError);
         }
