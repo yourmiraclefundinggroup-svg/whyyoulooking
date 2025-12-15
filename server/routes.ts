@@ -5608,6 +5608,92 @@ Enclosures: Copy of ID, Proof of Address${isFraud ? ', Identity Theft Report/Pol
     }
   });
 
+  // AI Chat for dispute letter refinement
+  app.post("/api/admin/dispute-chat", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { message, currentLetter, items, bureau, letterType } = req.body;
+
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return res.status(400).json({ 
+          message: "I can help you refine the letter. What would you like me to change?",
+          error: "AI not configured" 
+        });
+      }
+
+      const itemsDescription = items?.map((item: any) => 
+        `- ${item.name}: ${item.reason?.replace(/_/g, ' ') || 'dispute'}`
+      ).join('\n') || 'No items selected';
+
+      const chatPrompt = `You are an expert credit repair specialist helping an admin refine a dispute letter.
+
+CURRENT LETTER:
+${currentLetter || 'No letter generated yet'}
+
+ITEMS BEING DISPUTED:
+${itemsDescription}
+
+BUREAU: ${bureau || 'Not specified'}
+LETTER TYPE: ${letterType || 'round1'}
+
+USER REQUEST: ${message}
+
+Instructions:
+1. If the user asks to modify the letter, provide the COMPLETE updated letter text.
+2. If the user asks a question, answer it helpfully.
+3. If no letter exists yet, explain that they need to generate one first.
+4. Keep responses professional and focused on credit dispute best practices.
+
+If you are updating the letter, respond in this exact format:
+[MESSAGE]
+Your brief explanation or response here
+[/MESSAGE]
+[LETTER]
+The complete updated letter text here
+[/LETTER]
+
+If you are just answering a question (not updating the letter), just respond normally without the tags.`;
+
+      try {
+        const response = await anthropic.messages.create({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 2500,
+          messages: [{ role: "user", content: chatPrompt }]
+        });
+
+        const textBlock = response.content.find((block: any) => block.type === 'text');
+        const fullResponse = textBlock?.text || '';
+
+        // Parse response to extract message and letter if present
+        const letterMatch = fullResponse.match(/\[LETTER\]([\s\S]*?)\[\/LETTER\]/);
+        const messageMatch = fullResponse.match(/\[MESSAGE\]([\s\S]*?)\[\/MESSAGE\]/);
+
+        if (letterMatch) {
+          res.json({
+            message: messageMatch ? messageMatch[1].trim() : 'Letter updated successfully.',
+            updatedLetter: letterMatch[1].trim()
+          });
+        } else {
+          res.json({
+            message: fullResponse.trim()
+          });
+        }
+      } catch (aiError) {
+        console.error("AI chat error:", aiError);
+        res.json({
+          message: "I understand you want to make changes. Please try rephrasing your request, or generate the letter first if you haven't already."
+        });
+      }
+    } catch (error: any) {
+      console.error("Error in dispute chat:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ============================================
   // DISPUTE CALENDAR API ROUTES
   // ============================================

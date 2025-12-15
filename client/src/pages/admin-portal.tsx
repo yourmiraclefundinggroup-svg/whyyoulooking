@@ -1513,6 +1513,23 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   const [newEventDate, setNewEventDate] = useState('');
   const [newEventRound, setNewEventRound] = useState<'1' | '2' | 'validation'>('1');
   
+  // Create Dispute tab state
+  type DisputeItem = {
+    id: number;
+    type: 'account' | 'inquiry' | 'collection' | 'public_record';
+    name: string;
+    reason: 'fraud' | 'late_payment_error' | 'closed_account' | 'not_my_inquiry' | 'balance_incorrect' | 'account_not_mine' | 'paid_collection' | 'other';
+    customReason: string;
+    selected: boolean;
+  };
+  const [disputeItems, setDisputeItems] = useState<DisputeItem[]>([]);
+  const [disputeChat, setDisputeChat] = useState<{ role: 'user' | 'ai'; content: string }[]>([]);
+  const [disputeChatInput, setDisputeChatInput] = useState('');
+  const [disputeLetterContent, setDisputeLetterContent] = useState('');
+  const [isGeneratingDispute, setIsGeneratingDispute] = useState(false);
+  const [disputeBureau, setDisputeBureau] = useState<'EXPERIAN' | 'EQUIFAX' | 'TRANSUNION'>('EXPERIAN');
+  const [disputeLetterType, setDisputeLetterType] = useState<'round1' | 'round2' | 'validation' | 'fraud'>('round1');
+  
   const { data: report, isLoading: reportLoading } = useQuery<CreditReportUpload & { clientName?: string }>({
     queryKey: ['/api/admin/credit-report-uploads', reportId],
     select: (data: any) => {
@@ -2004,6 +2021,10 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
           </TabsTrigger>
           <TabsTrigger value="public-records" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             Public Records ({publicRecords.length})
+          </TabsTrigger>
+          <TabsTrigger value="create-dispute" className="data-[state=active]:bg-green-600 data-[state=active]:text-white text-green-400">
+            <Plus className="h-4 w-4 mr-1" />
+            Create Dispute
           </TabsTrigger>
           <TabsTrigger value="letters" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             Letters ({letters.length})
@@ -2578,6 +2599,483 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               )}
             </AdminCardContent>
           </AdminCard>
+        </TabsContent>
+
+        <TabsContent value="create-dispute" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <AdminCard>
+                <AdminCardHeader>
+                  <AdminCardTitle icon={<Plus className="h-5 w-5 text-green-400" />}>Select Items to Dispute</AdminCardTitle>
+                </AdminCardHeader>
+                <AdminCardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="space-y-2">
+                        <Label className="text-[hsl(var(--admin-text-muted))]">Letter Type</Label>
+                        <Select value={disputeLetterType} onValueChange={(v: any) => setDisputeLetterType(v)}>
+                          <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                            <SelectItem value="round1">Round 1 - Initial Dispute</SelectItem>
+                            <SelectItem value="round2">Round 2 - Follow-up</SelectItem>
+                            <SelectItem value="validation">Debt Validation</SelectItem>
+                            <SelectItem value="fraud">Fraud/Identity Theft</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[hsl(var(--admin-text-muted))]">Target Bureau</Label>
+                        <Select value={disputeBureau} onValueChange={(v: any) => setDisputeBureau(v)}>
+                          <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                            <SelectItem value="EXPERIAN">Experian</SelectItem>
+                            <SelectItem value="EQUIFAX">Equifax</SelectItem>
+                            <SelectItem value="TRANSUNION">TransUnion</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="border border-[hsl(var(--admin-border))] rounded-lg overflow-hidden">
+                      <div className="bg-[hsl(var(--admin-bg))] p-3 border-b border-[hsl(var(--admin-border))]">
+                        <span className="text-white font-medium">Accounts ({accounts.length})</span>
+                      </div>
+                      <div className="max-h-[250px] overflow-y-auto">
+                        {accounts.map((account) => {
+                          const item = disputeItems.find(d => d.id === account.id && d.type === 'account');
+                          return (
+                            <div key={account.id} className={`p-3 border-b border-[hsl(var(--admin-border))] last:border-b-0 ${item?.selected ? 'bg-green-500/10' : ''}`}>
+                              <div className="flex items-start gap-3">
+                                <Checkbox
+                                  checked={item?.selected || false}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setDisputeItems(prev => [...prev.filter(d => !(d.id === account.id && d.type === 'account')), {
+                                        id: account.id,
+                                        type: 'account',
+                                        name: account.creditorName || 'Unknown',
+                                        reason: 'other',
+                                        customReason: '',
+                                        selected: true
+                                      }]);
+                                    } else {
+                                      setDisputeItems(prev => prev.filter(d => !(d.id === account.id && d.type === 'account')));
+                                    }
+                                  }}
+                                  data-testid={`checkbox-dispute-account-${account.id}`}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-white font-medium">{account.creditorName}</span>
+                                    <span className="text-xs text-[hsl(var(--admin-text-muted))]">{account.accountNumberMasked}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-sm text-[hsl(var(--admin-text-muted))]">
+                                      {account.balance ? `$${account.balance.toLocaleString()}` : '--'}
+                                    </span>
+                                    {account.derogatoryFlags?.map((flag, i) => (
+                                      <span key={i} className="px-1.5 py-0.5 rounded text-xs bg-red-500/20 text-red-400">{flag}</span>
+                                    ))}
+                                  </div>
+                                  {item?.selected && (
+                                    <div className="mt-2 space-y-2">
+                                      <Select 
+                                        value={item.reason} 
+                                        onValueChange={(v: any) => {
+                                          setDisputeItems(prev => prev.map(d => 
+                                            d.id === account.id && d.type === 'account' ? {...d, reason: v} : d
+                                          ));
+                                        }}
+                                      >
+                                        <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm">
+                                          <SelectValue placeholder="Select dispute reason" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                                          <SelectItem value="fraud">Fraud - Not My Account</SelectItem>
+                                          <SelectItem value="late_payment_error">Late Payment Reported in Error</SelectItem>
+                                          <SelectItem value="closed_account">Account Should Show Closed</SelectItem>
+                                          <SelectItem value="balance_incorrect">Balance is Incorrect</SelectItem>
+                                          <SelectItem value="account_not_mine">Account Does Not Belong to Me</SelectItem>
+                                          <SelectItem value="paid_collection">Collection Already Paid</SelectItem>
+                                          <SelectItem value="other">Other (specify below)</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      {item.reason === 'other' && (
+                                        <input
+                                          type="text"
+                                          placeholder="Describe the issue..."
+                                          value={item.customReason}
+                                          onChange={(e) => {
+                                            setDisputeItems(prev => prev.map(d => 
+                                              d.id === account.id && d.type === 'account' ? {...d, customReason: e.target.value} : d
+                                            ));
+                                          }}
+                                          className="w-full px-3 py-1.5 rounded bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white text-sm"
+                                        />
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="border border-[hsl(var(--admin-border))] rounded-lg overflow-hidden">
+                      <div className="bg-[hsl(var(--admin-bg))] p-3 border-b border-[hsl(var(--admin-border))]">
+                        <span className="text-white font-medium">Inquiries ({inquiries.length})</span>
+                      </div>
+                      <div className="max-h-[150px] overflow-y-auto">
+                        {inquiries.length === 0 ? (
+                          <div className="p-4 text-center text-[hsl(var(--admin-text-muted))]">No inquiries found</div>
+                        ) : inquiries.map((inquiry) => {
+                          const item = disputeItems.find(d => d.id === inquiry.id && d.type === 'inquiry');
+                          return (
+                            <div key={inquiry.id} className={`p-3 border-b border-[hsl(var(--admin-border))] last:border-b-0 ${item?.selected ? 'bg-green-500/10' : ''}`}>
+                              <div className="flex items-start gap-3">
+                                <Checkbox
+                                  checked={item?.selected || false}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setDisputeItems(prev => [...prev.filter(d => !(d.id === inquiry.id && d.type === 'inquiry')), {
+                                        id: inquiry.id,
+                                        type: 'inquiry',
+                                        name: inquiry.creditorName || 'Unknown',
+                                        reason: 'not_my_inquiry',
+                                        customReason: '',
+                                        selected: true
+                                      }]);
+                                    } else {
+                                      setDisputeItems(prev => prev.filter(d => !(d.id === inquiry.id && d.type === 'inquiry')));
+                                    }
+                                  }}
+                                  data-testid={`checkbox-dispute-inquiry-${inquiry.id}`}
+                                />
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-white font-medium">{inquiry.creditorName}</span>
+                                    <span className="text-xs text-[hsl(var(--admin-text-muted))]">{inquiry.inquiryDate}</span>
+                                  </div>
+                                  {item?.selected && (
+                                    <div className="mt-2">
+                                      <Select 
+                                        value={item.reason} 
+                                        onValueChange={(v: any) => {
+                                          setDisputeItems(prev => prev.map(d => 
+                                            d.id === inquiry.id && d.type === 'inquiry' ? {...d, reason: v} : d
+                                          ));
+                                        }}
+                                      >
+                                        <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                                          <SelectItem value="not_my_inquiry">I Did Not Authorize This Inquiry</SelectItem>
+                                          <SelectItem value="fraud">Fraudulent Inquiry</SelectItem>
+                                          <SelectItem value="other">Other</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="border border-[hsl(var(--admin-border))] rounded-lg overflow-hidden">
+                      <div className="bg-[hsl(var(--admin-bg))] p-3 border-b border-[hsl(var(--admin-border))]">
+                        <span className="text-white font-medium">Collections ({collections.length})</span>
+                      </div>
+                      <div className="max-h-[150px] overflow-y-auto">
+                        {collections.length === 0 ? (
+                          <div className="p-4 text-center text-[hsl(var(--admin-text-muted))]">No collections found</div>
+                        ) : collections.map((collection) => {
+                          const item = disputeItems.find(d => d.id === collection.id && d.type === 'collection');
+                          return (
+                            <div key={collection.id} className={`p-3 border-b border-[hsl(var(--admin-border))] last:border-b-0 ${item?.selected ? 'bg-green-500/10' : ''}`}>
+                              <div className="flex items-start gap-3">
+                                <Checkbox
+                                  checked={item?.selected || false}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setDisputeItems(prev => [...prev.filter(d => !(d.id === collection.id && d.type === 'collection')), {
+                                        id: collection.id,
+                                        type: 'collection',
+                                        name: collection.agencyName || collection.originalCreditor || 'Unknown',
+                                        reason: 'paid_collection',
+                                        customReason: '',
+                                        selected: true
+                                      }]);
+                                    } else {
+                                      setDisputeItems(prev => prev.filter(d => !(d.id === collection.id && d.type === 'collection')));
+                                    }
+                                  }}
+                                  data-testid={`checkbox-dispute-collection-${collection.id}`}
+                                />
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-white font-medium">{collection.agencyName || collection.originalCreditor}</span>
+                                    <span className="text-red-400 font-medium">${collection.amount?.toLocaleString() || '0'}</span>
+                                  </div>
+                                  {item?.selected && (
+                                    <div className="mt-2">
+                                      <Select 
+                                        value={item.reason} 
+                                        onValueChange={(v: any) => {
+                                          setDisputeItems(prev => prev.map(d => 
+                                            d.id === collection.id && d.type === 'collection' ? {...d, reason: v} : d
+                                          ));
+                                        }}
+                                      >
+                                        <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                                          <SelectItem value="paid_collection">Already Paid/Settled</SelectItem>
+                                          <SelectItem value="account_not_mine">Not My Debt</SelectItem>
+                                          <SelectItem value="fraud">Fraudulent</SelectItem>
+                                          <SelectItem value="balance_incorrect">Balance Incorrect</SelectItem>
+                                          <SelectItem value="other">Other</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </AdminCardContent>
+              </AdminCard>
+
+              {disputeLetterContent && (
+                <AdminCard>
+                  <AdminCardHeader>
+                    <div className="flex items-center justify-between w-full">
+                      <AdminCardTitle icon={<FileText className="h-5 w-5" />}>Generated Letter</AdminCardTitle>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const printWindow = window.open('', '_blank');
+                            if (printWindow) {
+                              printWindow.document.write(`<html><head><title>Dispute Letter</title><style>body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.6;padding:40px;max-width:800px;margin:0 auto;white-space:pre-wrap;}</style></head><body>${disputeLetterContent.replace(/\n/g, '<br>')}</body></html>`);
+                              printWindow.document.close();
+                              setTimeout(() => printWindow.print(), 250);
+                            }
+                          }}
+                          className="border-[hsl(var(--admin-border))] text-white hover:bg-[hsl(var(--admin-bg))]"
+                          data-testid="button-print-dispute-letter"
+                        >
+                          <FileText className="h-4 w-4 mr-1" />
+                          Print
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              const response = await apiRequest('POST', '/api/admin/dispute-letters-new', {
+                                uploadId: reportId,
+                                clientId: report?.userId,
+                                letterType: disputeLetterType,
+                                bureau: disputeBureau,
+                                content: disputeLetterContent,
+                                status: 'draft'
+                              });
+                              if (response.ok) {
+                                queryClient.invalidateQueries({ queryKey: [`/api/admin/dispute-letters-new?uploadId=${reportId}`] });
+                                toast({ title: 'Success', description: 'Letter saved to Letters tab' });
+                              }
+                            } catch (error) {
+                              toast({ title: 'Error', description: 'Failed to save letter', variant: 'destructive' });
+                            }
+                          }}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          data-testid="button-save-dispute-letter"
+                        >
+                          <CheckSquare className="h-4 w-4 mr-1" />
+                          Save Letter
+                        </Button>
+                      </div>
+                    </div>
+                  </AdminCardHeader>
+                  <AdminCardContent>
+                    <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] max-h-[400px] overflow-y-auto">
+                      <pre className="text-sm text-white whitespace-pre-wrap font-sans">{disputeLetterContent}</pre>
+                    </div>
+                  </AdminCardContent>
+                </AdminCard>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              <AdminCard>
+                <AdminCardHeader>
+                  <AdminCardTitle icon={<Brain className="h-5 w-5 text-purple-400" />}>AI Assistant</AdminCardTitle>
+                </AdminCardHeader>
+                <AdminCardContent>
+                  <div className="space-y-4">
+                    <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                      <p className="text-xs text-[hsl(var(--admin-text-muted))]">
+                        Selected: <span className="text-white font-medium">{disputeItems.filter(d => d.selected).length} items</span>
+                      </p>
+                      {disputeItems.filter(d => d.selected).map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-2 mt-1 text-xs">
+                          <span className="text-white">{item.name}</span>
+                          <span className="px-1.5 py-0.5 rounded bg-[hsl(var(--admin-accent))]/20 text-[hsl(var(--admin-accent))]">
+                            {item.reason.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="h-[200px] overflow-y-auto space-y-2 p-2 rounded-lg bg-[hsl(var(--admin-bg))]/30">
+                      {disputeChat.length === 0 ? (
+                        <div className="text-center text-[hsl(var(--admin-text-muted))] text-sm py-8">
+                          Tell me what to include in the letter or how to adjust it...
+                        </div>
+                      ) : disputeChat.map((msg, idx) => (
+                        <div key={idx} className={`p-2 rounded-lg text-sm ${msg.role === 'user' ? 'bg-[hsl(var(--admin-accent))]/20 text-white ml-4' : 'bg-[hsl(var(--admin-bg))] text-[hsl(var(--admin-text-muted))] mr-4'}`}>
+                          {msg.content}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Tell AI what to fix or add..."
+                        value={disputeChatInput}
+                        onChange={(e) => setDisputeChatInput(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && disputeChatInput.trim()) {
+                            const userMsg = disputeChatInput.trim();
+                            setDisputeChat(prev => [...prev, { role: 'user', content: userMsg }]);
+                            setDisputeChatInput('');
+                            
+                            (async () => {
+                              try {
+                                const response = await apiRequest('POST', '/api/admin/dispute-chat', {
+                                  message: userMsg,
+                                  currentLetter: disputeLetterContent,
+                                  items: disputeItems.filter(d => d.selected),
+                                  bureau: disputeBureau,
+                                  letterType: disputeLetterType
+                                });
+                                const result = await response.json();
+                                setDisputeChat(prev => [...prev, { role: 'ai', content: result.message }]);
+                                if (result.updatedLetter) {
+                                  setDisputeLetterContent(result.updatedLetter);
+                                }
+                              } catch (error) {
+                                setDisputeChat(prev => [...prev, { role: 'ai', content: 'Sorry, I encountered an error. Please try again.' }]);
+                              }
+                            })();
+                          }
+                        }}
+                        className="flex-1 px-3 py-2 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white text-sm"
+                        data-testid="input-dispute-chat"
+                      />
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-[hsl(var(--admin-accent))]"
+                        onClick={() => {
+                          if (disputeChatInput.trim()) {
+                            const userMsg = disputeChatInput.trim();
+                            setDisputeChat(prev => [...prev, { role: 'user', content: userMsg }]);
+                            setDisputeChatInput('');
+                            
+                            (async () => {
+                              try {
+                                const response = await apiRequest('POST', '/api/admin/dispute-chat', {
+                                  message: userMsg,
+                                  currentLetter: disputeLetterContent,
+                                  items: disputeItems.filter(d => d.selected),
+                                  bureau: disputeBureau,
+                                  letterType: disputeLetterType
+                                });
+                                const result = await response.json();
+                                setDisputeChat(prev => [...prev, { role: 'ai', content: result.message }]);
+                                if (result.updatedLetter) {
+                                  setDisputeLetterContent(result.updatedLetter);
+                                }
+                              } catch (error) {
+                                setDisputeChat(prev => [...prev, { role: 'ai', content: 'Sorry, I encountered an error. Please try again.' }]);
+                              }
+                            })();
+                          }
+                        }}
+                        data-testid="button-send-chat"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <Button
+                      className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      disabled={disputeItems.filter(d => d.selected).length === 0 || isGeneratingDispute}
+                      onClick={async () => {
+                        setIsGeneratingDispute(true);
+                        try {
+                          const selectedDisputeItems = disputeItems.filter(d => d.selected);
+                          const response = await apiRequest('POST', '/api/admin/dispute-letters-new/generate', {
+                            uploadId: reportId,
+                            clientId: report?.userId,
+                            items: selectedDisputeItems.map(item => ({
+                              id: item.id,
+                              type: item.type,
+                              name: item.name,
+                              reason: item.reason === 'other' ? item.customReason : item.reason.replace(/_/g, ' '),
+                              strategy: item.reason
+                            })),
+                            letterType: disputeLetterType,
+                            bureau: disputeBureau,
+                            isFraud: disputeLetterType === 'fraud' || selectedDisputeItems.some(i => i.reason === 'fraud')
+                          });
+                          const result = await response.json();
+                          if (result.content) {
+                            setDisputeLetterContent(result.content);
+                            setDisputeChat(prev => [...prev, { role: 'ai', content: 'Letter generated! You can now review it, make changes, or ask me to modify specific parts.' }]);
+                          }
+                        } catch (error) {
+                          toast({ title: 'Error', description: 'Failed to generate letter', variant: 'destructive' });
+                        } finally {
+                          setIsGeneratingDispute(false);
+                        }
+                      }}
+                      data-testid="button-generate-dispute-letter"
+                    >
+                      {isGeneratingDispute ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Generate Letter
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </AdminCardContent>
+              </AdminCard>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="letters" className="mt-6">
