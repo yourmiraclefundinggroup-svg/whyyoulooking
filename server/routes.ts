@@ -5489,14 +5489,30 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
         return res.status(400).json({ error: "No dispute items selected" });
       }
 
-      // Build the prompt for AI letter generation
-      const itemsDescription = selectedItems.map((item: any) => {
-        // Handle both old and new formats
+      // Build the prompt for AI letter generation with account numbers and dates
+      const itemsDescription = selectedItems.map((item: any, idx: number) => {
+        // Handle both old and new formats with full account details
         if (item.name) {
-          return `- ${item.type?.toUpperCase() || 'ACCOUNT'}: ${item.name} - ${item.reason || 'Disputed item'} (Strategy: ${item.strategy || 'Standard dispute'})`;
+          let details = `${idx + 1}. ${item.type?.toUpperCase() || 'ACCOUNT'}: ${item.name}`;
+          if (item.accountNumber) details += `\n   Account Number: ${item.accountNumber}`;
+          if (item.openDate) details += `\n   Date Opened: ${item.openDate}`;
+          if (item.inquiryDate) details += `\n   Inquiry Date: ${item.inquiryDate}`;
+          if (item.balance) details += `\n   Balance: $${item.balance.toLocaleString()}`;
+          if (item.amount) details += `\n   Amount: $${item.amount.toLocaleString()}`;
+          if (item.originalCreditor) details += `\n   Original Creditor: ${item.originalCreditor}`;
+          if (item.accountType) details += `\n   Account Type: ${item.accountType}`;
+          if (item.latePayments) {
+            const lates = [];
+            if (item.latePayments.days30) lates.push(`${item.latePayments.days30}x 30-day late`);
+            if (item.latePayments.days60) lates.push(`${item.latePayments.days60}x 60-day late`);
+            if (item.latePayments.days90) lates.push(`${item.latePayments.days90}x 90-day late`);
+            if (lates.length > 0) details += `\n   Late Payment History: ${lates.join(', ')}`;
+          }
+          details += `\n   Dispute Reason: ${item.reason || 'Disputed item'}`;
+          return details;
         }
-        return `- ${item.itemType}: ${item.negativeReasonTags?.join(', ') || 'General dispute'} (Strategy: ${item.recommendedStrategy || 'Standard dispute'})`;
-      }).join('\n');
+        return `${idx + 1}. ${item.itemType}: ${item.negativeReasonTags?.join(', ') || 'General dispute'}`;
+      }).join('\n\n');
 
       // Get client info for the letter
       let clientName = clientInfo?.name || '';
@@ -5525,17 +5541,20 @@ ADDRESS: ${clientAddress || clientInfo?.address || 'Client Address'}
 BUREAU: ${bureau}
 LETTER TYPE: ${letterType} (${letterType === 'round1' ? 'Initial Dispute' : letterType === 'round2' ? 'Follow-up Dispute' : letterType === 'validation' ? 'Debt Validation' : letterType === 'goodwill' ? 'Goodwill Request' : letterType === 'fraud' ? 'Identity Theft/Fraud Dispute' : 'Inquiry Removal'})
 ${isFraud ? '\n**THIS IS A FRAUD/IDENTITY THEFT DISPUTE** - Include FCRA Section 605B language for identity theft blocking.\n' : ''}
-ITEMS TO DISPUTE:
+ITEMS TO DISPUTE (with full account details):
 ${itemsDescription}
 
 Generate a complete, professional dispute letter that:
 1. Follows FCRA guidelines
 2. Uses appropriate legal language for a ${letterType} letter
-3. Lists all disputed items clearly
-4. Requests proper verification/investigation
-5. Sets a ${isFraud ? '4 business day (identity theft)' : '30-day'} response deadline
-6. Is ready to print and mail
-${isFraud ? '7. Includes identity theft affidavit language and references FCRA Section 605B\n8. Mentions that a police report/FTC Identity Theft Report has been filed' : ''}`;
+3. **CRITICAL: For each disputed item, include the EXACT account number and date (date opened or inquiry date) in the letter body**
+4. Lists all disputed items in a numbered format with their specific account numbers and dates clearly visible
+5. Requests proper verification/investigation
+6. Sets a ${isFraud ? '4 business day (identity theft)' : '30-day'} response deadline
+7. Is ready to print and mail
+${isFraud ? '8. Includes identity theft affidavit language and references FCRA Section 605B\n9. Mentions that a police report/FTC Identity Theft Report has been filed' : ''}
+
+IMPORTANT: The dispute letter MUST include the specific account number and date for EVERY disputed item. This is legally required to ensure proper identification of the accounts.`;
 
       let letterContent = '';
 
@@ -5586,10 +5605,17 @@ I am writing to formally dispute the following items on my credit report as ${is
 DISPUTED ITEMS:
 ${selectedItems.map((item: any, idx: number) => {
   if (item.name) {
-    return `${idx + 1}. ${item.type?.toUpperCase() || 'ACCOUNT'}: ${item.name} - ${item.reason || 'Disputed item'}`;
+    let line = `${idx + 1}. ${item.type?.toUpperCase() || 'ACCOUNT'}: ${item.name}`;
+    if (item.accountNumber) line += `\n   Account Number: ${item.accountNumber}`;
+    if (item.openDate) line += `\n   Date Opened: ${item.openDate}`;
+    if (item.inquiryDate) line += `\n   Inquiry Date: ${item.inquiryDate}`;
+    if (item.balance) line += `\n   Balance: $${item.balance.toLocaleString()}`;
+    if (item.amount) line += `\n   Amount: $${item.amount.toLocaleString()}`;
+    line += `\n   Reason for Dispute: ${item.reason || 'Disputed item'}`;
+    return line;
   }
   return `${idx + 1}. ${item.itemType?.toUpperCase() || 'ACCOUNT'} - ${item.negativeReasonTags?.join(', ') || 'Disputed item'}`;
-}).join('\n')}
+}).join('\n\n')}
 
 Under 15 U.S.C. § 1681i, you are required to conduct a reasonable investigation within ${isFraud ? '4 business days' : '30 days'} and notify me of the results.
 

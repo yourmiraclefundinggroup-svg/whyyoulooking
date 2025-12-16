@@ -1521,6 +1521,14 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
     reason: 'fraud' | 'late_payment_error' | 'closed_account' | 'not_my_inquiry' | 'balance_incorrect' | 'account_not_mine' | 'paid_collection' | 'payment_made_on_time' | 'creditor_error' | 'goodwill' | 'disaster_relief' | 'other';
     customReason: string;
     selected: boolean;
+    accountNumber?: string;
+    openDate?: string;
+    balance?: number;
+    accountType?: string;
+    latePayments?: { days30?: number; days60?: number; days90?: number };
+    inquiryDate?: string;
+    originalCreditor?: string;
+    amount?: number;
   };
   const [disputeItems, setDisputeItems] = useState<DisputeItem[]>([]);
   const [disputeChat, setDisputeChat] = useState<{ role: 'user' | 'ai'; content: string }[]>([]);
@@ -2660,7 +2668,12 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                                         name: account.creditorName || 'Unknown',
                                         reason: 'other',
                                         customReason: '',
-                                        selected: true
+                                        selected: true,
+                                        accountNumber: account.accountNumberMasked || account.accountNumber,
+                                        openDate: account.dateOpened,
+                                        balance: account.balance,
+                                        accountType: account.accountType,
+                                        latePayments: account.latePayments
                                       }]);
                                     } else {
                                       setDisputeItems(prev => prev.filter(d => !(d.id === account.id && d.type === 'account')));
@@ -2750,7 +2763,12 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                                         name: account.creditorName || 'Unknown',
                                         reason: 'late_payment_error',
                                         customReason: '',
-                                        selected: true
+                                        selected: true,
+                                        accountNumber: account.accountNumberMasked || account.accountNumber,
+                                        openDate: account.dateOpened,
+                                        balance: account.balance,
+                                        accountType: account.accountType,
+                                        latePayments: account.latePayments
                                       }]);
                                     } else {
                                       setDisputeItems(prev => prev.filter(d => !(d.id === account.id && d.type === 'late_payment')));
@@ -2838,7 +2856,8 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                                         name: inquiry.creditorName || 'Unknown',
                                         reason: 'not_my_inquiry',
                                         customReason: '',
-                                        selected: true
+                                        selected: true,
+                                        inquiryDate: inquiry.inquiryDate
                                       }]);
                                     } else {
                                       setDisputeItems(prev => prev.filter(d => !(d.id === inquiry.id && d.type === 'inquiry')));
@@ -2902,7 +2921,11 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                                         name: collection.agencyName || collection.originalCreditor || 'Unknown',
                                         reason: 'paid_collection',
                                         customReason: '',
-                                        selected: true
+                                        selected: true,
+                                        accountNumber: collection.accountNumber,
+                                        openDate: collection.dateOpened,
+                                        originalCreditor: collection.originalCreditor,
+                                        amount: collection.amount
                                       }]);
                                     } else {
                                       setDisputeItems(prev => prev.filter(d => !(d.id === collection.id && d.type === 'collection')));
@@ -3129,7 +3152,15 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                               type: item.type,
                               name: item.name,
                               reason: item.reason === 'other' ? item.customReason : item.reason.replace(/_/g, ' '),
-                              strategy: item.reason
+                              strategy: item.reason,
+                              accountNumber: item.accountNumber,
+                              openDate: item.openDate,
+                              balance: item.balance,
+                              accountType: item.accountType,
+                              latePayments: item.latePayments,
+                              inquiryDate: item.inquiryDate,
+                              originalCreditor: item.originalCreditor,
+                              amount: item.amount
                             })),
                             letterType: disputeLetterType,
                             bureau: disputeBureau,
