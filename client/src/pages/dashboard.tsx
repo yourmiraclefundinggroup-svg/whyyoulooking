@@ -722,11 +722,6 @@ export default function Dashboard() {
                                           Original: {collection.originalCreditor}
                                         </p>
                                       )}
-                                      {collection.accountNumberMasked && (
-                                        <p className="text-xs text-muted-foreground">
-                                          Account: {collection.accountNumberMasked}
-                                        </p>
-                                      )}
                                     </div>
                                   </div>
                                   <div className="text-right">
@@ -816,12 +811,12 @@ export default function Dashboard() {
                                   </div>
                                   <div>
                                     <h4 className="font-medium text-foreground">{record.recordType}</h4>
-                                    {record.courtName && (
-                                      <p className="text-xs text-muted-foreground">{record.courtName}</p>
+                                    {record.court && (
+                                      <p className="text-xs text-muted-foreground">{record.court}</p>
                                     )}
-                                    {record.filingDate && (
+                                    {record.dateFiled && (
                                       <Badge variant="outline" className="text-xs mt-1">
-                                        Filed: {new Date(record.filingDate).toLocaleDateString()}
+                                        Filed: {new Date(record.dateFiled).toLocaleDateString()}
                                       </Badge>
                                     )}
                                   </div>

@@ -337,9 +337,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/credit-reports/:userId", async (req, res) => {
+  app.get("/api/credit-reports/:userId", authenticateToken, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
+      const requestingUser = (req as any).user;
+      
+      // Users can only access their own credit report unless they're admin
+      if (requestingUser.accessLevel !== 'ADMIN' && requestingUser.id !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
       const report = await storage.getCreditReport(userId);
       if (!report) {
         return res.status(404).json({ message: "Credit report not found" });
