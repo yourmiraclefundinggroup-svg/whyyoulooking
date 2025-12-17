@@ -5489,6 +5489,9 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
         return res.status(400).json({ error: "No dispute items selected" });
       }
 
+      // Log received items for debugging
+      console.log("Dispute letter items received:", JSON.stringify(selectedItems, null, 2));
+
       // Build the prompt for AI letter generation with account numbers and dates
       const itemsDescription = selectedItems.map((item: any, idx: number) => {
         // Handle both old and new formats with full account details
