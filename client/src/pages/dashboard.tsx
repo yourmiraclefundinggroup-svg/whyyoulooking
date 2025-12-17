@@ -29,9 +29,28 @@ import {
   ArrowRight,
   BarChart3,
   Mail,
-  ChevronRight
+  ChevronRight,
+  Building2,
+  Calendar,
+  DollarSign,
+  AlertOctagon,
+  Eye
 } from "lucide-react";
-import type { CreditReport, CreditIssue, Dispute, CreditGoal } from "@shared/schema";
+import type { CreditReport, CreditIssue, Dispute, CreditGoal, CreditReportAccount, CreditReportInquiry, CreditReportCollection, CreditReportPublicRecord } from "@shared/schema";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+interface MyCreditReportData {
+  hasReport: boolean;
+  uploadId?: number;
+  uploadedAt?: string;
+  fileName?: string;
+  parsedScore?: number;
+  accounts: CreditReportAccount[];
+  inquiries: CreditReportInquiry[];
+  collections: CreditReportCollection[];
+  publicRecords: CreditReportPublicRecord[];
+}
 
 function InteractiveDashboardBackground() {
   return (
@@ -321,6 +340,10 @@ export default function Dashboard() {
     queryKey: ['/api/credit-goals'],
   });
 
+  const { data: myCreditReport, isLoading: isLoadingCreditReport } = useQuery<MyCreditReportData>({
+    queryKey: ['/api/my-credit-report'],
+  });
+
   const handleDispute = (issue: CreditIssue) => {
     setSelectedIssue(issue);
     setDisputeModalOpen(true);
@@ -571,6 +594,255 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Credit Report Details */}
+            {myCreditReport?.hasReport && (
+              <Card className="border-0 shadow-lg bg-card text-card-foreground">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-foreground">
+                    <Eye className="h-5 w-5 text-indigo-500" />
+                    My Credit Report Details
+                  </CardTitle>
+                  {myCreditReport.uploadedAt && (
+                    <p className="text-sm text-muted-foreground">
+                      Last updated: {formatRelativeDate(myCreditReport.uploadedAt)}
+                    </p>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="accounts" className="w-full">
+                    <TabsList className="grid w-full grid-cols-4 mb-4">
+                      <TabsTrigger value="accounts" className="text-xs sm:text-sm">
+                        Accounts ({myCreditReport.accounts.length})
+                      </TabsTrigger>
+                      <TabsTrigger value="collections" className="text-xs sm:text-sm">
+                        Collections ({myCreditReport.collections.length})
+                      </TabsTrigger>
+                      <TabsTrigger value="inquiries" className="text-xs sm:text-sm">
+                        Inquiries ({myCreditReport.inquiries.length})
+                      </TabsTrigger>
+                      <TabsTrigger value="public" className="text-xs sm:text-sm">
+                        Public ({myCreditReport.publicRecords.length})
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="accounts">
+                      <ScrollArea className="h-[300px]">
+                        <div className="space-y-3">
+                          {myCreditReport.accounts.length > 0 ? (
+                            myCreditReport.accounts.map((account) => (
+                              <div 
+                                key={account.id} 
+                                className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700"
+                                data-testid={`account-item-${account.id}`}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                                      <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <div>
+                                      <h4 className="font-medium text-foreground">{account.creditorName}</h4>
+                                      {account.accountNumberMasked && (
+                                        <p className="text-xs text-muted-foreground">
+                                          Account: {account.accountNumberMasked}
+                                        </p>
+                                      )}
+                                      <div className="flex flex-wrap gap-2 mt-2">
+                                        {account.dateOpened && (
+                                          <Badge variant="outline" className="text-xs">
+                                            <Calendar className="h-3 w-3 mr-1" />
+                                            Opened: {new Date(account.dateOpened).toLocaleDateString()}
+                                          </Badge>
+                                        )}
+                                        {account.accountType && (
+                                          <Badge variant="outline" className="text-xs">
+                                            {account.accountType}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    {account.balance !== null && account.balance !== undefined && (
+                                      <p className="text-sm font-medium text-foreground">
+                                        ${account.balance.toLocaleString()}
+                                      </p>
+                                    )}
+                                    <Badge 
+                                      className={`mt-1 ${
+                                        account.status?.toLowerCase().includes('open') 
+                                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
+                                          : account.status?.toLowerCase().includes('closed')
+                                          ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                                          : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                                      }`}
+                                    >
+                                      {account.status || 'Unknown'}
+                                    </Badge>
+                                    {account.latePayments && (
+                                      <div className="mt-2 text-xs text-muted-foreground">
+                                        {account.latePayments.days30 && <span className="text-yellow-600">30d: {account.latePayments.days30} </span>}
+                                        {account.latePayments.days60 && <span className="text-orange-600">60d: {account.latePayments.days60} </span>}
+                                        {account.latePayments.days90 && <span className="text-red-600">90d: {account.latePayments.days90}</span>}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                              No accounts found in your credit report
+                            </div>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </TabsContent>
+
+                    <TabsContent value="collections">
+                      <ScrollArea className="h-[300px]">
+                        <div className="space-y-3">
+                          {myCreditReport.collections.length > 0 ? (
+                            myCreditReport.collections.map((collection) => (
+                              <div 
+                                key={collection.id} 
+                                className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800"
+                                data-testid={`collection-item-${collection.id}`}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                                      <AlertOctagon className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                    </div>
+                                    <div>
+                                      <h4 className="font-medium text-foreground">{collection.agencyName}</h4>
+                                      {collection.originalCreditor && (
+                                        <p className="text-xs text-muted-foreground">
+                                          Original: {collection.originalCreditor}
+                                        </p>
+                                      )}
+                                      {collection.accountNumberMasked && (
+                                        <p className="text-xs text-muted-foreground">
+                                          Account: {collection.accountNumberMasked}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    {collection.amount !== null && collection.amount !== undefined && (
+                                      <p className="text-lg font-bold text-red-600 dark:text-red-400">
+                                        ${collection.amount.toLocaleString()}
+                                      </p>
+                                    )}
+                                    {collection.dateReported && (
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        Reported: {new Date(collection.dateReported).toLocaleDateString()}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-8">
+                              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                              </div>
+                              <p className="text-muted-foreground">No collections on your report!</p>
+                            </div>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </TabsContent>
+
+                    <TabsContent value="inquiries">
+                      <ScrollArea className="h-[300px]">
+                        <div className="space-y-3">
+                          {myCreditReport.inquiries.length > 0 ? (
+                            myCreditReport.inquiries.map((inquiry) => (
+                              <div 
+                                key={inquiry.id} 
+                                className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800"
+                                data-testid={`inquiry-item-${inquiry.id}`}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                                      <Search className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                                    </div>
+                                    <div>
+                                      <h4 className="font-medium text-foreground">{inquiry.creditorName}</h4>
+                                      <Badge variant="outline" className="text-xs mt-1">
+                                        {inquiry.inquiryType || 'Hard Inquiry'}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    {inquiry.inquiryDate && (
+                                      <p className="text-sm text-muted-foreground">
+                                        {new Date(inquiry.inquiryDate).toLocaleDateString()}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-8">
+                              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                              </div>
+                              <p className="text-muted-foreground">No recent inquiries</p>
+                            </div>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </TabsContent>
+
+                    <TabsContent value="public">
+                      <ScrollArea className="h-[300px]">
+                        <div className="space-y-3">
+                          {myCreditReport.publicRecords.length > 0 ? (
+                            myCreditReport.publicRecords.map((record) => (
+                              <div 
+                                key={record.id} 
+                                className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800"
+                                data-testid={`public-record-item-${record.id}`}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                                    <FileText className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                  </div>
+                                  <div>
+                                    <h4 className="font-medium text-foreground">{record.recordType}</h4>
+                                    {record.courtName && (
+                                      <p className="text-xs text-muted-foreground">{record.courtName}</p>
+                                    )}
+                                    {record.filingDate && (
+                                      <Badge variant="outline" className="text-xs mt-1">
+                                        Filed: {new Date(record.filingDate).toLocaleDateString()}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-8">
+                              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                              </div>
+                              <p className="text-muted-foreground">No public records</p>
+                            </div>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Credit Utilization */}
             <Card className="border-0 shadow-lg bg-card text-card-foreground">

@@ -350,6 +350,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Client-facing credit report details endpoints
+  app.get("/api/my-credit-report", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const uploads = await storage.getCreditReportUploads(user.id);
+      
+      if (uploads.length === 0) {
+        return res.json({ hasReport: false, accounts: [], inquiries: [], collections: [], publicRecords: [] });
+      }
+      
+      // Get the most recent upload
+      const latestUpload = uploads.sort((a, b) => 
+        new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+      )[0];
+      
+      // Fetch all data for this upload
+      const [accounts, inquiries, collections, publicRecords] = await Promise.all([
+        storage.getCreditReportAccounts(latestUpload.id),
+        storage.getCreditReportInquiries(latestUpload.id),
+        storage.getCreditReportCollections(latestUpload.id),
+        storage.getCreditReportPublicRecords(latestUpload.id)
+      ]);
+      
+      res.json({
+        hasReport: true,
+        uploadId: latestUpload.id,
+        uploadedAt: latestUpload.uploadedAt,
+        fileName: latestUpload.fileName,
+        parsedScore: latestUpload.parsedScore,
+        accounts,
+        inquiries,
+        collections,
+        publicRecords
+      });
+    } catch (error: any) {
+      console.error("Error fetching client credit report:", error);
+      res.status(500).json({ message: "Failed to fetch credit report details" });
+    }
+  });
+
   // Credit Issues (Authenticated users only)
   app.get("/api/credit-issues", authenticateToken, requireClientAccess, async (req, res) => {
     try {
