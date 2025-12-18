@@ -628,7 +628,6 @@ function DisputeCenterPage({
             </AdminCardContent>
           </AdminCard>
 
-          <AdminDisputeTracking selectedClientId={selectedClient.id} />
           <FollowUpAlerts />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
