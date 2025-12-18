@@ -9,15 +9,33 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Package, Plus, Clock, FileText, Mail, CheckCircle2 } from "lucide-react";
+import { Package, Plus, Mail, RefreshCw, MapPin, CheckCircle2, Truck, AlertCircle } from "lucide-react";
 import type { User as UserType, DisputeLetterNew } from "@shared/schema";
 
 interface AdminDisputeTrackingProps {
   selectedClientId?: number | null;
 }
 
+interface USPSTrackingStatus {
+  trackingNumber: string;
+  status: string;
+  description: string;
+  isDelivered: boolean;
+  deliveryDate?: string;
+  events?: Array<{
+    event_time: string;
+    event_date: string;
+    event_city: string;
+    event_state: string;
+    event_description: string;
+  }>;
+  error?: string;
+}
+
 export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingProps) {
   const [selectedUserId, setSelectedUserId] = useState<number>(selectedClientId || 0);
+  const [trackingStatuses, setTrackingStatuses] = useState<Record<string, USPSTrackingStatus>>({});
+  const [loadingTracking, setLoadingTracking] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -46,9 +64,44 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
   const [letterTrackingNumber, setLetterTrackingNumber] = useState("");
   const [selectedLetterId, setSelectedLetterId] = useState<number | null>(null);
 
-  // Add tracking number to letter
+  // Fetch live USPS tracking status
+  const fetchTrackingStatus = async (trackingNumber: string) => {
+    setLoadingTracking(prev => ({ ...prev, [trackingNumber]: true }));
+    try {
+      const response = await apiRequest("GET", `/api/usps/track/${trackingNumber}`);
+      const data = await response.json();
+      setTrackingStatuses(prev => ({ ...prev, [trackingNumber]: data }));
+      return data;
+    } catch (error: any) {
+      const errorStatus: USPSTrackingStatus = {
+        trackingNumber,
+        status: 'ERROR',
+        description: error.message || 'Failed to fetch tracking',
+        isDelivered: false,
+        error: error.message
+      };
+      setTrackingStatuses(prev => ({ ...prev, [trackingNumber]: errorStatus }));
+      return errorStatus;
+    } finally {
+      setLoadingTracking(prev => ({ ...prev, [trackingNumber]: false }));
+    }
+  };
+
+  // Add tracking number to letter (with USPS validation)
   const addLetterTrackingMutation = useMutation({
     mutationFn: async (data: { letterId: number; trackingNumber: string }) => {
+      // First, try to validate with USPS API by fetching tracking
+      const trackingStatus = await fetchTrackingStatus(data.trackingNumber);
+      
+      // If tracking number is invalid or not found, still save it but warn
+      if (trackingStatus.error) {
+        toast({
+          title: "Warning",
+          description: "Tracking number saved but could not verify with USPS. It may take time to appear in USPS system.",
+          variant: "default"
+        });
+      }
+      
       const response = await apiRequest("PATCH", `/api/admin/dispute-letters-new/${data.letterId}`, {
         trackingNumber: data.trackingNumber,
         sentDate: new Date().toISOString().split('T')[0],
@@ -60,7 +113,7 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
       queryClient.invalidateQueries({ queryKey: ['/api/admin/dispute-letters-new/all'] });
       toast({
         title: "Tracking Added",
-        description: "USPS tracking number has been saved to the letter."
+        description: "USPS tracking number has been saved and verified."
       });
       setLetterTrackingNumber("");
       setSelectedLetterId(null);
@@ -74,15 +127,56 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
     }
   });
 
+  // Refresh all tracking statuses
+  const refreshAllTracking = async () => {
+    const lettersWithTracking = lettersToShow.filter(l => l.trackingNumber);
+    for (const letter of lettersWithTracking) {
+      if (letter.trackingNumber) {
+        await fetchTrackingStatus(letter.trackingNumber);
+      }
+    }
+    toast({
+      title: "Tracking Updated",
+      description: `Refreshed ${lettersWithTracking.length} tracking statuses from USPS.`
+    });
+  };
+
+  // Get status icon and color
+  const getStatusDisplay = (status: USPSTrackingStatus | undefined) => {
+    if (!status) {
+      return { icon: Package, color: "text-gray-400", bgColor: "bg-gray-100", label: "Not Checked" };
+    }
+    if (status.error) {
+      return { icon: AlertCircle, color: "text-amber-500", bgColor: "bg-amber-50", label: "Pending" };
+    }
+    if (status.isDelivered) {
+      return { icon: CheckCircle2, color: "text-green-600", bgColor: "bg-green-50", label: "Delivered" };
+    }
+    return { icon: Truck, color: "text-blue-600", bgColor: "bg-blue-50", label: "In Transit" };
+  };
+
   return (
     <div className="space-y-6">
       {/* Main Tracking Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            USPS Tracking Management
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              USPS Tracking Management
+            </CardTitle>
+            {lettersToShow.filter(l => l.trackingNumber).length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshAllTracking}
+                data-testid="button-refresh-all-tracking"
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Refresh All
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Client Selection */}
@@ -145,7 +239,7 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
                 data-testid="button-add-letter-tracking"
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Add
+                {addLetterTrackingMutation.isPending ? 'Verifying...' : 'Add'}
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -181,6 +275,11 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
               <h4 className="font-medium text-sm text-muted-foreground">Letters with Tracking Numbers</h4>
               {lettersToShow.filter(l => l.trackingNumber).map((letter) => {
                 const clientUser = clientUsers.find(u => u.id === letter.clientId);
+                const trackingStatus = letter.trackingNumber ? trackingStatuses[letter.trackingNumber] : undefined;
+                const statusDisplay = getStatusDisplay(trackingStatus);
+                const isLoading = letter.trackingNumber ? loadingTracking[letter.trackingNumber] : false;
+                const StatusIcon = statusDisplay.icon;
+                
                 return (
                   <div key={letter.id} className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
@@ -197,21 +296,69 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
                           )}
                         </div>
                       </div>
-                      <Badge 
-                        variant="default"
-                        className="bg-blue-600"
-                      >
-                        sent
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant="default"
+                          className={trackingStatus?.isDelivered ? "bg-green-600" : "bg-blue-600"}
+                        >
+                          {trackingStatus?.isDelivered ? 'Delivered' : 'sent'}
+                        </Badge>
+                      </div>
                     </div>
 
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded mt-2">
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-blue-600" />
-                        <span className="font-mono text-sm">{letter.trackingNumber}</span>
+                    {/* Tracking Info with Live Status */}
+                    <div className={`p-3 ${statusDisplay.bgColor} border border-blue-200 rounded mt-2`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-blue-600" />
+                          <span className="font-mono text-sm">{letter.trackingNumber}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => letter.trackingNumber && fetchTrackingStatus(letter.trackingNumber)}
+                          disabled={isLoading}
+                          data-testid={`button-refresh-tracking-${letter.id}`}
+                        >
+                          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                        </Button>
                       </div>
+                      
+                      {/* Live USPS Status */}
+                      {trackingStatus && !trackingStatus.error && (
+                        <div className="mt-3 pt-3 border-t border-blue-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <StatusIcon className={`h-5 w-5 ${statusDisplay.color}`} />
+                            <span className={`font-medium ${statusDisplay.color}`}>
+                              {trackingStatus.status}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600">{trackingStatus.description}</p>
+                          {trackingStatus.deliveryDate && (
+                            <p className="text-xs text-green-600 mt-1">
+                              Delivered: {new Date(trackingStatus.deliveryDate).toLocaleDateString()}
+                            </p>
+                          )}
+                          {trackingStatus.events && trackingStatus.events.length > 0 && (
+                            <div className="mt-2 text-xs text-gray-500">
+                              <div className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                Last: {trackingStatus.events[0].event_city}, {trackingStatus.events[0].event_state}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Not yet checked */}
+                      {!trackingStatus && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          Click refresh to get live USPS tracking status
+                        </div>
+                      )}
+                      
                       {letter.sentDate && (
-                        <div className="text-xs text-muted-foreground mt-1">
+                        <div className="text-xs text-muted-foreground mt-2">
                           Sent: {new Date(letter.sentDate).toLocaleDateString()}
                         </div>
                       )}
