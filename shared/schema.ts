@@ -1016,6 +1016,8 @@ export const disputeLettersNew = pgTable("dispute_letters_new", {
   status: text("status", { enum: ["draft", "approved", "sent"] }).default("draft"),
   downloadUrl: text("download_url"),
   disputeItemIds: integer("dispute_item_ids").array(),
+  trackingNumber: text("tracking_number"),
+  sentDate: date("sent_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

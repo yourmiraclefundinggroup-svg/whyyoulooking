@@ -1508,6 +1508,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   const [generatedLetter, setGeneratedLetter] = useState<DisputeLetterNew | null>(null);
   const [viewLetterOpen, setViewLetterOpen] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState<DisputeLetterNew | null>(null);
+  const [trackingNumberInput, setTrackingNumberInput] = useState('');
   const [compareReportId, setCompareReportId] = useState<number | null>(null);
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [newEventDate, setNewEventDate] = useState('');
@@ -1652,16 +1653,20 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   });
 
   const updateLetterMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: 'draft' | 'approved' | 'sent' }) => {
-      const response = await apiRequest('PATCH', `/api/admin/dispute-letters-new/${id}`, { status });
+    mutationFn: async ({ id, status, trackingNumber, sentDate }: { id: number; status?: 'draft' | 'approved' | 'sent'; trackingNumber?: string; sentDate?: string }) => {
+      const updates: any = {};
+      if (status) updates.status = status;
+      if (trackingNumber !== undefined) updates.trackingNumber = trackingNumber;
+      if (sentDate !== undefined) updates.sentDate = sentDate;
+      const response = await apiRequest('PATCH', `/api/admin/dispute-letters-new/${id}`, updates);
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/dispute-letters-new', reportId] });
-      toast({ title: 'Success', description: 'Letter status updated' });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/dispute-letters-new?uploadId=${reportId}`] });
+      toast({ title: 'Success', description: 'Letter updated' });
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to update letter status', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to update letter', variant: 'destructive' });
     }
   });
 
@@ -3812,6 +3817,47 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
 
               <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] max-h-[400px] overflow-y-auto">
                 <pre className="text-sm text-white whitespace-pre-wrap font-sans leading-relaxed">{selectedLetter.content}</pre>
+              </div>
+
+              {/* Tracking Number Section */}
+              <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))] space-y-3">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-[hsl(var(--admin-accent))]" />
+                  <span className="text-white font-medium">USPS Tracking</span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={trackingNumberInput || selectedLetter.trackingNumber || ''}
+                    onChange={(e) => setTrackingNumberInput(e.target.value)}
+                    placeholder="Enter USPS tracking number..."
+                    className="flex-1 px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--admin-accent))]"
+                    data-testid="input-tracking-number"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      updateLetterMutation.mutate({ 
+                        id: selectedLetter.id, 
+                        trackingNumber: trackingNumberInput || selectedLetter.trackingNumber,
+                        sentDate: new Date().toISOString().split('T')[0]
+                      });
+                      setTrackingNumberInput('');
+                    }}
+                    className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/80 text-white"
+                    disabled={updateLetterMutation.isPending || (!trackingNumberInput && !selectedLetter.trackingNumber)}
+                    data-testid="button-save-tracking"
+                  >
+                    Save Tracking
+                  </Button>
+                </div>
+                {selectedLetter.trackingNumber && (
+                  <div className="text-sm text-green-400 flex items-center gap-2">
+                    <CheckSquare className="h-4 w-4" />
+                    Current: {selectedLetter.trackingNumber}
+                    {selectedLetter.sentDate && ` (Sent: ${new Date(selectedLetter.sentDate).toLocaleDateString()})`}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 justify-between pt-4 border-t border-[hsl(var(--admin-border))]">
