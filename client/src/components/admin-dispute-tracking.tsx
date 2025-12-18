@@ -175,10 +175,11 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
             </div>
           </div>
 
-          {/* Letters List */}
-          {lettersToShow.length > 0 ? (
+          {/* Letters with Tracking - Only show letters that have tracking numbers */}
+          {lettersToShow.filter(l => l.trackingNumber).length > 0 ? (
             <div className="space-y-4 mt-4">
-              {lettersToShow.map((letter) => {
+              <h4 className="font-medium text-sm text-muted-foreground">Letters with Tracking Numbers</h4>
+              {lettersToShow.filter(l => l.trackingNumber).map((letter) => {
                 const clientUser = clientUsers.find(u => u.id === letter.clientId);
                 return (
                   <div key={letter.id} className="p-4 border rounded-lg">
@@ -197,39 +198,33 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
                         </div>
                       </div>
                       <Badge 
-                        variant={letter.status === 'sent' ? "default" : "secondary"}
-                        className={letter.status === 'sent' ? "bg-blue-600" : ""}
+                        variant="default"
+                        className="bg-blue-600"
                       >
-                        {letter.status}
+                        sent
                       </Badge>
                     </div>
 
-                    {letter.trackingNumber ? (
-                      <div className="p-3 bg-blue-50 border border-blue-200 rounded mt-2">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-blue-600" />
-                          <span className="font-mono text-sm">{letter.trackingNumber}</span>
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded mt-2">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-blue-600" />
+                        <span className="font-mono text-sm">{letter.trackingNumber}</span>
+                      </div>
+                      {letter.sentDate && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Sent: {new Date(letter.sentDate).toLocaleDateString()}
                         </div>
-                        {letter.sentDate && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Sent: {new Date(letter.sentDate).toLocaleDateString()}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-sm text-muted-foreground p-3 bg-gray-50 rounded mt-2">
-                        No tracking number assigned. Add tracking above after mailing.
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No dispute letters found</p>
-              <p className="text-sm">Generate dispute letters from the Credit Reports page</p>
+              <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No tracked letters yet</p>
+              <p className="text-sm">Select a letter above and add a USPS tracking number after mailing</p>
             </div>
           )}
         </CardContent>
