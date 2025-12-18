@@ -36,7 +36,7 @@ import {
   AlertOctagon,
   Eye
 } from "lucide-react";
-import type { CreditReport, CreditIssue, Dispute, CreditGoal, CreditReportAccount, CreditReportInquiry, CreditReportCollection, CreditReportPublicRecord } from "@shared/schema";
+import type { CreditReport, CreditIssue, Dispute, CreditGoal, CreditReportAccount, CreditReportInquiry, CreditReportCollection, CreditReportPublicRecord, DisputeLetterNew } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -344,6 +344,11 @@ export default function Dashboard() {
     queryKey: ['/api/my-credit-report'],
   });
 
+  // Fetch client's tracked dispute letters
+  const { data: myDisputeLetters = [] } = useQuery<DisputeLetterNew[]>({
+    queryKey: ['/api/my-dispute-letters'],
+  });
+
   const handleDispute = (issue: CreditIssue) => {
     setSelectedIssue(issue);
     setDisputeModalOpen(true);
@@ -594,6 +599,69 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Tracked Dispute Letters */}
+            {myDisputeLetters.length > 0 && (
+              <Card className="border-0 shadow-lg bg-card text-card-foreground">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-foreground">
+                    <Mail className="h-5 w-5 text-green-500" />
+                    My Dispute Letters
+                  </CardTitle>
+                  <Badge className="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border-0">
+                    {myDisputeLetters.filter(l => l.trackingNumber).length} tracked
+                  </Badge>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {myDisputeLetters.map((letter) => (
+                      <motion.div 
+                        key={letter.id}
+                        className={`p-4 rounded-xl border ${
+                          letter.trackingNumber 
+                            ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' 
+                            : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
+                        }`}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        data-testid={`dispute-letter-${letter.id}`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`w-3 h-3 rounded-full ${letter.trackingNumber ? 'bg-green-500' : 'bg-gray-400'}`} />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-medium text-foreground">{letter.bureau} Bureau</h4>
+                              <Badge className={letter.status === 'sent' 
+                                ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' 
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                              }>
+                                {letter.status}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {letter.letterType || 'Dispute Letter'} • Created {letter.createdAt ? formatRelativeDate(letter.createdAt) : 'recently'}
+                            </p>
+                            {letter.trackingNumber && (
+                              <div className="flex items-center gap-2 mt-2">
+                                <Mail className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <span className="font-mono text-sm text-green-700 dark:text-green-300">
+                                  {letter.trackingNumber}
+                                </span>
+                                {letter.sentDate && (
+                                  <span className="text-xs text-muted-foreground">
+                                    • Sent {formatRelativeDate(letter.sentDate)}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Credit Report Details */}
             {myCreditReport?.hasReport && (

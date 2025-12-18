@@ -283,6 +283,8 @@ export interface IStorage {
 
   // Dispute Letters (New)
   getDisputeLettersNew(uploadId: number): Promise<DisputeLetterNew[]>;
+  getAllDisputeLettersNew(): Promise<DisputeLetterNew[]>;
+  getDisputeLettersNewByClient(clientId: number): Promise<DisputeLetterNew[]>;
   getDisputeLetterNew(id: number): Promise<DisputeLetterNew | undefined>;
   createDisputeLetterNew(letter: InsertDisputeLetterNew): Promise<DisputeLetterNew>;
   updateDisputeLetterNew(id: number, updates: Partial<DisputeLetterNew>): Promise<DisputeLetterNew | undefined>;
@@ -870,6 +872,14 @@ export class DatabaseStorage implements IStorage {
   // Dispute Letters (New)
   async getDisputeLettersNew(uploadId: number): Promise<DisputeLetterNew[]> {
     return await db.select().from(disputeLettersNew).where(eq(disputeLettersNew.uploadId, uploadId));
+  }
+
+  async getAllDisputeLettersNew(): Promise<DisputeLetterNew[]> {
+    return await db.select().from(disputeLettersNew);
+  }
+
+  async getDisputeLettersNewByClient(clientId: number): Promise<DisputeLetterNew[]> {
+    return await db.select().from(disputeLettersNew).where(eq(disputeLettersNew.clientId, clientId));
   }
 
   async getDisputeLetterNew(id: number): Promise<DisputeLetterNew | undefined> {
@@ -2252,6 +2262,14 @@ export class MemStorage implements IStorage {
   // Dispute Letters (New)
   async getDisputeLettersNew(uploadId: number): Promise<DisputeLetterNew[]> {
     return await db.select().from(disputeLettersNew).where(eq(disputeLettersNew.uploadId, uploadId));
+  }
+
+  async getAllDisputeLettersNew(): Promise<DisputeLetterNew[]> {
+    return await db.select().from(disputeLettersNew);
+  }
+
+  async getDisputeLettersNewByClient(clientId: number): Promise<DisputeLetterNew[]> {
+    return await db.select().from(disputeLettersNew).where(eq(disputeLettersNew.clientId, clientId));
   }
 
   async getDisputeLetterNew(id: number): Promise<DisputeLetterNew | undefined> {

@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { EnhancedUSPSTracking } from "@/components/enhanced-usps-tracking";
-import { Package, Plus, Send, User, Calendar, MapPin, Clock } from "lucide-react";
-import type { Dispute, User as UserType } from "@shared/schema";
+import { Package, Plus, Send, User, Calendar, MapPin, Clock, FileText, Mail } from "lucide-react";
+import type { Dispute, User as UserType, DisputeLetterNew } from "@shared/schema";
 
 interface AdminDisputeTrackingProps {
   selectedClientId?: number | null;
@@ -19,7 +19,7 @@ interface AdminDisputeTrackingProps {
 
 export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingProps) {
   const [trackingNumber, setTrackingNumber] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState<number>(selectedClientId || 30); // Default to Kerise for testing
+  const [selectedUserId, setSelectedUserId] = useState<number>(selectedClientId || 0); // Default to 0 (All clients)
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -53,6 +53,52 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
   const { data: followUpDisputes = [] } = useQuery<Dispute[]>({
     queryKey: ['/api/disputes/follow-up'],
     refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+  });
+
+  // Get dispute letters for tracking
+  const { data: disputeLetters = [] } = useQuery<DisputeLetterNew[]>({
+    queryKey: ['/api/admin/dispute-letters-new/all'],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/admin/dispute-letters-new/all");
+      return response.json();
+    }
+  });
+
+  // Letters filtered by selected client
+  const lettersToShow = selectedUserId 
+    ? disputeLetters.filter(l => l.clientId === selectedUserId)
+    : disputeLetters;
+
+  // State for adding tracking to letters
+  const [letterTrackingNumber, setLetterTrackingNumber] = useState("");
+  const [selectedLetterId, setSelectedLetterId] = useState<number | null>(null);
+
+  // Add tracking number to letter
+  const addLetterTrackingMutation = useMutation({
+    mutationFn: async (data: { letterId: number; trackingNumber: string }) => {
+      const response = await apiRequest("PATCH", `/api/admin/dispute-letters-new/${data.letterId}`, {
+        trackingNumber: data.trackingNumber,
+        sentDate: new Date().toISOString().split('T')[0],
+        status: 'sent'
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/dispute-letters-new/all'] });
+      toast({
+        title: "Tracking Added",
+        description: "USPS tracking number has been saved to the letter."
+      });
+      setLetterTrackingNumber("");
+      setSelectedLetterId(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add tracking number",
+        variant: "destructive"
+      });
+    }
   });
 
   // Add tracking number to dispute
@@ -155,13 +201,6 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
               <p className="text-sm text-muted-foreground">
                 Enter the USPS tracking number from your certified mail receipt
               </p>
-              {/* Debug Info */}
-              <div className="text-xs text-gray-500 mt-2">
-                Debug: {selectedUserId ? `Client ${selectedUserId}` : "All clients"} - 
-                {disputesToShow.length} total disputes, 
-                {disputesToShow.filter(d => !d.uspsTrackingNumber).length} without tracking
-                <br />All Disputes: {allDisputes.length}, Client Disputes: {clientDisputes.length}
-              </div>
             </div>
 
             {/* Quick Stats */}
@@ -275,6 +314,147 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
               <Send className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No disputes found</p>
               <p className="text-sm">Create disputes for clients to begin tracking</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Dispute Letters Tracking */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Dispute Letters Tracking
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Add Tracking to Letter */}
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+            <Label className="font-medium">Add Tracking Number to Letter</Label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter 22-digit USPS tracking number"
+                value={letterTrackingNumber}
+                onChange={(e) => setLetterTrackingNumber(e.target.value)}
+                maxLength={22}
+                className="flex-1"
+                data-testid="input-letter-tracking"
+              />
+              <Select 
+                value={selectedLetterId?.toString() || ""}
+                onValueChange={(value) => setSelectedLetterId(parseInt(value) || null)}
+              >
+                <SelectTrigger className="w-56" data-testid="select-letter-for-tracking">
+                  <SelectValue placeholder="Select letter" />
+                </SelectTrigger>
+                <SelectContent>
+                  {lettersToShow
+                    .filter(l => !l.trackingNumber)
+                    .map((letter) => (
+                      <SelectItem key={letter.id} value={letter.id.toString()}>
+                        Letter #{letter.id} - {letter.bureau}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={() => {
+                  if (selectedLetterId && letterTrackingNumber) {
+                    addLetterTrackingMutation.mutate({
+                      letterId: selectedLetterId,
+                      trackingNumber: letterTrackingNumber
+                    });
+                  }
+                }}
+                disabled={!selectedLetterId || !letterTrackingNumber || addLetterTrackingMutation.isPending}
+                data-testid="button-add-letter-tracking"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {lettersToShow.filter(l => !l.trackingNumber).length} letters without tracking
+            </p>
+          </div>
+
+          {/* Quick Stats for Letters */}
+          <div className="grid grid-cols-3 gap-4 pt-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">
+                {lettersToShow.length}
+              </div>
+              <div className="text-sm text-muted-foreground">Total Letters</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                {lettersToShow.filter(l => l.trackingNumber).length}
+              </div>
+              <div className="text-sm text-muted-foreground">With Tracking</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {lettersToShow.filter(l => l.status === 'sent').length}
+              </div>
+              <div className="text-sm text-muted-foreground">Sent</div>
+            </div>
+          </div>
+
+          {/* Letters List */}
+          {lettersToShow.length > 0 ? (
+            <div className="space-y-4 mt-4">
+              {lettersToShow.map((letter) => {
+                const clientUser = clientUsers.find(u => u.id === letter.clientId);
+                return (
+                  <div key={letter.id} className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <div className="font-medium">Letter #{letter.id}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {letter.bureau} Bureau - {letter.letterType || 'Dispute Letter'}
+                          </div>
+                          {clientUser && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Client: {clientUser.firstName} {clientUser.lastName}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Badge 
+                        variant={letter.status === 'sent' ? "default" : "secondary"}
+                        className={letter.status === 'sent' ? "bg-blue-600" : ""}
+                      >
+                        {letter.status}
+                      </Badge>
+                    </div>
+
+                    {letter.trackingNumber ? (
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded mt-2">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-blue-600" />
+                          <span className="font-mono text-sm">{letter.trackingNumber}</span>
+                        </div>
+                        {letter.sentDate && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Sent: {new Date(letter.sentDate).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground p-3 bg-gray-50 rounded mt-2">
+                        No tracking number assigned. Add tracking above after mailing.
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No dispute letters found</p>
+              <p className="text-sm">Generate dispute letters from the Credit Reports page</p>
             </div>
           )}
         </CardContent>

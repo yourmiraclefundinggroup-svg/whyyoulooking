@@ -397,6 +397,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get client's dispute letters (for client dashboard)
+  app.get("/api/my-dispute-letters", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const letters = await storage.getDisputeLettersNewByClient(user.id);
+      res.json(letters);
+    } catch (error: any) {
+      console.error("Error fetching client dispute letters:", error);
+      res.status(500).json({ message: "Failed to fetch dispute letters" });
+    }
+  });
+
   // Credit Issues (Authenticated users only)
   app.get("/api/credit-issues", authenticateToken, requireClientAccess, async (req, res) => {
     try {
@@ -5423,6 +5435,22 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
   // ============================================
   // DISPUTE LETTERS API ROUTES
   // ============================================
+
+  // Get all dispute letters (for tracking page)
+  app.get("/api/admin/dispute-letters-new/all", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (!user || user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const letters = await storage.getAllDisputeLettersNew();
+      res.json(letters);
+    } catch (error: any) {
+      console.error("Error fetching all dispute letters:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   // Get dispute letters - with optional uploadId query param
   app.get("/api/admin/dispute-letters-new", authenticateToken, async (req, res) => {
