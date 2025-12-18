@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -34,7 +35,10 @@ import {
   Calendar,
   DollarSign,
   AlertOctagon,
-  Eye
+  Eye,
+  Truck,
+  MapPin,
+  CheckCircle2
 } from "lucide-react";
 import type { CreditReport, CreditIssue, Dispute, CreditGoal, CreditReportAccount, CreditReportInquiry, CreditReportCollection, CreditReportPublicRecord, DisputeLetterNew } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -50,6 +54,22 @@ interface MyCreditReportData {
   inquiries: CreditReportInquiry[];
   collections: CreditReportCollection[];
   publicRecords: CreditReportPublicRecord[];
+}
+
+interface USPSTrackingStatus {
+  trackingNumber: string;
+  status: string;
+  description: string;
+  isDelivered: boolean;
+  deliveryDate?: string;
+  events?: Array<{
+    event_time: string;
+    event_date: string;
+    event_city: string;
+    event_state: string;
+    event_description: string;
+  }>;
+  error?: string;
 }
 
 function InteractiveDashboardBackground() {
@@ -320,6 +340,9 @@ export default function Dashboard() {
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [simulatorModalOpen, setSimulatorModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<CreditIssue | undefined>();
+  const [trackingStatuses, setTrackingStatuses] = useState<Record<string, USPSTrackingStatus>>({});
+  const [loadingTracking, setLoadingTracking] = useState<Record<string, boolean>>({});
+  const [refreshingAll, setRefreshingAll] = useState(false);
 
   const { user } = useUserContext();
   const userId = user?.id || 1;
@@ -352,6 +375,55 @@ export default function Dashboard() {
   const handleDispute = (issue: CreditIssue) => {
     setSelectedIssue(issue);
     setDisputeModalOpen(true);
+  };
+
+  // Fetch live USPS tracking status
+  const fetchTrackingStatus = async (trackingNumber: string) => {
+    setLoadingTracking(prev => ({ ...prev, [trackingNumber]: true }));
+    try {
+      const response = await apiRequest("GET", `/api/usps/track/${trackingNumber}`);
+      const data = await response.json();
+      setTrackingStatuses(prev => ({ ...prev, [trackingNumber]: data }));
+      return data;
+    } catch (error: any) {
+      const errorStatus: USPSTrackingStatus = {
+        trackingNumber,
+        status: 'PENDING',
+        description: 'Tracking information will be available soon',
+        isDelivered: false,
+        error: error.message
+      };
+      setTrackingStatuses(prev => ({ ...prev, [trackingNumber]: errorStatus }));
+      return errorStatus;
+    } finally {
+      setLoadingTracking(prev => ({ ...prev, [trackingNumber]: false }));
+    }
+  };
+
+  // Refresh all tracking statuses
+  const refreshAllTracking = async () => {
+    setRefreshingAll(true);
+    const lettersWithTracking = myDisputeLetters.filter(l => l.trackingNumber);
+    for (const letter of lettersWithTracking) {
+      if (letter.trackingNumber) {
+        await fetchTrackingStatus(letter.trackingNumber);
+      }
+    }
+    setRefreshingAll(false);
+  };
+
+  // Get status display info
+  const getStatusDisplay = (status: USPSTrackingStatus | undefined) => {
+    if (!status) {
+      return { icon: Mail, color: "text-gray-400", bgColor: "bg-gray-100 dark:bg-gray-800", label: "Not Checked" };
+    }
+    if (status.error) {
+      return { icon: Clock, color: "text-amber-500", bgColor: "bg-amber-50 dark:bg-amber-900/30", label: "Pending" };
+    }
+    if (status.isDelivered) {
+      return { icon: CheckCircle2, color: "text-green-600", bgColor: "bg-green-50 dark:bg-green-900/30", label: "Delivered" };
+    }
+    return { icon: Truck, color: "text-blue-600", bgColor: "bg-blue-50 dark:bg-blue-900/30", label: "In Transit" };
   };
 
   const activeIssues = creditIssues.filter(issue => issue.status === 'ACTIVE');
@@ -600,64 +672,138 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Tracked Dispute Letters */}
+            {/* Tracked Dispute Letters with Live USPS Tracking */}
             {myDisputeLetters.length > 0 && (
               <Card className="border-0 shadow-lg bg-card text-card-foreground">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-foreground">
-                    <Mail className="h-5 w-5 text-green-500" />
-                    My Dispute Letters
-                  </CardTitle>
-                  <Badge className="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border-0">
-                    {myDisputeLetters.filter(l => l.trackingNumber).length} tracked
-                  </Badge>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
+                      <Mail className="h-5 w-5 text-green-500" />
+                      My Dispute Letters
+                    </CardTitle>
+                    <Badge className="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border-0">
+                      {myDisputeLetters.filter(l => l.trackingNumber).length} tracked
+                    </Badge>
+                  </div>
+                  
+                  {/* Prominent Refresh Button for Live Tracking */}
+                  {myDisputeLetters.filter(l => l.trackingNumber).length > 0 && (
+                    <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-300 dark:border-green-700 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold text-green-800 dark:text-green-300">Live USPS Tracking</h3>
+                          <p className="text-sm text-green-600 dark:text-green-400">Get real-time package status</p>
+                        </div>
+                        <Button
+                          onClick={refreshAllTracking}
+                          disabled={refreshingAll}
+                          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 h-12 text-base font-medium"
+                          data-testid="button-refresh-all-tracking"
+                        >
+                          <RefreshCw className={`h-5 w-5 mr-2 ${refreshingAll ? 'animate-spin' : ''}`} />
+                          {refreshingAll ? 'Refreshing...' : 'Refresh All'}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {myDisputeLetters.map((letter) => (
-                      <motion.div 
-                        key={letter.id}
-                        className={`p-4 rounded-xl border ${
-                          letter.trackingNumber 
-                            ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' 
-                            : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
-                        }`}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        data-testid={`dispute-letter-${letter.id}`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className={`w-3 h-3 rounded-full ${letter.trackingNumber ? 'bg-green-500' : 'bg-gray-400'}`} />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-medium text-foreground">{letter.bureau} Bureau</h4>
-                              <Badge className={letter.status === 'sent' 
-                                ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' 
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                              }>
-                                {letter.status}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {letter.letterType || 'Dispute Letter'} • Created {letter.createdAt ? formatRelativeDate(letter.createdAt) : 'recently'}
-                            </p>
-                            {letter.trackingNumber && (
-                              <div className="flex items-center gap-2 mt-2">
-                                <Mail className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                <span className="font-mono text-sm text-green-700 dark:text-green-300">
-                                  {letter.trackingNumber}
-                                </span>
-                                {letter.sentDate && (
-                                  <span className="text-xs text-muted-foreground">
-                                    • Sent {formatRelativeDate(letter.sentDate)}
-                                  </span>
-                                )}
+                    {myDisputeLetters.map((letter) => {
+                      const trackingStatus = letter.trackingNumber ? trackingStatuses[letter.trackingNumber] : undefined;
+                      const statusDisplay = getStatusDisplay(trackingStatus);
+                      const isLoading = letter.trackingNumber ? loadingTracking[letter.trackingNumber] : false;
+                      const StatusIcon = statusDisplay.icon;
+                      
+                      return (
+                        <motion.div 
+                          key={letter.id}
+                          className={`p-4 rounded-xl border ${
+                            letter.trackingNumber 
+                              ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' 
+                              : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
+                          }`}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          data-testid={`dispute-letter-${letter.id}`}
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className={`w-3 h-3 rounded-full mt-1.5 ${letter.trackingNumber ? 'bg-green-500' : 'bg-gray-400'}`} />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-medium text-foreground">{letter.bureau} Bureau</h4>
+                                <Badge className={letter.status === 'sent' 
+                                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' 
+                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                }>
+                                  {letter.status}
+                                </Badge>
                               </div>
-                            )}
+                              <p className="text-sm text-muted-foreground">
+                                {letter.letterType || 'Dispute Letter'} • Created {letter.createdAt ? formatRelativeDate(letter.createdAt) : 'recently'}
+                              </p>
+                              
+                              {/* Tracking Info with Live Status */}
+                              {letter.trackingNumber && (
+                                <div className="mt-3 p-3 bg-white dark:bg-gray-800 border border-green-200 dark:border-green-700 rounded-lg">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <Mail className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                      <span className="font-mono text-sm text-green-700 dark:text-green-300">
+                                        {letter.trackingNumber}
+                                      </span>
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => letter.trackingNumber && fetchTrackingStatus(letter.trackingNumber)}
+                                      disabled={isLoading}
+                                      data-testid={`button-refresh-tracking-${letter.id}`}
+                                    >
+                                      <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                                    </Button>
+                                  </div>
+                                  
+                                  {/* Live USPS Status */}
+                                  {trackingStatus && !trackingStatus.error ? (
+                                    <div className={`p-2 ${statusDisplay.bgColor} rounded-lg`}>
+                                      <div className="flex items-center gap-2">
+                                        <StatusIcon className={`h-5 w-5 ${statusDisplay.color}`} />
+                                        <span className={`font-medium ${statusDisplay.color}`}>
+                                          {trackingStatus.status}
+                                        </span>
+                                      </div>
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{trackingStatus.description}</p>
+                                      {trackingStatus.deliveryDate && (
+                                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                          Delivered: {new Date(trackingStatus.deliveryDate).toLocaleDateString()}
+                                        </p>
+                                      )}
+                                      {trackingStatus.events && trackingStatus.events.length > 0 && (
+                                        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                          <MapPin className="h-3 w-3" />
+                                          Last: {trackingStatus.events[0].event_city}, {trackingStatus.events[0].event_state}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : !trackingStatus ? (
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                      Click refresh to get live USPS status
+                                    </p>
+                                  ) : null}
+                                  
+                                  {letter.sentDate && (
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                      Sent: {formatRelativeDate(letter.sentDate)}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    ))}
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
