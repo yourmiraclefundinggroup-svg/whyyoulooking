@@ -160,23 +160,10 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
       {/* Main Tracking Card */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              USPS Tracking Management
-            </CardTitle>
-            {lettersToShow.filter(l => l.trackingNumber).length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={refreshAllTracking}
-                data-testid="button-refresh-all-tracking"
-              >
-                <RefreshCw className="h-4 w-4 mr-1" />
-                Refresh All
-              </Button>
-            )}
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            USPS Tracking Management
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Client Selection */}
@@ -246,6 +233,26 @@ export function AdminDisputeTracking({ selectedClientId }: AdminDisputeTrackingP
               {lettersToShow.filter(l => !l.trackingNumber).length} letters without tracking
             </p>
           </div>
+
+          {/* Prominent Refresh Button */}
+          {lettersToShow.filter(l => l.trackingNumber).length > 0 && (
+            <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-300 dark:border-green-700 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-green-800 dark:text-green-300">Live USPS Tracking</h3>
+                  <p className="text-sm text-green-600 dark:text-green-400">Get real-time package status from USPS</p>
+                </div>
+                <Button
+                  onClick={refreshAllTracking}
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 h-12 text-base font-medium"
+                  data-testid="button-refresh-all-tracking"
+                >
+                  <RefreshCw className="h-5 w-5 mr-2" />
+                  Refresh All Tracking
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Quick Stats for Letters */}
           <div className="grid grid-cols-3 gap-4 pt-4">
