@@ -1049,6 +1049,15 @@ export default function LandingPage() {
           <p className="text-gray-600 dark:text-gray-400 text-sm">
             © {new Date().getFullYear()} ScoreShift. All rights reserved.
           </p>
+          <div className="flex items-center justify-center gap-4 mt-3 text-sm">
+            <a href="/privacy-policy" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              Privacy Policy
+            </a>
+            <span className="text-gray-300 dark:text-gray-600">·</span>
+            <a href="/terms" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              Terms & Conditions
+            </a>
+          </div>
         </div>
       </footer>
     </div>

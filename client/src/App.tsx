@@ -20,6 +20,8 @@ import SupportAdmin from "@/pages/support-admin";
 import Billing from "@/pages/billing";
 import SubscriptionCheckout from "@/pages/subscription-checkout";
 import Login from "@/pages/login";
+import PrivacyPolicy from "@/pages/privacy-policy";
+import Terms from "@/pages/terms";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -34,6 +36,14 @@ function Router() {
   // Allow access to lead form without authentication
   if (!user && location === "/get-started") {
     return <LeadForm />;
+  }
+
+  // Allow access to public pages without authentication
+  if (location === "/privacy-policy") {
+    return <PrivacyPolicy />;
+  }
+  if (location === "/terms") {
+    return <Terms />;
   }
 
   // Show login if no user is authenticated and not on other allowed pages
