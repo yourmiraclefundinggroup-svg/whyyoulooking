@@ -4356,6 +4356,17 @@ Please contact this lead within 24 hours.
   });
 
   // Complete onboarding step
+  app.post("/api/onboarding/request-credit-report", authenticateToken, async (req, res) => {
+    try {
+      const { userId, goals, creditKnowledge, note } = req.body;
+      console.log(`[Onboarding] Credit report upload requested for user ${userId}. Goals: ${goals?.join(', ')}. Note: ${note}`);
+      return res.json({ success: true, message: "Request received. Your advisor will upload your credit report shortly." });
+    } catch (error) {
+      console.error("Onboarding request error:", error);
+      return res.status(500).json({ error: "Failed to process request" });
+    }
+  });
+
   app.post("/api/onboarding/complete-step", authenticateToken, async (req, res) => {
     try {
       const { userId, stepId } = req.body;

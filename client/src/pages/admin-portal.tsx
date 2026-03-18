@@ -528,6 +528,24 @@ function ClientManagementPage({
             </AdminCardTitle>
           </AdminCardHeader>
           <AdminCardContent>
+            {/* No credit report banner */}
+            {!clientCreditReport?.creditScore && (
+              <div className="mb-4 p-4 rounded-lg border border-amber-500/40 bg-amber-500/10 flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-amber-300">No Credit Report on File</p>
+                  <p className="text-xs text-amber-400/80 mt-0.5">
+                    This client has no credit data yet. Upload their credit report file so the AI can parse it and populate their dashboard.
+                  </p>
+                </div>
+                <Link href="/admin-portal/credit-reports">
+                  <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white text-xs flex-shrink-0">
+                    <Upload className="h-3 w-3 mr-1" />
+                    Upload Report
+                  </Button>
+                </Link>
+              </div>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
                 <div className="text-3xl font-bold text-blue-400">
@@ -1184,6 +1202,10 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
     }
   };
 
+  // Clients without any uploaded credit report
+  const clientsWithReports = new Set(creditReports.map((r: CreditReportWithClient) => r.userId));
+  const clientsAwaitingReport = clientUsers.filter(c => !clientsWithReports.has(c.id));
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -1398,6 +1420,45 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
           </div>
         </AdminCardHeader>
       </AdminCard>
+
+      {/* Clients awaiting report uploads */}
+      {clientsAwaitingReport.length > 0 && (
+        <AdminCard className="border-amber-500/30">
+          <AdminCardHeader>
+            <AdminCardTitle icon={<AlertCircle className="h-5 w-5 text-amber-400" />}>
+              <span className="text-amber-300">Clients Awaiting Credit Report ({clientsAwaitingReport.length})</span>
+            </AdminCardTitle>
+          </AdminCardHeader>
+          <AdminCardContent>
+            <div className="space-y-2">
+              {clientsAwaitingReport.map(client => (
+                <div key={client.id} className="flex items-center justify-between p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 text-xs font-bold">
+                      {client.firstName?.[0]}{client.lastName?.[0]}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">{client.firstName} {client.lastName}</p>
+                      <p className="text-xs text-amber-400/70">{client.email} — No report on file</p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-amber-500 hover:bg-amber-600 text-white text-xs"
+                    onClick={() => {
+                      setNewUpload(prev => ({ ...prev, userId: client.id.toString() }));
+                      setUploadDialogOpen(true);
+                    }}
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    Upload Now
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </AdminCardContent>
+        </AdminCard>
+      )}
 
       <AdminCard>
         <AdminCardHeader>

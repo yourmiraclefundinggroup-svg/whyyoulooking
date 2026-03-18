@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { DisputeLetterModal } from "@/components/dispute-letter-modal";
 import { CreditSimulatorModal } from "@/components/credit-simulator-modal";
 import { SupportChat } from "@/components/support-chat";
+import { OnboardingWizard } from "@/components/onboarding-wizard";
 import { formatCurrency, formatRelativeDate } from "@/lib/utils";
 import { useUserContext } from "@/hooks/use-user-context";
 import { motion } from "framer-motion";
@@ -511,9 +512,21 @@ export default function Dashboard() {
   const pendingDisputes = disputes.filter(dispute => dispute.status === 'PENDING');
   const resolvedIssues = creditIssues.filter(issue => issue.status === 'RESOLVED');
 
-  const currentScore = creditReport?.creditScore || 582;
+  const hasReport = myCreditReport?.hasReport;
+  const currentScore = creditReport?.creditScore ?? null;
   const targetScore = creditGoal?.targetScore || 720;
-  const scoreProgress = Math.min((currentScore / targetScore) * 100, 100);
+  const scoreProgress = currentScore ? Math.min((currentScore / targetScore) * 100, 100) : 0;
+
+  // Show onboarding wizard when there's no credit report yet
+  if (!isLoadingCreditReport && !hasReport) {
+    return (
+      <>
+        <InteractiveDashboardBackground />
+        <OnboardingWizard />
+        <SupportChat />
+      </>
+    );
+  }
 
   return (
     <>
@@ -565,7 +578,7 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <StatCard icon={TrendingUp} label="Current Score" value={currentScore} trend="+23 pts" color="blue" />
+          <StatCard icon={TrendingUp} label="Current Score" value={currentScore ?? "—"} trend={currentScore ? "+23 pts" : undefined} color="blue" />
           <StatCard icon={AlertTriangle} label="Active Issues" value={activeIssues.length} color="red" />
           <StatCard icon={Clock} label="Pending Disputes" value={pendingDisputes.length} color="yellow" />
           <StatCard icon={CheckCircle} label="Items Removed" value={resolvedIssues.length} color="green" />
@@ -591,14 +604,16 @@ export default function Dashboard() {
                   </p>
                 </div>
                 
-                <CreditScoreGauge score={currentScore} />
+                <CreditScoreGauge score={currentScore ?? 0} />
                 
-                <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-xl border border-green-200 dark:border-green-800">
-                  <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
-                    <TrendingUp className="h-4 w-4" />
-                    <span className="font-medium">+23 points this month</span>
+                {currentScore && (
+                  <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-xl border border-green-200 dark:border-green-800">
+                    <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                      <TrendingUp className="h-4 w-4" />
+                      <span className="font-medium">+23 points this month</span>
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 
@@ -614,7 +629,7 @@ export default function Dashboard() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-end">
                     <div>
-                      <span className="text-3xl font-bold text-foreground">{currentScore}</span>
+                      <span className="text-3xl font-bold text-foreground">{currentScore ?? "—"}</span>
                       <span className="text-muted-foreground mx-2">/</span>
                       <span className="text-xl text-purple-600 dark:text-purple-400 font-semibold">{targetScore}</span>
                     </div>
