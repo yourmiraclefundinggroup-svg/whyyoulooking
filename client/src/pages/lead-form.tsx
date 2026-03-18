@@ -22,6 +22,7 @@ export default function LeadForm() {
     additionalDetails: "",
     urgency: "normal"
   });
+  const [smsOptIn, setSmsOptIn] = useState(false);
 
   const creditIssueOptions = [
     "Collections",
@@ -62,6 +63,16 @@ export default function LeadForm() {
       return;
     }
 
+    if (!smsOptIn) {
+      toast({
+        title: "SMS Consent Required",
+        description: "Please check the SMS opt-in box to continue.",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     if (formData.creditIssues.length === 0) {
       toast({
         title: "Credit Issues Required",
@@ -81,6 +92,7 @@ export default function LeadForm() {
         body: JSON.stringify({
           type: 'credit_repair_lead',
           ...formData,
+          smsOptIn,
           timestamp: new Date().toISOString(),
           source: 'landing_page_form'
         }),
@@ -102,6 +114,7 @@ export default function LeadForm() {
           additionalDetails: "",
           urgency: "normal"
         });
+        setSmsOptIn(false);
       } else {
         throw new Error('Failed to submit request');
       }
@@ -221,6 +234,24 @@ export default function LeadForm() {
                         className="mt-1"
                       />
                     </div>
+                  </div>
+
+                  {/* SMS Opt-In */}
+                  <div className={`flex items-start gap-3 p-4 rounded-lg border-2 transition-colors ${smsOptIn ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+                    <Checkbox
+                      id="smsOptIn"
+                      checked={smsOptIn}
+                      onCheckedChange={(checked) => setSmsOptIn(checked as boolean)}
+                      className="mt-0.5 shrink-0"
+                    />
+                    <label htmlFor="smsOptIn" className="cursor-pointer">
+                      <span className="text-sm font-medium text-gray-800 block mb-1">
+                        SMS Consent <span className="text-red-500">*</span>
+                      </span>
+                      <span className="text-xs text-gray-500 leading-relaxed">
+                        By submitting this form you agree to receive SMS messages from ScoreShift regarding your credit repair progress. Message and data rates may apply. Reply STOP to opt out at any time.
+                      </span>
+                    </label>
                   </div>
                 </div>
 
