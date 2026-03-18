@@ -20,6 +20,7 @@ import SupportAdmin from "@/pages/support-admin";
 import Billing from "@/pages/billing";
 import SubscriptionCheckout from "@/pages/subscription-checkout";
 import Login from "@/pages/login";
+import Signup from "@/pages/signup";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import Terms from "@/pages/terms";
 import NotFound from "@/pages/not-found";
@@ -44,6 +45,9 @@ function Router() {
   }
   if (location === "/terms") {
     return <Terms />;
+  }
+  if (location === "/signup") {
+    return <Signup />;
   }
 
   // Show login if no user is authenticated and not on other allowed pages

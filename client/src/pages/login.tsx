@@ -214,6 +214,12 @@ export default function Login() {
         <div className="text-center text-sm text-gray-600 dark:text-gray-400">
           <p>Secure credit repair management system</p>
           <p className="mt-1">Protected by enterprise-grade security</p>
+          <p className="mt-4">
+            Don't have an account?{" "}
+            <a href="/signup" className="text-blue-600 hover:underline font-medium">
+              Sign up free
+            </a>
+          </p>
         </div>
       </div>
     </div>

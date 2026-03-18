@@ -7,6 +7,8 @@ export const users = pgTable("users", {
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email").notNull().unique(),
+  phone: text("phone"),
+  smsOptIn: boolean("sms_opt_in").default(false),
   password: text("password").notNull(),
   accessLevel: text("access_level").notNull().default("STANDARD"), // STANDARD, CLIENT_VIEWER, BETA_TESTER, ADMIN
   isTestUser: boolean("is_test_user").default(false),

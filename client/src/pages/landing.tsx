@@ -677,7 +677,7 @@ export default function LandingPage() {
             animate={heroInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <Link href="/billing">
+            <Link href="/signup">
               <Button 
                 size="lg" 
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 px-8 py-6 text-lg shadow-xl shadow-blue-500/25 hover:shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 group"
@@ -915,7 +915,7 @@ export default function LandingPage() {
               ))}
             </div>
 
-            <Link href="/get-started">
+            <Link href="/signup">
               <Button 
                 size="lg"
                 className="bg-white text-blue-600 hover:bg-gray-100 font-semibold px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300"
@@ -1021,7 +1021,7 @@ export default function LandingPage() {
                 Join thousands who have improved their credit scores with our AI-powered platform
               </p>
               
-              <Link href="/billing">
+              <Link href="/signup">
                 <Button 
                   size="lg" 
                   className="bg-white text-blue-600 hover:bg-gray-100 px-10 py-6 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300"
