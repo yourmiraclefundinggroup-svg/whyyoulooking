@@ -18,13 +18,24 @@ const STEPS = ["Personal Info", "Account Setup", "Choose Plan"];
 
 const PLANS = [
   {
+    id: "free",
+    name: "Free Trial",
+    price: "$0",
+    interval: "/7 days",
+    badge: "Start Free",
+    badgeColor: "bg-green-600",
+    features: ["Full access for 7 days", "Credit score tracking", "AI dispute letter preview", "No credit card required"],
+    note: "Upgrade required after 7 days",
+  },
+  {
     id: "basic",
     name: "Basic",
     price: "$49",
     interval: "/mo",
     badge: null,
-    color: "border-gray-200 dark:border-gray-700",
+    badgeColor: "",
     features: ["Up to 3 disputes/month", "Credit score tracking", "Basic AI analysis", "Email support"],
+    note: null,
   },
   {
     id: "premium",
@@ -32,8 +43,9 @@ const PLANS = [
     price: "$99",
     interval: "/mo",
     badge: "Most Popular",
-    color: "border-blue-500",
+    badgeColor: "bg-blue-600",
     features: ["Unlimited disputes", "USPS certified mail tracking", "Full AI dispute letters", "Priority support", "Credit report analysis"],
+    note: null,
   },
   {
     id: "professional",
@@ -41,8 +53,9 @@ const PLANS = [
     price: "$149",
     interval: "/mo",
     badge: "Best Value",
-    color: "border-purple-500",
+    badgeColor: "bg-purple-600",
     features: ["Everything in Premium", "Business credit portal", "Dedicated advisor", "White-glove service", "Same-day dispute filing"],
+    note: null,
   },
 ];
 
@@ -63,7 +76,7 @@ export default function Signup() {
   const [smsOptIn, setSmsOptIn] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState("premium");
+  const [selectedPlan, setSelectedPlan] = useState("free");
 
   // Step 1 validation
   const validateStep1 = () => {
@@ -105,6 +118,8 @@ export default function Signup() {
         password,
         accessLevel: "CLIENT_VIEWER",
         passwordResetRequired: false,
+        subscriptionPlan: selectedPlan === "free" ? "FREE" : selectedPlan.toUpperCase(),
+        subscriptionStatus: selectedPlan === "free" ? "TRIALING" : null,
       });
 
       if (!createRes.ok) {
@@ -131,11 +146,11 @@ export default function Signup() {
         description: "Your account has been created successfully.",
       });
 
-      // Redirect based on plan selection
-      if (selectedPlan && selectedPlan !== "skip") {
-        window.location.href = "/billing";
-      } else {
+      // Free plan → go to dashboard, paid plan → go to billing to complete payment
+      if (selectedPlan === "free") {
         window.location.href = "/dashboard";
+      } else {
+        window.location.href = "/billing";
       }
     } catch (error: any) {
       toast({
@@ -390,52 +405,53 @@ export default function Signup() {
                       onClick={() => setSelectedPlan(plan.id)}
                       className={`relative p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                         selectedPlan === plan.id
-                          ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-lg shadow-blue-100 dark:shadow-blue-950"
+                          ? plan.id === "free"
+                            ? "border-green-500 bg-green-50 dark:bg-green-950/30 shadow-lg"
+                            : "border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-lg"
                           : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800/50"
                       }`}
                     >
                       {plan.badge && (
-                        <Badge className="absolute -top-3 left-4 bg-blue-600 text-white text-xs px-2 py-0.5">
+                        <Badge className={`absolute -top-3 left-4 ${plan.badgeColor} text-white text-xs px-2 py-0.5`}>
                           {plan.badge}
                         </Badge>
                       )}
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                            selectedPlan === plan.id ? "border-blue-500 bg-blue-500" : "border-gray-300 dark:border-gray-600"
+                            selectedPlan === plan.id
+                              ? plan.id === "free" ? "border-green-500 bg-green-500" : "border-blue-500 bg-blue-500"
+                              : "border-gray-300 dark:border-gray-600"
                           }`}>
                             {selectedPlan === plan.id && <div className="w-2 h-2 rounded-full bg-white" />}
                           </div>
                           <span className="font-bold text-gray-900 dark:text-white text-lg">{plan.name}</span>
                         </div>
                         <div className="text-right">
-                          <span className="text-2xl font-bold text-gray-900 dark:text-white">{plan.price}</span>
+                          <span className={`text-2xl font-bold ${plan.id === "free" ? "text-green-600 dark:text-green-400" : "text-gray-900 dark:text-white"}`}>
+                            {plan.price}
+                          </span>
                           <span className="text-gray-500 text-sm">{plan.interval}</span>
                         </div>
                       </div>
                       <ul className="space-y-1.5 ml-8">
                         {plan.features.map((f) => (
                           <li key={f} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                            <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                            <CheckCircle className={`h-3.5 w-3.5 shrink-0 ${plan.id === "free" ? "text-green-500" : "text-green-500"}`} />
                             {f}
                           </li>
                         ))}
                       </ul>
+                      {plan.note && (
+                        <div className="ml-8 mt-2 flex items-center gap-1.5">
+                          <div className="w-3.5 h-3.5 rounded-full bg-amber-400 flex items-center justify-center shrink-0">
+                            <span className="text-white text-[9px] font-bold">!</span>
+                          </div>
+                          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">{plan.note}</span>
+                        </div>
+                      )}
                     </div>
                   ))}
-
-                  {/* Skip option */}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPlan("skip")}
-                    className={`w-full p-4 rounded-xl border-2 text-sm transition-all duration-200 ${
-                      selectedPlan === "skip"
-                        ? "border-gray-400 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-                        : "border-dashed border-gray-300 dark:border-gray-700 text-gray-400 hover:border-gray-400 hover:text-gray-500"
-                    }`}
-                  >
-                    Skip for now — explore my dashboard first
-                  </button>
                 </div>
               </div>
             )}

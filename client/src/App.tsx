@@ -24,6 +24,7 @@ import Signup from "@/pages/signup";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import Terms from "@/pages/terms";
 import NotFound from "@/pages/not-found";
+import { TrialUpgradeWall } from "@/components/trial-upgrade-wall";
 
 function Router() {
   const { user } = useUserContext();
@@ -66,74 +67,78 @@ function Router() {
       );
     } else {
       return (
-        <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
-          <Navigation />
-          <CreditRepair />
-        </div>
+        <TrialUpgradeWall>
+          <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
+            <Navigation />
+            <CreditRepair />
+          </div>
+        </TrialUpgradeWall>
       );
     }
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
-      <Switch>
-        <Route path="/" component={LandingPage} />
-        <Route path="/get-started" component={LeadForm} />
-        <Route path="/auth" component={Login} />
-        <Route path="/admin/auth" component={Login} />
-        <Route path="/dashboard">
-          <Navigation />
-          <Dashboard />
-        </Route>
-        <Route path="/credit-repair">
-          <Navigation />
-          <CreditRepair />
-        </Route>
-        <Route path="/student-loans">
-          <Navigation />
-          <StudentLoans />
-        </Route>
-        <Route path="/credit-building">
-          <Navigation />
-          <CreditBuilding />
-        </Route>
-        <Route path="/education">
-          <Navigation />
-          <Education />
-        </Route>
-        <Route path="/experian">
-          <Navigation />
-          <ExperianConnect />
-        </Route>
-        <Route path="/admin">
-          <Navigation />
-          <AdminDashboard />
-        </Route>
-        <Route path="/admin-portal">
-          <Navigation />
-          <AdminPortal />
-        </Route>
-        <Route path="/admin-portal/:section">
-          <Navigation />
-          <AdminPortal />
-        </Route>
-        <Route path="/admin-portal/credit-reports/:id">
-          <Navigation />
-          <AdminPortal />
-        </Route>
-        <Route path="/support-admin">
-          <Navigation />
-          <SupportAdmin />
-        </Route>
-        <Route path="/billing">
-          <Navigation />
-          <Billing />
-        </Route>
-        <Route path="/checkout" component={SubscriptionCheckout} />
-        <Route path="/login" component={Login} />
-        <Route component={NotFound} />
-      </Switch>
-    </div>
+    <TrialUpgradeWall>
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
+        <Switch>
+          <Route path="/" component={LandingPage} />
+          <Route path="/get-started" component={LeadForm} />
+          <Route path="/auth" component={Login} />
+          <Route path="/admin/auth" component={Login} />
+          <Route path="/dashboard">
+            <Navigation />
+            <Dashboard />
+          </Route>
+          <Route path="/credit-repair">
+            <Navigation />
+            <CreditRepair />
+          </Route>
+          <Route path="/student-loans">
+            <Navigation />
+            <StudentLoans />
+          </Route>
+          <Route path="/credit-building">
+            <Navigation />
+            <CreditBuilding />
+          </Route>
+          <Route path="/education">
+            <Navigation />
+            <Education />
+          </Route>
+          <Route path="/experian">
+            <Navigation />
+            <ExperianConnect />
+          </Route>
+          <Route path="/admin">
+            <Navigation />
+            <AdminDashboard />
+          </Route>
+          <Route path="/admin-portal">
+            <Navigation />
+            <AdminPortal />
+          </Route>
+          <Route path="/admin-portal/:section">
+            <Navigation />
+            <AdminPortal />
+          </Route>
+          <Route path="/admin-portal/credit-reports/:id">
+            <Navigation />
+            <AdminPortal />
+          </Route>
+          <Route path="/support-admin">
+            <Navigation />
+            <SupportAdmin />
+          </Route>
+          <Route path="/billing">
+            <Navigation />
+            <Billing />
+          </Route>
+          <Route path="/checkout" component={SubscriptionCheckout} />
+          <Route path="/login" component={Login} />
+          <Route component={NotFound} />
+        </Switch>
+      </div>
+    </TrialUpgradeWall>
   );
 }
 
