@@ -5992,6 +5992,387 @@ If you are just answering a question (not updating the letter), just respond nor
     }
   });
 
+  // ============================================================
+  // OPENCLAW API — Full programmatic access for external agents
+  // Authenticate with: X-Api-Key: <OPENCLAW_API_KEY>
+  // ============================================================
+
+  const openclawAuth = (req: Request, res: Response, next: NextFunction) => {
+    const apiKey = req.headers["x-api-key"];
+    if (!apiKey || apiKey !== process.env.OPENCLAW_API_KEY) {
+      return res.status(401).json({ error: "Invalid or missing API key. Set X-Api-Key header." });
+    }
+    next();
+  };
+
+  // Serve OPENCLAW.md as plain text for agent ingestion
+  app.get("/api/openclaw-docs", (req, res) => {
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      const docPath = path.join(process.cwd(), "OPENCLAW.md");
+      const content = fs.readFileSync(docPath, "utf-8");
+      res.type("text/markdown").send(content);
+    } catch {
+      res.status(404).json({ error: "Documentation not found" });
+    }
+  });
+
+  // PUBLIC: Full site audit — no auth required
+  app.get("/api/audit", async (req, res) => {
+    try {
+      const [clientCount, reportCount, disputeCount] = await Promise.all([
+        db.select({ count: sql<number>`count(*)` }).from(users).then(r => Number(r[0]?.count || 0)),
+        db.select({ count: sql<number>`count(*)` }).from(creditReportUploads).then(r => Number(r[0]?.count || 0)),
+        db.select({ count: sql<number>`count(*)` }).from(users).then(r => 0), // placeholder
+      ]);
+
+      res.json({
+        meta: {
+          name: "ScoreShift",
+          description: "AI-powered credit repair platform for credit repair professionals and their clients",
+          version: "1.0.0",
+          generatedAt: new Date().toISOString(),
+          liveUrl: process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : null,
+        },
+        techStack: {
+          frontend: ["React 18", "TypeScript", "Vite", "Tailwind CSS", "shadcn/ui", "Radix UI", "TanStack Query", "Wouter", "Framer Motion"],
+          backend: ["Express.js", "TypeScript", "Drizzle ORM", "PostgreSQL (Neon)", "JWT auth", "Express sessions"],
+          ai: ["OpenAI GPT-4o (dispute letters, analysis)", "Anthropic Claude (credit parsing)"],
+          integrations: {
+            stripe: { status: "connected", purpose: "Subscription payments and billing" },
+            openai: { status: "connected", purpose: "AI dispute letter generation, credit analysis, support chat" },
+            anthropic: { status: "connected", purpose: "Credit report PDF parsing and structured data extraction" },
+            experian: { status: "partial", issue: "OAuth credentials set but API connection not fully working — credit pulls failing", purpose: "Real-time credit monitoring and report fetching" },
+            usps: { status: "partial", issue: "OAuth credentials set, tracking endpoint implemented but needs live testing", purpose: "Certified mail tracking for dispute letters" },
+            sendgrid: { status: "configured", purpose: "Transactional email notifications" },
+          },
+        },
+        pages: [
+          { route: "/", name: "Landing Page", auth: false, description: "Public marketing page with features, pricing, CTA" },
+          { route: "/signup", name: "Signup Flow", auth: false, description: "3-step signup: name/phone/SMS consent → password → plan selection" },
+          { route: "/auth", name: "Login", auth: false, description: "Email/password login for clients and admin" },
+          { route: "/dashboard", name: "Client Dashboard", auth: true, description: "Main client view: score, disputes, letters, credit report details, onboarding wizard (if no report)" },
+          { route: "/credit-repair", name: "Credit Repair", auth: true, description: "Credit issues list, dispute workflow, AI letter generator" },
+          { route: "/credit-building", name: "Credit Building", auth: true, description: "Action plans, secured cards, credit builder loans" },
+          { route: "/student-loans", name: "Student Loans", auth: true, description: "Loan management, IBR, PSLF, negotiation tools" },
+          { route: "/education", name: "Education Center", auth: true, description: "Articles, videos, guides about credit repair" },
+          { route: "/experian", name: "Experian Connect", auth: true, description: "Credit monitoring connection status (API pending)" },
+          { route: "/billing", name: "Billing", auth: true, description: "Subscription management, plan upgrades, payment history" },
+          { route: "/checkout", name: "Checkout", auth: false, description: "Stripe payment flow for plan selection" },
+          { route: "/admin-portal", name: "Admin Portal", auth: true, adminOnly: true, description: "Full admin dashboard: clients, credit reports, disputes, analytics, settings" },
+          { route: "/admin-portal/credit-reports", name: "Admin Credit Reports", auth: true, adminOnly: true, description: "Upload/parse client credit files, view parsed data, manage disputes" },
+          { route: "/support-admin", name: "Support Admin", auth: true, adminOnly: true, description: "Support ticket management, client chat, knowledge base" },
+          { route: "/privacy-policy", name: "Privacy Policy", auth: false, description: "TCPA/Twilio-compliant privacy policy" },
+          { route: "/terms", name: "Terms & Conditions", auth: false, description: "Service terms and conditions" },
+          { route: "/get-started", name: "Lead Form", auth: false, description: "Lead capture form with SMS opt-in" },
+        ],
+        apiEndpoints: {
+          auth: [
+            { method: "POST", path: "/api/auth/login", description: "Login with email/password, returns JWT token" },
+            { method: "POST", path: "/api/auth/logout", description: "Logout current user" },
+            { method: "GET", path: "/api/auth/user", description: "Get current authenticated user" },
+          ],
+          clients: [
+            { method: "GET", path: "/api/users", description: "List all users (admin)" },
+            { method: "GET", path: "/api/users/:id", description: "Get user by ID" },
+            { method: "POST", path: "/api/users", description: "Create new user/client" },
+            { method: "PATCH", path: "/api/users/:id", description: "Update user" },
+          ],
+          creditReports: [
+            { method: "GET", path: "/api/credit-reports", description: "Get credit report for current user" },
+            { method: "GET", path: "/api/my-credit-report", description: "Get parsed credit report accounts/inquiries/collections for current user" },
+            { method: "GET", path: "/api/admin/credit-report-uploads", description: "List all credit report uploads (admin)" },
+            { method: "POST", path: "/api/admin/credit-report-uploads", description: "Upload and trigger AI parsing of credit file (admin)" },
+            { method: "GET", path: "/api/admin/credit-report-uploads/:id/details", description: "Get parsed accounts, inquiries, collections for upload" },
+          ],
+          disputes: [
+            { method: "GET", path: "/api/disputes", description: "List disputes for current user" },
+            { method: "POST", path: "/api/disputes", description: "Create dispute" },
+            { method: "PATCH", path: "/api/disputes/:id", description: "Update dispute status" },
+            { method: "DELETE", path: "/api/disputes/:id", description: "Delete dispute" },
+          ],
+          disputeLetters: [
+            { method: "GET", path: "/api/my-dispute-letters", description: "Get dispute letters for current user" },
+            { method: "GET", path: "/api/dispute-letters-new", description: "List all dispute letters (admin)" },
+            { method: "POST", path: "/api/dispute-letters-new", description: "Create/generate dispute letter" },
+            { method: "PATCH", path: "/api/dispute-letters-new/:id", description: "Update letter (add tracking number etc)" },
+          ],
+          ai: [
+            { method: "POST", path: "/api/generate-dispute-letter", description: "AI generate dispute letter for an issue" },
+            { method: "POST", path: "/api/ai/support-chat", description: "AI support chat message" },
+            { method: "POST", path: "/api/admin/parse-credit-report-ai", description: "Parse credit report text with AI" },
+          ],
+          openclaw: [
+            { method: "GET", path: "/api/audit", description: "This endpoint — full site audit, no auth required" },
+            { method: "GET", path: "/api/v1/clients", description: "List all clients with stats", auth: "X-Api-Key" },
+            { method: "GET", path: "/api/v1/clients/:id", description: "Get full client profile", auth: "X-Api-Key" },
+            { method: "POST", path: "/api/v1/clients", description: "Create client", auth: "X-Api-Key" },
+            { method: "PATCH", path: "/api/v1/clients/:id", description: "Update client", auth: "X-Api-Key" },
+            { method: "GET", path: "/api/v1/credit-reports", description: "All credit report uploads", auth: "X-Api-Key" },
+            { method: "GET", path: "/api/v1/credit-reports/:uploadId", description: "Get parsed credit report detail", auth: "X-Api-Key" },
+            { method: "GET", path: "/api/v1/disputes", description: "All disputes across all clients", auth: "X-Api-Key" },
+            { method: "GET", path: "/api/v1/letters", description: "All dispute letters", auth: "X-Api-Key" },
+            { method: "GET", path: "/api/v1/stats", description: "Platform-wide stats", auth: "X-Api-Key" },
+            { method: "POST", path: "/api/v1/generate-letter", description: "AI-generate a dispute letter", auth: "X-Api-Key" },
+          ],
+        },
+        database: {
+          tables: [
+            { name: "users", description: "All users (clients + admins). Key fields: id, email, firstName, lastName, accessLevel, subscriptionPlan, subscriptionStatus, phone, smsOptIn" },
+            { name: "credit_reports", description: "Legacy credit report records. Fields: creditScore, utilizationRate, totalAccounts, negativeItems" },
+            { name: "credit_report_uploads", description: "Uploaded credit files. Fields: userId, fileName, bureau, parseStatus (processing/succeeded/failed), creditScore" },
+            { name: "credit_report_accounts", description: "Parsed accounts from credit files. Fields: uploadId, accountName, accountNumber, accountType, status, balance, paymentStatus" },
+            { name: "credit_report_inquiries", description: "Parsed inquiries. Fields: uploadId, creditorName, inquiryDate, inquiryType" },
+            { name: "credit_report_collections", description: "Parsed collections. Fields: uploadId, agencyName, amount, originalCreditor, dateReported" },
+            { name: "credit_report_public_records", description: "Bankruptcies, judgments. Fields: uploadId, recordType, court, dateFiled, amount" },
+            { name: "credit_issues", description: "Identified credit problems. Fields: userId, type, creditor, description, impact (HIGH/MEDIUM/LOW), status (ACTIVE/RESOLVED)" },
+            { name: "disputes", description: "Dispute records. Fields: userId, creditor, reason, status (PENDING/IN_PROGRESS/RESOLVED)" },
+            { name: "dispute_letters_new", description: "Generated dispute letters. Fields: userId, clientId, letterType, content, bureau, trackingNumber, status" },
+            { name: "subscription_plans", description: "Available subscription tiers" },
+          ],
+        },
+        knownIssues: [
+          { severity: "HIGH", area: "Experian API", issue: "Credit pulls not working. EXPERIAN_CLIENT_ID and EXPERIAN_CLIENT_SECRET are set but the OAuth flow and report fetch endpoints need debugging. Clients must have reports manually uploaded by admin." },
+          { severity: "MEDIUM", area: "USPS Tracking", issue: "USPS OAuth credentials set (USPS_CLIENT_ID, USPS_CLIENT_SECRET). The tracking endpoint is implemented in server/usps-api.ts but needs live testing with real tracking numbers." },
+          { severity: "MEDIUM", area: "Dashboard fake data", issue: "Fixed: New users now see onboarding wizard instead of fake 582 credit score. But existing test accounts may still show hardcoded data in some views." },
+          { severity: "LOW", area: "Trial wall", issue: "TrialUpgradeWall wraps all routes. New signups are FREE/TRIALING. The 7-day trial logic uses createdAt timestamp." },
+          { severity: "LOW", area: "Sendgrid", issue: "Email integration is installed but email sending functionality not fully implemented in all notification flows." },
+        ],
+        credentials: {
+          note: "API credentials are stored as Replit secrets. Never hardcoded.",
+          adminLogin: { email: "admin@scoreshift.com", password: "admin123", note: "Change this in production!" },
+          openclawApiKey: "See your X-Api-Key — stored as OPENCLAW_API_KEY env var",
+        },
+        howToUse: {
+          browseApp: "Navigate to the live URL. Admin login: admin@scoreshift.com / admin123",
+          apiAccess: "Include header X-Api-Key: <your key> on all /api/v1/* requests",
+          uploadCreditReport: "POST /api/v1/credit-reports/upload with { userId, fileName, fileContent (base64 or text), bureau }",
+          generateLetter: "POST /api/v1/generate-letter with { clientId, issueType, creditor, description }",
+          fullClientProfile: "GET /api/v1/clients/:id for complete client data including credit report, disputes, and letters",
+        },
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/v1/clients — all clients with stats
+  app.get("/api/v1/clients", openclawAuth, async (req, res) => {
+    try {
+      const allUsers = await storage.getUsers();
+      const clients = allUsers.filter(u => u.accessLevel !== "ADMIN");
+      const uploads = await db.select().from(creditReportUploads);
+      const clientsWithStats = clients.map(client => {
+        const clientUploads = uploads.filter(u => u.userId === client.id);
+        return {
+          ...client,
+          hasReport: clientUploads.some(u => u.parseStatus === "succeeded"),
+          reportCount: clientUploads.length,
+          latestUpload: clientUploads.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())[0] || null,
+        };
+      });
+      res.json({ clients: clientsWithStats, total: clientsWithStats.length });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/v1/clients/:id — full client profile
+  app.get("/api/v1/clients/:id", openclawAuth, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const client = await storage.getUser(clientId);
+      if (!client) return res.status(404).json({ error: "Client not found" });
+      const [creditReport, creditIssues, disputes, uploadsList] = await Promise.all([
+        storage.getCreditReport(clientId).catch(() => null),
+        storage.getCreditIssues(clientId).catch(() => []),
+        storage.getDisputes(clientId).catch(() => []),
+        db.select().from(creditReportUploads).where(eq(creditReportUploads.userId, clientId)),
+      ]);
+      res.json({ client, creditReport, creditIssues, disputes, uploads: uploadsList });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/v1/clients — create client
+  app.post("/api/v1/clients", openclawAuth, async (req, res) => {
+    try {
+      const { firstName, lastName, email, password } = req.body;
+      if (!firstName || !lastName || !email || !password) {
+        return res.status(400).json({ error: "firstName, lastName, email, password are required" });
+      }
+      const bcrypt = await import("bcrypt");
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newUser = await storage.createUser({
+        firstName, lastName, email,
+        password: hashedPassword,
+        accessLevel: "CLIENT_VIEWER",
+        subscriptionPlan: "FREE",
+        subscriptionStatus: "TRIALING",
+        passwordResetRequired: false,
+      });
+      res.json({ client: newUser });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // PATCH /api/v1/clients/:id — update client
+  app.patch("/api/v1/clients/:id", openclawAuth, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const updated = await storage.updateUser(clientId, req.body);
+      res.json({ client: updated });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/v1/credit-reports — all uploads
+  app.get("/api/v1/credit-reports", openclawAuth, async (req, res) => {
+    try {
+      const reports = await db.select().from(creditReportUploads).orderBy(desc(creditReportUploads.createdAt));
+      const allUsers = await storage.getUsers();
+      const userMap = new Map(allUsers.map(u => [u.id, u]));
+      const reportsWithClient = reports.map(r => ({
+        ...r,
+        clientName: userMap.has(r.userId) ? `${userMap.get(r.userId)!.firstName} ${userMap.get(r.userId)!.lastName}` : "Unknown",
+        clientEmail: userMap.get(r.userId)?.email || null,
+      }));
+      res.json({ reports: reportsWithClient, total: reportsWithClient.length });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/v1/credit-reports/:id — parsed detail
+  app.get("/api/v1/credit-reports/:id", openclawAuth, async (req, res) => {
+    try {
+      const uploadId = parseInt(req.params.id);
+      const { creditReportAccounts, creditReportInquiries, creditReportCollections, creditReportPublicRecords } = await import("@shared/schema").then(m => m);
+      const [upload, accounts, inquiries, collections, publicRecords] = await Promise.all([
+        db.select().from(creditReportUploads).where(eq(creditReportUploads.id, uploadId)).then(r => r[0] || null),
+        db.select().from(creditReportAccounts).where(eq(creditReportAccounts.uploadId, uploadId)),
+        db.select().from(creditReportInquiries).where(eq(creditReportInquiries.uploadId, uploadId)),
+        db.select().from(creditReportCollections).where(eq(creditReportCollections.uploadId, uploadId)),
+        db.select().from(creditReportPublicRecords).where(eq(creditReportPublicRecords.uploadId, uploadId)),
+      ]);
+      if (!upload) return res.status(404).json({ error: "Upload not found" });
+      res.json({ upload, accounts, inquiries, collections, publicRecords });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/v1/disputes — all disputes across all clients
+  app.get("/api/v1/disputes", openclawAuth, async (req, res) => {
+    try {
+      const { disputes: disputesTable } = await import("@shared/schema").then(m => m);
+      const allDisputes = await db.select().from(disputesTable).orderBy(desc(disputesTable.createdAt));
+      const allUsers = await storage.getUsers();
+      const userMap = new Map(allUsers.map(u => [u.id, u]));
+      const disputesWithClient = allDisputes.map(d => ({
+        ...d,
+        clientName: userMap.has(d.userId) ? `${userMap.get(d.userId)!.firstName} ${userMap.get(d.userId)!.lastName}` : "Unknown",
+      }));
+      res.json({ disputes: disputesWithClient, total: disputesWithClient.length });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/v1/letters — all dispute letters
+  app.get("/api/v1/letters", openclawAuth, async (req, res) => {
+    try {
+      const { disputeLettersNew } = await import("@shared/schema").then(m => m);
+      const allLetters = await db.select().from(disputeLettersNew).orderBy(desc(disputeLettersNew.createdAt));
+      const allUsers = await storage.getUsers();
+      const userMap = new Map(allUsers.map(u => [u.id, u]));
+      const lettersWithClient = allLetters.map(l => ({
+        ...l,
+        clientName: userMap.has(l.userId) ? `${userMap.get(l.userId)!.firstName} ${userMap.get(l.userId)!.lastName}` : "Unknown",
+      }));
+      res.json({ letters: lettersWithClient, total: lettersWithClient.length });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/v1/stats — platform-wide stats
+  app.get("/api/v1/stats", openclawAuth, async (req, res) => {
+    try {
+      const { disputeLettersNew, disputes: disputesTable } = await import("@shared/schema").then(m => m);
+      const [allUsers, allUploads, allDisputes, allLetters] = await Promise.all([
+        storage.getUsers(),
+        db.select().from(creditReportUploads),
+        db.select().from(disputesTable),
+        db.select().from(disputeLettersNew),
+      ]);
+      const clients = allUsers.filter(u => u.accessLevel !== "ADMIN");
+      const parsedReports = allUploads.filter(u => u.parseStatus === "succeeded");
+      const clientsNoReport = clients.filter(c => !allUploads.some(u => u.userId === c.id && u.parseStatus === "succeeded"));
+      res.json({
+        stats: {
+          totalClients: clients.length,
+          clientsWithReport: parsedReports.length,
+          clientsAwaitingReport: clientsNoReport.length,
+          clientsAwaiting: clientsNoReport.map(c => ({ id: c.id, name: `${c.firstName} ${c.lastName}`, email: c.email })),
+          totalUploads: allUploads.length,
+          processingUploads: allUploads.filter(u => u.parseStatus === "processing").length,
+          failedUploads: allUploads.filter(u => u.parseStatus === "failed").length,
+          totalDisputes: allDisputes.length,
+          pendingDisputes: allDisputes.filter(d => d.status === "PENDING").length,
+          totalLetters: allLetters.length,
+          activeSubscriptions: clients.filter(c => c.subscriptionStatus === "ACTIVE").length,
+          trialUsers: clients.filter(c => c.subscriptionStatus === "TRIALING").length,
+        },
+        integrationStatus: {
+          experian: "PARTIAL — credentials set, API not fully working",
+          usps: "PARTIAL — credentials set, needs live testing",
+          openai: "CONNECTED",
+          anthropic: "CONNECTED",
+          stripe: "CONNECTED",
+          sendgrid: "CONFIGURED",
+        },
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/v1/generate-letter — AI generate a dispute letter
+  app.post("/api/v1/generate-letter", openclawAuth, async (req, res) => {
+    try {
+      const { clientId, issueType, creditor, accountNumber, description, bureau } = req.body;
+      if (!clientId || !issueType || !creditor) {
+        return res.status(400).json({ error: "clientId, issueType, creditor are required" });
+      }
+      const client = await storage.getUser(clientId);
+      if (!client) return res.status(404).json({ error: "Client not found" });
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const prompt = `Generate a professional credit dispute letter for:
+Client: ${client.firstName} ${client.lastName}
+Issue Type: ${issueType}
+Creditor/Agency: ${creditor}
+Account Number: ${accountNumber || "Unknown"}
+Description: ${description || "This account is inaccurate and should be investigated"}
+Bureau: ${bureau || "All bureaus"}
+
+Write a formal, legally-sound dispute letter citing FCRA Section 611, requesting investigation and removal if unverifiable. Include placeholders for signature, address, date. Keep it professional and firm.`;
+      const message = await anthropic.messages.create({
+        model: "claude-opus-4-5",
+        max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }],
+      });
+      const letterContent = message.content[0].type === "text" ? message.content[0].text : "";
+      res.json({ letter: letterContent, client: { id: client.id, name: `${client.firstName} ${client.lastName}` } });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

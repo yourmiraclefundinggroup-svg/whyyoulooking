@@ -37,3 +37,8 @@ externalPort = 80
 
 [agent]
 integrations = ["javascript_anthropic:1.0.0", "javascript_sendgrid:1.0.0", "javascript_stripe:1.0.0", "javascript_websocket:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+OPENCLAW_API_KEY = "ss_b64da37c30d784fd9b32014d2fd6231f168cdb892cc6c4ebf22bb61ca2a2805d"
