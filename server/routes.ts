@@ -4917,6 +4917,18 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
               } catch (decodeErr) {
                 throw new Error("Failed to decode file content as text");
               }
+              // For HTML files, strip tags to get clean text (much smaller, easier to parse)
+              if (sourceFormat === 'html') {
+                textContent = textContent
+                  .replace(/<script[\s\S]*?<\/script>/gi, '')
+                  .replace(/<style[\s\S]*?<\/style>/gi, '')
+                  .replace(/<!--[\s\S]*?-->/g, '')
+                  .replace(/<[^>]+>/g, ' ')
+                  .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/&#\d+;/g, ' ')
+                  .replace(/\s{3,}/g, '\n')
+                  .trim();
+                console.log("HTML stripped to text, length:", textContent.length);
+              }
               if (!textContent || textContent.trim().length < 50) {
                 throw new Error("Extracted text is too short or empty - unable to parse credit report");
               }
@@ -4925,7 +4937,7 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
                 max_tokens: 8000,
                 system: parseSystemPrompt,
                 messages: [
-                  { role: "user", content: `Extract ALL credit report data from this document. Be thorough - extract EVERY account, EVERY inquiry, EVERY collection. Do not skip any items. Count everything carefully.\n\nCREDIT REPORT CONTENT:\n\n${textContent.substring(0, 80000)}` }
+                  { role: "user", content: `Extract ALL credit report data from this document. Be thorough - extract EVERY account, EVERY inquiry, EVERY collection. Do not skip any items. Count everything carefully.\n\nCREDIT REPORT CONTENT:\n\n${textContent.substring(0, 120000)}` }
                 ]
               });
             }
@@ -5122,6 +5134,22 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
               }
             }
 
+            // Validate that we actually got data - empty results mean the file had no readable content
+            const totalItems = (parsedData.accounts?.length || 0) +
+              (parsedData.inquiries?.length || 0) +
+              (parsedData.collections?.length || 0) +
+              (parsedData.publicRecords?.length || 0);
+
+            if (totalItems === 0 && !parsedData.creditScore) {
+              // The AI found nothing - the file doesn't contain readable credit data
+              throw new Error(
+                "No credit data found in the uploaded file. " +
+                "If uploading from Experian's website, please save the page as HTML (File → Save Page As → Webpage, HTML Only) " +
+                "instead of printing to PDF, since Experian's printable report renders content with JavaScript that doesn't embed in PDFs. " +
+                "Then upload the saved .html file and set the format to 'HTML'."
+              );
+            }
+
             // Update upload status to succeeded
             await storage.updateCreditReportUpload(upload.id, {
               parseStatus: "succeeded",
@@ -5129,7 +5157,7 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
               rawExtractionJson: parsedData
             });
 
-            console.log("AI parsing completed successfully for upload:", upload.id);
+            console.log("AI parsing completed successfully for upload:", upload.id, "- found", totalItems, "items, score:", parsedData.creditScore);
 
           } catch (aiError: any) {
             console.error("AI parsing error:", aiError);

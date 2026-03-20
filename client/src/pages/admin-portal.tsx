@@ -1302,6 +1302,11 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
                         <p className="text-xs text-[hsl(var(--admin-text-muted))]">
                           {(selectedFile.size / 1024).toFixed(1)} KB
                         </p>
+                        {selectedFile.name.toLowerCase().endsWith('.pdf') && selectedFile.size < 150000 && (
+                          <div className="text-xs text-amber-400 bg-amber-900/30 border border-amber-700 rounded p-2 mt-1 text-left">
+                            ⚠️ This PDF is very small ({(selectedFile.size / 1024).toFixed(0)} KB). Experian's printable report may not embed all content in PDFs. If parsing fails, save the page as HTML instead (see tip below).
+                          </div>
+                        )}
                         <Button 
                           type="button" 
                           variant="outline" 
@@ -1328,6 +1333,19 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
                       </div>
                     )}
                   </div>
+                </div>
+                {/* Experian HTML tip */}
+                <div className="rounded-lg border border-blue-800 bg-blue-950/30 p-3 space-y-1">
+                  <p className="text-xs font-medium text-blue-300">💡 Tip: Experian Printable Reports</p>
+                  <p className="text-xs text-blue-200/80">
+                    Experian's printable report URL uses JavaScript rendering — when saved as PDF it may capture only page headers with no credit data. For best results:
+                  </p>
+                  <ol className="text-xs text-blue-200/80 list-decimal list-inside space-y-0.5">
+                    <li>Open the Experian printable report in your browser</li>
+                    <li>Press <strong>Ctrl+S</strong> (or File → Save Page As)</li>
+                    <li>Choose <strong>"Webpage, HTML Only"</strong></li>
+                    <li>Upload the saved <code>.html</code> file and set format to <strong>HTML</strong></li>
+                  </ol>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
