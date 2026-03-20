@@ -1074,7 +1074,7 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
     return () => clearInterval(interval);
   }, [hasProcessingReports, creditReports]);
 
-  const getProcessingStatus = (reportId: number, status: string) => {
+  const getProcessingStatus = (reportId: number, status: string, parseError?: string | null) => {
     if (status === 'processing') {
       const progress = processingProgress[reportId] || 5;
       return (
@@ -1090,6 +1090,14 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
             />
           </div>
           <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-1">{getEstimatedTime(progress)}</p>
+        </div>
+      );
+    }
+    if (status === 'failed' && parseError) {
+      return (
+        <div className="min-w-[140px]">
+          {getStatusBadge(status)}
+          <p className="text-xs text-red-400 mt-1 max-w-[200px] truncate" title={parseError}>{parseError}</p>
         </div>
       );
     }
@@ -1515,7 +1523,7 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
                         <span className="text-[hsl(var(--admin-text-muted))]">--</span>
                       )}
                     </AdminTableCell>
-                    <AdminTableCell>{getProcessingStatus(report.id, report.parseStatus)}</AdminTableCell>
+                    <AdminTableCell>{getProcessingStatus(report.id, report.parseStatus, report.parseError)}</AdminTableCell>
                     <AdminTableCell>
                       <span className="text-[hsl(var(--admin-text-muted))] text-sm">
                         {report.createdAt ? new Date(report.createdAt).toLocaleDateString() : '--'}
@@ -1601,6 +1609,14 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
     select: (data: any) => {
       if (Array.isArray(data)) {
         return data.find((r: any) => r.id === reportId);
+      }
+      // Detail endpoint returns { upload, client, accounts, ... }
+      if (data && data.upload) {
+        const client = data.client;
+        return {
+          ...data.upload,
+          clientName: client ? `${client.firstName} ${client.lastName}` : undefined
+        };
       }
       return data;
     }
@@ -2131,6 +2147,12 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                       {report?.parseStatus}
                     </AdminBadge>
                   </div>
+                  {report?.parseStatus === 'failed' && report?.parseError && (
+                    <div className="p-3 rounded-lg bg-red-950/40 border border-red-800">
+                      <p className="text-xs text-red-400 font-medium mb-1">Parse Error</p>
+                      <p className="text-xs text-red-300 break-words">{report.parseError}</p>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
                     <span className="text-[hsl(var(--admin-text-muted))]">Uploaded</span>
                     <span className="text-white">{report?.createdAt ? new Date(report.createdAt).toLocaleDateString() : '--'}</span>

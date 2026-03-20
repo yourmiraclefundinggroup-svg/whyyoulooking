@@ -363,13 +363,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = (req as any).user;
       const uploads = await storage.getCreditReportUploads(user.id);
       
-      if (uploads.length === 0) {
+      // Only consider successfully parsed uploads
+      const succeededUploads = uploads.filter(u => u.parseStatus === "succeeded");
+      
+      if (succeededUploads.length === 0) {
         return res.json({ hasReport: false, accounts: [], inquiries: [], collections: [], publicRecords: [] });
       }
       
-      // Get the most recent upload
-      const latestUpload = uploads.sort((a, b) => 
-        new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+      // Get the most recent succeeded upload
+      const latestUpload = succeededUploads.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )[0];
       
       // Fetch all data for this upload
@@ -383,9 +386,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         hasReport: true,
         uploadId: latestUpload.id,
-        uploadedAt: latestUpload.uploadedAt,
+        uploadedAt: latestUpload.createdAt,
         fileName: latestUpload.fileName,
-        parsedScore: latestUpload.parsedScore,
+        parsedScore: latestUpload.creditScore,
+        creditScore: latestUpload.creditScore,
+        bureau: latestUpload.bureau,
         accounts,
         inquiries,
         collections,
@@ -4878,9 +4883,15 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
               let textContent: string;
               
               if (sourceFormat === 'pdf') {
+                const os = require('os');
+                const path = require('path');
+                const fsSync = require('fs');
+                const tmpPath = path.join(os.tmpdir(), `credit_report_${upload.id}_${Date.now()}.pdf`);
                 try {
                   const pdfBuffer = Buffer.from(fileContent, 'base64');
-                  const parser = new PDFParse({ data: pdfBuffer });
+                  if (pdfBuffer.length < 10) throw new Error("PDF file appears to be empty or corrupt");
+                  fsSync.writeFileSync(tmpPath, pdfBuffer);
+                  const parser = new PDFParse({ url: tmpPath });
                   const pdfData = await parser.getText();
                   textContent = pdfData.text;
                   await parser.destroy();
@@ -4888,6 +4899,8 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
                 } catch (pdfErr: any) {
                   console.error("PDF parse error:", pdfErr);
                   throw new Error(`Failed to parse PDF: ${pdfErr.message}`);
+                } finally {
+                  try { require('fs').unlinkSync(tmpPath); } catch {}
                 }
               } else {
                 // For text/html/csv formats, decode as text
@@ -4991,6 +5004,13 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
             // Save extracted data to database
             const clientId = upload.userId;
 
+            // Helper: strip currency formatting before saving to DB
+            const parseCurrency = (v: any): number | null => {
+              if (v == null) return null;
+              const n = parseFloat(String(v).replace(/[$,\s]/g, ''));
+              return isNaN(n) ? null : Math.round(n);
+            };
+
             // Save accounts
             if (parsedData.accounts && Array.isArray(parsedData.accounts)) {
               for (const account of parsedData.accounts) {
@@ -5002,8 +5022,8 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
                     accountNumberMasked: account.accountNumberMasked || null,
                     accountType: account.accountType || null,
                     status: account.status || null,
-                    balance: account.balance ? parseInt(account.balance) : null,
-                    creditLimit: account.creditLimit ? parseInt(account.creditLimit) : null,
+                    balance: parseCurrency(account.balance),
+                    creditLimit: parseCurrency(account.creditLimit),
                     paymentStatus: account.paymentStatus || null,
                     dateOpened: account.dateOpened || null,
                     derogatoryFlags: account.derogatoryFlags || [],
@@ -5042,7 +5062,7 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
                     clientId,
                     agencyName: collection.agencyName || "Unknown Agency",
                     originalCreditor: collection.originalCreditor || null,
-                    amount: collection.amount ? parseInt(collection.amount) : null,
+                    amount: parseCurrency(collection.amount),
                     dateOpened: collection.dateOpened || null,
                     status: collection.status || null
                   });

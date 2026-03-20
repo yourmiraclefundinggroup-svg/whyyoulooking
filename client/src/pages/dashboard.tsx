@@ -513,7 +513,7 @@ export default function Dashboard() {
   const resolvedIssues = creditIssues.filter(issue => issue.status === 'RESOLVED');
 
   const hasReport = myCreditReport?.hasReport;
-  const currentScore = creditReport?.creditScore ?? null;
+  const currentScore = myCreditReport?.parsedScore ?? creditReport?.creditScore ?? null;
   const targetScore = creditGoal?.targetScore || 720;
   const scoreProgress = currentScore ? Math.min((currentScore / targetScore) * 100, 100) : 0;
 
