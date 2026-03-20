@@ -4878,43 +4878,48 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
                 ]
               });
               console.log("Image parsing complete");
+            } else if (sourceFormat === 'pdf') {
+              // Send PDF directly to Claude as a native document (works for both text and image-based PDFs)
+              const pdfBuffer = Buffer.from(fileContent, 'base64');
+              if (pdfBuffer.length < 10) throw new Error("PDF file appears to be empty or corrupt");
+              console.log("Sending PDF to Claude natively, size:", pdfBuffer.length, "bytes");
+              aiResponse = await anthropic.beta.messages.create({
+                model: "claude-opus-4-5",
+                max_tokens: 16000,
+                betas: ["pdfs-2024-09-25"],
+                system: parseSystemPrompt,
+                messages: [
+                  {
+                    role: "user",
+                    content: [
+                      {
+                        type: "document",
+                        source: {
+                          type: "base64",
+                          media_type: "application/pdf",
+                          data: fileContent
+                        }
+                      } as any,
+                      {
+                        type: "text",
+                        text: "Extract ALL credit report data from this PDF. Be thorough - extract EVERY account, EVERY inquiry, EVERY collection. Do not skip any items. Count everything carefully. Include the credit score if shown."
+                      }
+                    ]
+                  }
+                ]
+              }) as any;
+              console.log("PDF native parsing complete via Claude");
             } else {
-              // Extract text from PDF or text files
+              // For text/html/csv formats, decode as text and send
               let textContent: string;
-              
-              if (sourceFormat === 'pdf') {
-                const os = require('os');
-                const path = require('path');
-                const fsSync = require('fs');
-                const tmpPath = path.join(os.tmpdir(), `credit_report_${upload.id}_${Date.now()}.pdf`);
-                try {
-                  const pdfBuffer = Buffer.from(fileContent, 'base64');
-                  if (pdfBuffer.length < 10) throw new Error("PDF file appears to be empty or corrupt");
-                  fsSync.writeFileSync(tmpPath, pdfBuffer);
-                  const parser = new PDFParse({ url: tmpPath });
-                  const pdfData = await parser.getText();
-                  textContent = pdfData.text;
-                  await parser.destroy();
-                  console.log("PDF text extracted, length:", textContent.length);
-                } catch (pdfErr: any) {
-                  console.error("PDF parse error:", pdfErr);
-                  throw new Error(`Failed to parse PDF: ${pdfErr.message}`);
-                } finally {
-                  try { require('fs').unlinkSync(tmpPath); } catch {}
-                }
-              } else {
-                // For text/html/csv formats, decode as text
-                try {
-                  textContent = Buffer.from(fileContent, 'base64').toString('utf-8');
-                } catch (decodeErr) {
-                  throw new Error("Failed to decode file content as text");
-                }
+              try {
+                textContent = Buffer.from(fileContent, 'base64').toString('utf-8');
+              } catch (decodeErr) {
+                throw new Error("Failed to decode file content as text");
               }
-              
               if (!textContent || textContent.trim().length < 50) {
                 throw new Error("Extracted text is too short or empty - unable to parse credit report");
               }
-              
               aiResponse = await anthropic.messages.create({
                 model: "claude-sonnet-4-20250514",
                 max_tokens: 8000,
@@ -4979,6 +4984,33 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
                       }
                     ]
                   });
+                } else if (sourceFormat === 'pdf') {
+                  // Retry PDF with native document API
+                  retryResponse = await anthropic.beta.messages.create({
+                    model: "claude-opus-4-5",
+                    max_tokens: 8000,
+                    betas: ["pdfs-2024-09-25"],
+                    system: "You are a JSON extraction expert. Extract credit data and return ONLY valid JSON. No markdown, no code blocks.",
+                    messages: [
+                      {
+                        role: "user",
+                        content: [
+                          {
+                            type: "document",
+                            source: {
+                              type: "base64",
+                              media_type: "application/pdf",
+                              data: fileContent
+                            }
+                          } as any,
+                          {
+                            type: "text",
+                            text: "Extract credit report data as JSON with these keys: creditScore (number), accounts (array with creditorName, accountType, status, balance, paymentStatus, derogatoryFlags array, latePayments object), inquiries (array with creditorName, inquiryDate, inquiryType), collections (array with agencyName, amount), publicRecords (array with recordType, status). Return ONLY JSON."
+                          }
+                        ]
+                      }
+                    ]
+                  }) as any;
                 } else {
                   retryResponse = await anthropic.messages.create({
                     model: "claude-sonnet-4-20250514",
