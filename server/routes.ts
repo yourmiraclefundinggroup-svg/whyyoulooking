@@ -6453,6 +6453,46 @@ Write a formal, legally-sound dispute letter citing FCRA Section 611, requesting
     }
   });
 
+  // ─── Lob.com Integration Stub ─────────────────────────────────────────────
+  // TODO: Uncomment and implement when LOB_API_KEY is configured.
+  // Lob.com is a real mail API that will replace manual USPS dispute letter mailing.
+  // It provides automatic USPS tracking, certified mail, and delivery confirmation.
+  //
+  // app.post("/api/lob/send-letter", authenticateToken, async (req: Request, res: Response) => {
+  //   try {
+  //     const { to, from, pdf_url, description, bureau } = req.body;
+  //
+  //     // Initialize Lob client with API key
+  //     // const Lob = require("lob")(process.env.LOB_API_KEY);
+  //
+  //     // Create letter via Lob API
+  //     // const letter = await Lob.letters.create({
+  //     //   description: description || `ScoreShift Dispute Letter — ${bureau}`,
+  //     //   to: { name: to.name, address_line1: to.address, city: to.city, state: to.state, zip: to.zip, country: "US" },
+  //     //   from: { name: from.name, address_line1: from.address, city: from.city, state: from.state, zip: from.zip, country: "US" },
+  //     //   file: pdf_url,
+  //     //   color: false,
+  //     //   double_sided: false,
+  //     //   mail_type: "usps_first_class",
+  //     //   extra_service: "certified",  // Certified mail for dispute letters
+  //     // });
+  //
+  //     // Return tracking number and letter ID
+  //     // res.json({
+  //     //   success: true,
+  //     //   letterId: letter.id,
+  //     //   trackingNumber: letter.tracking_number,
+  //     //   expectedDeliveryDate: letter.expected_delivery_date,
+  //     //   sentViaLob: true,
+  //     // });
+  //
+  //     res.status(501).json({ error: "Lob integration not yet configured. Set LOB_API_KEY in .env." });
+  //   } catch (error: any) {
+  //     res.status(500).json({ error: error.message });
+  //   }
+  // });
+  // ─── End Lob.com Stub ─────────────────────────────────────────────────────
+
   const httpServer = createServer(app);
   return httpServer;
 }
