@@ -1084,3 +1084,19 @@ export type GamificationBadge = typeof gamificationBadges.$inferSelect;
 export type InsertGamificationBadge = z.infer<typeof insertGamificationBadgeSchema>;
 export type UserAchievement = typeof userAchievements.$inferSelect;
 export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
+
+// Referrals
+export const referrals = pgTable("referrals", {
+  id: serial("id").primaryKey(),
+  referrerId: integer("referrer_id").notNull().references(() => users.id),
+  referredEmail: text("referred_email"),
+  referredUserId: integer("referred_user_id").references(() => users.id),
+  status: text("status").default("pending"), // pending, signed_up, paid, earned
+  rewardAmount: integer("reward_amount").default(25),
+  rewardPaid: boolean("reward_paid").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertReferralSchema = createInsertSchema(referrals);
+export type InsertReferral = z.infer<typeof insertReferralSchema>;
+export type Referral = typeof referrals.$inferSelect;

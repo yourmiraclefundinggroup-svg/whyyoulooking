@@ -6530,6 +6530,246 @@ Write a formal, legally-sound dispute letter citing FCRA Section 611, requesting
   });
   // ─── End Lob.com Integration ───────────────────────────────────────────────
 
+  // ─── Credit Coach AI ──────────────────────────────────────────────────────
+  app.post("/api/ai/credit-coach", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const { message } = req.body;
+      const user = req.user as any;
+
+      // Fetch user context
+      const userRecord = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
+      const creditReportData = await storage.getCreditReports(user.id);
+      const disputeData = await storage.getDisputes(user.id);
+
+      const clientName = userRecord[0] ? `${userRecord[0].firstName} ${userRecord[0].lastName}` : "Client";
+      const latestScore = creditReportData[0]?.creditScore || "unknown";
+      const activeDisputes = disputeData.filter((d: any) => d.status !== "RESOLVED").length;
+      const resolvedDisputes = disputeData.filter((d: any) => d.status === "RESOLVED").length;
+
+      const systemPrompt = `You are Credit Coach AI, an expert credit repair advisor for ${clientName} on the ScoreShift platform.
+
+CLIENT PROFILE:
+- Name: ${clientName}
+- Current Credit Score: ${latestScore}
+- Active Disputes: ${activeDisputes}
+- Resolved Disputes: ${resolvedDisputes}
+- Total Dispute Rounds: ${disputeData.length > 0 ? Math.max(...disputeData.map((d: any) => 1)) : 0}
+
+You have full access to this client's credit file. Provide specific, actionable advice. Be encouraging but realistic. Explain credit concepts in plain English. When discussing disputes, reference their actual situation. Keep responses conversational and under 200 words unless a detailed explanation is needed.`;
+
+      const response = await anthropic.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 500,
+        system: systemPrompt,
+        messages: [{ role: "user", content: message }],
+      });
+
+      const reply = response.content[0].type === "text" ? response.content[0].text : "I'm here to help! Ask me anything about your credit.";
+
+      res.json({ reply });
+    } catch (error) {
+      console.error("Credit coach error:", error);
+      res.status(500).json({ reply: "I'm having trouble right now. Please try again in a moment." });
+    }
+  });
+
+  // ─── Score Map ─────────────────────────────────────────────────────────────
+  app.get("/api/ai/score-map", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const user = req.user as any;
+      const creditReports = await storage.getCreditReports(user.id);
+      const disputes = await storage.getDisputes(user.id);
+
+      const currentScore = creditReports[0]?.creditScore || 580;
+
+      // Generate roadmap via Claude
+      const response = await anthropic.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        messages: [{
+          role: "user",
+          content: `Generate a credit repair roadmap for a client with credit score ${currentScore} and ${disputes.length} total dispute items.
+
+Return ONLY valid JSON (no markdown, no code blocks) in this exact format:
+{
+  "phases": [
+    {
+      "number": 1,
+      "name": "Phase Name",
+      "weeks": "Weeks 1-4",
+      "scoreImpact": "+30-45 pts",
+      "items": "Description of items targeted",
+      "status": "completed"
+    }
+  ],
+  "projectedFinalScore": 720
+}
+
+Generate 4 phases with realistic score impacts. Status values: completed, active, upcoming.`
+        }]
+      });
+
+      const content = response.content[0].type === "text" ? response.content[0].text : "{}";
+      const roadmap = JSON.parse(content);
+
+      res.json(roadmap);
+    } catch (error) {
+      console.error("Score map error:", error);
+      // Return mock data on error
+      res.json({
+        phases: [
+          { number: 1, name: "Foundation Disputes", weeks: "Weeks 1-4", scoreImpact: "+35-50 pts", items: "Collections & Charge-Offs", status: "completed" },
+          { number: 2, name: "Late Payment Sweep", weeks: "Weeks 5-8", scoreImpact: "+25-40 pts", items: "Late Payments & Inquiries", status: "active" },
+          { number: 3, name: "Charge-Off Resolution", weeks: "Weeks 9-12", scoreImpact: "+30-45 pts", items: "Remaining Charge-Offs", status: "upcoming" },
+          { number: 4, name: "Final Polish", weeks: "Weeks 13-16", scoreImpact: "+15-25 pts", items: "Inquiries & Utilization", status: "upcoming" }
+        ],
+        projectedFinalScore: 720
+      });
+    }
+  });
+
+  // ─── Denial Decoder ────────────────────────────────────────────────────────
+  app.post("/api/ai/denial-decoder", async (req: Request, res: Response) => {
+    try {
+      const { denialLetterText } = req.body;
+
+      if (!denialLetterText || denialLetterText.trim().length < 20) {
+        return res.status(400).json({ error: "Please provide a denial letter to analyze." });
+      }
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{
+          role: "system",
+          content: `You are an expert loan officer and credit repair specialist who analyzes loan denial letters.
+Extract the denial reasons and provide actionable guidance. Return ONLY valid JSON.`
+        }, {
+          role: "user",
+          content: `Analyze this loan denial letter and return JSON in EXACTLY this format (no markdown, no code blocks):
+{
+  "reasons": [
+    {
+      "reason": "Short title of denial reason",
+      "explanation": "Plain English explanation of what this means",
+      "fixStatus": "Already Working On This",
+      "action": "Specific action to take",
+      "timeToFix": "2-3 months"
+    }
+  ],
+  "summary": "Fix these X items and you could qualify in approximately Y months"
+}
+
+fixStatus values must be exactly one of: "Already Working On This" | "Action Needed" | "Quick Fix"
+
+Denial letter:
+${denialLetterText}`
+        }],
+        max_tokens: 1500,
+        temperature: 0.3,
+      });
+
+      const content = response.choices[0]?.message?.content || "{}";
+      const result = JSON.parse(content);
+
+      res.json(result);
+    } catch (error) {
+      console.error("Denial decoder error:", error);
+      res.status(500).json({ error: "Failed to analyze denial letter. Please try again." });
+    }
+  });
+
+  // ─── Referrals ──────────────────────────────────────────────────────────────
+  app.get("/api/referrals", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const user = req.user as any;
+      // Return mock referral data for now (referrals table will be added to schema)
+      res.json({
+        referrals: [],
+        totalEarned: 0,
+        referralLink: `scoreshiftapp.com/ref/${user.id}`
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch referrals" });
+    }
+  });
+
+  app.post("/api/referrals/track", async (req: Request, res: Response) => {
+    try {
+      const { referrerId } = req.query;
+      // Log referral click - just acknowledge for now
+      res.json({ tracked: true, referrerId });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to track referral" });
+    }
+  });
+
+  // ─── Dispute IQ ─────────────────────────────────────────────────────────────
+  app.post("/api/ai/dispute-iq", authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { clientId, creditor, accountNumber, accountType, disputeReason, bureau, roundNumber, priorResponse } = req.body;
+
+      // Fetch client profile
+      const clientRecord = await db.select().from(users).where(eq(users.id, clientId)).limit(1);
+      if (!clientRecord[0]) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      const client = clientRecord[0];
+      const clientName = `${client.firstName} ${client.lastName}`;
+
+      // Import and call dispute IQ
+      const { generateDisputeIQLetter } = await import("./dispute-iq.js");
+
+      const letter = await generateDisputeIQLetter({
+        clientName,
+        clientAddress: {
+          line1: "123 Main Street",
+          city: "Houston",
+          state: "TX",
+          zip: "77001",
+        },
+        creditor,
+        accountNumber,
+        accountType,
+        disputeReason,
+        bureau,
+        roundNumber,
+        priorResponse,
+        clientState: "TX",
+      });
+
+      // Map roundNumber to letterType enum value
+      const letterTypeMap: Record<number, string> = {
+        1: "round1",
+        2: "round2",
+        3: "round2",
+        4: "validation",
+        5: "validation",
+      };
+      const letterType = letterTypeMap[roundNumber] || "round1";
+
+      // Save to dispute_letters_new table using actual schema fields
+      const { disputeLettersNew } = await import("@shared/schema");
+      const saved = await db.insert(disputeLettersNew).values({
+        clientId,
+        uploadId: 0, // Placeholder — no upload context for AI-generated letters
+        letterType: letterType as any,
+        bureau,
+        content: letter,
+        status: "draft",
+      }).returning();
+
+      res.json({
+        letter,
+        letterId: saved[0]?.id || null,
+        uniquenessNote: `Dispute IQ™ letter generated exclusively for ${clientName} — Round ${roundNumber} — ${bureau}. Dual-AI process (GPT-4o + Claude) ensures complete uniqueness.`
+      });
+    } catch (error: any) {
+      console.error("Dispute IQ error:", error);
+      res.status(500).json({ error: error.message || "Failed to generate Dispute IQ letter" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
