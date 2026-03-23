@@ -996,6 +996,91 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* White-Label Business Section */}
+      <section className="py-24 px-4 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            {/* Left: Headline */}
+            <div>
+              <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-full px-4 py-1.5 text-amber-400 text-sm font-medium mb-6">
+                🏷️ White-Label Platform
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-6">
+                Running a credit repair business?
+              </h2>
+              <p className="text-slate-300 text-lg mb-8">
+                ScoreShift powers your entire operation — client portal, dispute automation,
+                Lob.com certified mail, and a lending pipeline built in. Your brand, your clients,
+                full automation.
+              </p>
+
+              <ul className="space-y-3 mb-10">
+                {[
+                  "Your brand, your portal — fully white-labeled",
+                  "Automated dispute cycles (Rounds 1, 2, Validation)",
+                  "AI letters that bureaus can't flag",
+                  "Built-in DSCR loan pipeline for client graduates",
+                  "Starts at $99/mo — CRC charges $179+",
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-3 text-slate-300">
+                    <span className="text-amber-400 font-bold mt-0.5">✓</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/white-label/onboarding">
+                  <Button
+                    size="lg"
+                    className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-8 shadow-lg shadow-amber-500/25"
+                  >
+                    Start White-Label Free Trial
+                    <ArrowRight className="h-5 w-5 ml-2" />
+                  </Button>
+                </Link>
+                <Link href="/signup">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white"
+                  >
+                    Learn More
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right: Feature cards */}
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { icon: "⚡", title: "Scoreshifting Engine", desc: "AI processes every report automatically" },
+                { icon: "📬", title: "Lob.com Mail", desc: "Certified dispute letters sent automatically" },
+                { icon: "📊", title: "Client Dashboard", desc: "Branded portal your clients log into" },
+                { icon: "💰", title: "Loan Pipeline", desc: "DSCR loan referrals built right in" },
+                { icon: "🔄", title: "Round Automation", desc: "Rounds 1→2→Validation on autopilot" },
+                { icon: "📱", title: "SMS + Email", desc: "Automated client communications" },
+              ].map((card) => (
+                <div
+                  key={card.title}
+                  className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 hover:border-amber-500/40 transition-colors"
+                >
+                  <div className="text-2xl mb-2">{card.icon}</div>
+                  <h4 className="font-semibold text-white text-sm mb-1">{card.title}</h4>
+                  <p className="text-slate-400 text-xs">{card.desc}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-24 px-4">
         <div className="container mx-auto">

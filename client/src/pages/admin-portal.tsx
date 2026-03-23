@@ -205,6 +205,8 @@ export default function AdminPortal() {
       return <UsersRolesPage />;
     } else if (location === "/admin-portal/system") {
       return <SystemPage />;
+    } else if (location === "/admin-portal/alerts") {
+      return <AlertsPage />;
     }
     return <DashboardPage clientUsers={clientUsers} />;
   };
@@ -535,7 +537,7 @@ function ClientManagementPage({
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-amber-300">No Credit Report on File</p>
                   <p className="text-xs text-amber-400/80 mt-0.5">
-                    This client has no credit data yet. Upload their credit report file so the AI can parse it and populate their dashboard.
+                    This client has no credit data yet. Upload their credit report file to run Scoreshifting and populate their dashboard.
                   </p>
                 </div>
                 <Link href="/admin-portal/credit-reports">
@@ -691,7 +693,7 @@ function DisputeCenterPage({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AdminCard>
               <AdminCardHeader>
-                <AdminCardTitle icon={<Brain className="h-5 w-5" />}>AI Credit Analysis</AdminCardTitle>
+                <AdminCardTitle icon={<Brain className="h-5 w-5" />}>Scoreshifting Analysis</AdminCardTitle>
               </AdminCardHeader>
               <AdminCardContent>
                 {selectedClient?.id ? (
@@ -1039,6 +1041,93 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
   );
 }
 
+function AlertsPage() {
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const authHeaders = () => {
+    const token = localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
+    return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  };
+
+  useEffect(() => {
+    fetch("/api/admin/alerts", { headers: authHeaders() })
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => { setAlerts(Array.isArray(data) ? data : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const resolveAlert = async (id: number) => {
+    await fetch(`/api/admin/alerts/${id}/resolve`, { method: "PATCH", headers: authHeaders() });
+    setAlerts((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const typeColor = (type: string) => {
+    if (type === "error") return "border-red-700/40 bg-red-900/10";
+    if (type === "warning") return "border-amber-700/40 bg-amber-900/10";
+    return "border-blue-700/40 bg-blue-900/10";
+  };
+  const typeIcon = (type: string) => type === "error" ? "🔴" : type === "warning" ? "🟡" : "🔵";
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            Alerts
+            {alerts.length > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold">
+                {alerts.length}
+              </span>
+            )}
+          </h1>
+          <p className="text-[hsl(var(--admin-text-muted))]">Unresolved system alerts requiring your attention</p>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12 text-[hsl(var(--admin-text-muted))]">Loading alerts...</div>
+      ) : alerts.length === 0 ? (
+        <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-12 text-center">
+          <div className="text-4xl mb-3">✅</div>
+          <h3 className="font-semibold text-white text-lg">All clear</h3>
+          <p className="text-[hsl(var(--admin-text-muted))] text-sm mt-1">No unresolved alerts at this time.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {alerts.map((alert: any) => (
+            <div key={alert.id} className={`rounded-xl border p-4 ${typeColor(alert.type)}`}>
+              <div className="flex items-start gap-3">
+                <span className="text-lg flex-shrink-0">{typeIcon(alert.type)}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-white text-sm">{alert.title}</span>
+                    <span className="text-xs text-[hsl(var(--admin-text-muted))]">
+                      {alert.createdAt ? new Date(alert.createdAt).toLocaleString() : ""}
+                    </span>
+                  </div>
+                  <p className="text-sm text-[hsl(var(--admin-text-muted))]">{alert.message}</p>
+                  {alert.entityType && (
+                    <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-1 opacity-70">
+                      Entity: {alert.entityType} #{alert.entityId}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => resolveAlert(alert.id)}
+                  className="flex-shrink-0 text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors"
+                >
+                  Resolve
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -1268,7 +1357,7 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
       return (
         <div className="min-w-[140px]">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-amber-400 font-medium">AI Parsing...</span>
+            <span className="text-xs text-amber-400 font-medium">Scoreshifting...</span>
             <span className="text-xs text-[hsl(var(--admin-text-muted))]">{Math.round(progress)}%</span>
           </div>
           <div className="w-full bg-[hsl(var(--admin-bg))] rounded-full h-2 overflow-hidden">

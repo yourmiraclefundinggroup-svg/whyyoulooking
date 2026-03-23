@@ -24,6 +24,7 @@ import Signup from "@/pages/signup";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import Terms from "@/pages/terms";
 import DenialDecoder from "@/pages/denial-decoder";
+import WhiteLabelOnboarding from "@/pages/white-label-onboarding";
 import NotFound from "@/pages/not-found";
 import { TrialUpgradeWall } from "@/components/trial-upgrade-wall";
 
@@ -139,6 +140,7 @@ function Router() {
           </Route>
           <Route path="/checkout" component={SubscriptionCheckout} />
           <Route path="/denial-decoder" component={DenialDecoder} />
+          <Route path="/white-label/onboarding" component={WhiteLabelOnboarding} />
           <Route path="/login" component={Login} />
           <Route component={NotFound} />
         </Switch>

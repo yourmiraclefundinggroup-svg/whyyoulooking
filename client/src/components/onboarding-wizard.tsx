@@ -345,8 +345,8 @@ export function OnboardingWizard({ onReportAvailable }: OnboardingWizardProps) {
                       },
                       {
                         step: "3",
-                        title: "AI analysis",
-                        desc: "Our AI parses every account, inquiry, and collection on your report",
+                        title: "Scoreshifting",
+                        desc: "Our Scoreshifting engine analyzes every account, inquiry, and collection on your report",
                         status: "pending",
                       },
                       {

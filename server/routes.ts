@@ -300,6 +300,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertUserSchema.parse(req.body);
       const user = await storage.createUser(validatedData);
       res.status(201).json(user);
+      // Fire-and-forget: log + welcome communication
+      (async () => {
+        try {
+          const { logAction } = await import("./automation/audit-engine");
+          await logAction({ userId: user.id, action: "user_created", entity: "user", entityId: user.id, details: { email: user.email, source: (req.body as any).source || "direct" } });
+          const { triggerCommunication, COMMUNICATION_TRIGGERS } = await import("./automation/communication-engine");
+          await triggerCommunication(COMMUNICATION_TRIGGERS.USER_SIGNED_UP, user.id);
+        } catch (e) { console.error("Post-signup automation error:", e); }
+      })();
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid user data", errors: error.errors });
@@ -5157,14 +5166,41 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
               rawExtractionJson: parsedData
             });
 
-            console.log("AI parsing completed successfully for upload:", upload.id, "- found", totalItems, "items, score:", parsedData.creditScore);
+            console.log("Scoreshifting completed successfully for upload:", upload.id, "- found", totalItems, "items, score:", parsedData.creditScore);
+
+            // Run ScoreShifting Engine — automated post-parse pipeline
+            try {
+              const { runScoreshiftingEngine } = await import("./automation/scoreshifting-engine");
+              await runScoreshiftingEngine(upload.id, upload.userId, parsedData);
+            } catch (engineErr: any) {
+              console.error("ScoreShifting engine error (non-fatal):", engineErr);
+            }
+
+            // Trigger communication: scoreshifting complete
+            try {
+              const { triggerCommunication, COMMUNICATION_TRIGGERS } = await import("./automation/communication-engine");
+              await triggerCommunication(COMMUNICATION_TRIGGERS.SCORESHIFTING_COMPLETE, upload.userId, {
+                issuesCreated: totalItems,
+                creditScore: parsedData.creditScore
+              });
+            } catch (commErr) {
+              console.error("Communication trigger error (non-fatal):", commErr);
+            }
 
           } catch (aiError: any) {
-            console.error("AI parsing error:", aiError);
+            console.error("Scoreshifting error:", aiError);
             await storage.updateCreditReportUpload(upload.id, {
               parseStatus: "failed",
-              parseError: aiError.message || "AI parsing failed"
+              parseError: aiError.message || "Scoreshifting failed"
             });
+            // Create admin alert for failed parse
+            try {
+              const { createAdminAlert, logAction } = await import("./automation/audit-engine");
+              await createAdminAlert("error", "Scoreshifting Failed", `Upload ID ${upload.id} failed: ${aiError.message}`, "credit_report_upload", upload.id);
+              await logAction({ userId: upload.userId, action: "scoreshifting_failed", entity: "credit_report_upload", entityId: upload.id, status: "error", errorMessage: aiError.message });
+            } catch (alertErr) {
+              console.error("Failed to create admin alert:", alertErr);
+            }
           }
         })();
       }
@@ -6774,6 +6810,141 @@ ${denialLetterText}`
     } catch (error: any) {
       console.error("Dispute IQ error:", error);
       res.status(500).json({ error: error.message || "Failed to generate Dispute IQ letter" });
+    }
+  });
+
+  // ============================================
+  // AUTOMATION ROUTES — Phases 4, 5, 7, 9, 10
+  // ============================================
+
+  // --- Admin Alerts ---
+  app.get("/api/admin/alerts", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const { getUnresolvedAlerts } = await import("./automation/audit-engine");
+      const alerts = await getUnresolvedAlerts();
+      res.json(alerts);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/alerts/:id/resolve", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const alertId = parseInt(req.params.id);
+      const { resolveAlert } = await import("./automation/audit-engine");
+      await resolveAlert(alertId);
+      const { logAction } = await import("./automation/audit-engine");
+      await logAction({ adminId: user.id, action: "alert_resolved", entity: "admin_alert", entityId: alertId });
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Audit log endpoint
+  app.get("/api/admin/audit-log", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const { auditLog } = await import("@shared/schema");
+      const { desc: descOrd } = await import("drizzle-orm");
+      const logs = await db.select().from(auditLog).orderBy(descOrd(auditLog.createdAt)).limit(200);
+      res.json(logs);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- Demo Reset ---
+  app.post("/api/admin/demo/reset", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const { resetDemoAccount } = await import("./automation/demo-manager");
+      await resetDemoAccount();
+      const { logAction } = await import("./automation/audit-engine");
+      await logAction({ adminId: user.id, action: "demo_account_reset", details: { resetBy: user.email } });
+      res.json({ success: true, message: "Demo account reset and ready. Login: demo@scoreshift.com / Demo2026!" });
+    } catch (error: any) {
+      console.error("Demo reset error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- White-Label Routes ---
+  app.post("/api/white-label/initialize", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { brandName } = req.body;
+      if (!brandName) return res.status(400).json({ error: "brandName is required" });
+      const { initializeWhiteLabelAccount } = await import("./automation/white-label-onboarding");
+      const result = await initializeWhiteLabelAccount(user.id, brandName);
+      const { triggerCommunication, COMMUNICATION_TRIGGERS } = await import("./automation/communication-engine");
+      await triggerCommunication(COMMUNICATION_TRIGGERS.WHITE_LABEL_ACTIVATED, user.id, { brandName });
+      res.status(201).json({ success: true, ...result });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/white-label/status", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { whiteLabelAccounts } = await import("@shared/schema");
+      const { eq: eqOp } = await import("drizzle-orm");
+      const [account] = await db.select().from(whiteLabelAccounts).where(eqOp(whiteLabelAccounts.ownerUserId, user.id)).limit(1);
+      if (!account) return res.json({ hasAccount: false });
+      const { getOnboardingStatus } = await import("./automation/white-label-onboarding");
+      const status = await getOnboardingStatus(account.id);
+      res.json({ hasAccount: true, ...status });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/white-label/step/:stepName", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { stepName } = req.params;
+      const { whiteLabelAccounts } = await import("@shared/schema");
+      const { eq: eqOp } = await import("drizzle-orm");
+      const [account] = await db.select().from(whiteLabelAccounts).where(eqOp(whiteLabelAccounts.ownerUserId, user.id)).limit(1);
+      if (!account) return res.status(404).json({ error: "No white-label account found" });
+      const { completeOnboardingStep } = await import("./automation/white-label-onboarding");
+      await completeOnboardingStep(account.id, stepName);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- Plan Management ---
+  app.post("/api/admin/plans/assign", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const { userId, plan } = req.body;
+      if (!userId || !plan) return res.status(400).json({ error: "userId and plan are required" });
+      const { assignPlan, PLAN_FEATURES } = await import("./automation/plan-manager");
+      await assignPlan(userId, plan, user.id);
+      res.json({ success: true, plan, features: PLAN_FEATURES[plan] || [] });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/plans/features", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const { PLAN_FEATURES } = await import("./automation/plan-manager");
+      res.json(PLAN_FEATURES);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 

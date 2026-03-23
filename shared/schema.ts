@@ -1100,3 +1100,92 @@ export const referrals = pgTable("referrals", {
 export const insertReferralSchema = createInsertSchema(referrals);
 export type InsertReferral = z.infer<typeof insertReferralSchema>;
 export type Referral = typeof referrals.$inferSelect;
+
+// ============================================
+// AUTOMATION TABLES — Phase 2/4/7/9
+// ============================================
+
+// Audit Log — tracks every significant action
+export const auditLog = pgTable("audit_log", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  adminId: integer("admin_id").references(() => users.id),
+  action: text("action").notNull(),
+  entity: text("entity"), // e.g. "credit_report", "dispute_letter", "user"
+  entityId: integer("entity_id"),
+  details: text("details"), // JSON string of relevant data
+  status: text("status").default("success"), // success | error | warning
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Admin Alerts — exception-based notifications for admin attention
+export const adminAlerts = pgTable("admin_alerts", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), // error | warning | info
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  entityType: text("entity_type"),
+  entityId: integer("entity_id"),
+  resolved: boolean("resolved").default(false),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Communications Log — tracks all automated messages sent
+export const commsLog = pgTable("comms_log", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  trigger: text("trigger").notNull(),
+  channel: text("channel").notNull(), // sms | email
+  status: text("status").notNull(), // sent | failed | skipped
+  message: text("message"),
+  error: text("error"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// White-Label Accounts
+export const whiteLabelAccounts = pgTable("white_label_accounts", {
+  id: serial("id").primaryKey(),
+  ownerUserId: integer("owner_user_id").references(() => users.id),
+  brandName: text("brand_name").notNull(),
+  brandLogoUrl: text("brand_logo_url"),
+  primaryColor: text("primary_color").default("#0F172A"),
+  accentColor: text("accent_color").default("#F59E0B"),
+  customDomain: text("custom_domain"),
+  planTier: text("plan_tier").default("standard"), // standard | premium | enterprise
+  status: text("status").default("active"), // active | suspended | trial
+  stripeCustomerId: text("stripe_customer_id"),
+  onboardingCompleted: boolean("onboarding_completed").default(false),
+  setupProgress: integer("setup_progress").default(0), // 0-100%
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// White-Label Onboarding Steps
+export const whiteLabelOnboardingSteps = pgTable("white_label_onboarding_steps", {
+  id: serial("id").primaryKey(),
+  accountId: integer("account_id").references(() => whiteLabelAccounts.id),
+  stepName: text("step_name").notNull(),
+  stepStatus: text("step_status").default("pending"), // pending | completed | skipped
+  completedAt: timestamp("completed_at"),
+  autoCompleted: boolean("auto_completed").default(false),
+});
+
+// Insert schemas
+export const insertAuditLogSchema = createInsertSchema(auditLog).omit({ id: true, createdAt: true });
+export const insertAdminAlertSchema = createInsertSchema(adminAlerts).omit({ id: true, createdAt: true });
+export const insertCommsLogSchema = createInsertSchema(commsLog).omit({ id: true, createdAt: true });
+export const insertWhiteLabelAccountSchema = createInsertSchema(whiteLabelAccounts).omit({ id: true, createdAt: true });
+export const insertWhiteLabelOnboardingStepSchema = createInsertSchema(whiteLabelOnboardingSteps).omit({ id: true });
+
+// Types
+export type AuditLog = typeof auditLog.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type AdminAlert = typeof adminAlerts.$inferSelect;
+export type InsertAdminAlert = z.infer<typeof insertAdminAlertSchema>;
+export type CommsLog = typeof commsLog.$inferSelect;
+export type InsertCommsLog = z.infer<typeof insertCommsLogSchema>;
+export type WhiteLabelAccount = typeof whiteLabelAccounts.$inferSelect;
+export type InsertWhiteLabelAccount = z.infer<typeof insertWhiteLabelAccountSchema>;
+export type WhiteLabelOnboardingStep = typeof whiteLabelOnboardingSteps.$inferSelect;
+export type InsertWhiteLabelOnboardingStep = z.infer<typeof insertWhiteLabelOnboardingStepSchema>;

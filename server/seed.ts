@@ -185,3 +185,6 @@ async function seedDatabase() {
 seedDatabase();
 
 export { seedDatabase };
+
+// Re-export demo account management for convenience
+export { seedDemoAccount, resetDemoAccount } from "./automation/demo-manager";

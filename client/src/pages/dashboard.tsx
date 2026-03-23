@@ -231,12 +231,91 @@ const mockLoanData: LoanReadinessData = {
 export default function Dashboard() {
   const { user } = useUserContext();
   const [showVictory, setShowVictory] = useState(false);
+  const [realCreditReport, setRealCreditReport] = useState<any>(null);
+  const [realIssues, setRealIssues] = useState<any[]>([]);
+  const [realDisputes, setRealDisputes] = useState<any[]>([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  // Demo: show VictoryRoom after 3 seconds
+  // isDemoMode: URL param ?demo=true OR user is a test account
+  const isDemoMode =
+    new URLSearchParams(window.location.search).get("demo") === "true" ||
+    user?.isTestUser === true ||
+    user?.email === "demo@scoreshift.com";
+
+  // Fetch real data on mount
   useEffect(() => {
+    if (!user?.id) return;
+    const token = localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    Promise.all([
+      fetch("/api/credit-reports", { headers }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch("/api/credit-issues", { headers }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch("/api/disputes", { headers }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ]).then(([report, issues, disputes]) => {
+      if (report) setRealCreditReport(report);
+      if (issues && Array.isArray(issues)) setRealIssues(issues);
+      if (disputes && Array.isArray(disputes)) setRealDisputes(disputes);
+      setDataLoaded(true);
+    });
+  }, [user?.id]);
+
+  // Determine whether to show real or mock data
+  const hasRealData = dataLoaded && (realCreditReport !== null || realIssues.length > 0);
+  const showMockData = !hasRealData && isDemoMode;
+
+  // Demo: show VictoryRoom after 3 seconds only in demo mode
+  useEffect(() => {
+    if (!isDemoMode) return;
     const timer = setTimeout(() => setShowVictory(true), 3000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [isDemoMode]);
+
+  // Build score data from real or mock
+  const scoreData: ScoreData = hasRealData && realCreditReport
+    ? {
+        scores: {
+          experian: realCreditReport.creditScore ?? mockClient.scores.experian,
+          equifax: realCreditReport.creditScore ?? mockClient.scores.equifax,
+          transunion: realCreditReport.creditScore ?? mockClient.scores.transunion,
+        },
+        scoreChange: 0,
+        scoreHistory: [realCreditReport.creditScore ?? 600],
+        lastUpdated: realCreditReport.lastUpdated ?? new Date().toISOString(),
+      }
+    : mockScoreData;
+
+  const disputeData: DisputeTrackerData = hasRealData
+    ? {
+        disputeStage: realDisputes.length > 0 ? "Disputes Filed" : "Pending Upload",
+        currentRound: 1,
+        totalRounds: 3,
+        itemsInDispute: realDisputes.filter((d) => d.status === "PENDING").length,
+        nextUpdate: "30 days",
+      }
+    : mockDisputeData;
+
+  const removedItems: RemovedItem[] = hasRealData
+    ? realIssues
+        .filter((i) => i.status === "RESOLVED")
+        .slice(0, 6)
+        .map((i, idx) => ({
+          id: String(i.id ?? idx),
+          creditor: i.creditor ?? "Unknown",
+          type: i.type ?? "Collection",
+          amount: i.amount ? `$${i.amount}` : undefined,
+          removedDate: i.dateAdded ?? new Date().toISOString(),
+        }))
+    : mockRemovedItems;
+
+  const loanData: LoanReadinessData = hasRealData && realCreditReport
+    ? {
+        loanReadiness: Math.min(100, Math.max(0, Math.round((realCreditReport.creditScore - 500) / 2.8))),
+        currentScore: realCreditReport.creditScore,
+        targetScore: 680,
+      }
+    : mockLoanData;
 
   // Use real user name if available, fall back to mock
   const clientName = user
@@ -261,40 +340,59 @@ export default function Dashboard() {
           </p>
         </div>
 
+        {/* Demo mode banner */}
+        {showMockData && (
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 flex items-center gap-3 text-sm text-amber-800">
+            <span className="text-amber-500">⚡</span>
+            <span><strong>Demo Mode</strong> — Showing sample data. Upload a real credit report to see your actual data.</span>
+          </div>
+        )}
+
+        {/* No data state (not demo, no real data) */}
+        {!hasRealData && !showMockData && dataLoaded && (
+          <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
+            <div className="text-4xl mb-3">📄</div>
+            <h3 className="font-semibold text-slate-900 text-lg mb-1">No credit data yet</h3>
+            <p className="text-slate-500 text-sm">Your admin will upload your credit report to get started. Check back soon.</p>
+          </div>
+        )}
+
         {/* ── 2. Credit Score Hero ── */}
-        <ScoreHero data={mockScoreData} />
+        {(hasRealData || showMockData) && <ScoreHero data={scoreData} />}
 
         {/* ── 9. Loan Readiness (prominent — above the fold on desktop) ── */}
-        <LoanReadiness data={mockLoanData} />
+        {(hasRealData || showMockData) && <LoanReadiness data={loanData} />}
 
         {/* ── 8. Action Center ── */}
         <ActionCenter actions={mockActions} />
 
         {/* ── Two-column layout for middle sections ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {(hasRealData || showMockData) && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* ── 3. Dispute Tracker ── */}
-          <DisputeTracker data={mockDisputeData} />
+            {/* ── 3. Dispute Tracker ── */}
+            <DisputeTracker data={disputeData} />
 
-          {/* ── 4. Items Removed Wins ── */}
-          <ItemsRemoved count={mockClient.itemsRemoved} items={mockRemovedItems} />
-        </div>
+            {/* ── 4. Items Removed Wins ── */}
+            <ItemsRemoved count={removedItems.length} items={removedItems} />
+          </div>
+        )}
 
         {/* ── ScoreMap (Credit Roadmap) ── */}
         <ScoreMap />
 
         {/* ── 5. USPS Tracking ── */}
-        <USPSTracking entries={mockTrackingEntries} />
+        <USPSTracking entries={showMockData ? mockTrackingEntries : []} />
 
         {/* ── Two-column layout for lower sections ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* ── 7. Activity Feed ── */}
-          <ActivityFeed events={mockActivityEvents} />
+          <ActivityFeed events={showMockData ? mockActivityEvents : []} />
 
           {/* ── 6. Document Upload (with anchor id for scroll-to) ── */}
           <div id="upload-section">
-            <DocumentUpload uploadedFiles={mockUploadedFiles} />
+            <DocumentUpload uploadedFiles={showMockData ? mockUploadedFiles : []} />
           </div>
         </div>
 
