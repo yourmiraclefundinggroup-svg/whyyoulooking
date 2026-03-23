@@ -263,7 +263,8 @@ export default function Dashboard() {
 
   // Determine whether to show real or mock data
   const hasRealData = dataLoaded && (realCreditReport !== null || realIssues.length > 0);
-  const showMockData = !hasRealData && isDemoMode;
+  // Show mock/sample data for all users who don't have real data yet (including new clients)
+  const showMockData = !hasRealData;
 
   // Demo: show VictoryRoom after 3 seconds only in demo mode
   useEffect(() => {
@@ -340,22 +341,14 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Demo mode banner */}
+        {/* Sample data banner — shown until admin uploads real credit report */}
         {showMockData && (
-          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 flex items-center gap-3 text-sm text-amber-800">
-            <span className="text-amber-500">⚡</span>
-            <span><strong>Demo Mode</strong> — Showing sample data. Upload a real credit report to see your actual data.</span>
+          <div className="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 flex items-center gap-3 text-sm text-blue-800">
+            <span className="text-blue-500">📋</span>
+            <span><strong>Sample Dashboard</strong> — Your personalized credit data will appear here once your admin uploads your credit report.</span>
           </div>
         )}
 
-        {/* No data state (not demo, no real data) */}
-        {!hasRealData && !showMockData && dataLoaded && (
-          <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
-            <div className="text-4xl mb-3">📄</div>
-            <h3 className="font-semibold text-slate-900 text-lg mb-1">No credit data yet</h3>
-            <p className="text-slate-500 text-sm">Your admin will upload your credit report to get started. Check back soon.</p>
-          </div>
-        )}
 
         {/* ── 2. Credit Score Hero ── */}
         {(hasRealData || showMockData) && <ScoreHero data={scoreData} />}
