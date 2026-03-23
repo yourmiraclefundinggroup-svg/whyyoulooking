@@ -14,6 +14,8 @@
  * 10. Support Card        — SupportCard
  */
 
+import { useState, useEffect } from "react";
+import { Link } from "wouter";
 import { useUserContext } from "@/hooks/use-user-context";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { ScoreHero } from "@/components/dashboard/score-hero";
@@ -25,6 +27,10 @@ import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { ActionCenter } from "@/components/dashboard/action-center";
 import { LoanReadiness } from "@/components/dashboard/loan-readiness";
 import { SupportCard } from "@/components/dashboard/support-card";
+import { CreditCoachAI } from "@/components/dashboard/credit-coach-ai";
+import { VictoryRoom } from "@/components/dashboard/victory-room";
+import { ScoreMap } from "@/components/dashboard/score-map";
+import { ReferralEngine } from "@/components/dashboard/referral-engine";
 
 import type { ScoreData } from "@/components/dashboard/score-hero";
 import type { DisputeTrackerData } from "@/components/dashboard/dispute-tracker";
@@ -224,6 +230,13 @@ const mockLoanData: LoanReadinessData = {
 
 export default function Dashboard() {
   const { user } = useUserContext();
+  const [showVictory, setShowVictory] = useState(false);
+
+  // Demo: show VictoryRoom after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => setShowVictory(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Use real user name if available, fall back to mock
   const clientName = user
@@ -267,6 +280,9 @@ export default function Dashboard() {
           <ItemsRemoved count={mockClient.itemsRemoved} items={mockRemovedItems} />
         </div>
 
+        {/* ── ScoreMap (Credit Roadmap) ── */}
+        <ScoreMap />
+
         {/* ── 5. USPS Tracking ── */}
         <USPSTracking entries={mockTrackingEntries} />
 
@@ -282,12 +298,38 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* ── Referral Engine ── */}
+        <ReferralEngine userId={user?.id} />
+
+        {/* ── Try Denial Decoder CTA ── */}
+        <div className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-5 flex items-center justify-between gap-4">
+          <div>
+            <h3 className="font-semibold text-slate-900">Got a loan denial? Let AI decode it.</h3>
+            <p className="text-sm text-slate-600 mt-0.5">Paste your denial letter — we'll tell you exactly what to fix and how long it takes.</p>
+          </div>
+          <Link href="/denial-decoder">
+            <button className="shrink-0 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition-colors">
+              Try Denial Decoder →
+            </button>
+          </Link>
+        </div>
+
         {/* ── 10. Support Card ── */}
         <SupportCard />
 
         {/* Bottom padding */}
-        <div className="h-8" />
+        <div className="h-20" />
       </main>
+
+      {/* ── Victory Room overlay ── */}
+      <VictoryRoom
+        show={showVictory}
+        milestone="Score Crossed 620 🎯"
+        onClose={() => setShowVictory(false)}
+      />
+
+      {/* ── Credit Coach AI (floating, always visible) ── */}
+      <CreditCoachAI clientName={clientName} userId={user?.id} />
     </div>
   );
 }

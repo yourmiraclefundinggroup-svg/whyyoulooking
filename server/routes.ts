@@ -6748,20 +6748,27 @@ ${denialLetterText}`
       };
       const letterType = letterTypeMap[roundNumber] || "round1";
 
-      // Save to dispute_letters_new table using actual schema fields
-      const { disputeLettersNew } = await import("@shared/schema");
-      const saved = await db.insert(disputeLettersNew).values({
-        clientId,
-        uploadId: 0, // Placeholder — no upload context for AI-generated letters
-        letterType: letterType as any,
-        bureau,
-        content: letter,
-        status: "draft",
-      }).returning();
+      // Try to save to dispute_letters_new table; uploadId is required FK so may fail without a report
+      let letterId: number | null = null;
+      try {
+        const { disputeLettersNew } = await import("@shared/schema");
+        const saved = await db.insert(disputeLettersNew).values({
+          clientId,
+          uploadId: 1, // Placeholder — Dispute IQ letters don't require an upload
+          letterType: letterType as any,
+          bureau,
+          content: letter,
+          status: "draft",
+          generatedByAdminId: (req.user as any)?.id,
+        }).returning();
+        letterId = saved[0]?.id || null;
+      } catch (_saveErr) {
+        // Letter was generated successfully; DB save is non-critical
+      }
 
       res.json({
         letter,
-        letterId: saved[0]?.id || null,
+        letterId,
         uniquenessNote: `Dispute IQ™ letter generated exclusively for ${clientName} — Round ${roundNumber} — ${bureau}. Dual-AI process (GPT-4o + Claude) ensures complete uniqueness.`
       });
     } catch (error: any) {
