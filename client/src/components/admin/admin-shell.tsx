@@ -61,6 +61,7 @@ const navItems: NavItem[] = [
   { href: "/admin-portal/bureau-analysis", label: "Bureau Analysis", icon: Brain },
   { href: "/admin-portal/chat", label: "Messages", icon: MessageSquare },
   { href: "/admin-portal/analytics", label: "Analytics", icon: TrendingUp },
+  { href: "/admin-portal/alerts", label: "Alerts", icon: Bell },
   { href: "/admin-portal/users", label: "Users & Roles", icon: UserCog },
   { href: "/admin-portal/settings", label: "Settings", icon: Settings },
   { href: "/admin-portal/system", label: "System", icon: Activity },

@@ -205,6 +205,8 @@ export default function AdminPortal() {
       return <UsersRolesPage />;
     } else if (location === "/admin-portal/system") {
       return <SystemPage />;
+    } else if (location === "/admin-portal/alerts") {
+      return <AlertsPage />;
     }
     return <DashboardPage clientUsers={clientUsers} />;
   };
@@ -535,7 +537,7 @@ function ClientManagementPage({
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-amber-300">No Credit Report on File</p>
                   <p className="text-xs text-amber-400/80 mt-0.5">
-                    This client has no credit data yet. Upload their credit report file so the AI can parse it and populate their dashboard.
+                    This client has no credit data yet. Upload their credit report file to run Scoreshifting and populate their dashboard.
                   </p>
                 </div>
                 <Link href="/admin-portal/credit-reports">
@@ -579,10 +581,53 @@ function ClientManagementPage({
   );
 }
 
-function DisputeCenterPage({ 
-  selectedClient, selectedClientId, setSelectedClientId, clientUsers, 
-  clientCreditReport, clientIssues, setSelectedIssue, setDisputeModalOpen 
+function DisputeCenterPage({
+  selectedClient, selectedClientId, setSelectedClientId, clientUsers,
+  clientCreditReport, clientIssues, setSelectedIssue, setDisputeModalOpen
 }: any) {
+  const { toast } = useToast();
+  const [disputeIQRound, setDisputeIQRound] = useState<string>("1");
+  const [disputeIQReason, setDisputeIQReason] = useState("");
+  const [disputeIQPriorResponse, setDisputeIQPriorResponse] = useState("");
+  const [disputeIQSelectedIssue, setDisputeIQSelectedIssue] = useState<CreditIssue | null>(null);
+  const [disputeIQBureau, setDisputeIQBureau] = useState<string>("EXPERIAN");
+  const [generatedLetter, setGeneratedLetter] = useState<string | null>(null);
+  const [generatedLetterMeta, setGeneratedLetterMeta] = useState<{ clientName: string; round: string; bureau: string } | null>(null);
+
+  const disputeIQMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedClient || !disputeIQSelectedIssue) throw new Error("Select a client and issue first");
+      const response = await fetch("/api/ai/dispute-iq", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientId: selectedClient.id,
+          creditor: disputeIQSelectedIssue.creditor,
+          accountNumber: "XXXX",
+          accountType: disputeIQSelectedIssue.type.toLowerCase().replace("_", "_"),
+          disputeReason: disputeIQReason || disputeIQSelectedIssue.description,
+          bureau: disputeIQBureau,
+          roundNumber: parseInt(disputeIQRound),
+          priorResponse: disputeIQPriorResponse || undefined,
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to generate letter");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setGeneratedLetter(data.letter);
+      setGeneratedLetterMeta({
+        clientName: `${selectedClient.firstName} ${selectedClient.lastName}`,
+        round: disputeIQRound,
+        bureau: disputeIQBureau,
+      });
+      toast({ title: "Dispute IQ™ Letter Generated", description: data.uniquenessNote });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -648,7 +693,7 @@ function DisputeCenterPage({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AdminCard>
               <AdminCardHeader>
-                <AdminCardTitle icon={<Brain className="h-5 w-5" />}>AI Credit Analysis</AdminCardTitle>
+                <AdminCardTitle icon={<Brain className="h-5 w-5" />}>Scoreshifting Analysis</AdminCardTitle>
               </AdminCardHeader>
               <AdminCardContent>
                 {selectedClient?.id ? (
@@ -687,15 +732,160 @@ function DisputeCenterPage({
             </AdminCard>
           </div>
 
+          {/* ── Dispute IQ™ Letter Generator ── */}
+          <AdminCard className="border-amber-500/40">
+            <AdminCardHeader>
+              <div className="flex items-center justify-between w-full">
+                <AdminCardTitle icon={<Sparkles className="h-5 w-5 text-amber-400" />}>
+                  Dispute IQ™ Letter Generator
+                </AdminCardTitle>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold">
+                  Dual-AI • GPT-4o + Claude
+                </span>
+              </div>
+            </AdminCardHeader>
+            <AdminCardContent>
+              <p className="text-sm text-[hsl(var(--admin-text-muted))] mb-4">
+                Generate uniquely crafted, legally-grounded dispute letters. Each letter is processed by GPT-4o then rewritten by Claude for maximum uniqueness.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* Issue selector */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-[hsl(var(--admin-text-muted))]">Select Credit Issue</Label>
+                  <Select
+                    value={disputeIQSelectedIssue?.id?.toString() ?? ""}
+                    onValueChange={(val) => {
+                      const issue = clientIssues.find((i: CreditIssue) => i.id === parseInt(val));
+                      setDisputeIQSelectedIssue(issue || null);
+                    }}
+                  >
+                    <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white">
+                      <SelectValue placeholder="Choose an issue..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientIssues.map((issue: CreditIssue) => (
+                        <SelectItem key={issue.id} value={issue.id.toString()}>
+                          {issue.creditor} — {issue.type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Bureau selector */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-[hsl(var(--admin-text-muted))]">Bureau</Label>
+                  <Select value={disputeIQBureau} onValueChange={setDisputeIQBureau}>
+                    <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="EXPERIAN">Experian</SelectItem>
+                      <SelectItem value="EQUIFAX">Equifax</SelectItem>
+                      <SelectItem value="TRANSUNION">TransUnion</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Round selector */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-[hsl(var(--admin-text-muted))]">Dispute Round</Label>
+                  <Select value={disputeIQRound} onValueChange={setDisputeIQRound}>
+                    <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Round 1 — Initial Dispute (FCRA 611)</SelectItem>
+                      <SelectItem value="2">Round 2 — Method of Verification (FCRA 611a7)</SelectItem>
+                      <SelectItem value="3">Round 3 — CFPB Threat + Permissible Purpose</SelectItem>
+                      <SelectItem value="4">Round 4 — FDCPA Debt Validation (809b)</SelectItem>
+                      <SelectItem value="5">Round 5 — Attorney-Ready + Litigation Threat</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Dispute reason */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-[hsl(var(--admin-text-muted))]">Dispute Reason</Label>
+                  <Input
+                    value={disputeIQReason}
+                    onChange={(e) => setDisputeIQReason(e.target.value)}
+                    placeholder="e.g. Account not mine, balance incorrect..."
+                    className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-muted))]"
+                  />
+                </div>
+              </div>
+
+              {/* Prior response textarea */}
+              <div className="space-y-1.5 mb-4">
+                <Label className="text-xs text-[hsl(var(--admin-text-muted))]">Prior Bureau Response (optional — for rounds 2-5)</Label>
+                <textarea
+                  value={disputeIQPriorResponse}
+                  onChange={(e) => setDisputeIQPriorResponse(e.target.value)}
+                  placeholder="Paste the bureau's previous response here to craft a targeted escalation..."
+                  rows={3}
+                  className="w-full rounded-md border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))] text-white text-sm px-3 py-2 placeholder:text-[hsl(var(--admin-text-muted))] focus:outline-none focus:ring-1 focus:ring-amber-500 resize-none"
+                />
+              </div>
+
+              <Button
+                onClick={() => disputeIQMutation.mutate()}
+                disabled={disputeIQMutation.isPending || !disputeIQSelectedIssue}
+                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold"
+              >
+                {disputeIQMutation.isPending ? (
+                  <>
+                    <Brain className="mr-2 h-4 w-4 animate-pulse" />
+                    Generating with Dispute IQ™...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate with Dispute IQ™
+                  </>
+                )}
+              </Button>
+
+              {/* Generated letter result */}
+              {generatedLetter && generatedLetterMeta && (
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold">
+                      Dispute IQ™ — Unique Letter
+                    </span>
+                    <span className="text-xs text-[hsl(var(--admin-text-muted))]">
+                      Generated exclusively for {generatedLetterMeta.clientName} — Round {generatedLetterMeta.round} — {generatedLetterMeta.bureau}
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <pre className="text-xs text-slate-300 bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] rounded-lg p-4 whitespace-pre-wrap max-h-64 overflow-y-auto font-mono leading-relaxed">
+                      {generatedLetter}
+                    </pre>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="absolute top-2 right-2 text-xs border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))] hover:text-white"
+                      onClick={() => navigator.clipboard.writeText(generatedLetter)}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </AdminCardContent>
+          </AdminCard>
+
+          {/* ── Standard AI Dispute Letter Generator ── */}
           <AdminCard>
             <AdminCardHeader>
-              <AdminCardTitle icon={<FileText className="h-5 w-5" />}>AI Dispute Letter Generator</AdminCardTitle>
+              <AdminCardTitle icon={<FileText className="h-5 w-5" />}>Quick Letter Generator</AdminCardTitle>
             </AdminCardHeader>
             <AdminCardContent>
               <p className="text-sm text-[hsl(var(--admin-text-muted))] mb-6">
-                Generate professional dispute letters for each credit issue.
+                Generate standard dispute letters for each credit issue.
               </p>
-              
+
               {clientIssues.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {clientIssues.map((issue: CreditIssue) => (
@@ -847,6 +1037,93 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
           </div>
         </AdminCardContent>
       </AdminCard>
+    </div>
+  );
+}
+
+function AlertsPage() {
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const authHeaders = () => {
+    const token = localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
+    return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  };
+
+  useEffect(() => {
+    fetch("/api/admin/alerts", { headers: authHeaders() })
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => { setAlerts(Array.isArray(data) ? data : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const resolveAlert = async (id: number) => {
+    await fetch(`/api/admin/alerts/${id}/resolve`, { method: "PATCH", headers: authHeaders() });
+    setAlerts((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const typeColor = (type: string) => {
+    if (type === "error") return "border-red-700/40 bg-red-900/10";
+    if (type === "warning") return "border-amber-700/40 bg-amber-900/10";
+    return "border-blue-700/40 bg-blue-900/10";
+  };
+  const typeIcon = (type: string) => type === "error" ? "🔴" : type === "warning" ? "🟡" : "🔵";
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            Alerts
+            {alerts.length > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold">
+                {alerts.length}
+              </span>
+            )}
+          </h1>
+          <p className="text-[hsl(var(--admin-text-muted))]">Unresolved system alerts requiring your attention</p>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12 text-[hsl(var(--admin-text-muted))]">Loading alerts...</div>
+      ) : alerts.length === 0 ? (
+        <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-12 text-center">
+          <div className="text-4xl mb-3">✅</div>
+          <h3 className="font-semibold text-white text-lg">All clear</h3>
+          <p className="text-[hsl(var(--admin-text-muted))] text-sm mt-1">No unresolved alerts at this time.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {alerts.map((alert: any) => (
+            <div key={alert.id} className={`rounded-xl border p-4 ${typeColor(alert.type)}`}>
+              <div className="flex items-start gap-3">
+                <span className="text-lg flex-shrink-0">{typeIcon(alert.type)}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-white text-sm">{alert.title}</span>
+                    <span className="text-xs text-[hsl(var(--admin-text-muted))]">
+                      {alert.createdAt ? new Date(alert.createdAt).toLocaleString() : ""}
+                    </span>
+                  </div>
+                  <p className="text-sm text-[hsl(var(--admin-text-muted))]">{alert.message}</p>
+                  {alert.entityType && (
+                    <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-1 opacity-70">
+                      Entity: {alert.entityType} #{alert.entityId}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => resolveAlert(alert.id)}
+                  className="flex-shrink-0 text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors"
+                >
+                  Resolve
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -1080,7 +1357,7 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
       return (
         <div className="min-w-[140px]">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-amber-400 font-medium">AI Parsing...</span>
+            <span className="text-xs text-amber-400 font-medium">Scoreshifting...</span>
             <span className="text-xs text-[hsl(var(--admin-text-muted))]">{Math.round(progress)}%</span>
           </div>
           <div className="w-full bg-[hsl(var(--admin-bg))] rounded-full h-2 overflow-hidden">

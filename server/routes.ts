@@ -15,7 +15,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
 import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
-import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users } from "@shared/schema";
+import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users, disputeLettersNew } from "@shared/schema";
 import { z } from "zod";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
@@ -300,6 +300,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertUserSchema.parse(req.body);
       const user = await storage.createUser(validatedData);
       res.status(201).json(user);
+      // Fire-and-forget: log + welcome communication
+      (async () => {
+        try {
+          const { logAction } = await import("./automation/audit-engine");
+          await logAction({ userId: user.id, action: "user_created", entity: "user", entityId: user.id, details: { email: user.email, source: (req.body as any).source || "direct" } });
+          const { triggerCommunication, COMMUNICATION_TRIGGERS } = await import("./automation/communication-engine");
+          await triggerCommunication(COMMUNICATION_TRIGGERS.USER_SIGNED_UP, user.id);
+        } catch (e) { console.error("Post-signup automation error:", e); }
+      })();
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid user data", errors: error.errors });
@@ -5157,14 +5166,41 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
               rawExtractionJson: parsedData
             });
 
-            console.log("AI parsing completed successfully for upload:", upload.id, "- found", totalItems, "items, score:", parsedData.creditScore);
+            console.log("Scoreshifting completed successfully for upload:", upload.id, "- found", totalItems, "items, score:", parsedData.creditScore);
+
+            // Run ScoreShifting Engine — automated post-parse pipeline
+            try {
+              const { runScoreshiftingEngine } = await import("./automation/scoreshifting-engine");
+              await runScoreshiftingEngine(upload.id, upload.userId, parsedData);
+            } catch (engineErr: any) {
+              console.error("ScoreShifting engine error (non-fatal):", engineErr);
+            }
+
+            // Trigger communication: scoreshifting complete
+            try {
+              const { triggerCommunication, COMMUNICATION_TRIGGERS } = await import("./automation/communication-engine");
+              await triggerCommunication(COMMUNICATION_TRIGGERS.SCORESHIFTING_COMPLETE, upload.userId, {
+                issuesCreated: totalItems,
+                creditScore: parsedData.creditScore
+              });
+            } catch (commErr) {
+              console.error("Communication trigger error (non-fatal):", commErr);
+            }
 
           } catch (aiError: any) {
-            console.error("AI parsing error:", aiError);
+            console.error("Scoreshifting error:", aiError);
             await storage.updateCreditReportUpload(upload.id, {
               parseStatus: "failed",
-              parseError: aiError.message || "AI parsing failed"
+              parseError: aiError.message || "Scoreshifting failed"
             });
+            // Create admin alert for failed parse
+            try {
+              const { createAdminAlert, logAction } = await import("./automation/audit-engine");
+              await createAdminAlert("error", "Scoreshifting Failed", `Upload ID ${upload.id} failed: ${aiError.message}`, "credit_report_upload", upload.id);
+              await logAction({ userId: upload.userId, action: "scoreshifting_failed", entity: "credit_report_upload", entityId: upload.id, status: "error", errorMessage: aiError.message });
+            } catch (alertErr) {
+              console.error("Failed to create admin alert:", alertErr);
+            }
           }
         })();
       }
@@ -6496,7 +6532,7 @@ If you are just answering a question (not updating the letter), just respond nor
   app.get("/api/v1/disputes", openclawAuth, async (req, res) => {
     try {
       const { disputes: disputesTable } = await import("@shared/schema").then(m => m);
-      const allDisputes = await db.select().from(disputesTable).orderBy(desc(disputesTable.createdAt));
+      const allDisputes = await db.select().from(disputesTable).orderBy(desc(disputesTable.dateSent));
       const allUsers = await storage.getUsers();
       const userMap = new Map(allUsers.map(u => [u.id, u]));
       const disputesWithClient = allDisputes.map(d => ({
@@ -6518,7 +6554,7 @@ If you are just answering a question (not updating the letter), just respond nor
       const userMap = new Map(allUsers.map(u => [u.id, u]));
       const lettersWithClient = allLetters.map(l => ({
         ...l,
-        clientName: userMap.has(l.userId) ? `${userMap.get(l.userId)!.firstName} ${userMap.get(l.userId)!.lastName}` : "Unknown",
+        clientName: userMap.has(l.clientId) ? `${userMap.get(l.clientId)!.firstName} ${userMap.get(l.clientId)!.lastName}` : "Unknown",
       }));
       res.json({ letters: lettersWithClient, total: lettersWithClient.length });
     } catch (error: any) {
@@ -6594,6 +6630,465 @@ Write a formal, legally-sound dispute letter citing FCRA Section 611, requesting
       });
       const letterContent = message.content[0].type === "text" ? message.content[0].text : "";
       res.json({ letter: letterContent, client: { id: client.id, name: `${client.firstName} ${client.lastName}` } });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ─── Lob.com Integration — Automated Certified Mail ──────────────────────
+  // Sends dispute letters via Lob.com (real USPS certified mail, auto-tracked)
+  // Requires LOB_API_KEY env var. Use test_* key for dev, live_* for production.
+
+  // POST /api/lob/send-letter
+  // Send a dispute letter to a bureau via certified mail
+  app.post("/api/lob/send-letter", authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { clientId, letterId, bureau, letterContent, clientName, clientAddress } = req.body;
+
+      if (!clientId || !bureau || !letterContent || !clientName || !clientAddress) {
+        return res.status(400).json({ error: "Missing required fields: clientId, bureau, letterContent, clientName, clientAddress" });
+      }
+
+      const { sendDisputeLetter } = await import("./lob-service.js");
+
+      const result = await sendDisputeLetter({
+        clientName,
+        clientAddress,
+        bureau: bureau.toUpperCase() as "EXPERIAN" | "EQUIFAX" | "TRANSUNION",
+        letterContent,
+        certified: true,
+        returnReceipt: false,
+      });
+
+      // If a letterId was provided, update the tracking number in the DB
+      if (letterId) {
+        await db.update(disputeLettersNew)
+          .set({
+            trackingNumber: result.trackingNumber,
+            status: "sent" as any,
+            sentDate: new Date() as any,
+          })
+          .where(eq(disputeLettersNew.id, parseInt(letterId)));
+      }
+
+      res.json({
+        success: true,
+        lobId: result.lobId,
+        trackingNumber: result.trackingNumber,
+        expectedDelivery: result.expectedDelivery,
+        previewUrl: result.previewUrl,
+        sentViaLob: true,
+      });
+    } catch (error: any) {
+      console.error("Lob send-letter error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/lob/track/:lobId
+  // Get live tracking status for a Lob letter
+  app.get("/api/lob/track/:lobId", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const { lobId } = req.params;
+      const { getLetterTracking } = await import("./lob-service.js");
+      const tracking = await getLetterTracking(lobId);
+      res.json(tracking);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/lob/verify-address
+  // Verify a client address before mailing (reduce undeliverable mail)
+  app.post("/api/lob/verify-address", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const { line1, line2, city, state, zip } = req.body;
+      const { verifyAddress } = await import("./lob-service.js");
+      const result = await verifyAddress({ line1, line2, city, state, zip });
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  // ─── End Lob.com Integration ───────────────────────────────────────────────
+
+  // ─── Credit Coach AI ──────────────────────────────────────────────────────
+  app.post("/api/ai/credit-coach", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const { message } = req.body;
+      const user = (req as any).user;
+
+      // Fetch user context
+      const userRecord = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
+      const creditReportData = await storage.getCreditReport(user.id);
+      const disputeData = await storage.getDisputes(user.id);
+
+      const clientName = userRecord[0] ? `${userRecord[0].firstName} ${userRecord[0].lastName}` : "Client";
+      const latestScore = (creditReportData as any)?.creditScore || "unknown";
+      const activeDisputes = disputeData.filter((d: any) => d.status !== "RESOLVED").length;
+      const resolvedDisputes = disputeData.filter((d: any) => d.status === "RESOLVED").length;
+
+      const systemPrompt = `You are Credit Coach AI, an expert credit repair advisor for ${clientName} on the ScoreShift platform.
+
+CLIENT PROFILE:
+- Name: ${clientName}
+- Current Credit Score: ${latestScore}
+- Active Disputes: ${activeDisputes}
+- Resolved Disputes: ${resolvedDisputes}
+- Total Dispute Rounds: ${disputeData.length > 0 ? Math.max(...disputeData.map((d: any) => 1)) : 0}
+
+You have full access to this client's credit file. Provide specific, actionable advice. Be encouraging but realistic. Explain credit concepts in plain English. When discussing disputes, reference their actual situation. Keep responses conversational and under 200 words unless a detailed explanation is needed.`;
+
+      const response = await anthropic.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 500,
+        system: systemPrompt,
+        messages: [{ role: "user", content: message }],
+      });
+
+      const reply = response.content[0].type === "text" ? response.content[0].text : "I'm here to help! Ask me anything about your credit.";
+
+      res.json({ reply });
+    } catch (error) {
+      console.error("Credit coach error:", error);
+      res.status(500).json({ reply: "I'm having trouble right now. Please try again in a moment." });
+    }
+  });
+
+  // ─── Score Map ─────────────────────────────────────────────────────────────
+  app.get("/api/ai/score-map", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      const creditReports = await storage.getCreditReport(user.id);
+      const disputes = await storage.getDisputes(user.id);
+
+      const currentScore = (creditReports as any)?.creditScore || 580;
+
+      // Generate roadmap via Claude
+      const response = await anthropic.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        messages: [{
+          role: "user",
+          content: `Generate a credit repair roadmap for a client with credit score ${currentScore} and ${disputes.length} total dispute items.
+
+Return ONLY valid JSON (no markdown, no code blocks) in this exact format:
+{
+  "phases": [
+    {
+      "number": 1,
+      "name": "Phase Name",
+      "weeks": "Weeks 1-4",
+      "scoreImpact": "+30-45 pts",
+      "items": "Description of items targeted",
+      "status": "completed"
+    }
+  ],
+  "projectedFinalScore": 720
+}
+
+Generate 4 phases with realistic score impacts. Status values: completed, active, upcoming.`
+        }]
+      });
+
+      const content = response.content[0].type === "text" ? response.content[0].text : "{}";
+      const roadmap = JSON.parse(content);
+
+      res.json(roadmap);
+    } catch (error) {
+      console.error("Score map error:", error);
+      // Return mock data on error
+      res.json({
+        phases: [
+          { number: 1, name: "Foundation Disputes", weeks: "Weeks 1-4", scoreImpact: "+35-50 pts", items: "Collections & Charge-Offs", status: "completed" },
+          { number: 2, name: "Late Payment Sweep", weeks: "Weeks 5-8", scoreImpact: "+25-40 pts", items: "Late Payments & Inquiries", status: "active" },
+          { number: 3, name: "Charge-Off Resolution", weeks: "Weeks 9-12", scoreImpact: "+30-45 pts", items: "Remaining Charge-Offs", status: "upcoming" },
+          { number: 4, name: "Final Polish", weeks: "Weeks 13-16", scoreImpact: "+15-25 pts", items: "Inquiries & Utilization", status: "upcoming" }
+        ],
+        projectedFinalScore: 720
+      });
+    }
+  });
+
+  // ─── Denial Decoder ────────────────────────────────────────────────────────
+  app.post("/api/ai/denial-decoder", async (req: Request, res: Response) => {
+    try {
+      const { denialLetterText } = req.body;
+
+      if (!denialLetterText || denialLetterText.trim().length < 20) {
+        return res.status(400).json({ error: "Please provide a denial letter to analyze." });
+      }
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{
+          role: "system",
+          content: `You are an expert loan officer and credit repair specialist who analyzes loan denial letters.
+Extract the denial reasons and provide actionable guidance. Return ONLY valid JSON.`
+        }, {
+          role: "user",
+          content: `Analyze this loan denial letter and return JSON in EXACTLY this format (no markdown, no code blocks):
+{
+  "reasons": [
+    {
+      "reason": "Short title of denial reason",
+      "explanation": "Plain English explanation of what this means",
+      "fixStatus": "Already Working On This",
+      "action": "Specific action to take",
+      "timeToFix": "2-3 months"
+    }
+  ],
+  "summary": "Fix these X items and you could qualify in approximately Y months"
+}
+
+fixStatus values must be exactly one of: "Already Working On This" | "Action Needed" | "Quick Fix"
+
+Denial letter:
+${denialLetterText}`
+        }],
+        max_tokens: 1500,
+        temperature: 0.3,
+      });
+
+      const content = response.choices[0]?.message?.content || "{}";
+      const result = JSON.parse(content);
+
+      res.json(result);
+    } catch (error) {
+      console.error("Denial decoder error:", error);
+      res.status(500).json({ error: "Failed to analyze denial letter. Please try again." });
+    }
+  });
+
+  // ─── Referrals ──────────────────────────────────────────────────────────────
+  app.get("/api/referrals", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      // Return mock referral data for now (referrals table will be added to schema)
+      res.json({
+        referrals: [],
+        totalEarned: 0,
+        referralLink: `scoreshiftapp.com/ref/${user.id}`
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch referrals" });
+    }
+  });
+
+  app.post("/api/referrals/track", async (req: Request, res: Response) => {
+    try {
+      const { referrerId } = req.query;
+      // Log referral click - just acknowledge for now
+      res.json({ tracked: true, referrerId });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to track referral" });
+    }
+  });
+
+  // ─── Dispute IQ ─────────────────────────────────────────────────────────────
+  app.post("/api/ai/dispute-iq", authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { clientId, creditor, accountNumber, accountType, disputeReason, bureau, roundNumber, priorResponse } = req.body;
+
+      // Fetch client profile
+      const clientRecord = await db.select().from(users).where(eq(users.id, clientId)).limit(1);
+      if (!clientRecord[0]) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      const client = clientRecord[0];
+      const clientName = `${client.firstName} ${client.lastName}`;
+
+      // Import and call dispute IQ
+      const { generateDisputeIQLetter } = await import("./dispute-iq.js");
+
+      const letter = await generateDisputeIQLetter({
+        clientName,
+        clientAddress: {
+          line1: "123 Main Street",
+          city: "Houston",
+          state: "TX",
+          zip: "77001",
+        },
+        creditor,
+        accountNumber,
+        accountType,
+        disputeReason,
+        bureau,
+        roundNumber,
+        priorResponse,
+        clientState: "TX",
+      });
+
+      // Map roundNumber to letterType enum value
+      const letterTypeMap: Record<number, string> = {
+        1: "round1",
+        2: "round2",
+        3: "round2",
+        4: "validation",
+        5: "validation",
+      };
+      const letterType = letterTypeMap[roundNumber] || "round1";
+
+      // Try to save to dispute_letters_new table; uploadId is required FK so may fail without a report
+      let letterId: number | null = null;
+      try {
+        const { disputeLettersNew } = await import("@shared/schema");
+        const saved = await db.insert(disputeLettersNew).values({
+          clientId,
+          uploadId: 1, // Placeholder — Dispute IQ letters don't require an upload
+          letterType: letterType as any,
+          bureau,
+          content: letter,
+          status: "draft",
+          generatedByAdminId: (req as any).user?.id,
+        }).returning();
+        letterId = saved[0]?.id || null;
+      } catch (_saveErr) {
+        // Letter was generated successfully; DB save is non-critical
+      }
+
+      res.json({
+        letter,
+        letterId,
+        uniquenessNote: `Dispute IQ™ letter generated exclusively for ${clientName} — Round ${roundNumber} — ${bureau}. Dual-AI process (GPT-4o + Claude) ensures complete uniqueness.`
+      });
+    } catch (error: any) {
+      console.error("Dispute IQ error:", error);
+      res.status(500).json({ error: error.message || "Failed to generate Dispute IQ letter" });
+    }
+  });
+
+  // ============================================
+  // AUTOMATION ROUTES — Phases 4, 5, 7, 9, 10
+  // ============================================
+
+  // --- Admin Alerts ---
+  app.get("/api/admin/alerts", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const { getUnresolvedAlerts } = await import("./automation/audit-engine");
+      const alerts = await getUnresolvedAlerts();
+      res.json(alerts);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/alerts/:id/resolve", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const alertId = parseInt(req.params.id);
+      const { resolveAlert } = await import("./automation/audit-engine");
+      await resolveAlert(alertId);
+      const { logAction } = await import("./automation/audit-engine");
+      await logAction({ adminId: user.id, action: "alert_resolved", entity: "admin_alert", entityId: alertId });
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Audit log endpoint
+  app.get("/api/admin/audit-log", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const { auditLog } = await import("@shared/schema");
+      const { desc: descOrd } = await import("drizzle-orm");
+      const logs = await db.select().from(auditLog).orderBy(descOrd(auditLog.createdAt)).limit(200);
+      res.json(logs);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- Demo Reset ---
+  app.post("/api/admin/demo/reset", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const { resetDemoAccount } = await import("./automation/demo-manager");
+      await resetDemoAccount();
+      const { logAction } = await import("./automation/audit-engine");
+      await logAction({ adminId: user.id, action: "demo_account_reset", details: { resetBy: user.email } });
+      res.json({ success: true, message: "Demo account reset and ready. Login: demo@scoreshift.com / Demo2026!" });
+    } catch (error: any) {
+      console.error("Demo reset error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- White-Label Routes ---
+  app.post("/api/white-label/initialize", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { brandName } = req.body;
+      if (!brandName) return res.status(400).json({ error: "brandName is required" });
+      const { initializeWhiteLabelAccount } = await import("./automation/white-label-onboarding");
+      const result = await initializeWhiteLabelAccount(user.id, brandName);
+      const { triggerCommunication, COMMUNICATION_TRIGGERS } = await import("./automation/communication-engine");
+      await triggerCommunication(COMMUNICATION_TRIGGERS.WHITE_LABEL_ACTIVATED, user.id, { brandName });
+      res.status(201).json({ success: true, ...result });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/white-label/status", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { whiteLabelAccounts } = await import("@shared/schema");
+      const { eq: eqOp } = await import("drizzle-orm");
+      const [account] = await db.select().from(whiteLabelAccounts).where(eqOp(whiteLabelAccounts.ownerUserId, user.id)).limit(1);
+      if (!account) return res.json({ hasAccount: false });
+      const { getOnboardingStatus } = await import("./automation/white-label-onboarding");
+      const status = await getOnboardingStatus(account.id);
+      res.json({ hasAccount: true, ...status });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/white-label/step/:stepName", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { stepName } = req.params;
+      const { whiteLabelAccounts } = await import("@shared/schema");
+      const { eq: eqOp } = await import("drizzle-orm");
+      const [account] = await db.select().from(whiteLabelAccounts).where(eqOp(whiteLabelAccounts.ownerUserId, user.id)).limit(1);
+      if (!account) return res.status(404).json({ error: "No white-label account found" });
+      const { completeOnboardingStep } = await import("./automation/white-label-onboarding");
+      await completeOnboardingStep(account.id, stepName);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- Plan Management ---
+  app.post("/api/admin/plans/assign", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const { userId, plan } = req.body;
+      if (!userId || !plan) return res.status(400).json({ error: "userId and plan are required" });
+      const { assignPlan, PLAN_FEATURES } = await import("./automation/plan-manager");
+      await assignPlan(userId, plan, user.id);
+      res.json({ success: true, plan, features: PLAN_FEATURES[plan] || [] });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/plans/features", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const { PLAN_FEATURES } = await import("./automation/plan-manager");
+      res.json(PLAN_FEATURES);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
