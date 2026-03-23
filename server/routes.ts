@@ -6453,45 +6453,82 @@ Write a formal, legally-sound dispute letter citing FCRA Section 611, requesting
     }
   });
 
-  // ─── Lob.com Integration Stub ─────────────────────────────────────────────
-  // TODO: Uncomment and implement when LOB_API_KEY is configured.
-  // Lob.com is a real mail API that will replace manual USPS dispute letter mailing.
-  // It provides automatic USPS tracking, certified mail, and delivery confirmation.
-  //
-  // app.post("/api/lob/send-letter", authenticateToken, async (req: Request, res: Response) => {
-  //   try {
-  //     const { to, from, pdf_url, description, bureau } = req.body;
-  //
-  //     // Initialize Lob client with API key
-  //     // const Lob = require("lob")(process.env.LOB_API_KEY);
-  //
-  //     // Create letter via Lob API
-  //     // const letter = await Lob.letters.create({
-  //     //   description: description || `ScoreShift Dispute Letter — ${bureau}`,
-  //     //   to: { name: to.name, address_line1: to.address, city: to.city, state: to.state, zip: to.zip, country: "US" },
-  //     //   from: { name: from.name, address_line1: from.address, city: from.city, state: from.state, zip: from.zip, country: "US" },
-  //     //   file: pdf_url,
-  //     //   color: false,
-  //     //   double_sided: false,
-  //     //   mail_type: "usps_first_class",
-  //     //   extra_service: "certified",  // Certified mail for dispute letters
-  //     // });
-  //
-  //     // Return tracking number and letter ID
-  //     // res.json({
-  //     //   success: true,
-  //     //   letterId: letter.id,
-  //     //   trackingNumber: letter.tracking_number,
-  //     //   expectedDeliveryDate: letter.expected_delivery_date,
-  //     //   sentViaLob: true,
-  //     // });
-  //
-  //     res.status(501).json({ error: "Lob integration not yet configured. Set LOB_API_KEY in .env." });
-  //   } catch (error: any) {
-  //     res.status(500).json({ error: error.message });
-  //   }
-  // });
-  // ─── End Lob.com Stub ─────────────────────────────────────────────────────
+  // ─── Lob.com Integration — Automated Certified Mail ──────────────────────
+  // Sends dispute letters via Lob.com (real USPS certified mail, auto-tracked)
+  // Requires LOB_API_KEY env var. Use test_* key for dev, live_* for production.
+
+  // POST /api/lob/send-letter
+  // Send a dispute letter to a bureau via certified mail
+  app.post("/api/lob/send-letter", authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const { clientId, letterId, bureau, letterContent, clientName, clientAddress } = req.body;
+
+      if (!clientId || !bureau || !letterContent || !clientName || !clientAddress) {
+        return res.status(400).json({ error: "Missing required fields: clientId, bureau, letterContent, clientName, clientAddress" });
+      }
+
+      const { sendDisputeLetter } = await import("./lob-service.js");
+
+      const result = await sendDisputeLetter({
+        clientName,
+        clientAddress,
+        bureau: bureau.toUpperCase() as "EXPERIAN" | "EQUIFAX" | "TRANSUNION",
+        letterContent,
+        certified: true,
+        returnReceipt: false,
+      });
+
+      // If a letterId was provided, update the tracking number in the DB
+      if (letterId) {
+        await db.update(disputeLettersNew)
+          .set({
+            trackingNumber: result.trackingNumber,
+            status: "mailed",
+            sentAt: new Date(),
+          })
+          .where(eq(disputeLettersNew.id, letterId));
+      }
+
+      res.json({
+        success: true,
+        lobId: result.lobId,
+        trackingNumber: result.trackingNumber,
+        expectedDelivery: result.expectedDelivery,
+        previewUrl: result.previewUrl,
+        sentViaLob: true,
+      });
+    } catch (error: any) {
+      console.error("Lob send-letter error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/lob/track/:lobId
+  // Get live tracking status for a Lob letter
+  app.get("/api/lob/track/:lobId", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const { lobId } = req.params;
+      const { getLetterTracking } = await import("./lob-service.js");
+      const tracking = await getLetterTracking(lobId);
+      res.json(tracking);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/lob/verify-address
+  // Verify a client address before mailing (reduce undeliverable mail)
+  app.post("/api/lob/verify-address", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const { line1, line2, city, state, zip } = req.body;
+      const { verifyAddress } = await import("./lob-service.js");
+      const result = await verifyAddress({ line1, line2, city, state, zip });
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  // ─── End Lob.com Integration ───────────────────────────────────────────────
 
   const httpServer = createServer(app);
   return httpServer;
