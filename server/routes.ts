@@ -15,7 +15,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
 import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
-import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users } from "@shared/schema";
+import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users, disputeLettersNew } from "@shared/schema";
 import { z } from "zod";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
@@ -6350,7 +6350,7 @@ If you are just answering a question (not updating the letter), just respond nor
   app.get("/api/v1/disputes", openclawAuth, async (req, res) => {
     try {
       const { disputes: disputesTable } = await import("@shared/schema").then(m => m);
-      const allDisputes = await db.select().from(disputesTable).orderBy(desc(disputesTable.createdAt));
+      const allDisputes = await db.select().from(disputesTable).orderBy(desc(disputesTable.dateSent));
       const allUsers = await storage.getUsers();
       const userMap = new Map(allUsers.map(u => [u.id, u]));
       const disputesWithClient = allDisputes.map(d => ({
@@ -6372,7 +6372,7 @@ If you are just answering a question (not updating the letter), just respond nor
       const userMap = new Map(allUsers.map(u => [u.id, u]));
       const lettersWithClient = allLetters.map(l => ({
         ...l,
-        clientName: userMap.has(l.userId) ? `${userMap.get(l.userId)!.firstName} ${userMap.get(l.userId)!.lastName}` : "Unknown",
+        clientName: userMap.has(l.clientId) ? `${userMap.get(l.clientId)!.firstName} ${userMap.get(l.clientId)!.lastName}` : "Unknown",
       }));
       res.json({ letters: lettersWithClient, total: lettersWithClient.length });
     } catch (error: any) {
@@ -6483,10 +6483,10 @@ Write a formal, legally-sound dispute letter citing FCRA Section 611, requesting
         await db.update(disputeLettersNew)
           .set({
             trackingNumber: result.trackingNumber,
-            status: "mailed",
-            sentAt: new Date(),
+            status: "sent" as any,
+            sentDate: new Date() as any,
           })
-          .where(eq(disputeLettersNew.id, letterId));
+          .where(eq(disputeLettersNew.id, parseInt(letterId)));
       }
 
       res.json({
@@ -6534,15 +6534,15 @@ Write a formal, legally-sound dispute letter citing FCRA Section 611, requesting
   app.post("/api/ai/credit-coach", authenticateToken, async (req: Request, res: Response) => {
     try {
       const { message } = req.body;
-      const user = req.user as any;
+      const user = (req as any).user;
 
       // Fetch user context
       const userRecord = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
-      const creditReportData = await storage.getCreditReports(user.id);
+      const creditReportData = await storage.getCreditReport(user.id);
       const disputeData = await storage.getDisputes(user.id);
 
       const clientName = userRecord[0] ? `${userRecord[0].firstName} ${userRecord[0].lastName}` : "Client";
-      const latestScore = creditReportData[0]?.creditScore || "unknown";
+      const latestScore = (creditReportData as any)?.creditScore || "unknown";
       const activeDisputes = disputeData.filter((d: any) => d.status !== "RESOLVED").length;
       const resolvedDisputes = disputeData.filter((d: any) => d.status === "RESOLVED").length;
 
@@ -6576,11 +6576,11 @@ You have full access to this client's credit file. Provide specific, actionable 
   // ─── Score Map ─────────────────────────────────────────────────────────────
   app.get("/api/ai/score-map", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const user = req.user as any;
-      const creditReports = await storage.getCreditReports(user.id);
+      const user = (req as any).user;
+      const creditReports = await storage.getCreditReport(user.id);
       const disputes = await storage.getDisputes(user.id);
 
-      const currentScore = creditReports[0]?.creditScore || 580;
+      const currentScore = (creditReports as any)?.creditScore || 580;
 
       // Generate roadmap via Claude
       const response = await anthropic.messages.create({
@@ -6681,7 +6681,7 @@ ${denialLetterText}`
   // ─── Referrals ──────────────────────────────────────────────────────────────
   app.get("/api/referrals", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const user = req.user as any;
+      const user = (req as any).user;
       // Return mock referral data for now (referrals table will be added to schema)
       res.json({
         referrals: [],
@@ -6759,7 +6759,7 @@ ${denialLetterText}`
           bureau,
           content: letter,
           status: "draft",
-          generatedByAdminId: (req.user as any)?.id,
+          generatedByAdminId: (req as any).user?.id,
         }).returning();
         letterId = saved[0]?.id || null;
       } catch (_saveErr) {
