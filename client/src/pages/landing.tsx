@@ -1,1148 +1,530 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { motion, useInView, useAnimation, AnimatePresence } from "framer-motion";
-import { useRef, useEffect, useState, useCallback } from "react";
-import { 
-  Shield, 
-  TrendingUp, 
-  CreditCard, 
-  FileText, 
-  MessageSquare, 
-  Zap,
-  CheckCircle,
-  Users,
-  Building,
-  ArrowRight,
-  Star,
-  Lock,
-  Target,
-  Brain,
-  DollarSign,
-  GraduationCap,
-  ChevronRight,
-  Sparkles,
-  Moon,
-  Sun,
-  Quote,
-  ChevronLeft
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { ThemeToggle } from "@/components/theme-toggle";
-
-function AnimatedCounter({ value, suffix = "", duration = 2 }: { value: number; suffix?: string; duration?: number }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
-
-  useEffect(() => {
-    if (isInView) {
-      let start = 0;
-      const end = value;
-      const stepTime = Math.abs(Math.floor(duration * 1000 / end));
-      const timer = setInterval(() => {
-        start += 1;
-        setCount(start);
-        if (start === end) clearInterval(timer);
-      }, stepTime);
-      return () => clearInterval(timer);
-    }
-  }, [isInView, value, duration]);
-
-  return <span ref={ref}>{count}{suffix}</span>;
-}
-
-function FeatureCard({ feature, index }: { feature: any; index: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-    >
-      <Card className="group h-full border-0 shadow-lg hover:shadow-2xl transition-all duration-300 bg-white dark:bg-gray-900 hover:-translate-y-2 cursor-pointer overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <CardHeader className="relative">
-          <motion.div 
-            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-4 shadow-lg"
-            whileHover={{ scale: 1.1, rotate: 5 }}
-            transition={{ type: "spring", stiffness: 400 }}
-          >
-            {feature.icon}
-          </motion.div>
-          <CardTitle className="text-xl text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-            {feature.title}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CardDescription className="text-gray-600 dark:text-gray-400 text-base leading-relaxed">
-            {feature.description}
-          </CardDescription>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
-
-const testimonials = [
-  {
-    name: "Marcus J.",
-    location: "Atlanta, GA",
-    rating: 5,
-    text: "ScoreShift helped build my credit FAST! I had collections, charge-offs, and even a bankruptcy on my report. They got it ALL removed. My score went from 485 to 720 in just 6 months!",
-    scoreIncrease: "+235 points",
-    avatar: "MJ"
-  },
-  {
-    name: "Keisha W.",
-    location: "Houston, TX", 
-    rating: 5,
-    text: "Ervin at ScoreShift is amazing at getting everything done and done fast! He explained every step and kept me updated. Best decision I ever made for my credit!",
-    scoreIncrease: "+180 points",
-    avatar: "KW"
-  },
-  {
-    name: "David R.",
-    location: "Miami, FL",
-    rating: 5,
-    text: "I was drowning in negative items - late payments, collections, the works. ScoreShift's AI-powered disputes worked like magic. Now I'm approved for a mortgage!",
-    scoreIncrease: "+195 points",
-    avatar: "DR"
-  }
-];
-
-function TestimonialCard({ testimonial, isActive }: { testimonial: typeof testimonials[0]; isActive: boolean }) {
-  return (
-    <motion.div
-      className={`relative bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-2xl border border-gray-100 dark:border-gray-800 ${isActive ? 'scale-100 opacity-100' : 'scale-95 opacity-60'}`}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: isActive ? 1 : 0.6, y: 0, scale: isActive ? 1 : 0.95 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-        <Quote className="h-6 w-6 text-white" />
-      </div>
-      
-      <div className="flex items-center gap-1 mb-4 mt-2">
-        {[...Array(testimonial.rating)].map((_, i) => (
-          <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-        ))}
-      </div>
-      
-      <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-6 italic">
-        "{testimonial.text}"
-      </p>
-      
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-            {testimonial.avatar}
-          </div>
-          <div>
-            <div className="font-semibold text-gray-900 dark:text-white">{testimonial.name}</div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">{testimonial.location}</div>
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-2xl font-bold text-green-500">{testimonial.scoreIncrease}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Credit Score</div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function FloatingParticle({ delay, duration, size, left, top, color = "blue" }: { delay: number; duration: number; size: number; left: string; top: string; color?: string }) {
-  const colorMap: Record<string, { bg: string; shadow: string }> = {
-    blue: { bg: "bg-blue-500", shadow: "shadow-blue-500/50" },
-    purple: { bg: "bg-purple-500", shadow: "shadow-purple-500/50" },
-    green: { bg: "bg-green-500", shadow: "shadow-green-500/50" },
-    cyan: { bg: "bg-cyan-500", shadow: "shadow-cyan-500/50" },
-  };
-  
-  const colors = colorMap[color] || colorMap.blue;
-  
-  return (
-    <motion.div
-      className={`absolute rounded-full ${colors.bg} ${colors.shadow} shadow-xl`}
-      style={{ 
-        width: size, 
-        height: size, 
-        left, 
-        top,
-        boxShadow: `0 0 ${size * 2}px ${size / 2}px currentColor`,
-        zIndex: 5,
-      }}
-      animate={{
-        y: [0, -60, 0],
-        x: [0, 30, -30, 0],
-        scale: [1, 1.4, 0.7, 1],
-        opacity: [0.7, 1, 0.7],
-      }}
-      transition={{
-        duration,
-        delay,
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
-    />
-  );
-}
-
-function InteractiveBackground() {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setMousePosition({
-          x: (e.clientX - rect.left) / rect.width,
-          y: (e.clientY - rect.top) / rect.height,
-        });
-      }
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
-  return (
-    <div ref={containerRef} className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
-      {/* Animated gradient mesh */}
-      <motion.div
-        className="absolute inset-0"
-        style={{
-          background: `radial-gradient(circle at ${mousePosition.x * 100}% ${mousePosition.y * 100}%, rgba(59, 130, 246, 0.2) 0%, transparent 50%)`,
-        }}
-        transition={{ type: "spring", damping: 30 }}
-      />
-      
-      {/* Large floating orbs */}
-      <motion.div
-        className="absolute w-[600px] h-[600px] rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 70%)",
-          left: "10%",
-          top: "-20%",
-        }}
-        animate={{
-          x: [0, 50, 0],
-          y: [0, 30, 0],
-          scale: [1, 1.1, 1],
-        }}
-        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-      />
-      
-      <motion.div
-        className="absolute w-[500px] h-[500px] rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(147, 51, 234, 0.1) 0%, transparent 70%)",
-          right: "-10%",
-          bottom: "-10%",
-        }}
-        animate={{
-          x: [0, -40, 0],
-          y: [0, -20, 0],
-          scale: [1.1, 1, 1.1],
-        }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      <motion.div
-        className="absolute w-[400px] h-[400px] rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(34, 197, 94, 0.08) 0%, transparent 70%)",
-          left: "60%",
-          top: "20%",
-        }}
-        animate={{
-          x: [0, 30, -30, 0],
-          y: [0, -40, 0],
-        }}
-        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      {/* Floating particles - larger and more visible */}
-      <FloatingParticle delay={0} duration={6} size={16} left="10%" top="20%" color="blue" />
-      <FloatingParticle delay={1} duration={8} size={12} left="20%" top="60%" color="purple" />
-      <FloatingParticle delay={2} duration={7} size={20} left="80%" top="30%" color="cyan" />
-      <FloatingParticle delay={0.5} duration={9} size={14} left="70%" top="70%" color="green" />
-      <FloatingParticle delay={1.5} duration={6} size={18} left="30%" top="40%" color="blue" />
-      <FloatingParticle delay={3} duration={8} size={16} left="85%" top="55%" color="purple" />
-      <FloatingParticle delay={2.5} duration={7} size={12} left="15%" top="80%" color="cyan" />
-      <FloatingParticle delay={0.8} duration={10} size={22} left="50%" top="15%" color="blue" />
-      <FloatingParticle delay={1.2} duration={6} size={14} left="40%" top="85%" color="green" />
-      <FloatingParticle delay={2.2} duration={9} size={18} left="90%" top="10%" color="purple" />
-      <FloatingParticle delay={3.5} duration={7} size={16} left="5%" top="45%" color="cyan" />
-      <FloatingParticle delay={1.8} duration={8} size={20} left="60%" top="5%" color="blue" />
-      <FloatingParticle delay={0.3} duration={7} size={24} left="25%" top="25%" color="purple" />
-      <FloatingParticle delay={2.8} duration={9} size={18} left="75%" top="50%" color="green" />
-      <FloatingParticle delay={1.1} duration={6} size={14} left="45%" top="75%" color="cyan" />
-
-      {/* Animated lines/grid */}
-      <svg className="absolute inset-0 w-full h-full opacity-[0.03] dark:opacity-[0.05]" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-            <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="1" className="text-blue-600"/>
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#grid)" />
-      </svg>
-
-      {/* Animated glowing orbs that follow mouse slightly */}
-      <motion.div
-        className="absolute w-32 h-32 rounded-full bg-blue-500/20 blur-3xl"
-        animate={{
-          x: mousePosition.x * 100 - 50,
-          y: mousePosition.y * 100 - 50,
-        }}
-        transition={{ type: "spring", damping: 50, stiffness: 100 }}
-        style={{ left: "40%", top: "30%" }}
-      />
-      
-      <motion.div
-        className="absolute w-24 h-24 rounded-full bg-purple-500/15 blur-2xl"
-        animate={{
-          x: mousePosition.x * -80 + 40,
-          y: mousePosition.y * -60 + 30,
-        }}
-        transition={{ type: "spring", damping: 40, stiffness: 80 }}
-        style={{ right: "30%", bottom: "40%" }}
-      />
-
-      {/* Sparkle effects */}
-      {[...Array(6)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-1 h-1 bg-blue-400 rounded-full"
-          style={{
-            left: `${15 + i * 15}%`,
-            top: `${20 + (i % 3) * 25}%`,
-          }}
-          animate={{
-            opacity: [0, 1, 0],
-            scale: [0, 1.5, 0],
-          }}
-          transition={{
-            duration: 2,
-            delay: i * 0.5,
-            repeat: Infinity,
-            repeatDelay: 3,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function TestimonialsCarousel() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-
-  const nextSlide = useCallback(() => {
-    setActiveIndex((prev) => (prev + 1) % testimonials.length);
-  }, []);
-
-  const prevSlide = useCallback(() => {
-    setActiveIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-  }, []);
-
-  useEffect(() => {
-    if (!isAutoPlaying) return;
-    const interval = setInterval(nextSlide, 5000);
-    return () => clearInterval(interval);
-  }, [isAutoPlaying, nextSlide]);
-
-  return (
-    <div 
-      className="relative py-6"
-      onMouseEnter={() => setIsAutoPlaying(false)}
-      onMouseLeave={() => setIsAutoPlaying(true)}
-    >
-      <div className="overflow-visible">
-        <div className="flex justify-center">
-          <div className="w-full max-w-2xl px-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeIndex}
-                initial={{ opacity: 0, x: 100 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -100 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-              >
-                <TestimonialCard testimonial={testimonials[activeIndex]} isActive={true} />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation Buttons */}
-      <div className="flex justify-center items-center gap-4 mt-8">
-        <motion.button
-          onClick={prevSlide}
-          className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          data-testid="button-testimonial-prev"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </motion.button>
-
-        {/* Dots */}
-        <div className="flex gap-2">
-          {testimonials.map((_, index) => (
-            <motion.button
-              key={index}
-              onClick={() => setActiveIndex(index)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                index === activeIndex 
-                  ? 'bg-blue-600 w-8' 
-                  : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400'
-              }`}
-              whileHover={{ scale: 1.2 }}
-              data-testid={`button-testimonial-dot-${index}`}
-            />
-          ))}
-        </div>
-
-        <motion.button
-          onClick={nextSlide}
-          className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          data-testid="button-testimonial-next"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </motion.button>
-      </div>
-    </div>
-  );
-}
-
-function PricingCard({ plan, index }: { plan: any; index: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: index * 0.15 }}
-      className="relative"
-    >
-      <Card className={`relative h-full transition-all duration-300 hover:shadow-2xl ${
-        plan.popular 
-          ? "border-2 border-blue-500 shadow-xl bg-gradient-to-b from-blue-50 to-white dark:from-blue-950/50 dark:to-gray-900 scale-105 z-10" 
-          : "border border-gray-200 dark:border-gray-800 hover:-translate-y-2"
-      }`}>
-        {plan.popular && (
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500" />
-        )}
-        {plan.popular && (
-          <motion.div 
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="absolute -top-5 left-1/2 transform -translate-x-1/2 z-20"
-          >
-            <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-1.5 shadow-lg whitespace-nowrap">
-              <Star className="h-3 w-3 mr-1" /> Most Popular
-            </Badge>
-          </motion.div>
-        )}
-        <CardHeader className="text-center pb-8 pt-8">
-          <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">{plan.name}</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400 mt-2">{plan.description}</CardDescription>
-          <div className="mt-6">
-            <span className="text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-              ${plan.price}
-            </span>
-            <span className="text-gray-500 dark:text-gray-400">/month</span>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <ul className="space-y-4 mb-8">
-            {plan.features.map((feature: string, featureIndex: number) => (
-              <motion.li 
-                key={featureIndex} 
-                className="flex items-start gap-3"
-                initial={{ opacity: 0, x: -10 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: featureIndex * 0.05 + index * 0.1 }}
-              >
-                <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-700 dark:text-gray-300">{feature}</span>
-              </motion.li>
-            ))}
-          </ul>
-          <Link href="/billing">
-            <Button 
-              className={`w-full py-6 text-base font-semibold transition-all duration-300 ${
-                plan.popular 
-                  ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl" 
-                  : "hover:bg-blue-50 dark:hover:bg-blue-950"
-              }`}
-              variant={plan.popular ? "default" : "outline"}
-              data-testid={`button-pricing-${plan.name.toLowerCase().replace(/\s+/g, '-')}`}
-            >
-              Get Started
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
+import { Button } from "@/components/ui/button";
+import { CheckCircle, Zap, Mail, Building2, MessageSquare, Map, Trophy, Star, TrendingUp, Shield, ArrowRight, X } from "lucide-react";
+import { PaymentCard3D } from "@/components/ui/payment-card-3d";
 
 export default function LandingPage() {
-  const { toast } = useToast();
-  const heroRef = useRef(null);
-  const heroInView = useInView(heroRef, { once: true });
-
-  const features = [
-    {
-      icon: <Brain className="h-7 w-7 text-white" />,
-      title: "AI-Powered Credit Analysis",
-      description: "Advanced AI analyzes your credit reports and generates personalized dispute letters with 94% success rate."
-    },
-    {
-      icon: <Shield className="h-7 w-7 text-white" />,
-      title: "Real-Time Credit Monitoring",
-      description: "Direct integration with all three credit bureaus for instant score updates and alert notifications."
-    },
-    {
-      icon: <FileText className="h-7 w-7 text-white" />,
-      title: "Professional Dispute Management",
-      description: "Automated dispute tracking, USPS certified mail integration, and 14-day follow-up system."
-    },
-    {
-      icon: <TrendingUp className="h-7 w-7 text-white" />,
-      title: "Credit Score Optimization",
-      description: "AI-driven utilization recommendations, credit mix analysis, and score improvement predictions."
-    },
-    {
-      icon: <MessageSquare className="h-7 w-7 text-white" />,
-      title: "Secure Client Communication",
-      description: "Encrypted chat system with document sharing, progress updates, and real-time notifications."
-    },
-    {
-      icon: <Building className="h-7 w-7 text-white" />,
-      title: "Business Credit Building",
-      description: "Complete business credit profile development with funding recommendations and trade line analysis."
-    }
-  ];
-
-  const stats = [
-    { value: 94, suffix: "%", label: "Success Rate" },
-    { value: 156, suffix: "+", label: "Avg Point Increase" },
-    { value: 24, suffix: "/7", label: "Monitoring" },
-    { value: 48, suffix: "hrs", label: "Response Time" }
-  ];
-
-  const pricingPlans = [
-    {
-      name: "Pro Plan",
-      price: 29,
-      description: "Perfect for individuals starting their credit journey",
-      features: [
-        "Automated AI dispute generation",
-        "1–2 negative items handled monthly",
-        "Monthly credit report analysis",
-        "Basic templates & resources",
-        "Email support"
-      ],
-      popular: false
-    },
-    {
-      name: "Elite Plan",
-      price: 79,
-      description: "Accelerate results with unlimited disputes",
-      features: [
-        "Everything in Pro",
-        "Unlimited AI dispute generation",
-        "Weekly credit monitoring",
-        "Advanced removal tools",
-        "Priority live chat support",
-        "Monthly 15-min strategy call"
-      ],
-      popular: true
-    },
-    {
-      name: "White Label",
-      price: 399,
-      description: "Run your own branded credit business",
-      features: [
-        "Everything in Elite",
-        "Custom branding & domain",
-        "Client management (50 users)",
-        "Resell under your brand",
-        "Dedicated account manager",
-        "Wholesale vendor pricing"
-      ],
-      popular: false
-    }
-  ];
-
-  const integrations = [
-    { name: "Plaid Banking", icon: <DollarSign className="h-6 w-6" /> },
-    { name: "Experian API", icon: <Shield className="h-6 w-6" /> },
-    { name: "USPS Tracking", icon: <FileText className="h-6 w-6" /> },
-    { name: "OpenAI GPT-4", icon: <Brain className="h-6 w-6" /> },
-    { name: "Stripe", icon: <CreditCard className="h-6 w-6" /> }
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg border-b border-gray-200/50 dark:border-gray-800/50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <motion.div 
-              className="flex items-center space-x-3"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-            >
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-                <TrendingUp className="h-6 w-6 text-white" />
+    <div className="min-h-screen" style={{ background: "#050A14" }}>
+      {/* === PUBLIC NAVIGATION === */}
+      <nav
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b"
+        style={{
+          background: "rgba(5,10,20,0.85)",
+          borderColor: "rgba(255,255,255,0.06)",
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-2">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-black font-black text-sm"
+                style={{ background: "linear-gradient(135deg, #F59E0B, #FCD34D)" }}
+              >
+                SS
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                ScoreShift
-              </h1>
-            </motion.div>
-            <motion.div 
-              className="flex items-center space-x-3"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-            >
-              <ThemeToggle />
-              <Link href="/login">
-                <Button 
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/25 transition-all duration-300"
-                  data-testid="button-login"
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Login
+              <span className="text-white font-bold text-lg tracking-tight">ScoreShift</span>
+            </div>
+            <div className="hidden md:flex items-center gap-8">
+              <a href="#features" className="text-slate-400 hover:text-white text-sm transition-colors">Features</a>
+              <Link href="/pricing"><span className="text-slate-400 hover:text-white text-sm transition-colors cursor-pointer">Pricing</span></Link>
+              <a href="#compare" className="text-slate-400 hover:text-white text-sm transition-colors">Compare</a>
+              <a href="#business" className="text-slate-400 hover:text-white text-sm transition-colors">For Business</a>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link href="/auth">
+                <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-white/5">
+                  Sign In
                 </Button>
               </Link>
-            </motion.div>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <section ref={heroRef} className="pt-32 pb-20 px-4 relative min-h-screen flex items-center">
-        <InteractiveBackground />
-        
-        <div className="container mx-auto text-center relative" style={{ zIndex: 10 }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={heroInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6 }}
-          >
-            <Badge className="mb-6 px-4 py-2 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-950 border border-blue-200 dark:border-blue-800">
-              <Sparkles className="h-3 w-3 mr-2" />
-              AI-Powered Credit Repair Platform
-            </Badge>
-          </motion.div>
-
-          <motion.h2 
-            className="text-5xl md:text-7xl font-bold mb-6 tracking-tight"
-            initial={{ opacity: 0, y: 30 }}
-            animate={heroInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.1 }}
-          >
-            <span className="text-gray-900 dark:text-white">Transform Your</span>
-            <br />
-            <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-purple-600 bg-clip-text text-transparent">
-              Credit Profile
-            </span>
-          </motion.h2>
-
-          <motion.p 
-            className="text-xl text-gray-600 dark:text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed"
-            initial={{ opacity: 0, y: 30 }}
-            animate={heroInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            Professional credit repair platform combining AI-powered dispute generation, 
-            real-time bureau monitoring, and comprehensive financial wellness tools.
-          </motion.p>
-          
-          <motion.div 
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            animate={heroInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
-            <Link href="/signup">
-              <Button 
-                size="lg" 
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 px-8 py-6 text-lg shadow-xl shadow-blue-500/25 hover:shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 group"
-                data-testid="button-start-repair"
-              >
-                <Target className="h-5 w-5 mr-2" />
-                Start Credit Repair
-                <motion.span
-                  className="ml-2"
-                  animate={{ x: [0, 4, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </motion.span>
-              </Button>
-            </Link>
-            <Link href="/login">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Button 
-                  size="lg" 
-                  className="relative px-8 py-6 text-lg bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 hover:from-purple-700 hover:via-pink-600 hover:to-orange-600 text-white border-0 shadow-xl shadow-purple-500/30 hover:shadow-2xl hover:shadow-pink-500/40 transition-all duration-300 overflow-hidden group"
-                  data-testid="button-client-login"
-                >
-                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                  <Users className="h-5 w-5 mr-2 relative z-10" />
-                  <span className="relative z-10">Client Login</span>
-                  <Sparkles className="h-4 w-4 ml-2 relative z-10 animate-pulse" />
+              <Link href="/signup">
+                <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-black font-bold glow-gold">
+                  Start Free
                 </Button>
-              </motion.div>
-            </Link>
-          </motion.div>
-
-          {/* Animated Stats */}
-          <motion.div 
-            className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto"
-            initial={{ opacity: 0, y: 40 }}
-            animate={heroInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            {stats.map((stat, index) => (
-              <motion.div 
-                key={index} 
-                className="relative group"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 400 }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="relative bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-800">
-                  <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    <AnimatedCounter value={stat.value} suffix={stat.suffix} />
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1 font-medium">{stat.label}</div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Client Reviews / Testimonials Section */}
-      <section className="py-24 px-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-950 relative overflow-visible">
-        {/* Background decoration */}
-        <div className="absolute inset-0 -z-10">
-          <motion.div
-            className="absolute top-10 right-20 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl"
-            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-            transition={{ duration: 6, repeat: Infinity }}
-          />
-          <motion.div
-            className="absolute bottom-10 left-20 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl"
-            animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.3, 0.5] }}
-            transition={{ duration: 6, repeat: Infinity }}
-          />
-        </div>
-
-        <div className="container mx-auto">
-          <motion.div 
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <Badge className="mb-4 px-4 py-2 bg-yellow-100 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
-              <Star className="h-3 w-3 mr-2 fill-yellow-500" />
-              Real Client Results
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              What Our Clients Say
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Join thousands who have transformed their credit with ScoreShift
-            </p>
-          </motion.div>
-
-          <TestimonialsCarousel />
-
-          {/* Trust indicators */}
-          <motion.div 
-            className="flex flex-wrap justify-center gap-6 mt-16"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
-          >
-            <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-5 py-3 rounded-full shadow-lg border border-gray-100 dark:border-gray-700">
-              <div className="flex -space-x-2">
-                {['MJ', 'KW', 'DR'].map((initials, i) => (
-                  <div key={i} className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-white dark:border-gray-800">
-                    {initials}
-                  </div>
-                ))}
-              </div>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">2,500+ Happy Clients</span>
+              </Link>
             </div>
-            <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-5 py-3 rounded-full shadow-lg border border-gray-100 dark:border-gray-700">
-              <div className="flex gap-0.5">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">4.9/5 Average Rating</span>
-            </div>
-            <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-5 py-3 rounded-full shadow-lg border border-gray-100 dark:border-gray-700">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">94% Success Rate</span>
-            </div>
-          </motion.div>
+          </div>
         </div>
-      </section>
+      </nav>
 
-      {/* Pricing Section */}
-      <section className="py-24 px-4 bg-gray-50 dark:bg-gray-900/50">
-        <div className="container mx-auto">
-          <motion.div 
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <Badge className="mb-4 px-4 py-2 bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
-              <Zap className="h-3 w-3 mr-2" />
-              Simple Pricing
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              Choose Your Plan
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              All plans include AI-powered dispute tools and real-time monitoring
-            </p>
-          </motion.div>
+      {/* === HERO SECTION === */}
+      <section
+        className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden grid-bg"
+      >
+        {/* Ambient orbs */}
+        <div
+          className="absolute top-20 right-20 w-96 h-96 rounded-full blur-3xl pointer-events-none animate-pulse-slow"
+          style={{ background: "rgba(245,158,11,0.05)" }}
+        />
+        <div
+          className="absolute bottom-40 left-20 w-80 h-80 rounded-full blur-3xl pointer-events-none animate-float"
+          style={{ background: "rgba(96,165,250,0.05)" }}
+        />
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full blur-3xl pointer-events-none"
+          style={{ background: "rgba(245,158,11,0.02)" }}
+        />
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-start pt-6">
-            {pricingPlans.map((plan, index) => (
-              <PricingCard key={plan.name} plan={plan} index={index} />
-            ))}
+        <div className="relative z-10 max-w-6xl mx-auto px-4 text-center">
+          {/* Announcement badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-500/20 bg-amber-500/5 text-amber-400 text-xs font-medium mb-8">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            Now with Dispute IQ™ — AI letters bureaus can't flag
           </div>
 
-          <motion.div 
-            className="text-center mt-16"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.5 }}
+          {/* Main headline */}
+          <h1
+            className="text-6xl md:text-8xl font-black text-white tracking-tight leading-none mb-6"
           >
-            <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-600 dark:text-gray-400">
-              <span className="flex items-center gap-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-sm">
-                <Lock className="h-4 w-4 text-green-500" />
-                Bank-level security
-              </span>
-              <span className="flex items-center gap-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-sm">
-                <Shield className="h-4 w-4 text-green-500" />
-                GDPR compliant
-              </span>
-              <span className="flex items-center gap-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-sm">
-                <MessageSquare className="h-4 w-4 text-green-500" />
-                24/7 support
-              </span>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+            Fix Your Credit.<br />
+            <span className="gradient-text">Get Loan Ready.</span>
+          </h1>
 
-      {/* Student Loan Section */}
-      <section className="py-24 px-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700" />
-        <motion.div
-          className="absolute inset-0"
-          animate={{ backgroundPosition: ["0% 0%", "100% 100%"] }}
-          transition={{ duration: 20, repeat: Infinity, repeatType: "reverse" }}
-          style={{
-            backgroundImage: "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%)",
-            backgroundSize: "200% 200%"
-          }}
-        />
-        <div className="container mx-auto relative z-10">
-          <motion.div 
-            className="max-w-4xl mx-auto text-center text-white"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <Badge className="mb-6 bg-white/20 text-white hover:bg-white/20 border-white/30 backdrop-blur-sm">
-              <GraduationCap className="h-3 w-3 mr-2" />
-              New Feature
-            </Badge>
-            <h3 className="text-4xl md:text-5xl font-bold mb-6">
-              Student Loan Negotiation
-            </h3>
-            <p className="text-xl opacity-90 mb-12 max-w-2xl mx-auto">
-              AI-powered strategies to reduce payments, negotiate better terms, and optimize your repayment plan
-            </p>
-            
-            <div className="grid md:grid-cols-3 gap-6 mb-12">
-              {[
-                { icon: <Target className="h-8 w-8" />, title: "Payment Optimization", desc: "Calculate the best strategy" },
-                { icon: <MessageSquare className="h-8 w-8" />, title: "Servicer Communication", desc: "Professional templates" },
-                { icon: <TrendingUp className="h-8 w-8" />, title: "Progress Tracking", desc: "Monitor your savings" }
-              ].map((item, i) => (
-                <motion.div 
-                  key={i}
-                  className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300"
-                  whileHover={{ scale: 1.05, y: -5 }}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                >
-                  <div className="mb-4">{item.icon}</div>
-                  <h4 className="font-semibold text-lg mb-2">{item.title}</h4>
-                  <p className="text-sm opacity-80">{item.desc}</p>
-                </motion.div>
-              ))}
-            </div>
+          {/* Subheadline */}
+          <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-10">
+            ScoreShift is the only credit repair platform that connects your repair journey directly to DSCR loan approval. AI-powered. Automated. Built for results.
+          </p>
 
+          {/* CTA buttons */}
+          <div className="flex gap-4 justify-center flex-wrap mb-10">
             <Link href="/signup">
-              <Button 
+              <Button
                 size="lg"
-                className="bg-white text-blue-600 hover:bg-gray-100 font-semibold px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300"
-                data-testid="button-student-loans"
+                className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-8 h-14 text-lg glow-gold"
               >
-                <GraduationCap className="h-5 w-5 mr-2" />
-                Start Negotiation
-                <ArrowRight className="h-5 w-5 ml-2" />
+                Start Free Trial →
               </Button>
             </Link>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section className="py-24 px-4">
-        <div className="container mx-auto">
-          <motion.div 
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <Badge className="mb-4 px-4 py-2 bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-              <CheckCircle className="h-3 w-3 mr-2" />
-              Complete Feature Set
-            </Badge>
-            <h3 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              Everything You Need
-            </h3>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Our comprehensive platform handles every aspect of credit repair
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {features.map((feature, index) => (
-              <FeatureCard key={index} feature={feature} index={index} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Integrations */}
-      <section className="py-24 px-4 bg-gray-50 dark:bg-gray-900/50">
-        <div className="container mx-auto">
-          <motion.div 
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Powered by Industry Leaders
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Trusted integrations with leading financial services
-            </p>
-          </motion.div>
-
-          <div className="flex flex-wrap justify-center gap-6 max-w-4xl mx-auto">
-            {integrations.map((integration, index) => (
-              <motion.div
-                key={index}
-                className="flex items-center gap-3 bg-white dark:bg-gray-800 px-6 py-4 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700"
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.05, y: -2 }}
+            <a href="#features">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-white/10 text-white hover:bg-white/5 px-8 h-14 text-lg"
               >
-                <div className="text-blue-600 dark:text-blue-400">{integration.icon}</div>
-                <span className="font-medium text-gray-900 dark:text-white">{integration.name}</span>
-                <Badge className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs">Active</Badge>
-              </motion.div>
+                See How It Works
+              </Button>
+            </a>
+          </div>
+
+          {/* Social proof */}
+          <div className="flex items-center justify-center gap-6 md:gap-8 text-slate-500 text-sm flex-wrap">
+            <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> No credit card required</span>
+            <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> 3-day free trial</span>
+            <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Cancel anytime</span>
+          </div>
+
+          {/* Hero visual */}
+          <div className="relative mt-20 flex items-center justify-center">
+            {/* Floating stat chips */}
+            <div
+              className="absolute -left-4 md:left-8 top-4 z-10 animate-stat-1 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2 backdrop-blur-sm"
+            >
+              <div className="text-emerald-400 font-bold text-sm">+47 pts</div>
+              <div className="text-slate-400 text-xs">this month</div>
+            </div>
+            <div
+              className="absolute -right-4 md:right-8 top-8 z-10 animate-stat-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 backdrop-blur-sm"
+            >
+              <div className="text-amber-400 font-bold text-sm">4 items</div>
+              <div className="text-slate-400 text-xs">removed</div>
+            </div>
+            <div
+              className="absolute left-1/2 -translate-x-1/2 -bottom-8 z-10 animate-stat-3 bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2 backdrop-blur-sm"
+            >
+              <div className="text-blue-400 font-bold text-sm">Loan Ready: 68%</div>
+              <div className="text-slate-400 text-xs">on track</div>
+            </div>
+
+            <PaymentCard3D animated={true} className="relative z-10" />
+          </div>
+        </div>
+      </section>
+
+      {/* === STATS BAR === */}
+      <section
+        className="py-10 border-t border-b"
+        style={{
+          background: "rgba(255,255,255,0.02)",
+          borderColor: "rgba(255,255,255,0.06)",
+        }}
+      >
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {[
+              { value: "16,000+", label: "Items Removed" },
+              { value: "94%", label: "Client Satisfaction" },
+              { value: "30-Day", label: "Average First Result" },
+              { value: "$0", label: "Hidden Fees" },
+            ].map((stat) => (
+              <div key={stat.label}>
+                <div className="text-3xl font-black text-white mb-1">{stat.value}</div>
+                <div className="text-slate-500 text-sm uppercase tracking-widest text-xs">{stat.label}</div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* White-Label Business Section */}
-      <section className="py-24 px-4 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-        <div className="container mx-auto max-w-6xl">
-          <motion.div
-            className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            {/* Left: Headline */}
-            <div>
-              <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-full px-4 py-1.5 text-amber-400 text-sm font-medium mb-6">
-                🏷️ White-Label Platform
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-6">
-                Running a credit repair business?
-              </h2>
-              <p className="text-slate-300 text-lg mb-8">
-                ScoreShift powers your entire operation — client portal, dispute automation,
-                Lob.com certified mail, and a lending pipeline built in. Your brand, your clients,
-                full automation.
-              </p>
+      {/* === FEATURES SECTION === */}
+      <section id="features" className="py-24 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="text-xs uppercase tracking-widest text-amber-400 mb-3 font-medium">Platform Features</div>
+            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight">
+              Everything You Need
+            </h2>
+            <p className="text-slate-400 mt-4 text-lg max-w-2xl mx-auto">
+              Six powerful tools working together to get you loan-ready faster than any other platform.
+            </p>
+          </div>
 
-              <ul className="space-y-3 mb-10">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                icon: <Zap className="w-5 h-5 text-amber-400" />,
+                title: "Dispute IQ™",
+                desc: "AI writes a unique letter every round. Bureaus can't pattern-flag it.",
+                color: "amber",
+              },
+              {
+                icon: <Mail className="w-5 h-5 text-blue-400" />,
+                title: "Auto Certified Mail",
+                desc: "Lob.com sends letters automatically. Real USPS tracking, zero trips.",
+                color: "blue",
+              },
+              {
+                icon: <Building2 className="w-5 h-5 text-emerald-400" />,
+                title: "Loan Bridge",
+                desc: "Hit your target score? We connect you to DSCR lenders automatically.",
+                color: "emerald",
+              },
+              {
+                icon: <MessageSquare className="w-5 h-5 text-amber-400" />,
+                title: "Credit Coach AI",
+                desc: "24/7 AI that knows your full credit file. Ask anything, anytime.",
+                color: "amber",
+              },
+              {
+                icon: <Map className="w-5 h-5 text-blue-400" />,
+                title: "Score Map",
+                desc: "AI roadmap from your score today to loan approval. Updated in real time.",
+                color: "blue",
+              },
+              {
+                icon: <Trophy className="w-5 h-5 text-emerald-400" />,
+                title: "Victory Room",
+                desc: "Celebrate every win. Share your progress. Build momentum.",
+                color: "emerald",
+              },
+            ].map((feature) => (
+              <div
+                key={feature.title}
+                className="card-3d card-3d-gold p-6 group"
+              >
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
+                  style={{
+                    background:
+                      feature.color === "amber"
+                        ? "rgba(245,158,11,0.1)"
+                        : feature.color === "blue"
+                        ? "rgba(96,165,250,0.1)"
+                        : "rgba(52,211,153,0.1)",
+                    border:
+                      feature.color === "amber"
+                        ? "1px solid rgba(245,158,11,0.2)"
+                        : feature.color === "blue"
+                        ? "1px solid rgba(96,165,250,0.2)"
+                        : "1px solid rgba(52,211,153,0.2)",
+                  }}
+                >
+                  {feature.icon}
+                </div>
+                <h3 className="text-white font-bold text-lg mb-2">{feature.title}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* === DUAL AUDIENCE SECTION === */}
+      <section id="business" className="py-24 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="text-xs uppercase tracking-widest text-amber-400 mb-3 font-medium">Who It's For</div>
+            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight">
+              Personal or Business
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Personal */}
+            <div
+              className="card-3d p-8 border"
+              style={{ borderColor: "rgba(96,165,250,0.2)" }}
+            >
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-6">
+                Personal Credit
+              </div>
+              <h3 className="text-2xl font-black text-white mb-3">
+                Fix your credit.<br />Get loan-ready.
+              </h3>
+              <p className="text-slate-400 text-sm mb-6">
+                From $49/mo — Start with a 3-day free trial.
+              </p>
+              <ul className="space-y-3 mb-8">
                 {[
-                  "Your brand, your portal — fully white-labeled",
-                  "Automated dispute cycles (Rounds 1, 2, Validation)",
-                  "AI letters that bureaus can't flag",
-                  "Built-in DSCR loan pipeline for client graduates",
-                  "Starts at $99/mo — CRC charges $179+",
+                  "Track all 3 bureaus",
+                  "AI dispute letters",
+                  "Certified mail automation",
+                  "Loan readiness meter",
+                  "24/7 Credit Coach AI",
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-slate-300">
-                    <span className="text-amber-400 font-bold mt-0.5">✓</span>
-                    <span>{item}</span>
+                  <li key={item} className="flex items-center gap-2 text-slate-300 text-sm">
+                    <CheckCircle className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                    {item}
                   </li>
                 ))}
               </ul>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/white-label/onboarding">
-                  <Button
-                    size="lg"
-                    className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-8 shadow-lg shadow-amber-500/25"
-                  >
-                    Start White-Label Free Trial
-                    <ArrowRight className="h-5 w-5 ml-2" />
-                  </Button>
-                </Link>
-                <Link href="/signup">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white"
-                  >
-                    Learn More
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            {/* Right: Feature cards */}
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { icon: "⚡", title: "Scoreshifting Engine", desc: "AI processes every report automatically" },
-                { icon: "📬", title: "Lob.com Mail", desc: "Certified dispute letters sent automatically" },
-                { icon: "📊", title: "Client Dashboard", desc: "Branded portal your clients log into" },
-                { icon: "💰", title: "Loan Pipeline", desc: "DSCR loan referrals built right in" },
-                { icon: "🔄", title: "Round Automation", desc: "Rounds 1→2→Validation on autopilot" },
-                { icon: "📱", title: "SMS + Email", desc: "Automated client communications" },
-              ].map((card) => (
-                <div
-                  key={card.title}
-                  className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 hover:border-amber-500/40 transition-colors"
-                >
-                  <div className="text-2xl mb-2">{card.icon}</div>
-                  <h4 className="font-semibold text-white text-sm mb-1">{card.title}</h4>
-                  <p className="text-slate-400 text-xs">{card.desc}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-24 px-4">
-        <div className="container mx-auto">
-          <motion.div 
-            className="max-w-4xl mx-auto text-center bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 rounded-3xl p-12 md:p-16 shadow-2xl relative overflow-hidden"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <motion.div
-              className="absolute inset-0 opacity-30"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
-              style={{
-                background: "conic-gradient(from 0deg, transparent, rgba(255,255,255,0.3), transparent)"
-              }}
-            />
-            <div className="relative z-10">
-              <h3 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                Ready to Transform Your Credit?
-              </h3>
-              <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto">
-                Join thousands who have improved their credit scores with our AI-powered platform
-              </p>
-              
               <Link href="/signup">
-                <Button 
-                  size="lg" 
-                  className="bg-white text-blue-600 hover:bg-gray-100 px-10 py-6 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300"
-                  data-testid="button-get-started-cta"
-                >
-                  <Target className="h-5 w-5 mr-2" />
-                  Get Started Today
-                  <ArrowRight className="h-5 w-5 ml-2" />
+                <Button className="w-full bg-blue-500 hover:bg-blue-400 text-white font-bold">
+                  Start Free →
                 </Button>
               </Link>
             </div>
-          </motion.div>
+
+            {/* White Label */}
+            <div
+              className="card-3d p-8 border relative"
+              style={{ borderColor: "rgba(245,158,11,0.25)" }}
+            >
+              <div
+                className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-black text-xs font-bold"
+                style={{ background: "linear-gradient(135deg, #F59E0B, #FCD34D)" }}
+              >
+                Most Popular for Businesses
+              </div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium mb-6">
+                White Label Business
+              </div>
+              <h3 className="text-2xl font-black text-white mb-3">
+                Run your credit repair<br />business on autopilot.
+              </h3>
+              <p className="text-slate-400 text-sm mb-6">
+                From $99/mo — Unlimited clients. Your brand.
+              </p>
+              <ul className="space-y-3 mb-8">
+                {[
+                  "Your brand + portal",
+                  "Unlimited clients",
+                  "AutoCycle dispute automation",
+                  "Built-in DSCR pipeline",
+                  "Starts at $99/mo vs CRC's $179",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-slate-300 text-sm">
+                    <CheckCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/signup">
+                <Button className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold glow-gold">
+                  Start White Label →
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-4 border-t border-gray-200 dark:border-gray-800">
-        <div className="container mx-auto text-center">
-          <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-              <TrendingUp className="h-5 w-5 text-white" />
+      {/* === TESTIMONIALS === */}
+      <section
+        className="py-24 px-4"
+        style={{ background: "rgba(255,255,255,0.01)" }}
+      >
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="text-xs uppercase tracking-widest text-amber-400 mb-3 font-medium">Client Stories</div>
+            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight">
+              Real Results
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                quote: "I went from 572 to 664 in 4 months. My DSCR loan was approved last week.",
+                name: "Marcus T.",
+                location: "Atlanta, GA",
+              },
+              {
+                quote: "I run 80 clients and the automation does 90% of the work. I switched from CRC and never looked back.",
+                name: "Keisha R.",
+                location: "Credit Repair Business Owner",
+              },
+              {
+                quote: "The Credit Coach AI answered my question at 2am when I was panicking about a new collection. Instantly calmed me down.",
+                name: "David M.",
+                location: "Miami, FL",
+              },
+            ].map((t) => (
+              <div key={t.name} className="card-3d p-6">
+                <div className="flex gap-0.5 mb-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  ))}
+                </div>
+                <p className="text-slate-300 text-sm leading-relaxed mb-6">"{t.quote}"</p>
+                <div>
+                  <div className="text-white font-semibold text-sm">{t.name}</div>
+                  <div className="text-slate-500 text-xs">{t.location}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* === CRC COMPARISON TABLE === */}
+      <section id="compare" className="py-24 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="text-xs uppercase tracking-widest text-amber-400 mb-3 font-medium">Comparison</div>
+            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight">
+              ScoreShift vs Credit Repair Cloud
+            </h2>
+          </div>
+
+          <div
+            className="rounded-2xl overflow-hidden border"
+            style={{ borderColor: "rgba(255,255,255,0.06)" }}
+          >
+            {/* Header */}
+            <div
+              className="grid grid-cols-3 text-sm font-bold"
+              style={{ background: "#0F1E35" }}
+            >
+              <div className="p-4 text-slate-400">Feature</div>
+              <div className="p-4 text-center">
+                <span className="gradient-text font-black">ScoreShift</span>
+              </div>
+              <div className="p-4 text-center text-slate-500">CRC</div>
             </div>
-            <span className="font-bold text-gray-900 dark:text-white">ScoreShift</span>
+
+            {[
+              { feature: "AI-generated unique letters", ss: true, crc: false, crcNote: "static templates" },
+              { feature: "Automated certified mail", ss: true, crc: false, crcNote: "Manual" },
+              { feature: "DSCR loan pipeline", ss: true, crc: false, crcNote: "Not available" },
+              { feature: "Real-time score alerts", ss: true, crc: false, crcNote: "Static rounds only" },
+              { feature: "Credit Coach AI", ss: true, crc: false, crcNote: "" },
+              { feature: "8 languages", ss: true, crc: false, crcNote: "English only" },
+              { feature: "Victory Room celebrations", ss: true, crc: false, crcNote: "" },
+              { feature: "Starting price", ss: false, crc: false, ssText: "$49/mo", crcText: "$179/mo" },
+            ].map((row, i) => (
+              <div
+                key={row.feature}
+                className="grid grid-cols-3 text-sm border-t"
+                style={{
+                  borderColor: "rgba(255,255,255,0.04)",
+                  background: i % 2 === 0 ? "rgba(255,255,255,0.01)" : "transparent",
+                }}
+              >
+                <div className="p-4 text-slate-400">{row.feature}</div>
+                <div className="p-4 text-center">
+                  {row.ssText ? (
+                    <span className="text-amber-400 font-bold">{row.ssText}</span>
+                  ) : row.ss ? (
+                    <span className="text-emerald-400 font-bold text-lg">✓</span>
+                  ) : null}
+                </div>
+                <div className="p-4 text-center">
+                  {row.crcText ? (
+                    <span className="text-slate-500">{row.crcText}</span>
+                  ) : row.crc ? (
+                    <span className="text-emerald-400">✓</span>
+                  ) : (
+                    <span className="text-slate-600">
+                      <X className="w-4 h-4 mx-auto text-slate-600" />
+                      {row.crcNote && <div className="text-xs text-slate-600 mt-0.5">{row.crcNote}</div>}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
-            © {new Date().getFullYear()} ScoreShift. All rights reserved.
+        </div>
+      </section>
+
+      {/* === FINAL CTA === */}
+      <section
+        className="py-32 px-4 relative overflow-hidden"
+        style={{ background: "#0A1628" }}
+      >
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-3xl pointer-events-none"
+          style={{ background: "rgba(245,158,11,0.05)" }}
+        />
+        <div className="relative z-10 max-w-3xl mx-auto text-center">
+          <div className="text-xs uppercase tracking-widest text-amber-400 mb-4 font-medium">Get Started Today</div>
+          <h2 className="text-5xl md:text-6xl font-black text-white tracking-tight mb-4">
+            Ready to ScoreShift?
+          </h2>
+          <p className="text-slate-400 text-lg mb-10">
+            Join thousands of clients on their way to loan approval.
           </p>
-          <div className="flex items-center justify-center gap-4 mt-3 text-sm">
-            <a href="/privacy-policy" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              Privacy Policy
-            </a>
-            <span className="text-gray-300 dark:text-gray-600">·</span>
-            <a href="/terms" className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              Terms & Conditions
-            </a>
+          <div className="flex gap-4 justify-center flex-wrap">
+            <Link href="/signup">
+              <Button
+                size="lg"
+                className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-10 h-14 text-lg glow-gold"
+              >
+                Start Free Trial →
+              </Button>
+            </Link>
+            <Link href="/get-started">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-white/10 text-white hover:bg-white/5 px-10 h-14 text-lg"
+              >
+                Talk to a Loan Specialist
+              </Button>
+            </Link>
           </div>
+          <div className="mt-8 flex items-center justify-center gap-6 text-slate-600 text-sm flex-wrap">
+            <span>✓ No credit card required</span>
+            <span>✓ 3-day free trial</span>
+            <span>✓ Cancel anytime</span>
+          </div>
+        </div>
+      </section>
+
+      {/* === FOOTER === */}
+      <footer
+        className="py-10 px-4 border-t"
+        style={{
+          background: "#050A14",
+          borderColor: "rgba(255,255,255,0.06)",
+        }}
+      >
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-black font-black text-xs"
+              style={{ background: "linear-gradient(135deg, #F59E0B, #FCD34D)" }}
+            >
+              SS
+            </div>
+            <span className="text-white font-bold">ScoreShift</span>
+          </div>
+          <div className="flex gap-6 text-slate-500 text-sm">
+            <Link href="/privacy-policy"><span className="hover:text-white cursor-pointer transition-colors">Privacy</span></Link>
+            <Link href="/terms"><span className="hover:text-white cursor-pointer transition-colors">Terms</span></Link>
+            <Link href="/pricing"><span className="hover:text-white cursor-pointer transition-colors">Pricing</span></Link>
+            <Link href="/denial-decoder"><span className="hover:text-white cursor-pointer transition-colors">Denial Decoder</span></Link>
+          </div>
+          <div className="text-slate-600 text-sm">© 2027 ScoreShift. All rights reserved.</div>
         </div>
       </footer>
     </div>
