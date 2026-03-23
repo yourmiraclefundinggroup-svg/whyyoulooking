@@ -1592,6 +1592,8 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   const [viewLetterOpen, setViewLetterOpen] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState<DisputeLetterNew | null>(null);
   const [trackingNumberInput, setTrackingNumberInput] = useState('');
+  const [lobSendOpen, setLobSendOpen] = useState(false);
+  const [lobAddress, setLobAddress] = useState({ fromName: '', fromAddressLine1: '', fromAddressLine2: '', fromCity: '', fromState: '', fromZip: '' });
   const [compareReportId, setCompareReportId] = useState<number | null>(null);
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [newEventDate, setNewEventDate] = useState('');
@@ -1622,7 +1624,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   const [disputeBureau, setDisputeBureau] = useState<'EXPERIAN' | 'EQUIFAX' | 'TRANSUNION'>('EXPERIAN');
   const [disputeLetterType, setDisputeLetterType] = useState<'round1' | 'round2' | 'validation' | 'fraud'>('round1');
   
-  const { data: report, isLoading: reportLoading } = useQuery<CreditReportUpload & { clientName?: string }>({
+  const { data: report, isLoading: reportLoading } = useQuery<CreditReportUpload & { clientName?: string; clientAddress?: { line1?: string; line2?: string; city?: string; state?: string; zip?: string } }>({
     queryKey: ['/api/admin/credit-report-uploads', reportId],
     select: (data: any) => {
       if (Array.isArray(data)) {
@@ -1633,7 +1635,14 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
         const client = data.client;
         return {
           ...data.upload,
-          clientName: client ? `${client.firstName} ${client.lastName}` : undefined
+          clientName: client ? `${client.firstName} ${client.lastName}` : undefined,
+          clientAddress: client ? {
+            line1: client.addressLine1,
+            line2: client.addressLine2,
+            city: client.city,
+            state: client.state,
+            zip: client.zipCode,
+          } : undefined,
         };
       }
       return data;
@@ -1758,6 +1767,30 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
     },
     onError: () => {
       toast({ title: 'Error', description: 'Failed to update letter', variant: 'destructive' });
+    }
+  });
+
+  const sendLobMutation = useMutation({
+    mutationFn: async (address: typeof lobAddress) => {
+      if (!selectedLetter) throw new Error("No letter selected");
+      const response = await apiRequest('POST', `/api/admin/dispute-letters-new/${selectedLetter.id}/send-lob`, address);
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.details || err.error || 'Failed to send via Lob');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/dispute-letters-new?uploadId=${reportId}`] });
+      setLobSendOpen(false);
+      setViewLetterOpen(false);
+      toast({
+        title: 'Letter Sent via Certified Mail!',
+        description: `Tracking: ${data.trackingNumber || data.lobId}${data.expectedDeliveryDate ? ` · Expected delivery: ${data.expectedDeliveryDate}` : ''}`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Lob Error', description: error.message, variant: 'destructive' });
     }
   });
 
@@ -3971,16 +4004,43 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                       Approve
                     </Button>
                   )}
-                  {selectedLetter.status === 'approved' && (
+                  {(selectedLetter.status === 'approved' || selectedLetter.status === 'draft') && !selectedLetter.lobId && (
                     <Button
                       size="sm"
+                      onClick={() => {
+                        setLobAddress({
+                          fromName: report?.clientName || '',
+                          fromAddressLine1: report?.clientAddress?.line1 || '',
+                          fromAddressLine2: report?.clientAddress?.line2 || '',
+                          fromCity: report?.clientAddress?.city || '',
+                          fromState: report?.clientAddress?.state || '',
+                          fromZip: report?.clientAddress?.zip || '',
+                        });
+                        setLobSendOpen(true);
+                      }}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      data-testid="button-send-lob"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Send via Certified Mail
+                    </Button>
+                  )}
+                  {selectedLetter.lobId && (
+                    <div className="text-xs text-emerald-400 flex items-center gap-1 px-2">
+                      <CheckSquare className="h-3 w-3" />
+                      Sent via Lob
+                    </div>
+                  )}
+                  {selectedLetter.status === 'approved' && !selectedLetter.lobId && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
                       onClick={() => { updateLetterMutation.mutate({ id: selectedLetter.id, status: 'sent' }); setViewLetterOpen(false); }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      className="text-slate-400 hover:text-white text-xs"
                       disabled={updateLetterMutation.isPending}
                       data-testid="button-mark-sent"
                     >
-                      <Send className="h-4 w-4 mr-2" />
-                      Mark as Sent
+                      Mark Sent Manually
                     </Button>
                   )}
                 </div>
@@ -4007,6 +4067,84 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Lob Certified Mail Send Dialog */}
+      <Dialog open={lobSendOpen} onOpenChange={setLobSendOpen}>
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Send className="h-5 w-5 text-emerald-400" />
+              Send via Certified Mail
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="rounded-lg bg-emerald-950/40 border border-emerald-800 p-3 text-xs text-emerald-300 space-y-1">
+              <p className="font-medium">Lob will print and mail this letter automatically.</p>
+              <p className="text-emerald-400/80">
+                Addressed to: <strong>{selectedLetter?.bureau === 'EXPERIAN' ? 'Experian, P.O. Box 4500, Allen TX 75013' : selectedLetter?.bureau === 'EQUIFAX' ? 'Equifax, P.O. Box 740256, Atlanta GA 30374' : 'TransUnion, P.O. Box 2000, Chester PA 19016'}</strong>
+              </p>
+            </div>
+            <div className="space-y-3">
+              <p className="text-sm text-[hsl(var(--admin-text-muted))]">Client mailing address (return address on letter):</p>
+              <div className="space-y-2">
+                <input
+                  placeholder="Full name"
+                  value={lobAddress.fromName}
+                  onChange={e => setLobAddress(a => ({ ...a, fromName: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                />
+                <input
+                  placeholder="Address line 1"
+                  value={lobAddress.fromAddressLine1}
+                  onChange={e => setLobAddress(a => ({ ...a, fromAddressLine1: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                />
+                <input
+                  placeholder="Address line 2 (optional)"
+                  value={lobAddress.fromAddressLine2}
+                  onChange={e => setLobAddress(a => ({ ...a, fromAddressLine2: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                />
+                <div className="grid grid-cols-3 gap-2">
+                  <input
+                    placeholder="City"
+                    value={lobAddress.fromCity}
+                    onChange={e => setLobAddress(a => ({ ...a, fromCity: e.target.value }))}
+                    className="col-span-1 px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  />
+                  <input
+                    placeholder="State"
+                    maxLength={2}
+                    value={lobAddress.fromState}
+                    onChange={e => setLobAddress(a => ({ ...a, fromState: e.target.value.toUpperCase() }))}
+                    className="px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  />
+                  <input
+                    placeholder="ZIP"
+                    maxLength={10}
+                    value={lobAddress.fromZip}
+                    onChange={e => setLobAddress(a => ({ ...a, fromZip: e.target.value }))}
+                    className="px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={() => sendLobMutation.mutate(lobAddress)}
+                disabled={sendLobMutation.isPending || !lobAddress.fromName || !lobAddress.fromAddressLine1 || !lobAddress.fromCity || !lobAddress.fromState || !lobAddress.fromZip}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                data-testid="button-confirm-send-lob"
+              >
+                {sendLobMutation.isPending ? 'Sending...' : 'Send Letter ($)'}
+              </Button>
+              <Button variant="outline" onClick={() => setLobSendOpen(false)} className="border-[hsl(var(--admin-border))] text-white">
+                Cancel
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -8,6 +8,11 @@ export const users = pgTable("users", {
   lastName: text("last_name").notNull(),
   email: text("email").notNull().unique(),
   phone: text("phone"),
+  addressLine1: text("address_line1"),
+  addressLine2: text("address_line2"),
+  city: text("city"),
+  state: text("state"),
+  zipCode: text("zip_code"),
   smsOptIn: boolean("sms_opt_in").default(false),
   password: text("password").notNull(),
   accessLevel: text("access_level").notNull().default("STANDARD"), // STANDARD, CLIENT_VIEWER, BETA_TESTER, ADMIN
@@ -1020,6 +1025,8 @@ export const disputeLettersNew = pgTable("dispute_letters_new", {
   disputeItemIds: integer("dispute_item_ids").array(),
   trackingNumber: text("tracking_number"),
   sentDate: date("sent_date"),
+  lobId: text("lob_id"),
+  lobStatus: text("lob_status"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

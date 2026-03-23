@@ -5629,6 +5629,152 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
     }
   });
 
+  // Send dispute letter via Lob physical mail API
+  app.post("/api/admin/dispute-letters-new/:id/send-lob", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const letterId = parseInt(req.params.id);
+      const { fromName, fromAddressLine1, fromAddressLine2, fromCity, fromState, fromZip } = req.body;
+
+      if (!fromName || !fromAddressLine1 || !fromCity || !fromState || !fromZip) {
+        return res.status(400).json({ error: "Client mailing address is required" });
+      }
+
+      const LOB_API_KEY = process.env.LOB_API_KEY;
+      if (!LOB_API_KEY) {
+        return res.status(500).json({ error: "Lob API key not configured" });
+      }
+
+      // Get the letter and client info
+      const { disputeLettersNew: lettersTable, users: usersTable } = await import("@shared/schema").then(m => m);
+      const { db } = await import("./db").then(m => m);
+      const { eq } = await import("drizzle-orm").then(m => m);
+
+      const [letter] = await db.select().from(lettersTable).where(eq(lettersTable.id, letterId));
+      if (!letter) {
+        return res.status(404).json({ error: "Letter not found" });
+      }
+
+      // Bureau mailing addresses
+      const bureauAddresses: Record<string, { name: string; line1: string; city: string; state: string; zip: string }> = {
+        EXPERIAN: { name: "Experian Information Solutions", line1: "P.O. Box 4500", city: "Allen", state: "TX", zip: "75013" },
+        EQUIFAX: { name: "Equifax Information Services", line1: "P.O. Box 740256", city: "Atlanta", state: "GA", zip: "30374" },
+        TRANSUNION: { name: "TransUnion Consumer Solutions", line1: "P.O. Box 2000", city: "Chester", state: "PA", zip: "19016" },
+      };
+
+      const toAddress = bureauAddresses[letter.bureau];
+      if (!toAddress) {
+        return res.status(400).json({ error: `Unknown bureau: ${letter.bureau}` });
+      }
+
+      // Build HTML for the letter
+      const escapedContent = letter.content
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+      const letterHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 8.5in;
+      padding: 0.75in;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11pt;
+      line-height: 1.6;
+      color: #000;
+    }
+    .letter-content { white-space: pre-wrap; word-wrap: break-word; }
+  </style>
+</head>
+<body>
+  <div class="letter-content">${escapedContent}</div>
+</body>
+</html>`;
+
+      // Build form data for Lob API
+      const formParams = new URLSearchParams();
+      formParams.append("to[name]", toAddress.name);
+      formParams.append("to[address_line1]", toAddress.line1);
+      formParams.append("to[address_city]", toAddress.city);
+      formParams.append("to[address_state]", toAddress.state);
+      formParams.append("to[address_zip]", toAddress.zip);
+      formParams.append("from[name]", fromName);
+      formParams.append("from[address_line1]", fromAddressLine1);
+      if (fromAddressLine2) formParams.append("from[address_line2]", fromAddressLine2);
+      formParams.append("from[address_city]", fromCity);
+      formParams.append("from[address_state]", fromState);
+      formParams.append("from[address_zip]", fromZip);
+      formParams.append("file", letterHtml);
+      formParams.append("color", "false");
+      formParams.append("mail_type", "usps_first_class");
+      formParams.append("size", "us_letter");
+
+      const authHeader = "Basic " + Buffer.from(`${LOB_API_KEY}:`).toString("base64");
+
+      const lobResponse = await fetch("https://api.lob.com/v1/letters", {
+        method: "POST",
+        headers: {
+          "Authorization": authHeader,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formParams.toString(),
+      });
+
+      const lobData = await lobResponse.json() as any;
+
+      if (!lobResponse.ok) {
+        console.error("Lob API error:", lobData);
+        return res.status(502).json({ error: "Lob API error", details: lobData?.error?.message || JSON.stringify(lobData) });
+      }
+
+      // Update the letter record with Lob info and tracking number
+      const trackingNumber = lobData.tracking_number || lobData.id;
+      const today = new Date().toISOString().split("T")[0];
+
+      const updated = await storage.updateDisputeLetterNew(letterId, {
+        status: "sent",
+        sentDate: today,
+        trackingNumber: trackingNumber,
+        lobId: lobData.id,
+        lobStatus: lobData.status,
+      } as any);
+
+      // Also save client address to their user record if not already stored
+      if (letter.clientId && fromAddressLine1 && fromCity && fromState && fromZip) {
+        await db.update(usersTable)
+          .set({
+            addressLine1: fromAddressLine1,
+            addressLine2: fromAddressLine2 || null,
+            city: fromCity,
+            state: fromState,
+            zipCode: fromZip,
+          })
+          .where(eq(usersTable.id, letter.clientId));
+      }
+
+      res.json({
+        success: true,
+        letter: updated,
+        lobId: lobData.id,
+        trackingNumber,
+        lobStatus: lobData.status,
+        expectedDeliveryDate: lobData.expected_delivery_date,
+        url: lobData.url,
+      });
+    } catch (error: any) {
+      console.error("Error sending letter via Lob:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Generate AI-powered dispute letter for selected items
   app.post("/api/admin/dispute-letters-new/generate", authenticateToken, async (req, res) => {
     try {
