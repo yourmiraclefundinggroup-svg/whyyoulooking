@@ -12,6 +12,8 @@ import Dashboard from "@/pages/dashboard";
 import CreditRepair from "@/pages/credit-repair";
 import StudentLoans from "@/pages/student-loans";
 import CreditBuilding from "@/pages/credit-building";
+import CreditBuildingV2 from "@/pages/credit-building-v2";
+import Pricing from "@/pages/pricing";
 import Education from "@/pages/education";
 import ExperianConnect from "@/pages/experian-connect";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -54,6 +56,9 @@ function Router() {
   }
   if (location === "/denial-decoder") {
     return <DenialDecoder />;
+  }
+  if (location === "/pricing") {
+    return <Pricing />;
   }
 
   // Show login if no user is authenticated and not on other allowed pages
@@ -139,8 +144,13 @@ function Router() {
             <Billing />
           </Route>
           <Route path="/checkout" component={SubscriptionCheckout} />
+          <Route path="/pricing" component={Pricing} />
           <Route path="/denial-decoder" component={DenialDecoder} />
           <Route path="/white-label/onboarding" component={WhiteLabelOnboarding} />
+          <Route path="/credit-building-v2">
+            <Navigation />
+            <CreditBuildingV2 />
+          </Route>
           <Route path="/login" component={Login} />
           <Route component={NotFound} />
         </Switch>

@@ -35,6 +35,11 @@ export const users = pgTable("users", {
   subscriptionStartDate: timestamp("subscription_start_date"),
   subscriptionEndDate: timestamp("subscription_end_date"),
   billingCycle: text("billing_cycle").default("monthly"), // monthly, yearly
+  // CROA & AI compliance consent fields
+  croaDisclosureAccepted: boolean("croa_disclosure_accepted").default(false),
+  croaDisclosureTimestamp: timestamp("croa_disclosure_timestamp"),
+  aiConsentAccepted: boolean("ai_consent_accepted").default(false),
+  aiConsentTimestamp: timestamp("ai_consent_timestamp"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

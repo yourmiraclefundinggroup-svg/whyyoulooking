@@ -11,10 +11,16 @@ import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import {
   TrendingUp, ChevronRight, ChevronLeft, User, Phone, Mail,
-  Lock, Eye, EyeOff, CheckCircle, Shield, CreditCard, Zap, Star
+  Lock, Eye, EyeOff, CheckCircle, Shield, CreditCard, Zap, Star, Sparkles
 } from "lucide-react";
 
-const STEPS = ["Personal Info", "Account Setup", "Choose Plan"];
+const STEPS = [
+  { label: "Your Rights", icon: Shield },
+  { label: "AI Consent", icon: Sparkles },
+  { label: "Your Info", icon: User },
+  { label: "Password", icon: Lock },
+  { label: "Your Plan", icon: Star },
+];
 
 const PLANS = [
   {
@@ -59,6 +65,20 @@ const PLANS = [
   },
 ];
 
+const CROA_TEXT = `CONSUMER CREDIT FILE RIGHTS UNDER STATE AND FEDERAL LAW
+
+You have a right to dispute inaccurate information in your credit report by contacting the credit bureau directly. There is no fee for doing so. Any reputable credit counseling organization can help you do this at no charge.
+
+Any legitimate credit repair law firm or credit repair organization that charges fees must give you written information about your rights.
+
+You have the right to sue a credit repair organization that violates the Credit Repair Organizations Act. This law prohibits deceptive practices by credit repair organizations.
+
+Before signing a contract with any credit repair organization, you should understand all of your rights and what credit repair organizations can and cannot legally do on your behalf.
+
+ScoreShift will only dispute information that may be inaccurate, incomplete, or unverifiable. We will never advise you to dispute accurate information, create a new credit identity, or engage in any illegal activity.
+
+YOUR RIGHT TO CANCEL: You may cancel this contract without any penalty or obligation within THREE (3) BUSINESS DAYS from the date you sign up. To cancel, email support@scoreshiftapp.com with subject line: Cancel My ScoreShift Account. Services will not begin until the 3-day cancellation period has expired.`;
+
 export default function Signup() {
   const [step, setStep] = useState(0);
   const [, setLocation] = useLocation();
@@ -68,47 +88,88 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Form state
+  // Step 0 — CROA
+  const [croaAccepted, setCroaAccepted] = useState(false);
+  const [croaAcceptedAt, setCroaAcceptedAt] = useState<string | null>(null);
+
+  // Step 1 — AI Consent
+  const [aiConsent1, setAiConsent1] = useState(false);
+  const [aiConsent2, setAiConsent2] = useState(false);
+  const [aiConsent3, setAiConsent3] = useState(false);
+  const [aiConsent4, setAiConsent4] = useState(false);
+  const [aiConsentAcceptedAt, setAiConsentAcceptedAt] = useState<string | null>(null);
+
+  // Step 2 — Personal Info
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [smsOptIn, setSmsOptIn] = useState(false);
+
+  // Step 3 — Password
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  // Step 4 — Plan
   const [selectedPlan, setSelectedPlan] = useState("free");
 
-  // Step 1 validation
-  const validateStep1 = () => {
-    if (!firstName.trim()) { toast({ title: "First name is required", variant: "destructive" }); return false; }
-    if (!lastName.trim()) { toast({ title: "Last name is required", variant: "destructive" }); return false; }
-    if (!phone.trim()) { toast({ title: "Phone number is required", variant: "destructive" }); return false; }
-    if (!email.trim()) { toast({ title: "Email address is required", variant: "destructive" }); return false; }
-    if (!smsOptIn) {
-      toast({ title: "SMS Consent Required", description: "Please check the SMS opt-in box to continue.", variant: "destructive" });
-      return false;
+  const handleCroaCheck = (checked: boolean) => {
+    setCroaAccepted(checked);
+    if (checked && !croaAcceptedAt) {
+      setCroaAcceptedAt(new Date().toISOString());
+    }
+  };
+
+  const handleAllAiChecked = () => {
+    const allChecked = aiConsent1 && aiConsent2 && aiConsent3 && aiConsent4;
+    if (allChecked && !aiConsentAcceptedAt) {
+      setAiConsentAcceptedAt(new Date().toISOString());
+    }
+  };
+
+  const validateStep = () => {
+    if (step === 0) {
+      if (!croaAccepted) {
+        toast({ title: "Disclosure Required", description: "You must read and acknowledge the Consumer Credit Rights Disclosure to continue.", variant: "destructive" });
+        return false;
+      }
+      return true;
+    }
+    if (step === 1) {
+      if (!aiConsent1 || !aiConsent2 || !aiConsent3 || !aiConsent4) {
+        toast({ title: "AI Consent Required", description: "Please acknowledge all AI data processing disclosures to continue.", variant: "destructive" });
+        return false;
+      }
+      return true;
+    }
+    if (step === 2) {
+      if (!firstName.trim()) { toast({ title: "First name is required", variant: "destructive" }); return false; }
+      if (!lastName.trim()) { toast({ title: "Last name is required", variant: "destructive" }); return false; }
+      if (!phone.trim()) { toast({ title: "Phone number is required", variant: "destructive" }); return false; }
+      if (!email.trim()) { toast({ title: "Email address is required", variant: "destructive" }); return false; }
+      if (!smsOptIn) {
+        toast({ title: "SMS Consent Required", description: "Please check the SMS opt-in box to continue.", variant: "destructive" });
+        return false;
+      }
+      return true;
+    }
+    if (step === 3) {
+      if (!password) { toast({ title: "Password is required", variant: "destructive" }); return false; }
+      if (password.length < 8) { toast({ title: "Password must be at least 8 characters", variant: "destructive" }); return false; }
+      if (password !== confirmPassword) { toast({ title: "Passwords don't match", variant: "destructive" }); return false; }
+      return true;
     }
     return true;
   };
 
-  // Step 2 validation
-  const validateStep2 = () => {
-    if (!password) { toast({ title: "Password is required", variant: "destructive" }); return false; }
-    if (password.length < 8) { toast({ title: "Password must be at least 8 characters", variant: "destructive" }); return false; }
-    if (password !== confirmPassword) { toast({ title: "Passwords don't match", variant: "destructive" }); return false; }
-    return true;
-  };
-
   const handleNext = () => {
-    if (step === 0 && !validateStep1()) return;
-    if (step === 1 && !validateStep2()) return;
+    if (!validateStep()) return;
     setStep(s => s + 1);
   };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // Create the user account
       const createRes = await apiRequest("POST", "/api/users", {
         firstName,
         lastName,
@@ -120,6 +181,8 @@ export default function Signup() {
         passwordResetRequired: false,
         subscriptionPlan: selectedPlan === "free" ? "FREE" : selectedPlan.toUpperCase(),
         subscriptionStatus: selectedPlan === "free" ? "TRIALING" : null,
+        croaAcceptedAt,
+        aiConsentAcceptedAt,
       });
 
       if (!createRes.ok) {
@@ -127,7 +190,6 @@ export default function Signup() {
         throw new Error(err.message || "Failed to create account");
       }
 
-      // Auto-login
       const loginRes = await apiRequest("POST", "/api/auth/login", {
         email,
         password,
@@ -146,7 +208,6 @@ export default function Signup() {
         description: "Your account has been created successfully.",
       });
 
-      // Free plan → go to dashboard, paid plan → go to billing to complete payment
       if (selectedPlan === "free") {
         window.location.href = "/dashboard";
       } else {
@@ -161,6 +222,8 @@ export default function Signup() {
     }
     setIsSubmitting(false);
   };
+
+  const allAiChecked = aiConsent1 && aiConsent2 && aiConsent3 && aiConsent4;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
@@ -191,7 +254,7 @@ export default function Signup() {
               className="absolute top-5 left-0 h-0.5 bg-blue-500 z-0 transition-all duration-500"
               style={{ width: `${(step / (STEPS.length - 1)) * 100}%` }}
             />
-            {STEPS.map((label, i) => (
+            {STEPS.map(({ label }, i) => (
               <div key={i} className="flex flex-col items-center z-10">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-all duration-300 ${
                   i < step
@@ -214,8 +277,145 @@ export default function Signup() {
         <Card className="border-0 shadow-xl dark:bg-gray-900">
           <CardContent className="p-8">
 
-            {/* Step 1: Personal Info */}
+            {/* Step 0: CROA Disclosure */}
             {step === 0 && (
+              <div className="space-y-6">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
+                    <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Consumer Credit File Rights</h2>
+                    <p className="text-blue-600 dark:text-blue-400 text-sm font-medium mt-0.5">Required by Federal Law (15 U.S.C. §1679c)</p>
+                  </div>
+                </div>
+
+                <div className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-950/20 px-3 py-1.5 rounded-md border border-blue-100 dark:border-blue-900">
+                  Step 1 of 5 — Please read the disclosure below before continuing.
+                </div>
+
+                <div
+                  className="max-h-[300px] overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800/60 p-4 text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line"
+                >
+                  {CROA_TEXT}
+                </div>
+
+                <div className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all duration-200 ${
+                  croaAccepted
+                    ? "border-blue-400 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-600"
+                    : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+                }`}>
+                  <Checkbox
+                    id="croaAccepted"
+                    checked={croaAccepted}
+                    onCheckedChange={(c) => handleCroaCheck(c as boolean)}
+                    className="mt-0.5 shrink-0"
+                  />
+                  <label htmlFor="croaAccepted" className="cursor-pointer">
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 block mb-1">
+                      Acknowledge Disclosure <span className="text-red-500">*</span>
+                    </span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                      I have received and read this Consumer Credit Rights Disclosure and understand my right to cancel within 3 business days.
+                    </span>
+                  </label>
+                </div>
+
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Time of acknowledgment will be recorded:{" "}
+                  <span className="font-mono">
+                    {croaAcceptedAt ? new Date(croaAcceptedAt).toLocaleString() : new Date().toLocaleString()}
+                  </span>
+                </p>
+              </div>
+            )}
+
+            {/* Step 1: AI Data Processing Acknowledgment */}
+            {step === 1 && (
+              <div className="space-y-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
+                    <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">How We Use AI to Help You</h2>
+                    <p className="text-amber-600 dark:text-amber-400 text-sm font-medium mt-0.5">Please review and acknowledge each item below</p>
+                  </div>
+                </div>
+
+                <div className="text-xs text-gray-500 dark:text-gray-400 bg-amber-50 dark:bg-amber-950/20 px-3 py-1.5 rounded-md border border-amber-100 dark:border-amber-900">
+                  Step 2 of 5 — All four items must be acknowledged to continue.
+                </div>
+
+                <div className="space-y-3">
+                  {[
+                    {
+                      id: "aiConsent1",
+                      checked: aiConsent1,
+                      onChange: (c: boolean) => { setAiConsent1(c); if (c) handleAllAiChecked(); },
+                      text: "I understand that ScoreShift uses artificial intelligence (AI) technology, including services from Anthropic and OpenAI, to read and analyze my credit report data including my name, address, account information, payment history, and other personal financial information.",
+                    },
+                    {
+                      id: "aiConsent2",
+                      checked: aiConsent2,
+                      onChange: (c: boolean) => { setAiConsent2(c); if (c) handleAllAiChecked(); },
+                      text: "I understand my credit report data may be processed by third-party AI providers (Anthropic, PBC and OpenAI, LLC) to generate dispute letters and analysis. My data is not used to train AI models.",
+                    },
+                    {
+                      id: "aiConsent3",
+                      checked: aiConsent3,
+                      onChange: (c: boolean) => { setAiConsent3(c); if (c) handleAllAiChecked(); },
+                      text: "I understand my information is stored securely in encrypted cloud databases. ScoreShift uses industry-standard security to protect my data.",
+                    },
+                    {
+                      id: "aiConsent4",
+                      checked: aiConsent4,
+                      onChange: (c: boolean) => { setAiConsent4(c); if (c) handleAllAiChecked(); },
+                      text: "I understand I can request deletion of my personal data at any time by contacting support@scoreshiftapp.com, and that ScoreShift retains data for 2 years after account closure unless deletion is requested.",
+                    },
+                  ].map((item) => (
+                    <div key={item.id} className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all duration-200 ${
+                      item.checked
+                        ? "border-amber-400 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-600"
+                        : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+                    }`}>
+                      <Checkbox
+                        id={item.id}
+                        checked={item.checked}
+                        onCheckedChange={(c) => item.onChange(c as boolean)}
+                        className="mt-0.5 shrink-0"
+                      />
+                      <label htmlFor={item.id} className="cursor-pointer text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                        {item.text}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+
+                {/* AI Notice Box */}
+                <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30">
+                  <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-white text-xs font-bold">!</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">AI Analysis Notice</p>
+                    <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                      ScoreShift AI analyzes your credit information and generates dispute letters for your review. AI does not make final decisions — you retain full control over which items are disputed on your behalf.
+                    </p>
+                  </div>
+                </div>
+
+                {aiConsentAcceptedAt && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    Time of acknowledgment will be recorded:{" "}
+                    <span className="font-mono">{new Date(aiConsentAcceptedAt).toLocaleString()}</span>
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Step 2: Personal Info */}
+            {step === 2 && (
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Let's get started</h2>
@@ -305,8 +505,8 @@ export default function Signup() {
               </div>
             )}
 
-            {/* Step 2: Account Setup */}
-            {step === 1 && (
+            {/* Step 3: Password */}
+            {step === 3 && (
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create your login</h2>
@@ -366,7 +566,6 @@ export default function Signup() {
                   )}
                 </div>
 
-                {/* Password strength indicators */}
                 <div className="space-y-2">
                   {[
                     { label: "At least 8 characters", ok: password.length >= 8 },
@@ -390,8 +589,8 @@ export default function Signup() {
               </div>
             )}
 
-            {/* Step 3: Choose Plan */}
-            {step === 2 && (
+            {/* Step 4: Choose Plan */}
+            {step === 4 && (
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Choose your plan</h2>
@@ -437,7 +636,7 @@ export default function Signup() {
                       <ul className="space-y-1.5 ml-8">
                         {plan.features.map((f) => (
                           <li key={f} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                            <CheckCircle className={`h-3.5 w-3.5 shrink-0 ${plan.id === "free" ? "text-green-500" : "text-green-500"}`} />
+                            <CheckCircle className="h-3.5 w-3.5 shrink-0 text-green-500" />
                             {f}
                           </li>
                         ))}
@@ -473,7 +672,11 @@ export default function Signup() {
               {step < STEPS.length - 1 ? (
                 <Button
                   onClick={handleNext}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8"
+                  disabled={
+                    (step === 0 && !croaAccepted) ||
+                    (step === 1 && !allAiChecked)
+                  }
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Continue <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>

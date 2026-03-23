@@ -297,7 +297,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/users", async (req, res) => {
     try {
-      const validatedData = insertUserSchema.parse(req.body);
+      const body = req.body as any;
+      // Resolve consent timestamps from client-supplied ISO strings
+      if (body.croaAcceptedAt) {
+        body.croaDisclosureAccepted = true;
+        body.croaDisclosureTimestamp = new Date(body.croaAcceptedAt);
+        delete body.croaAcceptedAt;
+      }
+      if (body.aiConsentAcceptedAt) {
+        body.aiConsentAccepted = true;
+        body.aiConsentTimestamp = new Date(body.aiConsentAcceptedAt);
+        delete body.aiConsentAcceptedAt;
+      }
+      const validatedData = insertUserSchema.parse(body);
       const user = await storage.createUser(validatedData);
       res.status(201).json(user);
       // Fire-and-forget: log + welcome communication
