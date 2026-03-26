@@ -18,7 +18,7 @@ import Education from "@/pages/education";
 import ExperianConnect from "@/pages/experian-connect";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AdminPortal from "@/pages/admin-portal";
-import AdminPortalV2 from "@/pages/admin-portal-v2";
+import AdminPortalV2 from "@/pages/admin-portal-v2-full";
 import SupportAdmin from "@/pages/support-admin";
 import Billing from "@/pages/billing";
 import SubscriptionCheckout from "@/pages/subscription-checkout";
