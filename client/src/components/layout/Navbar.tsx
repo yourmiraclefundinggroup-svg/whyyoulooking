@@ -6,6 +6,7 @@ import { Button } from '../ui/Button'
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [dark, setDark] = useState(false)
 
   const links = [
     { label: 'Features', href: '/#features' },
