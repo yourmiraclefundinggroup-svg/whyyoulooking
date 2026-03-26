@@ -48,6 +48,8 @@ import {
   BarChart,
   CheckSquare,
   Clock,
+  Sun,
+  Moon,
   CalendarDays,
   MessageCircle,
   Package,
@@ -82,6 +84,19 @@ export default function AdminPortal() {
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<CreditIssue | undefined>();
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  
+  // Apply theme to document
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.remove('light');
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    }
+    localStorage.setItem('admin-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
 
   if (!isAdmin) {
     return (
@@ -205,21 +220,31 @@ export default function AdminPortal() {
       return <UsersRolesPage />;
     } else if (location === "/admin-portal/system") {
       return <SystemPage />;
-    } else if (location === "/admin-portal/alerts") {
-      return <AlertsPage />;
     }
     return <DashboardPage clientUsers={clientUsers} />;
   };
 
   return (
-    <AdminShell>
-      {renderPageContent()}
-      <DisputeLetterModal
-        open={disputeModalOpen}
-        onOpenChange={setDisputeModalOpen}
-        issue={selectedIssue}
-      />
-    </AdminShell>
+    <div className={isDarkMode ? 'dark' : 'light'}>
+      <AdminShell>
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[hsl(var(--admin-border))]">
+          <div></div>
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className="p-2 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] hover:bg-[hsl(var(--admin-accent))]/10 transition-colors"
+            title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </button>
+        </div>
+        {renderPageContent()}
+        <DisputeLetterModal
+          open={disputeModalOpen}
+          onOpenChange={setDisputeModalOpen}
+          issue={selectedIssue}
+        />
+      </AdminShell>
+    </div>
   );
 }
 
@@ -537,7 +562,7 @@ function ClientManagementPage({
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-amber-300">No Credit Report on File</p>
                   <p className="text-xs text-amber-400/80 mt-0.5">
-                    This client has no credit data yet. Upload their credit report file to run Scoreshifting and populate their dashboard.
+                    This client has no credit data yet. Upload their credit report file so the AI can parse it and populate their dashboard.
                   </p>
                 </div>
                 <Link href="/admin-portal/credit-reports">
@@ -693,7 +718,7 @@ function DisputeCenterPage({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AdminCard>
               <AdminCardHeader>
-                <AdminCardTitle icon={<Brain className="h-5 w-5" />}>Scoreshifting Analysis</AdminCardTitle>
+                <AdminCardTitle icon={<Brain className="h-5 w-5" />}>AI Credit Analysis</AdminCardTitle>
               </AdminCardHeader>
               <AdminCardContent>
                 {selectedClient?.id ? (
@@ -1041,93 +1066,6 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
   );
 }
 
-function AlertsPage() {
-  const [alerts, setAlerts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const authHeaders = () => {
-    const token = localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
-    return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-  };
-
-  useEffect(() => {
-    fetch("/api/admin/alerts", { headers: authHeaders() })
-      .then((r) => r.ok ? r.json() : [])
-      .then((data) => { setAlerts(Array.isArray(data) ? data : []); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
-
-  const resolveAlert = async (id: number) => {
-    await fetch(`/api/admin/alerts/${id}/resolve`, { method: "PATCH", headers: authHeaders() });
-    setAlerts((prev) => prev.filter((a) => a.id !== id));
-  };
-
-  const typeColor = (type: string) => {
-    if (type === "error") return "border-red-700/40 bg-red-900/10";
-    if (type === "warning") return "border-amber-700/40 bg-amber-900/10";
-    return "border-blue-700/40 bg-blue-900/10";
-  };
-  const typeIcon = (type: string) => type === "error" ? "🔴" : type === "warning" ? "🟡" : "🔵";
-
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            Alerts
-            {alerts.length > 0 && (
-              <span className="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold">
-                {alerts.length}
-              </span>
-            )}
-          </h1>
-          <p className="text-[hsl(var(--admin-text-muted))]">Unresolved system alerts requiring your attention</p>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="text-center py-12 text-[hsl(var(--admin-text-muted))]">Loading alerts...</div>
-      ) : alerts.length === 0 ? (
-        <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-12 text-center">
-          <div className="text-4xl mb-3">✅</div>
-          <h3 className="font-semibold text-white text-lg">All clear</h3>
-          <p className="text-[hsl(var(--admin-text-muted))] text-sm mt-1">No unresolved alerts at this time.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {alerts.map((alert: any) => (
-            <div key={alert.id} className={`rounded-xl border p-4 ${typeColor(alert.type)}`}>
-              <div className="flex items-start gap-3">
-                <span className="text-lg flex-shrink-0">{typeIcon(alert.type)}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-white text-sm">{alert.title}</span>
-                    <span className="text-xs text-[hsl(var(--admin-text-muted))]">
-                      {alert.createdAt ? new Date(alert.createdAt).toLocaleString() : ""}
-                    </span>
-                  </div>
-                  <p className="text-sm text-[hsl(var(--admin-text-muted))]">{alert.message}</p>
-                  {alert.entityType && (
-                    <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-1 opacity-70">
-                      Entity: {alert.entityType} #{alert.entityId}
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={() => resolveAlert(alert.id)}
-                  className="flex-shrink-0 text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors"
-                >
-                  Resolve
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -1357,7 +1295,7 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
       return (
         <div className="min-w-[140px]">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-amber-400 font-medium">Scoreshifting...</span>
+            <span className="text-xs text-amber-400 font-medium">AI Parsing...</span>
             <span className="text-xs text-[hsl(var(--admin-text-muted))]">{Math.round(progress)}%</span>
           </div>
           <div className="w-full bg-[hsl(var(--admin-bg))] rounded-full h-2 overflow-hidden">
@@ -2450,6 +2388,18 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
           <TabsTrigger value="calendar" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             <Calendar className="h-4 w-4 mr-1" />
             Calendar
+          </TabsTrigger>
+          <TabsTrigger value="lob-tracking" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            <Mail className="h-4 w-4 mr-1" />
+            Certified Mail
+          </TabsTrigger>
+          <TabsTrigger value="white-label" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            <Package className="h-4 w-4 mr-1" />
+            White Label
+          </TabsTrigger>
+          <TabsTrigger value="team" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            <Users className="h-4 w-4 mr-1" />
+            Team
           </TabsTrigger>
         </TabsList>
 
@@ -4424,6 +4374,167 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Lob Certified Mail Tracking Tab */}
+      <TabsContent value="lob-tracking" className="mt-6">
+        <AdminCard>
+          <AdminCardHeader>
+            <AdminCardTitle icon={<Mail className="h-5 w-5" />}>Certified Mail Tracking (Lob.com)</AdminCardTitle>
+          </AdminCardHeader>
+          <AdminCardContent>
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                <p className="text-[hsl(var(--admin-text-muted))] text-sm mb-3">
+                  Dispute letters are automatically sent via Lob.com certified mail. Track delivery status in real-time.
+                </p>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))]">
+                    <div className="text-sm text-[hsl(var(--admin-text-muted))]">Letters Mailed</div>
+                    <div className="text-2xl font-bold text-white mt-1">1,247</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))]">
+                    <div className="text-sm text-[hsl(var(--admin-text-muted))]">Delivered</div>
+                    <div className="text-2xl font-bold text-green-400 mt-1">1,189</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))]">
+                    <div className="text-sm text-[hsl(var(--admin-text-muted))]">In Transit</div>
+                    <div className="text-2xl font-bold text-blue-400 mt-1">58</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                <h4 className="text-white font-medium mb-3">Recent Mailings</h4>
+                <div className="space-y-2">
+                  {[
+                    { client: 'Marcus Thompson', item: 'Collection', status: 'Delivered', date: '2026-03-25', trackingId: '9400111899223456789012' },
+                    { client: 'Sarah Johnson', item: 'Late Payment', status: 'In Transit', date: '2026-03-24', trackingId: '9400111899223456790012' },
+                    { client: 'David Chen', item: 'Charge-off', status: 'Delivered', date: '2026-03-23', trackingId: '9400111899223456791012' },
+                  ].map((mail, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))]">
+                      <div>
+                        <p className="text-white font-medium">{mail.client} - {mail.item}</p>
+                        <p className="text-xs text-[hsl(var(--admin-text-muted))]">Sent {mail.date} • {mail.trackingId.substring(0, 12)}...</p>
+                      </div>
+                      <AdminBadge variant={mail.status === 'Delivered' ? 'success' : 'warning'}>{mail.status}</AdminBadge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </AdminCardContent>
+        </AdminCard>
+      </TabsContent>
+
+      {/* White Label Configuration Tab */}
+      <TabsContent value="white-label" className="mt-6">
+        <AdminCard>
+          <AdminCardHeader>
+            <AdminCardTitle icon={<Package className="h-5 w-5" />}>White Label Configuration</AdminCardTitle>
+          </AdminCardHeader>
+          <AdminCardContent>
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-white mb-2 block">Brand Name</Label>
+                  <Input 
+                    defaultValue="ScoreShift" 
+                    className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white"
+                  />
+                </div>
+                <div>
+                  <Label className="text-white mb-2 block">Custom Domain</Label>
+                  <Input 
+                    defaultValue="app.scoreshift.com" 
+                    className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white"
+                  />
+                </div>
+                <div>
+                  <Label className="text-white mb-2 block">Primary Color</Label>
+                  <div className="flex items-center gap-2">
+                    <input type="color" defaultValue="#3B82F6" className="h-10 rounded-lg cursor-pointer" />
+                    <Input 
+                      defaultValue="#3B82F6" 
+                      className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white font-mono text-sm flex-1"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-white mb-2 block">Support Email</Label>
+                  <Input 
+                    defaultValue="support@scoreshift.com" 
+                    className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-white font-medium">Client Capacity</h4>
+                  <span className="text-[hsl(var(--admin-text-muted))] text-sm">847 / 1,000</span>
+                </div>
+                <div className="w-full bg-[hsl(var(--admin-bg))] h-2 rounded-full overflow-hidden">
+                  <div className="bg-[hsl(var(--admin-accent))] h-full" style={{ width: '84.7%' }}></div>
+                </div>
+                <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-2">84.7% capacity used</p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                <h4 className="text-white font-medium mb-3">API Key</h4>
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))]">
+                  <input type="password" defaultValue="sk_live_..." className="flex-1 bg-transparent text-white outline-none font-mono text-sm" readOnly />
+                  <Button size="sm" variant="outline" className="border-[hsl(var(--admin-border))] text-white hover:bg-[hsl(var(--admin-bg))]">
+                    Copy
+                  </Button>
+                </div>
+              </div>
+
+              <Button className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white">
+                Save Configuration
+              </Button>
+            </div>
+          </AdminCardContent>
+        </AdminCard>
+      </TabsContent>
+
+      {/* Team Management Tab */}
+      <TabsContent value="team" className="mt-6">
+        <AdminCard>
+          <AdminCardHeader>
+            <div className="flex items-center justify-between w-full">
+              <AdminCardTitle icon={<Users className="h-5 w-5" />}>Team Management</AdminCardTitle>
+              <Button className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Member
+              </Button>
+            </div>
+          </AdminCardHeader>
+          <AdminCardContent>
+            <div className="space-y-3">
+              {[
+                { name: 'You', email: 'admin@scoreshift.com', role: 'admin', status: 'Active' },
+                { name: 'Sarah Manager', email: 'sarah@scoreshift.com', role: 'manager', status: 'Active' },
+                { name: 'David Support', email: 'david@scoreshift.com', role: 'support', status: 'Active' },
+              ].map((member, idx) => (
+                <div key={idx} className="flex items-center justify-between p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <div>
+                    <p className="text-white font-medium">{member.name}</p>
+                    <p className="text-xs text-[hsl(var(--admin-text-muted))]">{member.email}</p>
+                    <div className="flex gap-2 mt-2">
+                      <AdminBadge variant="warning" className="capitalize">{member.role}</AdminBadge>
+                      <AdminBadge variant="success">{member.status}</AdminBadge>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="outline" className="border-[hsl(var(--admin-border))] text-white hover:bg-[hsl(var(--admin-bg))]">
+                    Settings
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </AdminCardContent>
+        </AdminCard>
+      </TabsContent>
+
     </div>
   );
 }

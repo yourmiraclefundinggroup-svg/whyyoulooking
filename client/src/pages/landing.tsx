@@ -28,7 +28,6 @@ export default function LandingPage() {
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-slate-400 hover:text-white text-sm transition-colors">Features</a>
               <Link href="/pricing"><span className="text-slate-400 hover:text-white text-sm transition-colors cursor-pointer">Pricing</span></Link>
-              <a href="#compare" className="text-slate-400 hover:text-white text-sm transition-colors">Compare</a>
               <a href="#business" className="text-slate-400 hover:text-white text-sm transition-colors">For Business</a>
             </div>
             <div className="flex items-center gap-3">
@@ -359,14 +358,14 @@ export default function LandingPage() {
                 location: "Atlanta, GA",
               },
               {
-                quote: "I run 80 clients and the automation does 90% of the work. I switched from CRC and never looked back.",
-                name: "Keisha R.",
-                location: "Credit Repair Business Owner",
+                quote: "My credit was 486 when I started, going through a divorce and struggling to get approved for anything. Now I'm at 610 and just got approved for my own place. We're still working together to get me ready to buy a house next year. The advice and guidance has been incredible.",
+                name: "Olivia G.",
+                location: "Rebuilding After Divorce",
               },
               {
-                quote: "The Credit Coach AI answered my question at 2am when I was panicking about a new collection. Instantly calmed me down.",
-                name: "David M.",
-                location: "Miami, FL",
+                quote: "I had an amazing experience! In less than 30 days, my credit score increased by 95 points. Ervin was professional, consistent, and kept me informed every step of the way. Truly awesome experience for my husband and I!",
+                name: "Orlandria Washington",
+                location: "New York, NY",
               },
             ].map((t) => (
               <div key={t.name} className="card-3d p-6">
@@ -386,75 +385,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* === CRC COMPARISON TABLE === */}
-      <section id="compare" className="py-24 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="text-xs uppercase tracking-widest text-amber-400 mb-3 font-medium">Comparison</div>
-            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight">
-              ScoreShift vs Credit Repair Cloud
-            </h2>
-          </div>
 
-          <div
-            className="rounded-2xl overflow-hidden border"
-            style={{ borderColor: "rgba(255,255,255,0.06)" }}
-          >
-            {/* Header */}
-            <div
-              className="grid grid-cols-3 text-sm font-bold"
-              style={{ background: "#0F1E35" }}
-            >
-              <div className="p-4 text-slate-400">Feature</div>
-              <div className="p-4 text-center">
-                <span className="gradient-text font-black">ScoreShift</span>
-              </div>
-              <div className="p-4 text-center text-slate-500">CRC</div>
-            </div>
-
-            {[
-              { feature: "AI-generated unique letters", ss: true, crc: false, crcNote: "static templates" },
-              { feature: "Automated certified mail", ss: true, crc: false, crcNote: "Manual" },
-              { feature: "DSCR loan pipeline", ss: true, crc: false, crcNote: "Not available" },
-              { feature: "Real-time score alerts", ss: true, crc: false, crcNote: "Static rounds only" },
-              { feature: "Credit Coach AI", ss: true, crc: false, crcNote: "" },
-              { feature: "8 languages", ss: true, crc: false, crcNote: "English only" },
-              { feature: "Victory Room celebrations", ss: true, crc: false, crcNote: "" },
-              { feature: "Starting price", ss: false, crc: false, ssText: "$49/mo", crcText: "$179/mo" },
-            ].map((row, i) => (
-              <div
-                key={row.feature}
-                className="grid grid-cols-3 text-sm border-t"
-                style={{
-                  borderColor: "rgba(255,255,255,0.04)",
-                  background: i % 2 === 0 ? "rgba(255,255,255,0.01)" : "transparent",
-                }}
-              >
-                <div className="p-4 text-slate-400">{row.feature}</div>
-                <div className="p-4 text-center">
-                  {row.ssText ? (
-                    <span className="text-amber-400 font-bold">{row.ssText}</span>
-                  ) : row.ss ? (
-                    <span className="text-emerald-400 font-bold text-lg">✓</span>
-                  ) : null}
-                </div>
-                <div className="p-4 text-center">
-                  {row.crcText ? (
-                    <span className="text-slate-500">{row.crcText}</span>
-                  ) : row.crc ? (
-                    <span className="text-emerald-400">✓</span>
-                  ) : (
-                    <span className="text-slate-600">
-                      <X className="w-4 h-4 mx-auto text-slate-600" />
-                      {row.crcNote && <div className="text-xs text-slate-600 mt-0.5">{row.crcNote}</div>}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* === FINAL CTA === */}
       <section
