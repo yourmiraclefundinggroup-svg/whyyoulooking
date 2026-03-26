@@ -11,6 +11,34 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       colors: {
+        /* ── ScoreShift Gold scale ── */
+        gold: {
+          50:  "#FFFBEB",
+          100: "#FEF3C7",
+          200: "#FDE68A",
+          300: "#FCD34D",
+          400: "#FBBF24",
+          500: "#F59E0B",
+          600: "#D97706",
+          700: "#B45309",
+          800: "#92400E",
+          900: "#78350F",
+        },
+        /* ── ScoreShift Navy scale ── */
+        navy: {
+          50:  "#EFF6FF",
+          100: "#DBEAFE",
+          200: "#BFDBFE",
+          300: "#93C5FD",
+          400: "#60A5FA",
+          500: "#3B82F6",
+          600: "#1E3A5F",
+          700: "#162540",
+          800: "#0A1628",
+          900: "#050A14",
+          950: "#020B1A",
+        },
+        /* ── shadcn/ui tokens ── */
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {
@@ -62,22 +90,19 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+      boxShadow: {
+        "glow-gold": "0 0 20px rgba(245,158,11,0.35), 0 0 60px rgba(245,158,11,0.12)",
+        "glow-blue": "0 0 20px rgba(59,130,246,0.35), 0 0 60px rgba(59,130,246,0.12)",
+        "glow-emerald": "0 0 20px rgba(52,211,153,0.3), 0 0 60px rgba(52,211,153,0.1)",
+      },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
