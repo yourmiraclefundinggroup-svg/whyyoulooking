@@ -1,463 +1,642 @@
-import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, Zap, Mail, Building2, MessageSquare, Map, Trophy, Star, TrendingUp, Shield, ArrowRight, X } from "lucide-react";
-import { PaymentCard3D } from "@/components/ui/payment-card-3d";
+import { Link } from 'wouter'
+import { motion } from 'framer-motion'
+import {
+  Bot, Mail, Building2, Sparkles, Map, Trophy,
+  Check, ArrowRight, Play, Star,
+  Shield, Zap, ChevronRight
+} from 'lucide-react'
+import { Navbar } from '../components/layout/Navbar'
+import { Footer } from '../components/layout/Footer'
+import { PaymentCard3D } from '../components/ui/PaymentCard3D'
+import { Button } from '../components/ui/Button'
+import { Badge } from '../components/ui/Badge'
+import { StatCounter } from '../components/ui/StatCounter'
+
+const fadeUp = {
+  initial: { opacity: 0, y: 24 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5 },
+}
+
+const stagger = {
+  animate: { transition: { staggerChildren: 0.08 } },
+}
+
+const features = [
+  {
+    icon: Bot,
+    title: 'Dispute IQ™',
+    desc: 'AI writes a completely unique letter every round. No two ever identical. Bureaus can\'t flag it.',
+    accent: 'blue',
+    accentClass: 'bg-blue-100 text-blue-600',
+    borderClass: 'border-l-blue-500',
+  },
+  {
+    icon: Mail,
+    title: 'Auto Certified Mail',
+    desc: 'Letters printed, mailed, and tracked automatically via Lob.com. No post office trips. Ever.',
+    accent: 'gold',
+    accentClass: 'bg-gold-50 text-gold-600',
+    borderClass: 'border-l-gold-500',
+  },
+  {
+    icon: Shield,
+    title: 'Metro2 Compliance Engine',
+    desc: 'Every dispute letter is Metro2-formatted by default. Legally bulletproof, bureau-recognized, and AI-unique every single time.',
+    accent: 'blue',
+    accentClass: 'bg-blue-100 text-blue-600',
+    borderClass: 'border-l-blue-500',
+  },
+  {
+    icon: Building2,
+    title: 'LoanBridge™',
+    desc: 'Hit your target score and we connect you to DSCR lenders automatically. The finish line matters.',
+    accent: 'green',
+    accentClass: 'bg-green-50 text-green-600',
+    borderClass: 'border-l-green-500',
+  },
+  {
+    icon: Sparkles,
+    title: 'Credit Coach AI',
+    desc: '24/7 AI that has your full credit file. Ask anything at 2am. Get real answers, not FAQs.',
+    accent: 'blue',
+    accentClass: 'bg-blue-100 text-blue-600',
+    borderClass: 'border-l-blue-500',
+  },
+  {
+    icon: Map,
+    title: 'ScoreMap™',
+    desc: 'AI roadmap from your score today to loan approval. Week-by-week. Updates as you progress.',
+    accent: 'gold',
+    accentClass: 'bg-gold-50 text-gold-600',
+    borderClass: 'border-l-gold-500',
+  },
+  {
+    icon: Trophy,
+    title: 'Victory Room™',
+    desc: 'Celebrate every removal. Share your wins. Milestones you can show your family.',
+    accent: 'green',
+    accentClass: 'bg-green-50 text-green-600',
+    borderClass: 'border-l-green-500',
+  },
+  {
+    icon: Zap,
+    title: 'Auto Marketing Engine™',
+    desc: 'Set your ad budget. ScoreShift AI runs your Facebook, Google, and TikTok campaigns automatically. Clients come to you. — Coming Q2 2026',
+    accent: 'gold',
+    accentClass: 'bg-gold-50 text-gold-600',
+    borderClass: 'border-l-gold-500',
+  },
+]
+
+const testimonials = [
+  {
+    quote: 'My credit was 486 when I started, going through a divorce and struggling to get approved for anything. Now I\'m at 610 and just got approved for my own place. We\'re still working together to get me ready to buy a house next year. The advice and guidance has been incredible.',
+    name: 'Olivia G.',
+    location: 'Rebuilding After Divorce',
+    score: '486 → 610',
+    avatar: 'OG',
+    color: 'bg-blue-600',
+  },
+  {
+    quote: 'In less than 30 days, my credit score increased by 95 points. Ervin was professional, consistent, and kept me informed every step of the way. Truly awesome experience for my husband and I!',
+    name: 'Orlandria Washington',
+    location: 'New York, NY',
+    score: '+95 pts',
+    avatar: 'OW',
+    color: 'bg-gold-500',
+  },
+  {
+    quote: 'Went from 572 to 664 in 4 months. DSCR loan approved last week. ScoreShift is the real deal.',
+    name: 'Marcus T.',
+    location: 'Atlanta, GA',
+    score: '+92 pts',
+    avatar: 'MT',
+    color: 'bg-green-600',
+  },
+]
+
+
+
+const personalChecks = [
+  'All 3 credit bureaus covered',
+  'AI-unique dispute letters every round',
+  'Automated certified mail via Lob.com',
+  'ScoreMap™ week-by-week roadmap',
+  'Credit Coach AI — 24/7 answers',
+  'LoanBridge™ DSCR loan connection',
+]
+
+const businessChecks = [
+  'Full white-label client portal',
+  'Metro2 Compliance Engine — built in',
+  'Dispute IQ™ for every client',
+  'AutoCycle batch automation',
+  'Affiliate revenue engine',
+  'Voice AI lead qualifier',
+  'API + Zapier integration',
+]
 
 export default function LandingPage() {
+  const logos = ['Equifax Partners', 'FCRA Compliant', 'Lob.com', 'Stripe Secured', 'Anthropic AI']
+
   return (
-    <div className="min-h-screen" style={{ background: "#050A14" }}>
-      {/* === PUBLIC NAVIGATION === */}
-      <nav
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b"
-        style={{
-          background: "rgba(5,10,20,0.85)",
-          borderColor: "rgba(255,255,255,0.06)",
-        }}
-      >
+    <div className="min-h-screen bg-white text-slate-900">
+      <Navbar />
+
+      {/* ─── HERO ─── */}
+      <section className="relative pt-24 pb-20 overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full opacity-30 dark:opacity-15"
+            style={{ background: 'radial-gradient(ellipse, #DBEAFE 0%, transparent 70%)' }} />
+          <div className="absolute top-20 right-0 w-96 h-96 rounded-full opacity-20 dark:opacity-10"
+            style={{ background: 'radial-gradient(ellipse, #FFFBEB 0%, transparent 70%)' }} />
+        </div>
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-black font-black text-sm"
-                style={{ background: "linear-gradient(135deg, #F59E0B, #FCD34D)" }}
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left: copy */}
+            <motion.div
+              variants={stagger}
+              initial="initial"
+              animate="animate"
+              className="text-center lg:text-left"
+            >
+              {/* Badge */}
+              <motion.div variants={fadeUp} className="inline-flex mb-6">
+                <Badge variant="blue" size="md" className="gap-1.5">
+                  <span className="text-gold-500">✦</span>
+                  Trusted by 2,400+ clients · 16,000+ items removed
+                </Badge>
+              </motion.div>
+
+              {/* Headline */}
+              <motion.h1
+                variants={fadeUp}
+                className="font-black text-5xl md:text-6xl lg:text-7xl leading-[1.05] tracking-tight text-slate-900 dark:text-white mb-4"
               >
-                SS
-              </div>
-              <span className="text-white font-bold text-lg tracking-tight">ScoreShift</span>
-            </div>
-            <div className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-slate-400 hover:text-white text-sm transition-colors">Features</a>
-              <Link href="/pricing"><span className="text-slate-400 hover:text-white text-sm transition-colors cursor-pointer">Pricing</span></Link>
-              <a href="#business" className="text-slate-400 hover:text-white text-sm transition-colors">For Business</a>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link href="/auth">
-                <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-white/5">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-black font-bold glow-gold">
-                  Start Free
-                </Button>
-              </Link>
-            </div>
+                Fix Your Credit.<br />
+                <span className="gradient-text">Get Loan-Ready.</span>
+              </motion.h1>
+
+              {/* Subheadline */}
+              <motion.p
+                variants={fadeUp}
+                className="text-lg md:text-xl text-slate-500 dark:text-slate-400 max-w-xl mb-8 leading-relaxed mx-auto lg:mx-0"
+              >
+                The only credit repair platform that connects your dispute journey directly to DSCR loan approval.
+                AI-powered. Automated. Built for results.
+              </motion.p>
+
+              {/* CTAs */}
+              <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-6">
+                <Link to="/signup">
+                  <Button variant="primary" size="lg">
+                    Start Free Trial <ArrowRight size={18} />
+                  </Button>
+                </Link>
+                <button className="inline-flex items-center justify-center gap-2.5 px-8 py-4 text-base font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-navy-700 border border-slate-200 dark:border-white/15 rounded-xl hover:bg-slate-50 dark:hover:bg-navy-600 transition-all shadow-sm">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+                    <Play size={12} fill="white" className="text-white ml-0.5" />
+                  </div>
+                  Watch Demo
+                </button>
+              </motion.div>
+
+              {/* Trust strip */}
+              <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-x-6 gap-y-2 justify-center lg:justify-start">
+                {['No credit card required', 'Results in 30 days', '3-day free trial'].map((t) => (
+                  <div key={t} className="flex items-center gap-1.5 text-sm text-slate-400">
+                    <Check size={14} className="text-green-500" />
+                    {t}
+                  </div>
+                ))}
+              </motion.div>
+            </motion.div>
+
+            {/* Right: 3D Card */}
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, delay: 0.3 }}
+              className="flex justify-center lg:justify-end"
+            >
+              <PaymentCard3D />
+            </motion.div>
           </div>
-        </div>
-      </nav>
 
-      {/* === HERO SECTION === */}
-      <section
-        className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden grid-bg"
-      >
-        {/* Ambient orbs */}
-        <div
-          className="absolute top-20 right-20 w-96 h-96 rounded-full blur-3xl pointer-events-none animate-pulse-slow"
-          style={{ background: "rgba(245,158,11,0.05)" }}
-        />
-        <div
-          className="absolute bottom-40 left-20 w-80 h-80 rounded-full blur-3xl pointer-events-none animate-float"
-          style={{ background: "rgba(96,165,250,0.05)" }}
-        />
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full blur-3xl pointer-events-none"
-          style={{ background: "rgba(245,158,11,0.02)" }}
-        />
-
-        <div className="relative z-10 max-w-6xl mx-auto px-4 text-center">
-          {/* Announcement badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-500/20 bg-amber-500/5 text-amber-400 text-xs font-medium mb-8">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            Now with Dispute IQ™ — AI letters bureaus can't flag
-          </div>
-
-          {/* Main headline */}
-          <h1
-            className="text-6xl md:text-8xl font-black text-white tracking-tight leading-none mb-6"
+          {/* Stats row */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16 pt-10 border-t border-slate-100 dark:border-white/8"
           >
-            Fix Your Credit.<br />
-            <span className="gradient-text">Get Loan Ready.</span>
-          </h1>
-
-          {/* Subheadline */}
-          <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-10">
-            ScoreShift is the only credit repair platform that connects your repair journey directly to DSCR loan approval. AI-powered. Automated. Built for results.
-          </p>
-
-          {/* CTA buttons */}
-          <div className="flex gap-4 justify-center flex-wrap mb-10">
-            <Link href="/signup">
-              <Button
-                size="lg"
-                className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-8 h-14 text-lg glow-gold"
-              >
-                Start Free Trial →
-              </Button>
-            </Link>
-            <a href="#features">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white/10 text-white hover:bg-white/5 px-8 h-14 text-lg"
-              >
-                See How It Works
-              </Button>
-            </a>
-          </div>
-
-          {/* Social proof */}
-          <div className="flex items-center justify-center gap-6 md:gap-8 text-slate-500 text-sm flex-wrap">
-            <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> No credit card required</span>
-            <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> 3-day free trial</span>
-            <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Cancel anytime</span>
-          </div>
-
-          {/* Hero visual */}
-          <div className="relative mt-20 flex items-center justify-center">
-            {/* Floating stat chips */}
-            <div
-              className="absolute -left-4 md:left-8 top-4 z-10 animate-stat-1 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2 backdrop-blur-sm"
-            >
-              <div className="text-emerald-400 font-bold text-sm">+47 pts</div>
-              <div className="text-slate-400 text-xs">this month</div>
-            </div>
-            <div
-              className="absolute -right-4 md:right-8 top-8 z-10 animate-stat-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 backdrop-blur-sm"
-            >
-              <div className="text-amber-400 font-bold text-sm">4 items</div>
-              <div className="text-slate-400 text-xs">removed</div>
-            </div>
-            <div
-              className="absolute left-1/2 -translate-x-1/2 -bottom-8 z-10 animate-stat-3 bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2 backdrop-blur-sm"
-            >
-              <div className="text-blue-400 font-bold text-sm">Loan Ready: 68%</div>
-              <div className="text-slate-400 text-xs">on track</div>
-            </div>
-
-            <PaymentCard3D animated={true} className="relative z-10" />
-          </div>
-        </div>
-      </section>
-
-      {/* === STATS BAR === */}
-      <section
-        className="py-10 border-t border-b"
-        style={{
-          background: "rgba(255,255,255,0.02)",
-          borderColor: "rgba(255,255,255,0.06)",
-        }}
-      >
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
-              { value: "16,000+", label: "Items Removed" },
-              { value: "94%", label: "Client Satisfaction" },
-              { value: "30-Day", label: "Average First Result" },
-              { value: "$0", label: "Hidden Fees" },
+              { label: 'Clients Served', value: 2400, suffix: '+' },
+              { label: 'Items Removed', value: 16000, suffix: '+' },
+              { label: 'Avg Score Gain', value: 74, suffix: ' pts' },
+              { label: 'Loan Approvals', value: 890, suffix: '+' },
             ].map((stat) => (
-              <div key={stat.label}>
-                <div className="text-3xl font-black text-white mb-1">{stat.value}</div>
-                <div className="text-slate-500 text-sm uppercase tracking-widest text-xs">{stat.label}</div>
+              <div key={stat.label} className="text-center">
+                <div className="font-black text-3xl md:text-4xl text-slate-900 dark:text-white mb-1">
+                  <StatCounter value={stat.value} suffix={stat.suffix} />
+                </div>
+                <div className="text-sm text-slate-400 font-medium">{stat.label}</div>
               </div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* === FEATURES SECTION === */}
-      <section id="features" className="py-24 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="text-xs uppercase tracking-widest text-amber-400 mb-3 font-medium">Platform Features</div>
-            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight">
-              Everything You Need
-            </h2>
-            <p className="text-slate-400 mt-4 text-lg max-w-2xl mx-auto">
-              Six powerful tools working together to get you loan-ready faster than any other platform.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                icon: <Zap className="w-5 h-5 text-amber-400" />,
-                title: "Dispute IQ™",
-                desc: "AI writes a unique letter every round. Bureaus can't pattern-flag it.",
-                color: "amber",
-              },
-              {
-                icon: <Mail className="w-5 h-5 text-blue-400" />,
-                title: "Auto Certified Mail",
-                desc: "Lob.com sends letters automatically. Real USPS tracking, zero trips.",
-                color: "blue",
-              },
-              {
-                icon: <Building2 className="w-5 h-5 text-emerald-400" />,
-                title: "Loan Bridge",
-                desc: "Hit your target score? We connect you to DSCR lenders automatically.",
-                color: "emerald",
-              },
-              {
-                icon: <MessageSquare className="w-5 h-5 text-amber-400" />,
-                title: "Credit Coach AI",
-                desc: "24/7 AI that knows your full credit file. Ask anything, anytime.",
-                color: "amber",
-              },
-              {
-                icon: <Map className="w-5 h-5 text-blue-400" />,
-                title: "Score Map",
-                desc: "AI roadmap from your score today to loan approval. Updated in real time.",
-                color: "blue",
-              },
-              {
-                icon: <Trophy className="w-5 h-5 text-emerald-400" />,
-                title: "Victory Room",
-                desc: "Celebrate every win. Share your progress. Build momentum.",
-                color: "emerald",
-              },
-            ].map((feature) => (
-              <div
-                key={feature.title}
-                className="card-3d card-3d-gold p-6 group"
-              >
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
-                  style={{
-                    background:
-                      feature.color === "amber"
-                        ? "rgba(245,158,11,0.1)"
-                        : feature.color === "blue"
-                        ? "rgba(96,165,250,0.1)"
-                        : "rgba(52,211,153,0.1)",
-                    border:
-                      feature.color === "amber"
-                        ? "1px solid rgba(245,158,11,0.2)"
-                        : feature.color === "blue"
-                        ? "1px solid rgba(96,165,250,0.2)"
-                        : "1px solid rgba(52,211,153,0.2)",
-                  }}
-                >
-                  {feature.icon}
-                </div>
-                <h3 className="text-white font-bold text-lg mb-2">{feature.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{feature.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* === DUAL AUDIENCE SECTION === */}
-      <section id="business" className="py-24 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="text-xs uppercase tracking-widest text-amber-400 mb-3 font-medium">Who It's For</div>
-            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight">
-              Personal or Business
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Personal */}
-            <div
-              className="card-3d p-8 border"
-              style={{ borderColor: "rgba(96,165,250,0.2)" }}
-            >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-6">
-                Personal Credit
-              </div>
-              <h3 className="text-2xl font-black text-white mb-3">
-                Fix your credit.<br />Get loan-ready.
-              </h3>
-              <p className="text-slate-400 text-sm mb-6">
-                From $49/mo — Start with a 3-day free trial.
-              </p>
-              <ul className="space-y-3 mb-8">
-                {[
-                  "Track all 3 bureaus",
-                  "AI dispute letters",
-                  "Certified mail automation",
-                  "Loan readiness meter",
-                  "24/7 Credit Coach AI",
-                ].map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-slate-300 text-sm">
-                    <CheckCircle className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/signup">
-                <Button className="w-full bg-blue-500 hover:bg-blue-400 text-white font-bold">
-                  Start Free →
-                </Button>
-              </Link>
-            </div>
-
-            {/* White Label */}
-            <div
-              className="card-3d p-8 border relative"
-              style={{ borderColor: "rgba(245,158,11,0.25)" }}
-            >
-              <div
-                className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-black text-xs font-bold"
-                style={{ background: "linear-gradient(135deg, #F59E0B, #FCD34D)" }}
-              >
-                Most Popular for Businesses
-              </div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium mb-6">
-                White Label Business
-              </div>
-              <h3 className="text-2xl font-black text-white mb-3">
-                Run your credit repair<br />business on autopilot.
-              </h3>
-              <p className="text-slate-400 text-sm mb-6">
-                From $99/mo — Unlimited clients. Your brand.
-              </p>
-              <ul className="space-y-3 mb-8">
-                {[
-                  "Your brand + portal",
-                  "Unlimited clients",
-                  "AutoCycle dispute automation",
-                  "Built-in DSCR pipeline",
-                  "Starts at $99/mo vs CRC's $179",
-                ].map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-slate-300 text-sm">
-                    <CheckCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/signup">
-                <Button className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold glow-gold">
-                  Start White Label →
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* === TESTIMONIALS === */}
-      <section
-        className="py-24 px-4"
-        style={{ background: "rgba(255,255,255,0.01)" }}
-      >
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="text-xs uppercase tracking-widest text-amber-400 mb-3 font-medium">Client Stories</div>
-            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight">
-              Real Results
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                quote: "I went from 572 to 664 in 4 months. My DSCR loan was approved last week.",
-                name: "Marcus T.",
-                location: "Atlanta, GA",
-              },
-              {
-                quote: "My credit was 486 when I started, going through a divorce and struggling to get approved for anything. Now I'm at 610 and just got approved for my own place. We're still working together to get me ready to buy a house next year. The advice and guidance has been incredible.",
-                name: "Olivia G.",
-                location: "Rebuilding After Divorce",
-              },
-              {
-                quote: "I had an amazing experience! In less than 30 days, my credit score increased by 95 points. Ervin was professional, consistent, and kept me informed every step of the way. Truly awesome experience for my husband and I!",
-                name: "Orlandria Washington",
-                location: "New York, NY",
-              },
-            ].map((t) => (
-              <div key={t.name} className="card-3d p-6">
-                <div className="flex gap-0.5 mb-4">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
-                  ))}
-                </div>
-                <p className="text-slate-300 text-sm leading-relaxed mb-6">"{t.quote}"</p>
-                <div>
-                  <div className="text-white font-semibold text-sm">{t.name}</div>
-                  <div className="text-slate-500 text-xs">{t.location}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-
-
-      {/* === FINAL CTA === */}
-      <section
-        className="py-32 px-4 relative overflow-hidden"
-        style={{ background: "#0A1628" }}
-      >
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-3xl pointer-events-none"
-          style={{ background: "rgba(245,158,11,0.05)" }}
-        />
-        <div className="relative z-10 max-w-3xl mx-auto text-center">
-          <div className="text-xs uppercase tracking-widest text-amber-400 mb-4 font-medium">Get Started Today</div>
-          <h2 className="text-5xl md:text-6xl font-black text-white tracking-tight mb-4">
-            Ready to ScoreShift?
-          </h2>
-          <p className="text-slate-400 text-lg mb-10">
-            Join thousands of clients on their way to loan approval.
+      {/* ─── LOGOS BAR ─── */}
+      <section className="py-10 bg-slate-50 dark:bg-navy-800 border-y border-slate-100 dark:border-white/8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-center text-xs font-semibold uppercase tracking-widest text-slate-400 mb-6">
+            Trusted by clients at
           </p>
-          <div className="flex gap-4 justify-center flex-wrap">
-            <Link href="/signup">
-              <Button
-                size="lg"
-                className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-10 h-14 text-lg glow-gold"
+          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-14">
+            {logos.map((logo) => (
+              <div
+                key={logo}
+                className="text-sm font-bold text-slate-300 dark:text-slate-600 hover:text-slate-400 dark:hover:text-slate-500 transition-colors cursor-default tracking-wide uppercase"
               >
-                Start Free Trial →
-              </Button>
-            </Link>
-            <Link href="/get-started">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white/10 text-white hover:bg-white/5 px-10 h-14 text-lg"
-              >
-                Talk to a Loan Specialist
-              </Button>
-            </Link>
-          </div>
-          <div className="mt-8 flex items-center justify-center gap-6 text-slate-600 text-sm flex-wrap">
-            <span>✓ No credit card required</span>
-            <span>✓ 3-day free trial</span>
-            <span>✓ Cancel anytime</span>
+                {logo}
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* === FOOTER === */}
-      <footer
-        className="py-10 px-4 border-t"
-        style={{
-          background: "#050A14",
-          borderColor: "rgba(255,255,255,0.06)",
-        }}
-      >
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-black font-black text-xs"
-              style={{ background: "linear-gradient(135deg, #F59E0B, #FCD34D)" }}
-            >
-              SS
-            </div>
-            <span className="text-white font-bold">ScoreShift</span>
-          </div>
-          <div className="flex gap-6 text-slate-500 text-sm">
-            <Link href="/privacy-policy"><span className="hover:text-white cursor-pointer transition-colors">Privacy</span></Link>
-            <Link href="/terms"><span className="hover:text-white cursor-pointer transition-colors">Terms</span></Link>
-            <Link href="/pricing"><span className="hover:text-white cursor-pointer transition-colors">Pricing</span></Link>
-            <Link href="/denial-decoder"><span className="hover:text-white cursor-pointer transition-colors">Denial Decoder</span></Link>
-          </div>
-          <div className="text-slate-600 text-sm">© 2027 ScoreShift. All rights reserved.</div>
+      {/* ─── FEATURES GRID ─── */}
+      <section id="features" className="py-24 bg-white dark:bg-navy-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-14"
+          >
+            <Badge variant="blue" className="mb-4">Platform Features</Badge>
+            <h2 className="font-black text-4xl md:text-5xl text-slate-900 dark:text-white mb-4 tracking-tight">
+              Everything You Need to Win
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto">
+              Built for the serious credit repair journey. Every tool connects to your end goal: loan approval.
+            </p>
+          </motion.div>
+
+          <motion.div
+            variants={stagger}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true, amount: 0.1 }}
+            className="grid md:grid-cols-2 lg:grid-cols-3 gap-5"
+          >
+            {features.map((f) => (
+              <motion.div
+                key={f.title}
+                variants={fadeUp}
+                whileHover={{ y: -3, boxShadow: '0 12px 35px rgba(59,130,246,0.12)' }}
+                className={`bg-white dark:bg-navy-700 rounded-2xl p-6 border border-slate-200 dark:border-white/8 border-l-4 ${f.borderClass} shadow-sm transition-all`}
+              >
+                <div className={`w-10 h-10 rounded-xl ${f.accentClass} flex items-center justify-center mb-4`}>
+                  <f.icon size={20} />
+                </div>
+                <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">{f.title}</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{f.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
-      </footer>
+      </section>
+
+      {/* ─── HOW IT WORKS ─── */}
+      <section className="py-24 bg-slate-50 dark:bg-navy-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-14"
+          >
+            <Badge variant="green" className="mb-4">Simple Process</Badge>
+            <h2 className="font-black text-4xl md:text-5xl text-slate-900 dark:text-white mb-4 tracking-tight">
+              Three Steps to Loan-Ready
+            </h2>
+          </motion.div>
+
+          <div className="relative">
+            {/* Connecting line */}
+            <div className="hidden md:block absolute top-10 left-[16.67%] right-[16.67%] h-0.5 bg-gradient-to-r from-blue-200 via-blue-400 to-green-400" />
+
+            <motion.div
+              variants={stagger}
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+              className="grid md:grid-cols-3 gap-8"
+            >
+              {[
+                {
+                  step: '01',
+                  title: 'Upload Your Report',
+                  desc: 'Upload your credit report. Our AI ScoreShifts it in seconds — identifying every dispute opportunity.',
+                  color: 'bg-blue-600',
+                  icon: '📄',
+                },
+                {
+                  step: '02',
+                  title: 'We Dispute Automatically',
+                  desc: 'AI generates unique letters per bureau. Certified mail is printed and sent automatically via Lob.com.',
+                  color: 'bg-blue-500',
+                  icon: '✉️',
+                },
+                {
+                  step: '03',
+                  title: 'Score Up. Loan Approved.',
+                  desc: 'Watch items get removed. Hit your target score. LoanBridge™ connects you to DSCR lenders.',
+                  color: 'bg-green-600',
+                  icon: '🏡',
+                },
+              ].map((step) => (
+                <motion.div key={step.step} variants={fadeUp} className="text-center flex flex-col items-center">
+                  <div className={`w-20 h-20 ${step.color} rounded-full flex items-center justify-center text-3xl mb-5 shadow-lg relative z-10`}>
+                    {step.icon}
+                  </div>
+                  <div className="text-xs font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest mb-2">
+                    Step {step.step}
+                  </div>
+                  <h3 className="font-bold text-xl text-slate-900 dark:text-white mb-3">{step.title}</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed max-w-xs">{step.desc}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── DUAL AUDIENCE SPLIT ─── */}
+      <section className="py-24 bg-white dark:bg-navy-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-14"
+          >
+            <h2 className="font-black text-4xl md:text-5xl text-slate-900 dark:text-white mb-4 tracking-tight">
+              Built for You. Or Your Business.
+            </h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Personal */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="bg-white dark:bg-navy-700 rounded-2xl p-8 border border-slate-200 dark:border-white/8 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all"
+            >
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center mb-5 text-blue-600 text-2xl">
+                👤
+              </div>
+              <h3 className="font-black text-2xl text-slate-900 dark:text-white mb-2">For You</h3>
+              <p className="text-slate-500 dark:text-slate-400 mb-6">Fix your credit. Get loan-ready. Track every step.</p>
+              <ul className="flex flex-col gap-3 mb-8">
+                {personalChecks.map((c) => (
+                  <li key={c} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-slate-300">
+                    <Check size={16} className="text-green-500 shrink-0 mt-0.5" />
+                    {c}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex items-end gap-2 mb-6">
+                <span className="font-black text-4xl text-slate-900 dark:text-white">$29</span>
+                <span className="text-slate-400 mb-1">/month</span>
+              </div>
+              <Link to="/signup">
+                <Button variant="primary" fullWidth size="lg">Start Free Trial</Button>
+              </Link>
+            </motion.div>
+
+            {/* Business */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-navy-800 dark:to-navy-700 rounded-2xl p-8 border border-slate-700 dark:border-white/15 shadow-lg hover:-translate-y-0.5 transition-all relative overflow-hidden"
+            >
+              {/* Gold accent */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-gold-400 to-gold-600 rounded-t-2xl" />
+
+              <div className="w-12 h-12 bg-gold-500/20 rounded-2xl flex items-center justify-center mb-5 text-2xl border border-gold-500/30">
+                🏢
+              </div>
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="font-black text-2xl text-white">For Your Business</h3>
+                <Badge variant="gold" className="shrink-0">White Label</Badge>
+              </div>
+              <p className="text-slate-400 mb-6">Run a credit repair business on autopilot.</p>
+              <ul className="flex flex-col gap-3 mb-8">
+                {businessChecks.map((c) => (
+                  <li key={c} className="flex items-start gap-2.5 text-sm text-slate-300">
+                    <Check size={16} className="text-gold-500 shrink-0 mt-0.5" />
+                    {c}
+                  </li>
+                ))}
+              </ul>
+              <div className="flex items-end gap-2 mb-2">
+                <span className="font-black text-4xl text-white">$49</span>
+                <span className="text-slate-400 mb-1">/month</span>
+              </div>
+
+              <Button variant="gold" fullWidth size="lg">
+                Start White Label →
+              </Button>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── TESTIMONIALS ─── */}
+      <section className="py-24 bg-white dark:bg-navy-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-14"
+          >
+            <div className="flex items-center justify-center gap-1 mb-4">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} size={18} fill="#F59E0B" className="text-gold-500" />
+              ))}
+            </div>
+            <h2 className="font-black text-4xl md:text-5xl text-slate-900 dark:text-white mb-4 tracking-tight">
+              Real Results. Real People.
+            </h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6 items-start">
+            {testimonials.map((t, i) => (
+              <motion.div
+                key={t.name}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                style={{ marginTop: i === 1 ? 20 : 0 }}
+                className="bg-white dark:bg-navy-700 rounded-2xl p-6 border border-slate-200 dark:border-white/8 border-l-4 border-l-blue-500 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, j) => (
+                      <Star key={j} size={12} fill="#F59E0B" className="text-gold-500" />
+                    ))}
+                  </div>
+                  <Badge variant="green" className="text-xs">{t.score}</Badge>
+                </div>
+                <p className="text-slate-700 dark:text-slate-200 text-sm leading-relaxed mb-5 italic">"{t.quote}"</p>
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-full ${t.color} flex items-center justify-center text-white text-xs font-bold`}>
+                    {t.avatar}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm text-slate-900 dark:text-white">{t.name}</div>
+                    <div className="text-xs text-slate-400">{t.location}</div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── PRICING PREVIEW ─── */}
+      <section className="py-24 bg-slate-50 dark:bg-navy-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <Badge variant="blue" className="mb-4">Pricing</Badge>
+            <h2 className="font-black text-4xl text-slate-900 dark:text-white mb-3 tracking-tight">Simple, Fair Pricing</h2>
+            <p className="text-slate-500 dark:text-slate-400">Start free. Upgrade when ready. No contracts.</p>
+          </motion.div>
+
+          <motion.div
+            variants={stagger}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            className="grid md:grid-cols-3 gap-5 mb-8"
+          >
+            {[
+              { name: 'Personal Pro', price: '$29', popular: false, desc: 'For individuals fixing their credit', badge: null },
+              { name: 'Business Pro', price: '$99', popular: true, desc: 'For credit repair professionals', badge: 'Most Popular' },
+              { name: 'White Label', price: '$399', popular: false, desc: 'Your brand, powered by ScoreShift', badge: '🏆' },
+            ].map((plan) => (
+              <motion.div
+                key={plan.name}
+                variants={fadeUp}
+                className={`rounded-2xl p-6 border transition-all ${
+                  plan.popular
+                    ? 'bg-blue-600 border-blue-500 shadow-glow-blue text-white'
+                    : 'bg-white dark:bg-navy-700 border-slate-200 dark:border-white/8 shadow-sm hover:shadow-md hover:-translate-y-0.5'
+                }`}
+              >
+                {plan.badge && (
+                  <div className="mb-3">
+                    <span className={`text-xs font-black px-3 py-1 rounded-full ${plan.popular ? 'bg-white/20 text-white' : 'bg-gold-50 text-gold-600 border border-gold-200'}`}>
+                      {plan.badge}
+                    </span>
+                  </div>
+                )}
+                <h3 className={`font-bold text-lg mb-1 ${plan.popular ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{plan.name}</h3>
+                <p className={`text-sm mb-4 ${plan.popular ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'}`}>{plan.desc}</p>
+                <div className="flex items-end gap-1 mb-5">
+                  <span className={`font-black text-4xl ${plan.popular ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{plan.price}</span>
+                  <span className={`mb-1 text-sm ${plan.popular ? 'text-blue-200' : 'text-slate-400'}`}>/mo</span>
+                </div>
+                <Link to="/pricing">
+                  <button className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                    plan.popular
+                      ? 'bg-white text-blue-600 hover:bg-blue-50'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}>
+                    Get Started →
+                  </button>
+                </Link>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          <div className="text-center">
+            <Link to="/pricing" className="inline-flex items-center gap-1 text-blue-600 font-semibold hover:gap-2 transition-all text-sm">
+              See all plans & features <ChevronRight size={16} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FINAL CTA ─── */}
+      <section className="py-24" style={{ background: 'linear-gradient(135deg, #EFF6FF 0%, #FFFFFF 60%, #F0FDF4 100%)' }}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-glow-blue text-2xl">
+              🚀
+            </div>
+            <h2 className="font-black text-4xl md:text-5xl text-slate-900 mb-4 tracking-tight">
+              Ready to ScoreShift<br />Your Credit?
+            </h2>
+            <p className="text-slate-500 text-lg mb-8 max-w-xl mx-auto leading-relaxed">
+              Join 2,400+ clients already on their way to loan approval. Start free — no credit card required.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link to="/signup">
+                <Button variant="primary" size="lg">
+                  Start Free — No Credit Card <ArrowRight size={18} />
+                </Button>
+              </Link>
+              <Button variant="secondary" size="lg">
+                Talk to a Specialist
+              </Button>
+            </div>
+            <div className="mt-8 flex items-center justify-center gap-6 flex-wrap">
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <Shield size={14} className="text-blue-400" />
+                FCRA Compliant
+              </div>
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <Check size={14} className="text-green-400" />
+                SOC2 Certified
+              </div>
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <Check size={14} className="text-green-400" />
+                256-bit Encryption
+              </div>
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <Zap size={14} className="text-gold-500" />
+                Powered by Anthropic AI
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      <Footer />
     </div>
-  );
+  )
 }
