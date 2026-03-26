@@ -33,5 +33,10 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*"],
     },
+    allowedHosts: [
+      "sisters-red-wto-happening.trycloudflare.com",
+      "localhost",
+      "127.0.0.1",
+    ],
   },
 });
