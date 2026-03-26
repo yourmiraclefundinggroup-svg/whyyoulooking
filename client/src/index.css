@@ -270,6 +270,39 @@
 }
 .animate-card-float { animation: card-float 6s ease-in-out infinite; }
 
+/* PaymentCard3D helper classes */
+.card-3d-container {
+  transform-style: preserve-3d;
+  perspective: 1200px;
+}
+.card-float {
+  animation: card-float 6s ease-in-out infinite;
+}
+
+/* Shimmer sweep on card */
+@keyframes shimmer-sweep {
+  0%   { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(200%)  skewX(-15deg); }
+}
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
+  animation: shimmer-sweep 3s ease-in-out infinite;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Stat chip floating animation */
+@keyframes chip-float-anim {
+  0%, 100% { transform: translateY(0px);  }
+  50%       { transform: translateY(-6px); }
+}
+.chip-float {
+  animation: chip-float-anim 3s ease-in-out infinite;
+}
+
 /* Stat chip float */
 @keyframes stat-float-1 {
   0%, 100% { transform: translateY(0px) translateX(0px); }

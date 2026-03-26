@@ -3,10 +3,11 @@ import { Link } from 'wouter'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, Sun, Moon } from 'lucide-react'
 import { Button } from '../ui/Button'
+import { useTheme } from '@/components/theme-provider'
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [dark, setDark] = useState(false)
+  const { theme, toggleTheme } = useTheme()
 
   const links = [
     { label: 'Features', href: '/#features' },
@@ -51,11 +52,11 @@ export function Navbar() {
           <div className="flex items-center gap-2 ml-auto">
             {/* Dark mode toggle */}
             <button
-              onClick={() => setDark(!dark)}
+              onClick={toggleTheme}
               className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-all dark:text-slate-400 dark:hover:bg-white/8"
               aria-label="Toggle dark mode"
             >
-              {dark ? <Sun size={18} /> : <Moon size={18} />}
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
 
             <Link

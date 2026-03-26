@@ -91,9 +91,10 @@ export default {
         },
       },
       boxShadow: {
-        "glow-gold": "0 0 20px rgba(245,158,11,0.35), 0 0 60px rgba(245,158,11,0.12)",
-        "glow-blue": "0 0 20px rgba(59,130,246,0.35), 0 0 60px rgba(59,130,246,0.12)",
-        "glow-emerald": "0 0 20px rgba(52,211,153,0.3), 0 0 60px rgba(52,211,153,0.1)",
+        "glow-gold":    "0 0 20px rgba(245,158,11,0.35), 0 0 60px rgba(245,158,11,0.12)",
+        "glow-blue":    "0 0 20px rgba(59,130,246,0.35), 0 0 60px rgba(59,130,246,0.12)",
+        "glow-emerald": "0 0 20px rgba(52,211,153,0.3),  0 0 60px rgba(52,211,153,0.10)",
+        "glow-green":   "0 0 20px rgba(34,197,94,0.3),   0 0 60px rgba(34,197,94,0.10)",
       },
       keyframes: {
         "accordion-down": {
