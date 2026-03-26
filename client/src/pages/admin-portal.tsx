@@ -84,7 +84,10 @@ export default function AdminPortal() {
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<CreditIssue | undefined>();
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('admin-theme');
+    return saved ? saved === 'dark' : true; // default dark
+  });
   
   // Apply theme to document
   useEffect(() => {
@@ -227,14 +230,16 @@ export default function AdminPortal() {
   return (
     <div className={isDarkMode ? 'dark' : 'light'}>
       <AdminShell>
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[hsl(var(--admin-border))]">
-          <div></div>
+        <div className="flex items-center justify-end mb-6 pb-4 border-b border-[hsl(var(--admin-border))]">
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
-            className="p-2 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] hover:bg-[hsl(var(--admin-accent))]/10 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))] hover:text-[hsl(var(--admin-text))] hover:border-[hsl(var(--admin-accent))]/50 hover:bg-[hsl(var(--admin-accent))]/8 transition-all text-sm font-medium"
             title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            {isDarkMode
+              ? <><Sun className="h-4 w-4 text-[hsl(var(--admin-warning))]" /><span>Light mode</span></>
+              : <><Moon className="h-4 w-4 text-[hsl(var(--admin-info))]" /><span>Dark mode</span></>
+            }
           </button>
         </div>
         {renderPageContent()}
