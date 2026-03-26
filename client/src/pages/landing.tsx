@@ -359,14 +359,14 @@ export default function LandingPage() {
                 location: "Atlanta, GA",
               },
               {
-                quote: "I run 80 clients and the automation does 90% of the work. I switched from CRC and never looked back.",
-                name: "Keisha R.",
-                location: "Credit Repair Business Owner",
+                quote: "My credit was 486 when I started, going through a divorce and struggling to get approved for anything. Now I'm at 610 and just got approved for my own place. We're still working together to get me ready to buy a house next year. The advice and guidance has been incredible.",
+                name: "Olivia G.",
+                location: "Rebuilding After Divorce",
               },
               {
-                quote: "The Credit Coach AI answered my question at 2am when I was panicking about a new collection. Instantly calmed me down.",
-                name: "David M.",
-                location: "Miami, FL",
+                quote: "I had an amazing experience! In less than 30 days, my credit score increased by 95 points. Ervin was professional, consistent, and kept me informed every step of the way. Truly awesome experience for my husband and I!",
+                name: "Orlandria Washington",
+                location: "New York, NY",
               },
             ].map((t) => (
               <div key={t.name} className="card-3d p-6">
