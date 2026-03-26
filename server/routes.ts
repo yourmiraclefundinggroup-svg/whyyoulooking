@@ -1263,6 +1263,19 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
+  app.get("/force-logout", (req, res) => {
+    res.send(`<!DOCTYPE html><html><head><title>Signing out...</title></head><body>
+      <script>
+        localStorage.removeItem('user_id');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('authToken');
+        sessionStorage.clear();
+        window.location.replace('/login');
+      </script>
+      <p>Signing out...</p>
+    </body></html>`);
+  });
+
   app.post("/api/auth/reset-password", authenticateToken, async (req, res) => {
     try {
       const { currentPassword, newPassword } = req.body;
