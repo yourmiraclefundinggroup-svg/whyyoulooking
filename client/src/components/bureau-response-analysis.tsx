@@ -71,12 +71,12 @@ export function BureauResponseAnalysis({ userId = 2 }: BureauResponseAnalysisPro
   // Fetch bureau responses
   const { data: responses = [], isLoading } = useQuery({
     queryKey: ["/api/bureau-responses", userId],
-    queryFn: () => apiRequest(`/api/bureau-responses/${userId}`)
+    queryFn: () => apiRequest("GET", `/api/bureau-responses/${userId}`).then(r => r.json())
   });
 
   // Create new bureau response
   const createResponseMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/bureau-responses", { method: "POST", body: data }),
+    mutationFn: (data: any) => apiRequest("POST", "/api/bureau-responses", data).then(r => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/bureau-responses", userId] });
       setNewResponseText("");
@@ -92,8 +92,8 @@ export function BureauResponseAnalysis({ userId = 2 }: BureauResponseAnalysisPro
 
   // Analyze bureau response with AI
   const analyzeResponseMutation = useMutation({
-    mutationFn: (responseId: number) => apiRequest(`/api/bureau-response/${responseId}/analyze`, { method: "POST" }),
-    onSuccess: (data) => {
+    mutationFn: (responseId: number) => apiRequest("POST", `/api/bureau-response/${responseId}/analyze`).then(r => r.json()),
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/bureau-responses", userId] });
       setSelectedResponse(data.response);
       toast({ description: "AI analysis completed successfully" });
