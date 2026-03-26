@@ -159,13 +159,32 @@
 
   body {
     @apply font-sans antialiased;
+    /* Light mode: clean white */
+    background-color: #ffffff;
+    color: #0f172a;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  }
+
+  /* Dark mode: ScoreShift deep navy */
+  .dark body {
     background-color: #050A14;
     color: #F8FAFC;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   }
 }
 
 /* === SCORESHIFT 2027 GLOBAL EFFECTS === */
+
+/* Frosted glass navbar */
+.glass {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.dark .glass {
+  background: rgba(5, 10, 20, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
 
 /* Glow effects */
 .glow-gold {

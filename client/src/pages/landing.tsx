@@ -141,16 +141,16 @@ export default function LandingPage() {
   const logos = ['Equifax Partners', 'FCRA Compliant', 'Lob.com', 'Stripe Secured', 'Anthropic AI']
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-white dark:bg-navy-950 text-slate-900 dark:text-white">
       <Navbar />
 
       {/* ─── HERO ─── */}
-      <section className="relative pt-24 pb-20 overflow-hidden">
+      <section className="relative pt-24 pb-20 overflow-hidden bg-white dark:bg-navy-950">
         {/* Background decoration */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full opacity-30 dark:opacity-15"
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full opacity-30 dark:opacity-10"
             style={{ background: 'radial-gradient(ellipse, #DBEAFE 0%, transparent 70%)' }} />
-          <div className="absolute top-20 right-0 w-96 h-96 rounded-full opacity-20 dark:opacity-10"
+          <div className="absolute top-20 right-0 w-96 h-96 rounded-full opacity-20 dark:opacity-8"
             style={{ background: 'radial-gradient(ellipse, #FFFBEB 0%, transparent 70%)' }} />
         </div>
 

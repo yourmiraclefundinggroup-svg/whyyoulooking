@@ -21,8 +21,7 @@ export function Navbar() {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="fixed top-0 left-0 right-0 z-50 glass border-b border-slate-200/80 dark:border-white/8"
-      style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(16px)' }}
+      className="fixed top-0 left-0 right-0 z-50 glass border-b border-slate-200/80 dark:border-white/10"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center h-16 gap-8">
