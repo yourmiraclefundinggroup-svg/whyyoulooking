@@ -48,6 +48,8 @@ import {
   BarChart,
   CheckSquare,
   Clock,
+  Sun,
+  Moon,
   CalendarDays,
   MessageCircle,
   Package,
@@ -82,6 +84,19 @@ export default function AdminPortal() {
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<CreditIssue | undefined>();
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  
+  // Apply theme to document
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.remove('light');
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    }
+    localStorage.setItem('admin-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
 
   if (!isAdmin) {
     return (
@@ -210,14 +225,26 @@ export default function AdminPortal() {
   };
 
   return (
-    <AdminShell>
-      {renderPageContent()}
-      <DisputeLetterModal
-        open={disputeModalOpen}
-        onOpenChange={setDisputeModalOpen}
-        issue={selectedIssue}
-      />
-    </AdminShell>
+    <div className={isDarkMode ? 'dark' : 'light'}>
+      <AdminShell>
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[hsl(var(--admin-border))]">
+          <div></div>
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className="p-2 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] hover:bg-[hsl(var(--admin-accent))]/10 transition-colors"
+            title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </button>
+        </div>
+        {renderPageContent()}
+        <DisputeLetterModal
+          open={disputeModalOpen}
+          onOpenChange={setDisputeModalOpen}
+          issue={selectedIssue}
+        />
+      </AdminShell>
+    </div>
   );
 }
 
