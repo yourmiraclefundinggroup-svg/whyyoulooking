@@ -28,15 +28,4 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },
-  server: {
-    fs: {
-      strict: true,
-      deny: ["**/.*"],
-    },
-    allowedHosts: [
-      "sisters-red-wto-happening.trycloudflare.com",
-      "localhost",
-      "127.0.0.1",
-    ],
-  },
 });
