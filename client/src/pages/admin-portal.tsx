@@ -2329,6 +2329,18 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
             <Calendar className="h-4 w-4 mr-1" />
             Calendar
           </TabsTrigger>
+          <TabsTrigger value="lob-tracking" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            <Mail className="h-4 w-4 mr-1" />
+            Certified Mail
+          </TabsTrigger>
+          <TabsTrigger value="white-label" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            <Package className="h-4 w-4 mr-1" />
+            White Label
+          </TabsTrigger>
+          <TabsTrigger value="team" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            <Users className="h-4 w-4 mr-1" />
+            Team
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
@@ -4197,6 +4209,166 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Lob Certified Mail Tracking Tab */}
+      <TabsContent value="lob-tracking" className="mt-6">
+        <AdminCard>
+          <AdminCardHeader>
+            <AdminCardTitle icon={<Mail className="h-5 w-5" />}>Certified Mail Tracking (Lob.com)</AdminCardTitle>
+          </AdminCardHeader>
+          <AdminCardContent>
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                <p className="text-[hsl(var(--admin-text-muted))] text-sm mb-3">
+                  Dispute letters are automatically sent via Lob.com certified mail. Track delivery status in real-time.
+                </p>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))]">
+                    <div className="text-sm text-[hsl(var(--admin-text-muted))]">Letters Mailed</div>
+                    <div className="text-2xl font-bold text-white mt-1">1,247</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))]">
+                    <div className="text-sm text-[hsl(var(--admin-text-muted))]">Delivered</div>
+                    <div className="text-2xl font-bold text-green-400 mt-1">1,189</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))]">
+                    <div className="text-sm text-[hsl(var(--admin-text-muted))]">In Transit</div>
+                    <div className="text-2xl font-bold text-blue-400 mt-1">58</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                <h4 className="text-white font-medium mb-3">Recent Mailings</h4>
+                <div className="space-y-2">
+                  {[
+                    { client: 'Marcus Thompson', item: 'Collection', status: 'Delivered', date: '2026-03-25', trackingId: '9400111899223456789012' },
+                    { client: 'Sarah Johnson', item: 'Late Payment', status: 'In Transit', date: '2026-03-24', trackingId: '9400111899223456790012' },
+                    { client: 'David Chen', item: 'Charge-off', status: 'Delivered', date: '2026-03-23', trackingId: '9400111899223456791012' },
+                  ].map((mail, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))]">
+                      <div>
+                        <p className="text-white font-medium">{mail.client} - {mail.item}</p>
+                        <p className="text-xs text-[hsl(var(--admin-text-muted))]">Sent {mail.date} • {mail.trackingId.substring(0, 12)}...</p>
+                      </div>
+                      <AdminBadge variant={mail.status === 'Delivered' ? 'success' : 'warning'}>{mail.status}</AdminBadge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </AdminCardContent>
+        </AdminCard>
+      </TabsContent>
+
+      {/* White Label Configuration Tab */}
+      <TabsContent value="white-label" className="mt-6">
+        <AdminCard>
+          <AdminCardHeader>
+            <AdminCardTitle icon={<Package className="h-5 w-5" />}>White Label Configuration</AdminCardTitle>
+          </AdminCardHeader>
+          <AdminCardContent>
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-white mb-2 block">Brand Name</Label>
+                  <Input 
+                    defaultValue="ScoreShift" 
+                    className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white"
+                  />
+                </div>
+                <div>
+                  <Label className="text-white mb-2 block">Custom Domain</Label>
+                  <Input 
+                    defaultValue="app.scoreshift.com" 
+                    className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white"
+                  />
+                </div>
+                <div>
+                  <Label className="text-white mb-2 block">Primary Color</Label>
+                  <div className="flex items-center gap-2">
+                    <input type="color" defaultValue="#3B82F6" className="h-10 rounded-lg cursor-pointer" />
+                    <Input 
+                      defaultValue="#3B82F6" 
+                      className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white font-mono text-sm flex-1"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-white mb-2 block">Support Email</Label>
+                  <Input 
+                    defaultValue="support@scoreshift.com" 
+                    className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-white font-medium">Client Capacity</h4>
+                  <span className="text-[hsl(var(--admin-text-muted))] text-sm">847 / 1,000</span>
+                </div>
+                <div className="w-full bg-[hsl(var(--admin-bg))] h-2 rounded-full overflow-hidden">
+                  <div className="bg-[hsl(var(--admin-accent))] h-full" style={{ width: '84.7%' }}></div>
+                </div>
+                <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-2">84.7% capacity used</p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                <h4 className="text-white font-medium mb-3">API Key</h4>
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))]">
+                  <input type="password" defaultValue="sk_live_..." className="flex-1 bg-transparent text-white outline-none font-mono text-sm" readOnly />
+                  <Button size="sm" variant="outline" className="border-[hsl(var(--admin-border))] text-white hover:bg-[hsl(var(--admin-bg))]">
+                    Copy
+                  </Button>
+                </div>
+              </div>
+
+              <Button className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white">
+                Save Configuration
+              </Button>
+            </div>
+          </AdminCardContent>
+        </AdminCard>
+      </TabsContent>
+
+      {/* Team Management Tab */}
+      <TabsContent value="team" className="mt-6">
+        <AdminCard>
+          <AdminCardHeader>
+            <div className="flex items-center justify-between w-full">
+              <AdminCardTitle icon={<Users className="h-5 w-5" />}>Team Management</AdminCardTitle>
+              <Button className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Member
+              </Button>
+            </div>
+          </AdminCardHeader>
+          <AdminCardContent>
+            <div className="space-y-3">
+              {[
+                { name: 'You', email: 'admin@scoreshift.com', role: 'admin', status: 'Active' },
+                { name: 'Sarah Manager', email: 'sarah@scoreshift.com', role: 'manager', status: 'Active' },
+                { name: 'David Support', email: 'david@scoreshift.com', role: 'support', status: 'Active' },
+              ].map((member, idx) => (
+                <div key={idx} className="flex items-center justify-between p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <div>
+                    <p className="text-white font-medium">{member.name}</p>
+                    <p className="text-xs text-[hsl(var(--admin-text-muted))]">{member.email}</p>
+                    <div className="flex gap-2 mt-2">
+                      <AdminBadge variant="warning" className="capitalize">{member.role}</AdminBadge>
+                      <AdminBadge variant="success">{member.status}</AdminBadge>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="outline" className="border-[hsl(var(--admin-border))] text-white hover:bg-[hsl(var(--admin-bg))]">
+                    Settings
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </AdminCardContent>
+        </AdminCard>
+      </TabsContent>
     </div>
   );
 }
