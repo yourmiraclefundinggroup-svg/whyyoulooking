@@ -89,40 +89,25 @@ export default function AdminPortal() {
   const isDarkMode = theme === 'dark';
   const setIsDarkMode = (dark: boolean) => setTheme(dark ? 'dark' : 'light');
 
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-[hsl(230,15%,3%)] flex items-center justify-center">
-        <AdminCard className="w-full max-w-md">
-          <AdminCardContent className="pt-6 text-center">
-            <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
-            <p className="text-[hsl(var(--admin-text-muted))]">This portal is restricted to administrators only.</p>
-          </AdminCardContent>
-        </AdminCard>
-      </div>
-    );
-  }
-
+  // All hooks must be declared before any early returns (React Rules of Hooks)
   const { data: allUsers = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
+    enabled: !!isAdmin,
   });
-
-  const clientUsers = allUsers.filter(u => u.accessLevel !== "ADMIN");
-  const selectedClient = selectedClientId ? allUsers.find(u => u.id === selectedClientId) : null;
 
   const { data: clientCreditReport } = useQuery<CreditReport>({
     queryKey: ['/api/credit-reports', selectedClientId],
-    enabled: !!selectedClientId,
+    enabled: !!isAdmin && !!selectedClientId,
   });
 
   const { data: clientIssues = [] } = useQuery<CreditIssue[]>({
     queryKey: ['/api/credit-issues', selectedClientId],
-    enabled: !!selectedClientId,
+    enabled: !!isAdmin && !!selectedClientId,
   });
 
   const { data: clientDisputes = [] } = useQuery<Dispute[]>({
     queryKey: ['/api/disputes', selectedClientId],
-    enabled: !!selectedClientId,
+    enabled: !!isAdmin && !!selectedClientId,
   });
 
   const [newClient, setNewClient] = useState({ firstName: "", lastName: "", email: "", password: "" });
@@ -158,6 +143,24 @@ export default function AdminPortal() {
       createClientMutation.mutate(newClient);
     }
   };
+
+  const clientUsers = allUsers.filter(u => u.accessLevel !== "ADMIN");
+  const selectedClient = selectedClientId ? allUsers.find(u => u.id === selectedClientId) : null;
+
+  // Guard rendered after all hooks (React Rules of Hooks compliance)
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-[hsl(230,15%,3%)] flex items-center justify-center">
+        <AdminCard className="w-full max-w-md">
+          <AdminCardContent className="pt-6 text-center">
+            <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
+            <p className="text-[hsl(var(--admin-text-muted))]">This portal is restricted to administrators only.</p>
+          </AdminCardContent>
+        </AdminCard>
+      </div>
+    );
+  }
 
   const renderPageContent = () => {
     if (location === "/admin-portal" || location === "/admin-portal/") {
