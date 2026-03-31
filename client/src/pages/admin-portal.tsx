@@ -320,7 +320,7 @@ function DashboardPage({ clientUsers }: { clientUsers: User[] }) {
                 <div key={idx} className="flex items-center gap-4 p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
                   <div className="w-10 h-10 rounded-lg bg-[hsl(var(--admin-accent))]/20 flex items-center justify-center">
                     {item.type === "dispute" && <FileText className="h-5 w-5 text-[hsl(var(--admin-accent))]" />}
-                    {item.type === "mail" && <Package className="h-5 w-5 text-blue-400" />}
+                    {item.type === "mail" && <Package className="h-5 w-5 text-[hsl(var(--admin-info))]" />}
                     {item.type === "client" && <Users className="h-5 w-5 text-green-400" />}
                     {item.type === "response" && <MessageCircle className="h-5 w-5 text-[hsl(var(--admin-text-muted))]" />}
                   </div>
@@ -493,12 +493,12 @@ function ClientManagementPage({
                   data-testid="input-password"
                 />
               </div>
-              <div className="bg-blue-500/10 p-3 rounded-lg border border-blue-500/30">
-                <div className="flex items-center gap-2 text-blue-400">
+              <div className="bg-[hsl(var(--admin-info))]/10 p-3 rounded-lg border border-[hsl(var(--admin-info))]/30">
+                <div className="flex items-center gap-2 text-[hsl(var(--admin-info))]">
                   <Shield className="h-4 w-4" />
                   <span className="text-sm font-medium">Secure Setup</span>
                 </div>
-                <p className="text-xs text-blue-300/70 mt-1">
+                <p className="text-xs text-[hsl(var(--admin-info))]/70 mt-1">
                   Client will be required to reset this password on first login.
                 </p>
               </div>
@@ -590,7 +590,7 @@ function ClientManagementPage({
             )}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
-                <div className="text-3xl font-bold text-blue-400">
+                <div className="text-3xl font-bold text-[hsl(var(--admin-accent))]">
                   {clientCreditReport?.creditScore || '---'}
                 </div>
                 <p className="text-sm text-[hsl(var(--admin-text-muted))]">Credit Score</p>
@@ -608,7 +608,7 @@ function ClientManagementPage({
                 <p className="text-sm text-[hsl(var(--admin-text-muted))]">Pending Disputes</p>
               </div>
               <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
-                <div className="text-3xl font-bold text-emerald-400">
+                <div className="text-3xl font-bold text-[hsl(var(--admin-accent))]">
                   {clientDisputes.length}
                 </div>
                 <p className="text-sm text-[hsl(var(--admin-text-muted))]">Total Disputes</p>
@@ -704,22 +704,22 @@ function DisputeCenterPage({
         </AdminCard>
       ) : (
         <div className="space-y-6">
-          <AdminCard className="border-blue-500/30 bg-blue-500/5">
+          <AdminCard className="border-[hsl(var(--admin-accent))]/30 bg-[hsl(var(--admin-accent))]/5">
             <AdminCardContent>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(var(--admin-accent-deep))] flex items-center justify-center text-white font-semibold">
                     {selectedClient.firstName?.[0]}{selectedClient.lastName?.[0]}
                   </div>
                   <div>
                     <h3 className="text-lg font-medium text-white">
                       {selectedClient.firstName} {selectedClient.lastName}
                     </h3>
-                    <p className="text-sm text-blue-400">{selectedClient.email}</p>
+                    <p className="text-sm text-[hsl(var(--admin-text-muted))]">{selectedClient.email}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-blue-400">
+                  <div className="text-2xl font-bold text-[hsl(var(--admin-accent))]">
                     {clientCreditReport?.creditScore || '---'}
                   </div>
                   <p className="text-sm text-[hsl(var(--admin-text-muted))]">Credit Score</p>
@@ -899,7 +899,7 @@ function DisputeCenterPage({
                     </span>
                   </div>
                   <div className="relative">
-                    <pre className="text-xs text-slate-300 bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] rounded-lg p-4 whitespace-pre-wrap max-h-64 overflow-y-auto font-mono leading-relaxed">
+                    <pre className="text-xs text-[hsl(var(--admin-text-muted))] bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] rounded-lg p-4 whitespace-pre-wrap max-h-64 overflow-y-auto font-mono leading-relaxed">
                       {generatedLetter}
                     </pre>
                     <Button
@@ -1048,7 +1048,7 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
                     <p className="font-medium text-sm text-white">{item.client}</p>
                     <p className="text-xs text-[hsl(var(--admin-text-muted))]">{item.timeframe}</p>
                   </div>
-                  <span className="font-bold text-emerald-400">{item.improvement}</span>
+                  <span className="font-bold text-[hsl(var(--admin-success))]">{item.improvement}</span>
                 </div>
               ))}
             </div>
@@ -1237,7 +1237,7 @@ function SystemPage() {
             ].map((item) => (
               <div key={item.name} className="p-4 rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className={`w-3 h-3 rounded-full ${item.color === 'green' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                  <div className={`w-3 h-3 rounded-full ${item.color === 'green' ? 'bg-[hsl(var(--admin-success))]' : 'bg-[hsl(var(--admin-danger))]'}`} />
                   <span className="font-medium text-white">{item.name}</span>
                 </div>
                 <p className="text-sm text-[hsl(var(--admin-text-muted))]">{item.status}</p>
@@ -1345,7 +1345,7 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
       TRANSUNION: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
     };
     return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${colors[bureau] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${colors[bureau] || 'bg-[hsl(var(--admin-card))] text-[hsl(var(--admin-text-muted))] border-[hsl(var(--admin-border))]'}`}>
         {bureau}
       </span>
     );
@@ -1498,7 +1498,7 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
                       </AdminTableCell>
                       <AdminTableCell>
                         {letter.trackingNumber ? (
-                          <span className="text-xs text-blue-400 font-mono">{letter.trackingNumber}</span>
+                          <span className="text-xs text-[hsl(var(--admin-text-muted))] font-mono">{letter.trackingNumber}</span>
                         ) : (
                           <span className="text-xs text-[hsl(var(--admin-text-subtle))]">—</span>
                         )}
@@ -1815,7 +1815,7 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
       case "TRANSUNION":
         return <span className="px-2 py-1 rounded text-xs font-medium bg-purple-500/20 text-purple-400">TransUnion</span>;
       default:
-        return <span className="px-2 py-1 rounded text-xs font-medium bg-gray-500/20 text-gray-400">{bureau}</span>;
+        return <span className="px-2 py-1 rounded text-xs font-medium bg-[hsl(var(--admin-card))] text-[hsl(var(--admin-text-muted))]">{bureau}</span>;
     }
   };
 
@@ -1944,12 +1944,12 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
                   </div>
                 </div>
                 {/* Experian HTML tip */}
-                <div className="rounded-lg border border-blue-800 bg-blue-950/30 p-3 space-y-1">
-                  <p className="text-xs font-medium text-blue-300">💡 Tip: Experian Printable Reports</p>
-                  <p className="text-xs text-blue-200/80">
+                <div className="rounded-lg border border-[hsl(var(--admin-info))]/40 bg-[hsl(var(--admin-info))]/10 p-3 space-y-1">
+                  <p className="text-xs font-medium text-[hsl(var(--admin-info))]">💡 Tip: Experian Printable Reports</p>
+                  <p className="text-xs text-[hsl(var(--admin-info))]/80">
                     Experian's printable report URL uses JavaScript rendering — when saved as PDF it may capture only page headers with no credit data. For best results:
                   </p>
-                  <ol className="text-xs text-blue-200/80 list-decimal list-inside space-y-0.5">
+                  <ol className="text-xs text-[hsl(var(--admin-info))]/80 list-decimal list-inside space-y-0.5">
                     <li>Open the Experian printable report in your browser</li>
                     <li>Press <strong>Ctrl+S</strong> (or File → Save Page As)</li>
                     <li>Choose <strong>"Webpage, HTML Only"</strong></li>
@@ -2644,7 +2644,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
       case "TRANSUNION":
         return <span className="px-2 py-1 rounded text-xs font-medium bg-purple-500/20 text-purple-400">TransUnion</span>;
       default:
-        return <span className="px-2 py-1 rounded text-xs font-medium bg-gray-500/20 text-gray-400">{bureau}</span>;
+        return <span className="px-2 py-1 rounded text-xs font-medium bg-[hsl(var(--admin-card))] text-[hsl(var(--admin-text-muted))]">{bureau}</span>;
     }
   };
 
@@ -2716,7 +2716,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               }, 300);
             }}
             variant="outline"
-            className="border-emerald-500/50 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+            className="border-[hsl(var(--admin-accent))]/50 text-[hsl(var(--admin-accent))] hover:text-[hsl(var(--admin-accent-deep))] hover:bg-[hsl(var(--admin-accent))]/10"
           >
             <FileText className="h-4 w-4 mr-2" />
             Progress Report
@@ -2877,7 +2877,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
           <TabsTrigger value="letters" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             Letters ({letters.length})
           </TabsTrigger>
-          <TabsTrigger value="send-mail" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-400">
+          <TabsTrigger value="send-mail" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             <Send className="h-4 w-4 mr-1" />
             Send Mail
           </TabsTrigger>
@@ -2901,7 +2901,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
             <Users className="h-4 w-4 mr-1" />
             Team
           </TabsTrigger>
-          <TabsTrigger value="progress-report" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-emerald-400">
+          <TabsTrigger value="progress-report" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             <FileText className="h-4 w-4 mr-1" />
             Progress Report
           </TabsTrigger>
@@ -4141,7 +4141,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-blue-400 hover:bg-blue-400/10"
+                              className="text-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/10"
                               onClick={() => downloadLetterAsPdf(letter)}
                               data-testid={`button-download-letter-${letter.id}`}
                             >
@@ -4163,7 +4163,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
             <AdminCard>
               <AdminCardHeader>
                 <div className="flex items-center justify-between w-full">
-                  <AdminCardTitle icon={<Send className="h-5 w-5 text-blue-400" />}>Send Dispute Letters via Certified Mail</AdminCardTitle>
+                  <AdminCardTitle icon={<Send className="h-5 w-5 text-[hsl(var(--admin-accent))]" />}>Send Dispute Letters via Certified Mail</AdminCardTitle>
                 </div>
               </AdminCardHeader>
               <AdminCardContent>
@@ -4172,7 +4172,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 </p>
                 {lettersLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400" />
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--admin-accent))]" />
                   </div>
                 ) : letters.length === 0 ? (
                   <AdminEmptyState
@@ -4188,8 +4188,8 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                         <div key={letter.id} className={`p-4 rounded-lg border ${isSent ? 'bg-green-500/10 border-green-500/30' : 'bg-[hsl(var(--admin-bg))]/50 border-[hsl(var(--admin-border))]'}`}>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isSent ? 'bg-green-500/20' : 'bg-blue-500/20'}`}>
-                                <Mail className={`h-5 w-5 ${isSent ? 'text-green-400' : 'text-blue-400'}`} />
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isSent ? 'bg-[hsl(var(--admin-success))]/20' : 'bg-[hsl(var(--admin-info))]/20'}`}>
+                                <Mail className={`h-5 w-5 ${isSent ? 'text-[hsl(var(--admin-success))]' : 'text-[hsl(var(--admin-info))]'}`} />
                               </div>
                               <div>
                                 <div className="flex items-center gap-2">
@@ -4217,7 +4217,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                               {!isSent && (
                                 <Button
                                   size="sm"
-                                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                                  className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white"
                                   onClick={() => {
                                     setSelectedLetter(letter);
                                     setLobAddress({
@@ -4297,17 +4297,17 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                           ) : (report.creditScore - (allClientReports.find(r => r.id === compareReportId)?.creditScore || 0)) < 0 ? (
                             <ArrowDown className="h-6 w-6 text-red-400" />
                           ) : (
-                            <Minus className="h-6 w-6 text-gray-400" />
+                            <Minus className="h-6 w-6 text-[hsl(var(--admin-text-muted))]" />
                           )}
                           <span className={`text-2xl font-bold ${
                             (report.creditScore - (allClientReports.find(r => r.id === compareReportId)?.creditScore || 0)) > 0 ? 'text-green-400' :
-                            (report.creditScore - (allClientReports.find(r => r.id === compareReportId)?.creditScore || 0)) < 0 ? 'text-red-400' : 'text-gray-400'
+                            (report.creditScore - (allClientReports.find(r => r.id === compareReportId)?.creditScore || 0)) < 0 ? 'text-red-400' : 'text-[hsl(var(--admin-text-muted))]'
                           }`}>
                             {Math.abs(report.creditScore - (allClientReports.find(r => r.id === compareReportId)?.creditScore || 0))} pts
                           </span>
                         </div>
                       ) : (
-                        <Minus className="h-6 w-6 text-gray-400" />
+                        <Minus className="h-6 w-6 text-[hsl(var(--admin-text-muted))]" />
                       )}
                     </div>
                     <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))] text-center">
@@ -4351,7 +4351,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                                     ${Math.abs(balanceChange).toLocaleString()}
                                   </span>
                                 ) : (
-                                  <span className="text-gray-400">No change</span>
+                                  <span className="text-[hsl(var(--admin-text-muted))]">No change</span>
                                 )}
                               </AdminTableCell>
                               <AdminTableCell>
@@ -4363,7 +4363,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                                       <span className="text-white">{account.status}</span>
                                     </span>
                                   ) : (
-                                    <span className="text-gray-400">Unchanged</span>
+                                    <span className="text-[hsl(var(--admin-text-muted))]">Unchanged</span>
                                   )
                                 ) : (
                                   <AdminBadge variant="success">New</AdminBadge>
@@ -4455,7 +4455,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                       <div key={event.id} className={`p-4 rounded-lg border ${
                         isOverdue ? 'bg-red-500/10 border-red-500/30' : 
                         event.status === 'sent' ? 'bg-green-500/10 border-green-500/30' :
-                        event.status === 'completed' ? 'bg-blue-500/10 border-blue-500/30' :
+                        event.status === 'completed' ? 'bg-[hsl(var(--admin-info))]/10 border-[hsl(var(--admin-info))]/30' :
                         'bg-[hsl(var(--admin-bg))]/50 border-[hsl(var(--admin-border))]'
                       }`} data-testid={`calendar-event-${event.id}`}>
                         <div className="flex items-center justify-between">
@@ -4520,7 +4520,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                                 size="sm"
                                 variant="outline"
                                 onClick={() => updateCalendarEventMutation.mutate({ id: event.id, status: 'completed' })}
-                                className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+                                className="border-[hsl(var(--admin-info))]/50 text-[hsl(var(--admin-info))] hover:bg-[hsl(var(--admin-info))]/10"
                                 data-testid={`button-complete-${event.id}`}
                               >
                                 <CheckSquare className="h-4 w-4 mr-1" />
@@ -4566,7 +4566,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                     </div>
                     <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))]">
                       <div className="text-sm text-[hsl(var(--admin-text-muted))]">In Transit</div>
-                      <div className="text-2xl font-bold text-blue-400 mt-1">58</div>
+                      <div className="text-2xl font-bold text-[hsl(var(--admin-info))] mt-1">58</div>
                     </div>
                   </div>
                 </div>
@@ -4715,7 +4715,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                       }
                     }
                   }}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white"
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   Print / Save PDF
@@ -4900,8 +4900,8 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 data-testid="input-event-date"
               />
             </div>
-            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
-              <p className="text-xs text-blue-300">
+            <div className="p-3 rounded-lg bg-[hsl(var(--admin-info))]/10 border border-[hsl(var(--admin-info))]/30">
+              <p className="text-xs text-[hsl(var(--admin-info))]/80">
                 Follow-up date will automatically be set to 45 days after the send date, and expected response by 30 days.
               </p>
             </div>
@@ -4985,20 +4985,20 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
-                <Label className="text-blue-400 font-medium text-sm mb-2 block">Letter Format</Label>
+              <div className="p-3 rounded-lg bg-[hsl(var(--admin-accent))]/10 border border-[hsl(var(--admin-accent))]/30">
+                <Label className="text-[hsl(var(--admin-accent))] font-medium text-sm mb-2 block">Letter Format</Label>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setLetterFormat('standard')}
-                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-all ${letterFormat === 'standard' ? 'bg-blue-600 text-white' : 'bg-[hsl(var(--admin-bg))] text-[hsl(var(--admin-text-muted))] hover:text-white'}`}
+                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-all ${letterFormat === 'standard' ? 'bg-[hsl(var(--admin-accent))] text-white' : 'bg-[hsl(var(--admin-bg))] text-[hsl(var(--admin-text-muted))] hover:text-white'}`}
                   >Standard</button>
                   <button
                     onClick={() => setLetterFormat('metro2')}
-                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-all ${letterFormat === 'metro2' ? 'bg-blue-600 text-white' : 'bg-[hsl(var(--admin-bg))] text-[hsl(var(--admin-text-muted))] hover:text-white'}`}
+                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-all ${letterFormat === 'metro2' ? 'bg-[hsl(var(--admin-accent))] text-white' : 'bg-[hsl(var(--admin-bg))] text-[hsl(var(--admin-text-muted))] hover:text-white'}`}
                   >Metro2</button>
                 </div>
                 {letterFormat === 'metro2' && (
-                  <p className="text-[10px] text-blue-300 mt-1">Metro2 format uses bureau data field codes (K4, DA, etc.)</p>
+                  <p className="text-[10px] text-[hsl(var(--admin-text-muted))] mt-1">Metro2 format uses bureau data field codes (K4, DA, etc.)</p>
                 )}
               </div>
               <div className="p-3 rounded-lg bg-[hsl(var(--admin-accent))]/10 border border-[hsl(var(--admin-accent))]/30">
@@ -5144,7 +5144,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                     value={trackingNumberInput || selectedLetter.trackingNumber || ''}
                     onChange={(e) => setTrackingNumberInput(e.target.value)}
                     placeholder="Enter USPS tracking number..."
-                    className="flex-1 px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--admin-accent))]"
+                    className="flex-1 px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--admin-accent))]"
                     data-testid="input-tracking-number"
                   />
                   <Button
@@ -5201,7 +5201,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                         });
                         setLobSendOpen(true);
                       }}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white"
                       data-testid="button-send-lob"
                     >
                       <Send className="h-4 w-4 mr-2" />
@@ -5209,7 +5209,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                     </Button>
                   )}
                   {selectedLetter.lobId && (
-                    <div className="text-xs text-emerald-400 flex items-center gap-1 px-2">
+                    <div className="text-xs text-[hsl(var(--admin-success))] flex items-center gap-1 px-2">
                       <CheckSquare className="h-3 w-3" />
                       Sent via Lob
                     </div>
@@ -5219,7 +5219,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                       size="sm"
                       variant="ghost"
                       onClick={() => { updateLetterMutation.mutate({ id: selectedLetter.id, status: 'sent' }); setViewLetterOpen(false); }}
-                      className="text-slate-400 hover:text-white text-xs"
+                      className="text-[hsl(var(--admin-text-muted))] hover:text-white text-xs"
                       disabled={updateLetterMutation.isPending}
                       data-testid="button-mark-sent"
                     >
@@ -5273,14 +5273,14 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
         <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-md">
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
-              <Send className="h-5 w-5 text-emerald-400" />
+              <Send className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
               Send via Certified Mail
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="rounded-lg bg-emerald-950/40 border border-emerald-800 p-3 text-xs text-emerald-300 space-y-1">
-              <p className="font-medium">Lob will print and mail this letter automatically.</p>
-              <p className="text-emerald-400/80">
+            <div className="rounded-lg bg-[hsl(var(--admin-accent))]/10 border border-[hsl(var(--admin-accent))]/30 p-3 text-xs text-[hsl(var(--admin-accent))]/80 space-y-1">
+              <p className="font-medium text-[hsl(var(--admin-accent))]">Lob will print and mail this letter automatically.</p>
+              <p className="text-[hsl(var(--admin-text-muted))]">
                 Addressed to: <strong>{selectedLetter?.bureau === 'EXPERIAN' ? 'Experian, P.O. Box 4500, Allen TX 75013' : selectedLetter?.bureau === 'EQUIFAX' ? 'Equifax, P.O. Box 740256, Atlanta GA 30374' : 'TransUnion, P.O. Box 2000, Chester PA 19016'}</strong>
               </p>
             </div>
@@ -5291,40 +5291,40 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                   placeholder="Full name"
                   value={lobAddress.fromName}
                   onChange={e => setLobAddress(a => ({ ...a, fromName: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  className="w-full px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--admin-accent))] text-sm"
                 />
                 <input
                   placeholder="Address line 1"
                   value={lobAddress.fromAddressLine1}
                   onChange={e => setLobAddress(a => ({ ...a, fromAddressLine1: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  className="w-full px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--admin-accent))] text-sm"
                 />
                 <input
                   placeholder="Address line 2 (optional)"
                   value={lobAddress.fromAddressLine2}
                   onChange={e => setLobAddress(a => ({ ...a, fromAddressLine2: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  className="w-full px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--admin-accent))] text-sm"
                 />
                 <div className="grid grid-cols-3 gap-2">
                   <input
                     placeholder="City"
                     value={lobAddress.fromCity}
                     onChange={e => setLobAddress(a => ({ ...a, fromCity: e.target.value }))}
-                    className="col-span-1 px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    className="col-span-1 px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--admin-accent))] text-sm"
                   />
                   <input
                     placeholder="State"
                     maxLength={2}
                     value={lobAddress.fromState}
                     onChange={e => setLobAddress(a => ({ ...a, fromState: e.target.value.toUpperCase() }))}
-                    className="px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    className="px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--admin-accent))] text-sm"
                   />
                   <input
                     placeholder="ZIP"
                     maxLength={10}
                     value={lobAddress.fromZip}
                     onChange={e => setLobAddress(a => ({ ...a, fromZip: e.target.value }))}
-                    className="px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    className="px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--admin-accent))] text-sm"
                   />
                 </div>
               </div>
@@ -5333,7 +5333,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               <Button
                 onClick={() => sendLobMutation.mutate(lobAddress)}
                 disabled={sendLobMutation.isPending || !lobAddress.fromName || !lobAddress.fromAddressLine1 || !lobAddress.fromCity || !lobAddress.fromState || !lobAddress.fromZip}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="flex-1 bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white"
                 data-testid="button-confirm-send-lob"
               >
                 {sendLobMutation.isPending ? 'Sending...' : 'Send Letter ($)'}
@@ -5365,7 +5365,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 value={markRemovedAccountName}
                 onChange={e => setMarkRemovedAccountName(e.target.value)}
                 placeholder="e.g. ABC Medical Center Collections"
-                className="w-full px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                className="w-full px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--admin-accent))] text-sm"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -5384,7 +5384,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                   placeholder="99.00"
                   min="0"
                   step="0.01"
-                  className="w-full px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                  className="w-full px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--admin-accent))] text-sm"
                 />
               </div>
             </div>
@@ -5798,10 +5798,10 @@ function AffiliatesPage() {
                         <td className="py-3 px-3 text-green-400">${earned.toFixed(2)}</td>
                         <td className="py-3 px-3 text-[hsl(var(--admin-accent))]">${paid.toFixed(2)}</td>
                         <td className="py-3 px-3">
-                          <span className={`font-semibold ${owed > 0 ? 'text-red-400' : 'text-gray-500'}`}>${owed.toFixed(2)}</span>
+                          <span className={`font-semibold ${owed > 0 ? 'text-red-400' : 'text-[hsl(var(--admin-text-subtle))]'}`}>${owed.toFixed(2)}</span>
                         </td>
                         <td className="py-3 px-3">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${aff.isActive ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${aff.isActive ? 'bg-green-500/20 text-green-400' : 'bg-[hsl(var(--admin-card))] text-[hsl(var(--admin-text-muted))]'}`}>
                             {aff.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
@@ -6150,7 +6150,7 @@ function PayPerDeleteTab({ uploadId, report }: { uploadId: number; report: (Cred
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-7 text-xs text-emerald-400 hover:text-emerald-300 px-2"
+                  className="h-7 text-xs text-[hsl(var(--admin-success))] hover:text-[hsl(var(--admin-success))]/80 px-2"
                   disabled={saveRateMutation.isPending}
                   onClick={() => saveRateMutation.mutate(defaultRate)}
                   title="Save billing rate for this client"
@@ -6213,7 +6213,7 @@ function PayPerDeleteTab({ uploadId, report }: { uploadId: number; report: (Cred
                           onClick={() => markPaidMutation.mutate({ id: event.id, isPaid: !event.isPaid })}
                           className={`text-xs px-3 py-1 rounded transition-colors ${
                             event.isPaid
-                              ? 'bg-gray-600/40 text-gray-300 hover:bg-gray-500/40'
+                              ? 'bg-[hsl(var(--admin-card))] text-[hsl(var(--admin-text-muted))] hover:bg-[hsl(var(--admin-border))]/60'
                               : 'bg-green-600/40 text-green-300 hover:bg-green-500/40'
                           }`}
                         >

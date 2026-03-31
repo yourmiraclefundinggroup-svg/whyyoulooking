@@ -81,18 +81,18 @@ interface AdminStatCardProps {
 export function AdminStatCard({ label, value, icon, trend, color = "orange" }: AdminStatCardProps) {
   const colorClasses = {
     orange: "from-[hsl(var(--admin-accent))] to-[hsl(var(--admin-accent-deep))]",
-    blue: "from-blue-500 to-blue-600",
-    green: "from-emerald-500 to-emerald-600",
-    red: "from-red-500 to-red-600",
-    purple: "from-purple-500 to-purple-600",
+    blue: "from-[hsl(var(--admin-info))] to-[hsl(213,80%,55%)]",
+    green: "from-[hsl(var(--admin-success))] to-[hsl(160,60%,38%)]",
+    red: "from-[hsl(var(--admin-danger))] to-[hsl(0,70%,48%)]",
+    purple: "from-[hsl(var(--admin-accent))] to-[hsl(var(--admin-accent-deep))]",
   };
 
   const textColorClasses = {
     orange: "text-[hsl(var(--admin-accent))]",
-    blue: "text-blue-400",
-    green: "text-emerald-400",
-    red: "text-red-400",
-    purple: "text-purple-400",
+    blue: "text-[hsl(var(--admin-info))]",
+    green: "text-[hsl(var(--admin-success))]",
+    red: "text-[hsl(var(--admin-danger))]",
+    purple: "text-[hsl(var(--admin-accent))]",
   };
 
   return (
@@ -192,10 +192,10 @@ interface AdminBadgeProps {
 export function AdminBadge({ children, variant = "default", className }: AdminBadgeProps) {
   const variantClasses = {
     default: "bg-[hsl(var(--admin-accent))]/20 text-[hsl(var(--admin-accent))] border-[hsl(var(--admin-accent))]/30",
-    success: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-    warning: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-    danger: "bg-red-500/20 text-red-400 border-red-500/30",
-    info: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    success: "bg-[hsl(var(--admin-success))]/20 text-[hsl(var(--admin-success))] border-[hsl(var(--admin-success))]/30",
+    warning: "bg-[hsl(var(--admin-warning))]/20 text-[hsl(var(--admin-warning))] border-[hsl(var(--admin-warning))]/30",
+    danger: "bg-[hsl(var(--admin-danger))]/20 text-[hsl(var(--admin-danger))] border-[hsl(var(--admin-danger))]/30",
+    info: "bg-[hsl(var(--admin-info))]/20 text-[hsl(var(--admin-info))] border-[hsl(var(--admin-info))]/30",
     muted: "bg-[hsl(var(--admin-card))] text-[hsl(var(--admin-text-muted))] border-[hsl(var(--admin-border))]",
   };
 
