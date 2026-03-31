@@ -1689,7 +1689,7 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
       return (
         <div className="min-w-[140px]">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-amber-400 font-medium">AI Parsing...</span>
+            <span className="text-xs text-amber-400 font-medium">Scoreshifting...</span>
             <span className="text-xs text-[hsl(var(--admin-text-muted))]">{Math.round(progress)}%</span>
           </div>
           <div className="w-full bg-[hsl(var(--admin-bg))] rounded-full h-2 overflow-hidden">
