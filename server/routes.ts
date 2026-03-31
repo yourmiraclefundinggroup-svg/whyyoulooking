@@ -5742,11 +5742,33 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
       }
 
       const letterId = parseInt(req.params.id);
-      const updates = req.body;
+
+      // Allowlist: only persist valid DB columns; strip transient control flags
+      const { skipAutoLog, ...rawUpdates } = req.body as {
+        skipAutoLog?: boolean;
+        status?: string;
+        trackingNumber?: string;
+        sentDate?: string;
+        content?: string;
+        bureau?: string;
+        letterType?: string;
+        lobMailingId?: string;
+        lobStatus?: string;
+        lobMailedAt?: string;
+        [key: string]: unknown;
+      };
+      const ALLOWED_COLUMNS = new Set([
+        'status', 'trackingNumber', 'sentDate', 'content', 'bureau',
+        'letterType', 'lobMailingId', 'lobStatus', 'lobMailedAt',
+        'generatedByAdminId', 'disputeItemIds', 'clientId', 'uploadId',
+      ]);
+      const dbUpdates = Object.fromEntries(
+        Object.entries(rawUpdates).filter(([key]) => ALLOWED_COLUMNS.has(key))
+      );
 
       // Fetch current letter before updating (for status-transition auto deletion-event logging)
       const existingLetter = await storage.getDisputeLetterNew(letterId);
-      const updated = await storage.updateDisputeLetterNew(letterId, updates);
+      const updated = await storage.updateDisputeLetterNew(letterId, dbUpdates);
       
       if (!updated) {
         return res.status(404).json({ error: "Dispute letter not found" });
@@ -5754,11 +5776,10 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
 
       // Auto-log pay-per-delete event when status transitions to "removed" or "deleted"
       // This is idempotent: only fires on first transition from a non-removed state.
-      // skipAutoLog=true allows the explicit "Bureau Removed Item" dialog flow to avoid duplicate events.
+      // skipAutoLog=true (stripped from dbUpdates) allows the explicit dialog flow to skip the auto-event.
       const REMOVED_STATUSES = ["removed", "deleted"];
       const wasAlreadyRemoved = existingLetter && REMOVED_STATUSES.includes(existingLetter.status ?? "");
-      const isNowRemoved = REMOVED_STATUSES.includes(updates.status ?? "");
-      const skipAutoLog = updates.skipAutoLog === true;
+      const isNowRemoved = REMOVED_STATUSES.includes((dbUpdates.status as string) ?? "");
       if (isNowRemoved && !wasAlreadyRemoved && updated.clientId && updated.uploadId && !skipAutoLog) {
         try {
           // Resolve per-client billing rate from their profile (set by admin)
@@ -5776,7 +5797,7 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
             ]);
             const accountMap = new Map(accounts.map(a => [a.id, a.creditorName]));
             const collectionMap = new Map(collections.map(c => [c.id, c.agencyName]));
-            const inquiryMap = new Map(inquiries.map(i => [i.id, i.subscriberName]));
+            const inquiryMap = new Map(inquiries.map(i => [i.id, i.creditorName]));
             const names = disputeItemsList
               .filter((item): item is NonNullable<typeof item> => !!item)
               .map(item => {
