@@ -206,6 +206,8 @@ export default function AdminPortal() {
         setSelectedClientId={setSelectedClientId}
         selectedClient={selectedClient}
       />;
+    } else if (location === "/admin-portal/mail") {
+      return <MailQueuePage clientUsers={clientUsers} />;
     } else if (location === "/admin-portal/analytics") {
       return <AnalyticsPage clientUsers={clientUsers} />;
     } else if (location === "/admin-portal/settings") {
@@ -245,6 +247,10 @@ export default function AdminPortal() {
 }
 
 function DashboardPage({ clientUsers }: { clientUsers: User[] }) {
+  const { data: stats } = useQuery<{ totalClients: number; totalLetters: number; lettersSentThisMonth: number; activeDisputes: number }>({
+    queryKey: ['/api/admin/stats'],
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -257,29 +263,29 @@ function DashboardPage({ clientUsers }: { clientUsers: User[] }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <AdminStatCard
           label="Total Clients"
-          value={clientUsers.length}
+          value={stats?.totalClients ?? clientUsers.length}
           icon={<Users className="h-6 w-6" />}
           trend={{ value: 12, positive: true }}
           color="blue"
         />
         <AdminStatCard
           label="Active Disputes"
-          value={23}
+          value={stats?.activeDisputes ?? 0}
           icon={<FileText className="h-6 w-6" />}
           trend={{ value: 8, positive: true }}
           color="orange"
         />
         <AdminStatCard
-          label="Success Rate"
-          value="78%"
-          icon={<TrendingUp className="h-6 w-6" />}
+          label="Letters Generated"
+          value={stats?.totalLetters ?? 0}
+          icon={<Mail className="h-6 w-6" />}
           trend={{ value: 5, positive: true }}
           color="green"
         />
         <AdminStatCard
-          label="Revenue"
-          value="$24.5k"
-          icon={<DollarSign className="h-6 w-6" />}
+          label="Mailed This Month"
+          value={stats?.lettersSentThisMonth ?? 0}
+          icon={<Send className="h-6 w-6" />}
           trend={{ value: 18, positive: true }}
           color="purple"
         />
@@ -1233,6 +1239,374 @@ function SystemPage() {
 
 interface CreditReportWithClient extends CreditReportUpload {
   clientName?: string;
+}
+
+function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [viewLetterOpen, setViewLetterOpen] = useState(false);
+  const [selectedLetter, setSelectedLetter] = useState<DisputeLetterNew | null>(null);
+  const [lobSendOpen, setLobSendOpen] = useState(false);
+  const [lobAddress, setLobAddress] = useState({ fromName: '', fromAddressLine1: '', fromAddressLine2: '', fromCity: '', fromState: '', fromZip: '' });
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [bulkSelected, setBulkSelected] = useState<number[]>([]);
+  const [isBulkSending, setIsBulkSending] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState(0);
+
+  const { data: allLetters = [], isLoading: lettersLoading } = useQuery<DisputeLetterNew[]>({
+    queryKey: ['/api/admin/dispute-letters-new/all'],
+  });
+
+  const sendLobMutation = useMutation({
+    mutationFn: async ({ letterId, address }: { letterId: number; address: typeof lobAddress }) => {
+      const response = await apiRequest('POST', `/api/admin/dispute-letters-new/${letterId}/send-lob`, address);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Letter sent!', description: 'Letter has been queued for certified mail delivery.' });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/dispute-letters-new/all'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+      setLobSendOpen(false);
+      setSelectedLetter(null);
+    },
+    onError: (error: any) => {
+      toast({ title: 'Send failed', description: error.message || 'Failed to send letter via Lob.', variant: 'destructive' });
+    },
+  });
+
+  const openLobSend = (letter: DisputeLetterNew) => {
+    setSelectedLetter(letter);
+    const client = clientUsers.find(u => u.id === (letter as any).clientId);
+    if (client) {
+      setLobAddress({
+        fromName: `${client.firstName} ${client.lastName}`,
+        fromAddressLine1: (client as any).addressLine1 || '',
+        fromAddressLine2: (client as any).addressLine2 || '',
+        fromCity: (client as any).city || '',
+        fromState: (client as any).state || '',
+        fromZip: (client as any).zipCode || '',
+      });
+    }
+    setLobSendOpen(true);
+  };
+
+  const handleBulkSend = async () => {
+    const readyLetters = filteredLetters.filter(l => bulkSelected.includes(l.id));
+    if (readyLetters.length === 0) return;
+    setIsBulkSending(true);
+    setBulkProgress(0);
+    let sent = 0;
+    for (const letter of readyLetters) {
+      try {
+        const client = clientUsers.find(u => u.id === (letter as any).clientId);
+        const address = {
+          fromName: client ? `${client.firstName} ${client.lastName}` : 'Client',
+          fromAddressLine1: (client as any)?.addressLine1 || '',
+          fromAddressLine2: (client as any)?.addressLine2 || '',
+          fromCity: (client as any)?.city || '',
+          fromState: (client as any)?.state || '',
+          fromZip: (client as any)?.zipCode || '',
+        };
+        if (!address.fromAddressLine1 || !address.fromCity || !address.fromState || !address.fromZip) {
+          toast({ title: `Skipped: ${letter.bureau}`, description: 'Client address not on file.', variant: 'destructive' });
+        } else {
+          await apiRequest('POST', `/api/admin/dispute-letters-new/${letter.id}/send-lob`, address);
+          sent++;
+        }
+      } catch {
+        toast({ title: 'Error', description: `Failed to send letter ID ${letter.id}`, variant: 'destructive' });
+      }
+      setBulkProgress(Math.round(((sent + 1) / readyLetters.length) * 100));
+    }
+    setIsBulkSending(false);
+    setBulkSelected([]);
+    queryClient.invalidateQueries({ queryKey: ['/api/admin/dispute-letters-new/all'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+    toast({ title: `Bulk send complete`, description: `${sent} of ${readyLetters.length} letters sent successfully.` });
+  };
+
+  const getBureauBadge = (bureau: string) => {
+    const colors: Record<string, string> = {
+      EXPERIAN: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      EQUIFAX: 'bg-red-500/20 text-red-400 border-red-500/30',
+      TRANSUNION: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+    };
+    return (
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${colors[bureau] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
+        {bureau}
+      </span>
+    );
+  };
+
+  const filteredLetters = statusFilter === 'all'
+    ? allLetters
+    : allLetters.filter(l => l.status === statusFilter);
+
+  const statusCounts = {
+    all: allLetters.length,
+    draft: allLetters.filter(l => l.status === 'draft').length,
+    approved: allLetters.filter(l => l.status === 'approved').length,
+    sent: allLetters.filter(l => l.status === 'sent').length,
+    delivered: allLetters.filter(l => l.status === 'delivered').length,
+  };
+
+  const toggleBulkSelect = (id: number) => {
+    setBulkSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const selectAll = () => {
+    const unsent = filteredLetters.filter(l => l.status !== 'sent' && l.status !== 'delivered').map(l => l.id);
+    setBulkSelected(unsent.length === bulkSelected.length ? [] : unsent);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <Mail className="h-7 w-7 text-[hsl(var(--admin-accent))]" />
+            Mail Queue
+          </h1>
+          <p className="text-[hsl(var(--admin-text-muted))]">Send dispute letters via certified mail to credit bureaus.</p>
+        </div>
+        {bulkSelected.length > 0 && (
+          <Button
+            className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
+            onClick={handleBulkSend}
+            disabled={isBulkSending}
+          >
+            {isBulkSending ? (
+              <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />Sending {bulkProgress}%...</>
+            ) : (
+              <><Send className="h-4 w-4 mr-2" />Send {bulkSelected.length} Selected via Certified Mail</>
+            )}
+          </Button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {(Object.entries(statusCounts) as [string, number][]).map(([status, count]) => (
+          <button
+            key={status}
+            onClick={() => setStatusFilter(status)}
+            className={`p-3 rounded-lg border text-left transition-all ${
+              statusFilter === status
+                ? 'border-[hsl(var(--admin-accent))] bg-[hsl(var(--admin-accent))]/10'
+                : 'border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50 hover:border-[hsl(var(--admin-accent))]/50'
+            }`}
+          >
+            <div className="text-2xl font-bold text-white">{count}</div>
+            <div className="text-xs text-[hsl(var(--admin-text-muted))] capitalize mt-0.5">{status === 'all' ? 'Total' : status}</div>
+          </button>
+        ))}
+      </div>
+
+      <AdminCard>
+        <AdminCardHeader>
+          <div className="flex items-center justify-between w-full">
+            <AdminCardTitle icon={<Mail className="h-5 w-5" />}>
+              {statusFilter === 'all' ? 'All Letters' : `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Letters`}
+            </AdminCardTitle>
+            {filteredLetters.some(l => l.status !== 'sent' && l.status !== 'delivered') && (
+              <Button variant="ghost" size="sm" onClick={selectAll} className="text-[hsl(var(--admin-text-muted))] hover:text-white">
+                {bulkSelected.length > 0 ? 'Deselect All' : 'Select All Pending'}
+              </Button>
+            )}
+          </div>
+        </AdminCardHeader>
+        <AdminCardContent>
+          {lettersLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[hsl(var(--admin-accent))]" />
+            </div>
+          ) : filteredLetters.length === 0 ? (
+            <AdminEmptyState
+              icon={<Mail className="h-8 w-8" />}
+              title="No Letters in Queue"
+              description="Generate dispute letters from a client's credit report to add them here."
+            />
+          ) : (
+            <AdminTable>
+              <AdminTableHeader>
+                <tr>
+                  <AdminTableHead className="w-10"></AdminTableHead>
+                  <AdminTableHead>Client</AdminTableHead>
+                  <AdminTableHead>Bureau</AdminTableHead>
+                  <AdminTableHead>Type</AdminTableHead>
+                  <AdminTableHead>Status</AdminTableHead>
+                  <AdminTableHead>Created</AdminTableHead>
+                  <AdminTableHead>Tracking</AdminTableHead>
+                  <AdminTableHead>Actions</AdminTableHead>
+                </tr>
+              </AdminTableHeader>
+              <tbody>
+                {filteredLetters.map((letter) => {
+                  const client = clientUsers.find(u => u.id === (letter as any).clientId);
+                  const isSent = letter.status === 'sent' || letter.status === 'delivered';
+                  const isSelected = bulkSelected.includes(letter.id);
+                  return (
+                    <AdminTableRow key={letter.id} className={isSelected ? 'bg-[hsl(var(--admin-accent))]/10' : ''}>
+                      <AdminTableCell>
+                        {!isSent && (
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleBulkSelect(letter.id)}
+                          />
+                        )}
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        <div>
+                          <p className="font-medium text-white">{client ? `${client.firstName} ${client.lastName}` : 'Unknown'}</p>
+                          <p className="text-xs text-[hsl(var(--admin-text-muted))]">{client?.email}</p>
+                        </div>
+                      </AdminTableCell>
+                      <AdminTableCell>{getBureauBadge(letter.bureau || '')}</AdminTableCell>
+                      <AdminTableCell>
+                        <span className="text-white capitalize">{letter.letterType}</span>
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        <AdminBadge variant={
+                          letter.status === 'sent' || letter.status === 'delivered' ? 'success' :
+                          letter.status === 'approved' ? 'warning' : 'default'
+                        }>
+                          {letter.status}
+                        </AdminBadge>
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        <span className="text-[hsl(var(--admin-text-muted))]">
+                          {letter.createdAt ? new Date(letter.createdAt).toLocaleDateString() : '--'}
+                        </span>
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        {letter.trackingNumber ? (
+                          <span className="text-xs text-blue-400 font-mono">{letter.trackingNumber}</span>
+                        ) : (
+                          <span className="text-xs text-[hsl(var(--admin-text-subtle))]">—</span>
+                        )}
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/10"
+                            onClick={() => { setSelectedLetter(letter); setViewLetterOpen(true); }}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                          {!isSent && (
+                            <Button
+                              size="sm"
+                              className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white text-xs"
+                              onClick={() => openLobSend(letter)}
+                            >
+                              <Send className="h-3 w-3 mr-1" />
+                              Send Mail
+                            </Button>
+                          )}
+                        </div>
+                      </AdminTableCell>
+                    </AdminTableRow>
+                  );
+                })}
+              </tbody>
+            </AdminTable>
+          )}
+        </AdminCardContent>
+      </AdminCard>
+
+      <Dialog open={viewLetterOpen} onOpenChange={setViewLetterOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+          <DialogHeader>
+            <DialogTitle className="text-white">Letter Preview</DialogTitle>
+          </DialogHeader>
+          {selectedLetter && (
+            <div className="space-y-4">
+              <div className="flex gap-2 flex-wrap">
+                {getBureauBadge(selectedLetter.bureau || '')}
+                <AdminBadge variant={selectedLetter.status === 'sent' ? 'success' : 'warning'}>
+                  {selectedLetter.status}
+                </AdminBadge>
+                <span className="text-xs text-[hsl(var(--admin-text-muted))] capitalize">{selectedLetter.letterType}</span>
+              </div>
+              <pre className="whitespace-pre-wrap text-sm text-white bg-[hsl(var(--admin-bg))] p-4 rounded-lg border border-[hsl(var(--admin-border))] font-mono leading-relaxed max-h-[50vh] overflow-y-auto">
+                {selectedLetter.content}
+              </pre>
+              {selectedLetter.status !== 'sent' && selectedLetter.status !== 'delivered' && (
+                <Button
+                  className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
+                  onClick={() => { setViewLetterOpen(false); openLobSend(selectedLetter); }}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Send via Certified Mail
+                </Button>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={lobSendOpen} onOpenChange={setLobSendOpen}>
+        <DialogContent className="max-w-lg bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Send className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
+              Send via Certified Mail (Lob.com)
+            </DialogTitle>
+          </DialogHeader>
+          {selectedLetter && (
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                <p className="text-xs text-[hsl(var(--admin-text-muted))] mb-1">Sending to bureau:</p>
+                <p className="text-white font-medium">{selectedLetter.bureau}</p>
+              </div>
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-[hsl(var(--admin-text-muted))]">Client (from) address:</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <Label className="text-[hsl(var(--admin-text-muted))] text-xs">Full Name *</Label>
+                    <Input value={lobAddress.fromName} onChange={e => setLobAddress(prev => ({ ...prev, fromName: e.target.value }))} className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white mt-1" placeholder="John Doe" />
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-[hsl(var(--admin-text-muted))] text-xs">Street Address *</Label>
+                    <Input value={lobAddress.fromAddressLine1} onChange={e => setLobAddress(prev => ({ ...prev, fromAddressLine1: e.target.value }))} className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white mt-1" placeholder="123 Main St" />
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-[hsl(var(--admin-text-muted))] text-xs">Apt/Suite (optional)</Label>
+                    <Input value={lobAddress.fromAddressLine2} onChange={e => setLobAddress(prev => ({ ...prev, fromAddressLine2: e.target.value }))} className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white mt-1" placeholder="Apt 4B" />
+                  </div>
+                  <div>
+                    <Label className="text-[hsl(var(--admin-text-muted))] text-xs">City *</Label>
+                    <Input value={lobAddress.fromCity} onChange={e => setLobAddress(prev => ({ ...prev, fromCity: e.target.value }))} className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white mt-1" placeholder="New York" />
+                  </div>
+                  <div>
+                    <Label className="text-[hsl(var(--admin-text-muted))] text-xs">State *</Label>
+                    <Input value={lobAddress.fromState} onChange={e => setLobAddress(prev => ({ ...prev, fromState: e.target.value }))} className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white mt-1" placeholder="NY" maxLength={2} />
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-[hsl(var(--admin-text-muted))] text-xs">ZIP Code *</Label>
+                    <Input value={lobAddress.fromZip} onChange={e => setLobAddress(prev => ({ ...prev, fromZip: e.target.value }))} className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white mt-1" placeholder="10001" maxLength={10} />
+                  </div>
+                </div>
+              </div>
+              <Button
+                className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
+                onClick={() => selectedLetter && sendLobMutation.mutate({ letterId: selectedLetter.id, address: lobAddress })}
+                disabled={sendLobMutation.isPending || !lobAddress.fromName || !lobAddress.fromAddressLine1 || !lobAddress.fromCity || !lobAddress.fromState || !lobAddress.fromZip}
+              >
+                {sendLobMutation.isPending ? (
+                  <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />Sending...</>
+                ) : (
+                  <><Send className="h-4 w-4 mr-2" />Send Certified Letter ($)</>
+                )}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
 
 function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
@@ -2376,6 +2750,10 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
           </TabsTrigger>
           <TabsTrigger value="letters" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             Letters ({letters.length})
+          </TabsTrigger>
+          <TabsTrigger value="send-mail" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-400">
+            <Send className="h-4 w-4 mr-1" />
+            Send Mail
           </TabsTrigger>
           <TabsTrigger value="diff-view" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             <GitCompare className="h-4 w-4 mr-1" />
@@ -3644,6 +4022,84 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               )}
             </AdminCardContent>
           </AdminCard>
+        </TabsContent>
+
+        <TabsContent value="send-mail" className="mt-6">
+          <div className="space-y-6">
+            <AdminCard>
+              <AdminCardHeader>
+                <div className="flex items-center justify-between w-full">
+                  <AdminCardTitle icon={<Send className="h-5 w-5 text-blue-400" />}>Send Dispute Letters via Certified Mail</AdminCardTitle>
+                </div>
+              </AdminCardHeader>
+              <AdminCardContent>
+                <p className="text-sm text-[hsl(var(--admin-text-muted))] mb-4">
+                  Click "Send via Certified Mail" on any letter below to mail it to the bureau via Lob.com. The client's address will be pre-filled if on file.
+                </p>
+                {lettersLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400" />
+                  </div>
+                ) : letters.length === 0 ? (
+                  <AdminEmptyState
+                    icon={<Mail className="h-8 w-8" />}
+                    title="No Letters Ready to Send"
+                    description="Generate a dispute letter from the 'Create Dispute' tab first, then return here to send it."
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {letters.map((letter) => {
+                      const isSent = letter.status === 'sent' || letter.status === 'delivered';
+                      return (
+                        <div key={letter.id} className={`p-4 rounded-lg border ${isSent ? 'bg-green-500/10 border-green-500/30' : 'bg-[hsl(var(--admin-bg))]/50 border-[hsl(var(--admin-border))]'}`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isSent ? 'bg-green-500/20' : 'bg-blue-500/20'}`}>
+                                <Mail className={`h-5 w-5 ${isSent ? 'text-green-400' : 'text-blue-400'}`} />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-white capitalize">{letter.letterType}</span>
+                                  {getBureauBadge(letter.bureau || '')}
+                                  <AdminBadge variant={isSent ? 'success' : 'warning'}>{letter.status}</AdminBadge>
+                                </div>
+                                <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-0.5">
+                                  Created {letter.createdAt ? new Date(letter.createdAt).toLocaleDateString() : '--'}
+                                  {letter.sentDate && ` · Sent ${new Date(letter.sentDate).toLocaleDateString()}`}
+                                  {letter.trackingNumber && ` · Tracking: ${letter.trackingNumber}`}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/10"
+                                onClick={() => { setSelectedLetter(letter); setViewLetterOpen(true); }}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                Preview
+                              </Button>
+                              {!isSent && (
+                                <Button
+                                  size="sm"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                                  onClick={() => { setSelectedLetter(letter); setLobSendOpen(true); }}
+                                >
+                                  <Send className="h-4 w-4 mr-2" />
+                                  Send via Certified Mail
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </AdminCardContent>
+            </AdminCard>
+          </div>
         </TabsContent>
 
         <TabsContent value="diff-view" className="mt-6">

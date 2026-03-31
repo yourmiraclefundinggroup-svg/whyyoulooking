@@ -4008,6 +4008,45 @@ Please contact this lead within 24 hours.
     }
   });
 
+  // Admin: Get dashboard stats (live data)
+  app.get("/api/admin/stats", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (!user || user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const [clientCountResult] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(sql`access_level != 'ADMIN'`);
+
+      const [letterCountResult] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(disputeLettersNew);
+
+      const [sentLettersResult] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(disputeLettersNew)
+        .where(sql`status = 'sent' AND sent_date >= date_trunc('month', current_date)`);
+
+      const [uploadCountResult] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(creditReportUploads)
+        .where(sql`status = 'pending' OR status = 'processing'`);
+
+      res.json({
+        totalClients: Number(clientCountResult?.count ?? 0),
+        totalLetters: Number(letterCountResult?.count ?? 0),
+        lettersSentThisMonth: Number(sentLettersResult?.count ?? 0),
+        activeDisputes: Number(uploadCountResult?.count ?? 0),
+      });
+    } catch (error: any) {
+      console.error("Error fetching admin stats:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Admin: Get support metrics
   app.get("/api/support/admin/metrics", authenticateToken, async (req, res) => {
     try {

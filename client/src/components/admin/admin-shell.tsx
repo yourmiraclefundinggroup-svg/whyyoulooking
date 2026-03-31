@@ -27,6 +27,7 @@ import {
   Package,
   Brain,
   TrendingUp,
+  Mail,
 } from "lucide-react";
 
 interface AdminShellContextType {
@@ -49,23 +50,59 @@ interface NavItem {
   label: string;
   icon: any;
   badge?: string;
-  children?: { href: string; label: string }[];
 }
 
-const navItems: NavItem[] = [
-  { href: "/admin-portal", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin-portal/clients", label: "Clients", icon: Users },
-  { href: "/admin-portal/credit-reports", label: "Credit Reports", icon: FolderOpen },
-  { href: "/admin-portal/disputes", label: "Disputes", icon: FileText, badge: "3" },
-  { href: "/admin-portal/tracking", label: "USPS Tracking", icon: Package },
-  { href: "/admin-portal/bureau-analysis", label: "Bureau Analysis", icon: Brain },
-  { href: "/admin-portal/chat", label: "Messages", icon: MessageSquare },
-  { href: "/admin-portal/analytics", label: "Analytics", icon: TrendingUp },
-  { href: "/admin-portal/alerts", label: "Alerts", icon: Bell },
-  { href: "/admin-portal/users", label: "Users & Roles", icon: UserCog },
-  { href: "/admin-portal/settings", label: "Settings", icon: Settings },
-  { href: "/admin-portal/system", label: "System", icon: Activity },
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: "Overview",
+    items: [
+      { href: "/admin-portal", label: "Dashboard", icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: "Clients",
+    items: [
+      { href: "/admin-portal/clients", label: "Clients", icon: Users },
+      { href: "/admin-portal/chat", label: "Messages", icon: MessageSquare },
+    ],
+  },
+  {
+    label: "Disputes",
+    items: [
+      { href: "/admin-portal/credit-reports", label: "Credit Reports", icon: FolderOpen },
+      { href: "/admin-portal/disputes", label: "Disputes", icon: FileText, badge: "3" },
+      { href: "/admin-portal/tracking", label: "USPS Tracking", icon: Package },
+      { href: "/admin-portal/bureau-analysis", label: "Bureau Analysis", icon: Brain },
+    ],
+  },
+  {
+    label: "Mail",
+    items: [
+      { href: "/admin-portal/mail", label: "Mail Queue", icon: Mail },
+    ],
+  },
+  {
+    label: "Business",
+    items: [
+      { href: "/admin-portal/analytics", label: "Analytics", icon: TrendingUp },
+    ],
+  },
+  {
+    label: "Settings",
+    items: [
+      { href: "/admin-portal/users", label: "Users & Roles", icon: UserCog },
+      { href: "/admin-portal/settings", label: "Settings", icon: Settings },
+      { href: "/admin-portal/system", label: "System", icon: Activity },
+    ],
+  },
 ];
+
+const allNavItems = navGroups.flatMap(g => g.items);
 
 interface AdminShellProps {
   children: React.ReactNode;
@@ -83,6 +120,39 @@ export function AdminShell({ children }: AdminShellProps) {
       return location === "/admin-portal" || location === "/admin-portal/";
     }
     return location.startsWith(href);
+  };
+
+  const NavItemEl = ({ item, onClick }: { item: NavItem; onClick?: () => void }) => {
+    const Icon = item.icon;
+    const isActive = isActiveRoute(item.href);
+    return (
+      <Link key={item.href} href={item.href}>
+        <motion.div
+          whileHover={{ x: sidebarCollapsed ? 0 : 4 }}
+          whileTap={{ scale: 0.98 }}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200",
+            isActive
+              ? "bg-gradient-to-r from-[hsl(var(--admin-accent))]/20 to-[hsl(var(--admin-accent))]/5 text-[hsl(var(--admin-accent))] border-l-2 border-[hsl(var(--admin-accent))]"
+              : "text-[hsl(var(--admin-text-muted))] hover:text-white hover:bg-[hsl(var(--admin-card))]",
+            sidebarCollapsed && "justify-center px-2"
+          )}
+          onClick={onClick}
+        >
+          <Icon className={cn("h-5 w-5 flex-shrink-0", isActive && "text-[hsl(var(--admin-accent))]")} />
+          {!sidebarCollapsed && (
+            <>
+              <span className="flex-1 text-sm font-medium">{item.label}</span>
+              {item.badge && (
+                <Badge className="h-5 px-1.5 text-[10px] bg-[hsl(var(--admin-accent))] text-white border-0">
+                  {item.badge}
+                </Badge>
+              )}
+            </>
+          )}
+        </motion.div>
+      </Link>
+    );
   };
 
   return (
@@ -132,39 +202,24 @@ export function AdminShell({ children }: AdminShellProps) {
               )}
             </div>
 
-            <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = isActiveRoute(item.href);
-                
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <motion.div
-                      whileHover={{ x: 4 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200",
-                        isActive
-                          ? "bg-gradient-to-r from-[hsl(var(--admin-accent))]/20 to-[hsl(var(--admin-accent))]/5 text-[hsl(var(--admin-accent))] border-l-2 border-[hsl(var(--admin-accent))]"
-                          : "text-[hsl(var(--admin-text-muted))] hover:text-white hover:bg-[hsl(var(--admin-card))]",
-                        sidebarCollapsed && "justify-center px-2"
-                      )}
-                    >
-                      <Icon className={cn("h-5 w-5 flex-shrink-0", isActive && "text-[hsl(var(--admin-accent))]")} />
-                      {!sidebarCollapsed && (
-                        <>
-                          <span className="flex-1 text-sm font-medium">{item.label}</span>
-                          {item.badge && (
-                            <Badge className="h-5 px-1.5 text-[10px] bg-[hsl(var(--admin-accent))] text-white border-0">
-                              {item.badge}
-                            </Badge>
-                          )}
-                        </>
-                      )}
-                    </motion.div>
-                  </Link>
-                );
-              })}
+            <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
+              {navGroups.map((group) => (
+                <div key={group.label} className="mb-2">
+                  {!sidebarCollapsed && (
+                    <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--admin-text-subtle))]">
+                      {group.label}
+                    </p>
+                  )}
+                  {sidebarCollapsed && group.label !== "Overview" && (
+                    <div className="border-t border-[hsl(var(--admin-border))]/40 my-2" />
+                  )}
+                  <div className="space-y-0.5">
+                    {group.items.map((item) => (
+                      <NavItemEl key={item.href} item={item} />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </nav>
 
             {sidebarCollapsed && (
@@ -295,33 +350,41 @@ export function AdminShell({ children }: AdminShellProps) {
                   </Button>
                 </div>
 
-                <nav className="py-4 px-3 space-y-1">
-                  {navItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = isActiveRoute(item.href);
-                    
-                    return (
-                      <Link key={item.href} href={item.href}>
-                        <div
-                          className={cn(
-                            "flex items-center gap-3 px-3 py-3 rounded-lg cursor-pointer",
-                            isActive
-                              ? "bg-gradient-to-r from-[hsl(var(--admin-accent))]/20 to-transparent text-[hsl(var(--admin-accent))]"
-                              : "text-[hsl(var(--admin-text-muted))]"
-                          )}
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          <Icon className="h-5 w-5" />
-                          <span className="text-sm font-medium">{item.label}</span>
-                          {item.badge && (
-                            <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-[hsl(var(--admin-accent))] text-white border-0">
-                              {item.badge}
-                            </Badge>
-                          )}
-                        </div>
-                      </Link>
-                    );
-                  })}
+                <nav className="py-3 px-3 overflow-y-auto h-[calc(100vh-8rem)]">
+                  {navGroups.map((group) => (
+                    <div key={group.label} className="mb-3">
+                      <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--admin-text-subtle))]">
+                        {group.label}
+                      </p>
+                      <div className="space-y-0.5">
+                        {group.items.map((item) => {
+                          const Icon = item.icon;
+                          const isActive = isActiveRoute(item.href);
+                          return (
+                            <Link key={item.href} href={item.href}>
+                              <div
+                                className={cn(
+                                  "flex items-center gap-3 px-3 py-3 rounded-lg cursor-pointer",
+                                  isActive
+                                    ? "bg-gradient-to-r from-[hsl(var(--admin-accent))]/20 to-transparent text-[hsl(var(--admin-accent))]"
+                                    : "text-[hsl(var(--admin-text-muted))]"
+                                )}
+                                onClick={() => setMobileMenuOpen(false)}
+                              >
+                                <Icon className="h-5 w-5" />
+                                <span className="text-sm font-medium">{item.label}</span>
+                                {item.badge && (
+                                  <Badge className="ml-auto h-5 px-1.5 text-[10px] bg-[hsl(var(--admin-accent))] text-white border-0">
+                                    {item.badge}
+                                  </Badge>
+                                )}
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </nav>
 
                 <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[hsl(var(--admin-border))]">
