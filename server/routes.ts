@@ -5716,12 +5716,34 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
 
       const letterId = parseInt(req.params.id);
       const updates = req.body;
+
+      // Fetch the current letter before updating (for auto deletion-event logging)
+      const existingLetter = await storage.getDisputeLetterNew(letterId);
       const updated = await storage.updateDisputeLetterNew(letterId, updates);
       
       if (!updated) {
         return res.status(404).json({ error: "Dispute letter not found" });
       }
-      
+
+      // Auto-log a pay-per-delete deletion event when letter status becomes "removed" or "deleted"
+      const REMOVED_STATUSES = ["removed", "deleted"];
+      const wasAlreadyRemoved = existingLetter && REMOVED_STATUSES.includes(existingLetter.status ?? "");
+      const isNowRemoved = REMOVED_STATUSES.includes(updates.status ?? "");
+      if (isNowRemoved && !wasAlreadyRemoved && updated.clientId && updated.uploadId) {
+        try {
+          await storage.createDeletionEvent({
+            clientId: updated.clientId,
+            uploadId: updated.uploadId,
+            accountName: updated.bureau ?? "Unknown",
+            bureau: updated.bureau ?? "Unknown",
+            billingRate: "99.00",
+            isPaid: false,
+          });
+        } catch (logErr) {
+          console.error("Failed to auto-log deletion event:", logErr);
+        }
+      }
+
       res.json(updated);
     } catch (error: any) {
       console.error("Error updating dispute letter:", error);
@@ -6449,7 +6471,7 @@ If you are just answering a question (not updating the letter), just respond nor
       if (affiliate) {
         await storage.updateAffiliate(affiliateId, {
           totalClients: (affiliate.totalClients || 0) + 1,
-          totalEarned: (parseFloat(String(affiliate.totalEarned || 0)) + parseFloat(String(commissionAmount || affiliate.commissionRate))).toFixed(2) as any,
+          totalEarned: (parseFloat(String(affiliate.totalEarned || 0)) + parseFloat(String(commissionAmount || affiliate.commissionRate))).toFixed(2),
         });
       }
       res.json(signup);
@@ -6471,7 +6493,7 @@ If you are just answering a question (not updating the letter), just respond nor
           const affiliate = await storage.getAffiliate(Number(req.params.id));
           if (affiliate) {
             await storage.updateAffiliate(Number(req.params.id), {
-              totalPaid: (parseFloat(String(affiliate.totalPaid || 0)) + parseFloat(String(signup.commissionAmount || 0))).toFixed(2) as any,
+              totalPaid: (parseFloat(String(affiliate.totalPaid || 0)) + parseFloat(String(signup.commissionAmount || 0))).toFixed(2),
             });
           }
         }

@@ -1025,7 +1025,7 @@ export const disputeLettersNew = pgTable("dispute_letters_new", {
   bureau: text("bureau", { enum: ["EXPERIAN", "EQUIFAX", "TRANSUNION"] }).notNull(),
   content: text("content").notNull(),
   generatedByAdminId: integer("generated_by_admin_id").references(() => users.id),
-  status: text("status", { enum: ["draft", "approved", "sent"] }).default("draft"),
+  status: text("status", { enum: ["draft", "approved", "sent", "removed", "mailed", "deleted"] }).default("draft"),
   downloadUrl: text("download_url"),
   disputeItemIds: integer("dispute_item_ids").array(),
   trackingNumber: text("tracking_number"),

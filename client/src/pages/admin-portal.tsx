@@ -2367,7 +2367,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   });
 
   const updateLetterMutation = useMutation({
-    mutationFn: async ({ id, status, trackingNumber, sentDate }: { id: number; status?: 'draft' | 'approved' | 'sent'; trackingNumber?: string; sentDate?: string }) => {
+    mutationFn: async ({ id, status, trackingNumber, sentDate }: { id: number; status?: 'draft' | 'approved' | 'sent' | 'removed' | 'mailed' | 'deleted'; trackingNumber?: string; sentDate?: string }) => {
       const updates: any = {};
       if (status) updates.status = status;
       if (trackingNumber !== undefined) updates.trackingNumber = trackingNumber;
@@ -2623,7 +2623,42 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
             {report?.clientName || 'Client'} • {getBureauBadge(report?.bureau || '')}
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <Button
+            size="sm"
+            onClick={() => {
+              const printContent = document.getElementById('progress-report-printable');
+              if (printContent) {
+                const w = window.open('', '_blank');
+                if (w) {
+                  w.document.write(`<html><head><title>Progress Report - ${report?.clientName || 'Client'}</title><style>body{font-family:Arial,sans-serif;padding:40px;color:#000;max-width:800px;margin:0 auto}h1{color:#1a1a1a;border-bottom:3px solid #f59e0b;padding-bottom:12px}h2{color:#374151;font-size:16px;margin-top:24px}.stat{display:inline-block;background:#f3f4f6;border-radius:8px;padding:12px 20px;margin:6px;text-align:center}.stat-val{font-size:28px;font-weight:bold;color:#f59e0b}.stat-lbl{font-size:11px;color:#6b7280;margin-top:2px}table{width:100%;border-collapse:collapse;margin-top:12px}th{background:#f3f4f6;padding:8px;text-align:left;font-size:12px}td{padding:8px;border-bottom:1px solid #e5e7eb;font-size:12px}.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}.badge-green{background:#dcfce7;color:#16a34a}.badge-yellow{background:#fef9c3;color:#ca8a04}.badge-red{background:#fee2e2;color:#dc2626}@media print{body{padding:20px}}</style></head><body>`);
+                  w.document.write(printContent.innerHTML);
+                  w.document.write('</body></html>');
+                  w.document.close();
+                  w.print();
+                }
+              } else {
+                // If not rendered yet, switch to the progress-report tab first
+                setProgressReportOpen(true);
+                setTimeout(() => {
+                  const el = document.getElementById('progress-report-printable');
+                  if (el) {
+                    const w = window.open('', '_blank');
+                    if (w) {
+                      w.document.write(`<html><head><title>Progress Report</title></head><body>${el.innerHTML}</body></html>`);
+                      w.document.close();
+                      w.print();
+                    }
+                  }
+                }, 500);
+              }
+            }}
+            variant="outline"
+            className="border-emerald-500/50 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Progress Report
+          </Button>
           {report?.creditScore && (
             <div className="text-center px-4 py-2 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
               <div className="text-2xl font-bold text-white">{report.creditScore}</div>
@@ -5129,6 +5164,19 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                       Mark Sent Manually
                     </Button>
                   )}
+                  {(selectedLetter.status === 'sent' || selectedLetter.status === 'mailed') && selectedLetter.status !== 'removed' && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => { updateLetterMutation.mutate({ id: selectedLetter.id, status: 'removed' }); setViewLetterOpen(false); }}
+                      className="text-green-400 hover:text-green-300 text-xs border border-green-500/30 hover:bg-green-500/10"
+                      disabled={updateLetterMutation.isPending}
+                      title="Bureau confirmed this item was removed — auto-logs a pay-per-delete event"
+                    >
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Bureau Removed Item
+                    </Button>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -5460,6 +5508,7 @@ function AffiliatesPage() {
   const [logSignupOpen, setLogSignupOpen] = useState(false);
   const [logSignupAffId, setLogSignupAffId] = useState<number | null>(null);
   const [signupClientId, setSignupClientId] = useState('');
+  const [signupPaymentAmount, setSignupPaymentAmount] = useState('');
 
   const { data: affiliates = [], isLoading } = useQuery<Affiliate[]>({
     queryKey: ['/api/admin/affiliates'],
@@ -5499,11 +5548,17 @@ function AffiliatesPage() {
   });
 
   const logSignupMutation = useMutation({
-    mutationFn: async ({ affiliateId, userId }: { affiliateId: number; userId: number }) => {
+    mutationFn: async ({ affiliateId, userId, paymentAmount }: { affiliateId: number; userId: number; paymentAmount?: string }) => {
       const aff = affiliates.find(a => a.id === affiliateId);
+      let commissionAmount: string;
+      if (aff?.commissionType === 'percent' && paymentAmount) {
+        commissionAmount = ((parseFloat(String(aff.commissionRate)) / 100) * parseFloat(paymentAmount)).toFixed(2);
+      } else {
+        commissionAmount = String(aff?.commissionRate || '25.00');
+      }
       const response = await apiRequest('POST', `/api/admin/affiliates/${affiliateId}/signups`, {
         userId,
-        commissionAmount: aff?.commissionRate || '25.00',
+        commissionAmount,
       });
       return response.json();
     },
@@ -5512,6 +5567,7 @@ function AffiliatesPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/affiliates', logSignupAffId, 'signups'] });
       setLogSignupOpen(false);
       setSignupClientId('');
+      setSignupPaymentAmount('');
       toast({ title: 'Client signup attributed to affiliate.' });
     },
     onError: () => toast({ title: 'Error', description: 'Failed to log signup.', variant: 'destructive' }),
@@ -5732,35 +5788,59 @@ function AffiliatesPage() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <p className="text-xs text-[hsl(var(--admin-text-muted))]">
-              Affiliate: <strong className="text-white">{affiliates.find(a => a.id === logSignupAffId)?.name}</strong>
-              {' '} — Commission: <strong className="text-green-400">{(() => {
-                const aff = affiliates.find(a => a.id === logSignupAffId);
-                if (!aff) return '—';
-                return aff.commissionType === 'flat' ? `$${parseFloat(String(aff.commissionRate)).toFixed(2)}` : `${parseFloat(String(aff.commissionRate)).toFixed(1)}%`;
-              })()}</strong>
-            </p>
-            <div>
-              <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Client User ID</Label>
-              <Input
-                type="number"
-                value={signupClientId}
-                onChange={e => setSignupClientId(e.target.value)}
-                placeholder="e.g. 42"
-                className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm"
-              />
-              <p className="text-[10px] text-[hsl(var(--admin-text-subtle))] mt-1">Find the client's ID on the Clients page.</p>
-            </div>
-            <div className="flex gap-3 justify-end pt-2 border-t border-[hsl(var(--admin-border))]">
-              <Button variant="outline" onClick={() => setLogSignupOpen(false)} className="border-[hsl(var(--admin-border))] text-white">Cancel</Button>
-              <Button
-                onClick={() => logSignupMutation.mutate({ affiliateId: logSignupAffId!, userId: parseInt(signupClientId) })}
-                disabled={logSignupMutation.isPending || !signupClientId || !logSignupAffId}
-                className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
-              >
-                {logSignupMutation.isPending ? 'Logging...' : 'Log Signup'}
-              </Button>
-            </div>
+            {(() => {
+              const aff = affiliates.find(a => a.id === logSignupAffId);
+              const isPercent = aff?.commissionType === 'percent';
+              const computedCommission = isPercent && signupPaymentAmount
+                ? ((parseFloat(String(aff!.commissionRate)) / 100) * parseFloat(signupPaymentAmount)).toFixed(2)
+                : null;
+              return (
+                <>
+                  <p className="text-xs text-[hsl(var(--admin-text-muted))]">
+                    Affiliate: <strong className="text-white">{aff?.name || '—'}</strong>
+                    {' '} — Rate: <strong className="text-green-400">
+                      {isPercent ? `${parseFloat(String(aff!.commissionRate)).toFixed(1)}%` : `$${parseFloat(String(aff?.commissionRate || 0)).toFixed(2)}`}
+                    </strong>
+                    {computedCommission && <span className="text-[hsl(var(--admin-text-muted))] ml-2">→ <strong className="text-green-400">${computedCommission}</strong> commission</span>}
+                  </p>
+                  <div>
+                    <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Client User ID</Label>
+                    <Input
+                      type="number"
+                      value={signupClientId}
+                      onChange={e => setSignupClientId(e.target.value)}
+                      placeholder="e.g. 42"
+                      className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm"
+                    />
+                    <p className="text-[10px] text-[hsl(var(--admin-text-subtle))] mt-1">Find the client's ID on the Clients page.</p>
+                  </div>
+                  {isPercent && (
+                    <div>
+                      <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Client First Payment Amount ($)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={signupPaymentAmount}
+                        onChange={e => setSignupPaymentAmount(e.target.value)}
+                        placeholder="e.g. 199.00"
+                        className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm"
+                      />
+                      <p className="text-[10px] text-[hsl(var(--admin-text-subtle))] mt-1">Commission = {parseFloat(String(aff?.commissionRate || 0)).toFixed(1)}% of this amount.</p>
+                    </div>
+                  )}
+                  <div className="flex gap-3 justify-end pt-2 border-t border-[hsl(var(--admin-border))]">
+                    <Button variant="outline" onClick={() => setLogSignupOpen(false)} className="border-[hsl(var(--admin-border))] text-white">Cancel</Button>
+                    <Button
+                      onClick={() => logSignupMutation.mutate({ affiliateId: logSignupAffId!, userId: parseInt(signupClientId), paymentAmount: signupPaymentAmount || undefined })}
+                      disabled={logSignupMutation.isPending || !signupClientId || !logSignupAffId || (isPercent && !signupPaymentAmount)}
+                      className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
+                    >
+                      {logSignupMutation.isPending ? 'Logging...' : 'Log Signup'}
+                    </Button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </DialogContent>
       </Dialog>
