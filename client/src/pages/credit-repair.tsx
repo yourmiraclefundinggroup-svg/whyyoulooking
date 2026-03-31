@@ -94,6 +94,170 @@ import { Link } from "wouter";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
+// Client Progress Tab - Shows the client's credit repair progress report
+function ClientProgressTab() {
+  const { data: progress, isLoading } = useQuery<{
+    hasData: boolean;
+    startingScore?: number;
+    currentScore?: number;
+    scoreDelta?: number;
+    totalUploads?: number;
+    lettersSent?: number;
+    lettersRemoved?: number;
+    lettersDraft?: number;
+    nextDisputeDate?: string | null;
+    nextDisputeRound?: string | null;
+    latestUploadDate?: string;
+    latestBureau?: string;
+  }>({ queryKey: ['/api/client/progress-summary'] });
+
+  const handlePrint = () => {
+    const el = document.getElementById('client-progress-printable');
+    if (!el) return;
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(`<html><head><title>My Credit Repair Progress</title><style>
+      body{font-family:Arial,sans-serif;padding:40px;color:#111;max-width:700px;margin:0 auto}
+      h1{border-bottom:3px solid #2563eb;padding-bottom:8px;color:#1e3a8a}
+      .stat{display:inline-block;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px 20px;margin:6px 4px;text-align:center;min-width:110px}
+      .stat-val{font-size:28px;font-weight:bold;color:#2563eb}
+      .stat-lbl{font-size:11px;color:#6b7280;margin-top:2px}
+      .delta-pos{color:#16a34a}.delta-neg{color:#dc2626}
+      @media print{body{padding:20px}}
+    </style></head><body>${el.innerHTML}</body></html>`);
+    w.document.close();
+    w.print();
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
+            <div className="h-24 bg-gray-200 dark:bg-gray-700 rounded" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!progress?.hasData) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Progress Data Yet</h3>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
+            Your progress report will appear here once your admin uploads your credit report.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const scoreDelta = progress.scoreDelta ?? 0;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <CheckCircle className="h-6 w-6 text-blue-500" />
+            My Credit Repair Progress
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Based on {progress.totalUploads} credit report{(progress.totalUploads ?? 0) > 1 ? 's' : ''}
+            {progress.latestBureau ? ` · ${progress.latestBureau}` : ''}
+          </p>
+        </div>
+        <Button onClick={handlePrint} size="sm" variant="outline" className="gap-2">
+          <FileText className="h-4 w-4" />
+          Print Report
+        </Button>
+      </div>
+
+      <div id="client-progress-printable">
+        <h1 style={{ display: 'none' }}>My Credit Repair Progress</h1>
+
+        {/* Score cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-gray-900 dark:text-white">{progress.startingScore ?? '—'}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Starting Score</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{progress.currentScore ?? '—'}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Current Score</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className={`text-3xl font-bold ${scoreDelta >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {scoreDelta >= 0 ? '+' : ''}{scoreDelta}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Score Change</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-3xl font-bold text-green-600 dark:text-green-400">{progress.lettersRemoved ?? 0}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Items Removed</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Dispute letters summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base text-gray-900 dark:text-white">Dispute Letter Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{progress.lettersSent ?? 0}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Sent to Bureaus</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{progress.lettersRemoved ?? 0}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Confirmed Removed</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{progress.lettersDraft ?? 0}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">In Progress</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Next dispute */}
+        {progress.nextDisputeDate && (
+          <Card>
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                  Next Dispute Round {progress.nextDisputeRound ?? ''}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  Scheduled for {new Date(progress.nextDisputeDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Client Credit Reports Tab - Read-only view of credit reports
 function ClientCreditReportsTab({ userId }: { userId: number }) {
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
@@ -757,6 +921,7 @@ export default function CreditRepair() {
           <TabsTrigger value="password-reset" className="text-xs px-2 py-2">Password</TabsTrigger>
           <TabsTrigger value="ai-tools" className="text-xs px-2 py-2">AI Tools</TabsTrigger>
           <TabsTrigger value="credit-reports" className="text-xs px-2 py-2">Reports</TabsTrigger>
+          <TabsTrigger value="progress" className="text-xs px-2 py-2">Progress</TabsTrigger>
         </TabsList>
 
         <TabsContent value="issues" className="space-y-4 sm:space-y-6">
@@ -1158,6 +1323,10 @@ export default function CreditRepair() {
 
         <TabsContent value="credit-reports" className="space-y-6">
           <ClientCreditReportsTab userId={userId} />
+        </TabsContent>
+
+        <TabsContent value="progress" className="space-y-6">
+          <ClientProgressTab />
         </TabsContent>
       </Tabs>
 

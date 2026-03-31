@@ -5725,25 +5725,6 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
         return res.status(404).json({ error: "Dispute letter not found" });
       }
 
-      // Auto-log a pay-per-delete deletion event when letter status becomes "removed" or "deleted"
-      const REMOVED_STATUSES = ["removed", "deleted"];
-      const wasAlreadyRemoved = existingLetter && REMOVED_STATUSES.includes(existingLetter.status ?? "");
-      const isNowRemoved = REMOVED_STATUSES.includes(updates.status ?? "");
-      if (isNowRemoved && !wasAlreadyRemoved && updated.clientId && updated.uploadId) {
-        try {
-          await storage.createDeletionEvent({
-            clientId: updated.clientId,
-            uploadId: updated.uploadId,
-            accountName: updated.bureau ?? "Unknown",
-            bureau: updated.bureau ?? "Unknown",
-            billingRate: "99.00",
-            isPaid: false,
-          });
-        } catch (logErr) {
-          console.error("Failed to auto-log deletion event:", logErr);
-        }
-      }
-
       res.json(updated);
     } catch (error: any) {
       console.error("Error updating dispute letter:", error);
@@ -6092,7 +6073,36 @@ ${clientAddress || clientInfo?.address || '[Your Address]'}
 Enclosures: Copy of ID, Proof of Address${isFraud ? ', Identity Theft Report/Police Report' : ''}`;
       }
 
-      // Save the letter
+      // For 3-bureau (all) mode: split AI output into per-bureau letters and save each separately
+      if (isAllBureaus) {
+        const BUREAUS = ['EXPERIAN', 'EQUIFAX', 'TRANSUNION'] as const;
+        const letters = await Promise.all(BUREAUS.map(async (b) => {
+          // Try to extract this bureau's section from the combined AI output
+          const sectionRegex = new RegExp(
+            `---\\s*${b}\\s*LETTER\\s*---([\\s\\S]*?)(?=---\\s*(?:EXPERIAN|EQUIFAX|TRANSUNION)\\s*LETTER\\s*---|$)`,
+            'i'
+          );
+          const match = letterContent.match(sectionRegex);
+          // Use the matched section or the full content as fallback (in case AI didn't split properly)
+          const bureauContent = match ? match[1].trim() : letterContent.replace(
+            /---\s*(EXPERIAN|EQUIFAX|TRANSUNION)\s*LETTER\s*---/gi, ''
+          ).trim();
+
+          return storage.createDisputeLetterNew({
+            clientId,
+            uploadId,
+            letterType,
+            bureau: b,
+            content: bureauContent,
+            generatedByAdminId: user.id,
+            status: 'draft',
+            disputeItemIds
+          });
+        }));
+        return res.status(201).json({ letters, count: letters.length });
+      }
+
+      // Single-bureau: save one record
       const letter = await storage.createDisputeLetterNew({
         clientId,
         uploadId,
@@ -6361,6 +6371,50 @@ If you are just answering a question (not updating the letter), just respond nor
     }
   });
 
+  // Client Progress Summary — accessible by client themselves
+  app.get("/api/client/progress-summary", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const uploads = await storage.getCreditReportUploads(user.id);
+      if (!uploads.length) {
+        return res.json({ hasData: false });
+      }
+      const sorted = [...uploads].sort((a, b) => new Date(a.uploadedAt ?? 0).getTime() - new Date(b.uploadedAt ?? 0).getTime());
+      const earliest = sorted[0];
+      const latest = sorted[sorted.length - 1];
+
+      // Gather all letters across all uploads
+      const allLettersArrays = await Promise.all(uploads.map(u => storage.getDisputeLettersNew(u.id)));
+      const allLetters = allLettersArrays.flat();
+
+      const lettersSent = allLetters.filter(l => l.status === 'sent' || l.status === 'mailed').length;
+      const lettersRemoved = allLetters.filter(l => l.status === 'removed' || l.status === 'deleted').length;
+      const lettersDraft = allLetters.filter(l => l.status === 'draft' || l.status === 'approved').length;
+
+      const calendarEvents = await storage.getDisputeCalendarEvents(user.id);
+      const upcomingEvents = calendarEvents
+        .filter(e => e.scheduledSendDate && new Date(e.scheduledSendDate) >= new Date() && e.status !== 'completed')
+        .sort((a, b) => new Date(a.scheduledSendDate).getTime() - new Date(b.scheduledSendDate).getTime());
+
+      res.json({
+        hasData: true,
+        startingScore: earliest.creditScore,
+        currentScore: latest.creditScore,
+        scoreDelta: (latest.creditScore ?? 0) - (earliest.creditScore ?? 0),
+        totalUploads: uploads.length,
+        lettersSent,
+        lettersRemoved,
+        lettersDraft,
+        nextDisputeDate: upcomingEvents[0]?.scheduledSendDate ?? null,
+        nextDisputeRound: upcomingEvents[0]?.round ?? null,
+        latestUploadDate: latest.uploadedAt,
+        latestBureau: latest.bureau,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ============================================================
   // LEADS CRM API
   // ============================================================
@@ -6484,21 +6538,34 @@ If you are just answering a question (not updating the letter), just respond nor
     try {
       const user = (req as any).user;
       if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
-      // Mark commission paid - update affiliate totalPaid
       const { commissionPaid } = req.body;
-      if (commissionPaid) {
-        const signups = await storage.getAffiliateSignups(Number(req.params.id));
-        const signup = signups.find(s => s.id === Number(req.params.signupId));
-        if (signup) {
-          const affiliate = await storage.getAffiliate(Number(req.params.id));
-          if (affiliate) {
-            await storage.updateAffiliate(Number(req.params.id), {
-              totalPaid: (parseFloat(String(affiliate.totalPaid || 0)) + parseFloat(String(signup.commissionAmount || 0))).toFixed(2),
-            });
-          }
+      const signupId = Number(req.params.signupId);
+      const affiliateId = Number(req.params.id);
+      const signups = await storage.getAffiliateSignups(affiliateId);
+      const signup = signups.find(s => s.id === signupId);
+      if (!signup) return res.status(404).json({ error: "Signup not found" });
+
+      // Update the signup's commissionPaid status
+      const updatedSignup = await storage.updateAffiliateSignup(signupId, { commissionPaid: !!commissionPaid });
+
+      // When marking as paid, increment affiliate totalPaid by this signup's commission amount
+      if (commissionPaid && !signup.commissionPaid) {
+        const affiliate = await storage.getAffiliate(affiliateId);
+        if (affiliate) {
+          await storage.updateAffiliate(affiliateId, {
+            totalPaid: (parseFloat(String(affiliate.totalPaid || 0)) + parseFloat(String(signup.commissionAmount || 0))).toFixed(2),
+          });
         }
       }
-      res.json({ success: true });
+      // When un-marking paid, decrement affiliate totalPaid
+      if (!commissionPaid && signup.commissionPaid) {
+        const affiliate = await storage.getAffiliate(affiliateId);
+        if (affiliate) {
+          const newPaid = Math.max(0, parseFloat(String(affiliate.totalPaid || 0)) - parseFloat(String(signup.commissionAmount || 0)));
+          await storage.updateAffiliate(affiliateId, { totalPaid: newPaid.toFixed(2) });
+        }
+      }
+      res.json(updatedSignup);
     } catch (error) {
       res.status(500).json({ error: "Failed to update affiliate signup" });
     }

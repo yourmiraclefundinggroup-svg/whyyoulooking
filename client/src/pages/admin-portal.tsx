@@ -2235,6 +2235,14 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   const [letterFormat, setLetterFormat] = useState<'standard' | 'metro2'>('standard');
   const [bureauCount, setBureauCount] = useState<'single' | 'all'>('single');
   const [progressReportOpen, setProgressReportOpen] = useState(false);
+  const [markRemovedOpen, setMarkRemovedOpen] = useState(false);
+  const [markRemovedAccountName, setMarkRemovedAccountName] = useState('');
+  const [markRemovedRate, setMarkRemovedRate] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(`ppd_rate_${reportId}`) || '99.00';
+    }
+    return '99.00';
+  });
   
   const { data: report, isLoading: reportLoading } = useQuery<CreditReportUpload & { clientName?: string; clientAddress?: { line1?: string; line2?: string; city?: string; state?: string; zip?: string } }>({
     queryKey: ['/api/admin/credit-report-uploads', reportId],
@@ -2356,10 +2364,16 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
       });
       return response.json();
     },
-    onSuccess: (letter: DisputeLetterNew) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/dispute-letters-new', reportId] });
-      setGeneratedLetter(letter);
-      toast({ title: 'Success', description: 'Dispute letter generated successfully' });
+    onSuccess: (result: DisputeLetterNew | { letters: DisputeLetterNew[]; count: number }) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/dispute-letters-new?uploadId=${reportId}`] });
+      // Multi-bureau mode returns { letters, count }; single-bureau returns the letter directly
+      if ('letters' in result && Array.isArray(result.letters)) {
+        setGeneratedLetter(result.letters[0] ?? null);
+        toast({ title: 'Success', description: `Generated ${result.count} letters (one per bureau)` });
+      } else {
+        setGeneratedLetter(result as DisputeLetterNew);
+        toast({ title: 'Success', description: 'Dispute letter generated successfully' });
+      }
     },
     onError: () => {
       toast({ title: 'Error', description: 'Failed to generate letter', variant: 'destructive' });
@@ -2405,6 +2419,38 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
     },
     onError: (error: Error) => {
       toast({ title: 'Lob Error', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  const createDeletionEventMutation = useMutation({
+    mutationFn: async ({ accountName, billingRate, letterId }: { accountName: string; billingRate: string; letterId: number }) => {
+      const rpt = report as any;
+      if (!rpt) throw new Error('No report found');
+      const clientId = rpt.clientId ?? rpt.userId ?? rpt.uploadedByUserId;
+      const response = await apiRequest('POST', '/api/admin/deletion-events', {
+        clientId,
+        uploadId: reportId,
+        accountName,
+        bureau: selectedLetter?.bureau || 'EXPERIAN',
+        billingRate,
+        isPaid: false,
+      });
+      if (!response.ok) throw new Error('Failed to create deletion event');
+      return response.json();
+    },
+    onSuccess: async () => {
+      // Also mark the letter as removed
+      if (selectedLetter) {
+        await updateLetterMutation.mutateAsync({ id: selectedLetter.id, status: 'removed' });
+      }
+      localStorage.setItem(`ppd_rate_${reportId}`, markRemovedRate);
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/deletion-events'] });
+      setMarkRemovedOpen(false);
+      setViewLetterOpen(false);
+      toast({ title: 'Item Removed', description: `Pay-per-delete event logged for "${markRemovedAccountName}"` });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to log deletion event', variant: 'destructive' });
     }
   });
 
@@ -5168,10 +5214,12 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => { updateLetterMutation.mutate({ id: selectedLetter.id, status: 'removed' }); setViewLetterOpen(false); }}
+                      onClick={() => {
+                        setMarkRemovedAccountName('');
+                        setMarkRemovedOpen(true);
+                      }}
                       className="text-green-400 hover:text-green-300 text-xs border border-green-500/30 hover:bg-green-500/10"
-                      disabled={updateLetterMutation.isPending}
-                      title="Bureau confirmed this item was removed — auto-logs a pay-per-delete event"
+                      title="Bureau confirmed this item was removed — logs a pay-per-delete event"
                     >
                       <CheckCircle className="h-3 w-3 mr-1" />
                       Bureau Removed Item
@@ -5275,6 +5323,73 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 {sendLobMutation.isPending ? 'Sending...' : 'Send Letter ($)'}
               </Button>
               <Button variant="outline" onClick={() => setLobSendOpen(false)} className="border-[hsl(var(--admin-border))] text-white">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mark Account Removed — Pay-Per-Delete Dialog */}
+      <Dialog open={markRemovedOpen} onOpenChange={setMarkRemovedOpen}>
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-400" />
+              Log Bureau Removal
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2 text-sm">
+            <p className="text-[hsl(var(--admin-text-muted))]">
+              Record that the bureau confirmed removal of this disputed item. A pay-per-delete billing event will be created.
+            </p>
+            <div className="space-y-1">
+              <label className="text-xs text-[hsl(var(--admin-text-muted))]">Account / Item Name <span className="text-red-400">*</span></label>
+              <input
+                value={markRemovedAccountName}
+                onChange={e => setMarkRemovedAccountName(e.target.value)}
+                placeholder="e.g. ABC Medical Center Collections"
+                className="w-full px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs text-[hsl(var(--admin-text-muted))]">Bureau</label>
+                <div className="px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))] text-white/70 text-sm">
+                  {selectedLetter?.bureau || '—'}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-[hsl(var(--admin-text-muted))]">Billing Rate ($)</label>
+                <input
+                  type="number"
+                  value={markRemovedRate}
+                  onChange={e => setMarkRemovedRate(e.target.value)}
+                  placeholder="99.00"
+                  min="0"
+                  step="0.01"
+                  className="w-full px-3 py-2 rounded-md bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-[hsl(var(--admin-text-muted))]">The billing rate will be remembered for this client's next removal.</p>
+            <div className="flex gap-3 pt-1">
+              <Button
+                onClick={() => {
+                  if (!markRemovedAccountName.trim()) return;
+                  if (!selectedLetter) return;
+                  createDeletionEventMutation.mutate({
+                    accountName: markRemovedAccountName.trim(),
+                    billingRate: markRemovedRate || '99.00',
+                    letterId: selectedLetter.id,
+                  });
+                }}
+                disabled={createDeletionEventMutation.isPending || !markRemovedAccountName.trim()}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              >
+                {createDeletionEventMutation.isPending ? 'Logging...' : 'Confirm Removal'}
+              </Button>
+              <Button variant="outline" onClick={() => setMarkRemovedOpen(false)} className="border-[hsl(var(--admin-border))] text-white">
                 Cancel
               </Button>
             </div>

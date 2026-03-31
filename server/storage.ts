@@ -318,6 +318,7 @@ export interface IStorage {
   // Affiliate Signups
   getAffiliateSignups(affiliateId: number): Promise<AffiliateSignup[]>;
   createAffiliateSignup(signup: InsertAffiliateSignup): Promise<AffiliateSignup>;
+  updateAffiliateSignup(id: number, updates: Partial<AffiliateSignup>): Promise<AffiliateSignup | undefined>;
 
   // Deletion Events (Pay-Per-Delete)
   getDeletionEvents(clientId: number): Promise<DeletionEvent[]>;
@@ -1011,6 +1012,11 @@ export class DatabaseStorage implements IStorage {
   async createAffiliateSignup(signup: InsertAffiliateSignup): Promise<AffiliateSignup> {
     const [result] = await db.insert(affiliateSignups).values(signup).returning();
     return result;
+  }
+
+  async updateAffiliateSignup(id: number, updates: Partial<AffiliateSignup>): Promise<AffiliateSignup | undefined> {
+    const [result] = await db.update(affiliateSignups).set(updates).where(eq(affiliateSignups.id, id)).returning();
+    return result || undefined;
   }
 
   // Deletion Events (Pay-Per-Delete)
@@ -2479,6 +2485,11 @@ export class MemStorage implements IStorage {
   async createAffiliateSignup(signup: InsertAffiliateSignup): Promise<AffiliateSignup> {
     const [result] = await db.insert(affiliateSignups).values(signup).returning();
     return result;
+  }
+
+  async updateAffiliateSignup(id: number, updates: Partial<AffiliateSignup>): Promise<AffiliateSignup | undefined> {
+    const [result] = await db.update(affiliateSignups).set(updates).where(eq(affiliateSignups.id, id)).returning();
+    return result || undefined;
   }
 
   // Deletion Events (Pay-Per-Delete)
