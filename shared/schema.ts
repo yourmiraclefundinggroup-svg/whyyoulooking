@@ -40,6 +40,7 @@ export const users = pgTable("users", {
   croaDisclosureTimestamp: timestamp("croa_disclosure_timestamp"),
   aiConsentAccepted: boolean("ai_consent_accepted").default(false),
   aiConsentTimestamp: timestamp("ai_consent_timestamp"),
+  payPerDeleteRate: decimal("pay_per_delete_rate", { precision: 10, scale: 2 }).default("99.00"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

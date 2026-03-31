@@ -1218,6 +1218,33 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
+  // Admin: get/set per-client pay-per-delete billing rate
+  app.get("/api/admin/users/:id/billing-rate", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const client = await storage.getUser(parseInt(req.params.id));
+      if (!client) return res.status(404).json({ error: "Client not found" });
+      res.json({ payPerDeleteRate: client.payPerDeleteRate ?? "99.00" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch billing rate" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id/billing-rate", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const { payPerDeleteRate } = req.body;
+      if (payPerDeleteRate === undefined) return res.status(400).json({ error: "payPerDeleteRate required" });
+      const updated = await storage.updateUser(parseInt(req.params.id), { payPerDeleteRate: String(parseFloat(String(payPerDeleteRate)).toFixed(2)) });
+      if (!updated) return res.status(404).json({ error: "Client not found" });
+      res.json({ payPerDeleteRate: updated.payPerDeleteRate });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update billing rate" });
+    }
+  });
+
   // Authentication Routes
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -5717,12 +5744,62 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
       const letterId = parseInt(req.params.id);
       const updates = req.body;
 
-      // Fetch the current letter before updating (for auto deletion-event logging)
+      // Fetch current letter before updating (for status-transition auto deletion-event logging)
       const existingLetter = await storage.getDisputeLetterNew(letterId);
       const updated = await storage.updateDisputeLetterNew(letterId, updates);
       
       if (!updated) {
         return res.status(404).json({ error: "Dispute letter not found" });
+      }
+
+      // Auto-log pay-per-delete event when status transitions to "removed" or "deleted"
+      // This is idempotent: only fires on first transition from a non-removed state.
+      // skipAutoLog=true allows the explicit "Bureau Removed Item" dialog flow to avoid duplicate events.
+      const REMOVED_STATUSES = ["removed", "deleted"];
+      const wasAlreadyRemoved = existingLetter && REMOVED_STATUSES.includes(existingLetter.status ?? "");
+      const isNowRemoved = REMOVED_STATUSES.includes(updates.status ?? "");
+      const skipAutoLog = updates.skipAutoLog === true;
+      if (isNowRemoved && !wasAlreadyRemoved && updated.clientId && updated.uploadId && !skipAutoLog) {
+        try {
+          // Resolve per-client billing rate from their profile (set by admin)
+          const client = await storage.getUser(updated.clientId);
+          const billingRate = String(client?.payPerDeleteRate || "99.00");
+
+          // Build account name from associated dispute items
+          let accountName = `${updated.bureau} Dispute`;
+          if (updated.disputeItemIds && updated.disputeItemIds.length > 0) {
+            const [disputeItemsList, accounts, collections, inquiries] = await Promise.all([
+              Promise.all(updated.disputeItemIds.map(id => storage.getDisputeItem(id))),
+              storage.getCreditReportAccounts(updated.uploadId),
+              storage.getCreditReportCollections(updated.uploadId),
+              storage.getCreditReportInquiries(updated.uploadId),
+            ]);
+            const accountMap = new Map(accounts.map(a => [a.id, a.creditorName]));
+            const collectionMap = new Map(collections.map(c => [c.id, c.agencyName]));
+            const inquiryMap = new Map(inquiries.map(i => [i.id, i.subscriberName]));
+            const names = disputeItemsList
+              .filter((item): item is NonNullable<typeof item> => !!item)
+              .map(item => {
+                if (item.itemType === 'account') return accountMap.get(item.itemRefId) ?? null;
+                if (item.itemType === 'collection') return collectionMap.get(item.itemRefId) ?? null;
+                if (item.itemType === 'inquiry') return inquiryMap.get(item.itemRefId) ?? null;
+                return null;
+              })
+              .filter((n): n is string => !!n);
+            if (names.length > 0) accountName = names.join(', ');
+          }
+
+          await storage.createDeletionEvent({
+            clientId: updated.clientId,
+            uploadId: updated.uploadId,
+            accountName,
+            bureau: updated.bureau ?? "Unknown",
+            billingRate,
+            isPaid: false,
+          });
+        } catch (logErr) {
+          console.error("Failed to auto-log deletion event:", logErr);
+        }
       }
 
       res.json(updated);

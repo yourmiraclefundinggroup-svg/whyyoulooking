@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/components/theme-provider";
@@ -2269,6 +2269,26 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
     }
   });
 
+  // Fetch per-client billing rate from server (used as default in mark-removed dialog)
+  const clientUserId = (report as any)?.userId;
+  const { data: serverBillingRate } = useQuery<{ payPerDeleteRate: string }>({
+    queryKey: ['/api/admin/users', clientUserId, 'billing-rate'],
+    queryFn: async () => {
+      const resp = await fetch(`/api/admin/users/${clientUserId}/billing-rate`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
+      });
+      return resp.json();
+    },
+    enabled: !!clientUserId,
+  });
+
+  // Sync server billing rate to local state
+  useEffect(() => {
+    if (serverBillingRate?.payPerDeleteRate) {
+      setMarkRemovedRate(serverBillingRate.payPerDeleteRate);
+    }
+  }, [serverBillingRate?.payPerDeleteRate]);
+
   const { data: accounts = [], isLoading: accountsLoading } = useQuery<CreditReportAccount[]>({
     queryKey: [`/api/admin/credit-report-accounts?uploadId=${reportId}`],
     enabled: !!reportId,
@@ -2439,11 +2459,16 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
       return response.json();
     },
     onSuccess: async () => {
-      // Also mark the letter as removed
+      // Mark the letter as removed with skipAutoLog=true to avoid a duplicate deletion event
       if (selectedLetter) {
-        await updateLetterMutation.mutateAsync({ id: selectedLetter.id, status: 'removed' });
+        const resp = await apiRequest('PATCH', `/api/admin/dispute-letters-new/${selectedLetter.id}`, { status: 'removed', skipAutoLog: true });
+        await resp.json();
+        queryClient.invalidateQueries({ queryKey: [`/api/admin/dispute-letters-new?uploadId=${reportId}`] });
       }
-      localStorage.setItem(`ppd_rate_${reportId}`, markRemovedRate);
+      // Save billing rate to server for persistence
+      if (clientUserId) {
+        apiRequest('PATCH', `/api/admin/users/${clientUserId}/billing-rate`, { payPerDeleteRate: markRemovedRate }).catch(() => {});
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/admin/deletion-events'] });
       setMarkRemovedOpen(false);
       setViewLetterOpen(false);
@@ -5975,6 +6000,37 @@ function PayPerDeleteTab({ uploadId, report }: { uploadId: number; report: (Cred
   const [defaultRate, setDefaultRate] = useState('99.00');
   const [newEvent, setNewEvent] = useState({ accountName: '', bureau: 'Experian', billingRate: '99.00' });
 
+  // Fetch per-client billing rate from server
+  const { data: billingRateData } = useQuery<{ payPerDeleteRate: string }>({
+    queryKey: ['/api/admin/users', clientId, 'billing-rate'],
+    queryFn: async () => {
+      const resp = await fetch(`/api/admin/users/${clientId}/billing-rate`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
+      });
+      return resp.json();
+    },
+    enabled: !!clientId,
+  });
+
+  // Sync server rate to local state when loaded
+  useEffect(() => {
+    if (billingRateData?.payPerDeleteRate) {
+      setDefaultRate(billingRateData.payPerDeleteRate);
+    }
+  }, [billingRateData?.payPerDeleteRate]);
+
+  const saveRateMutation = useMutation({
+    mutationFn: async (rate: string) => {
+      const resp = await apiRequest('PATCH', `/api/admin/users/${clientId}/billing-rate`, { payPerDeleteRate: rate });
+      return resp.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users', clientId, 'billing-rate'] });
+      toast({ title: 'Billing rate saved', description: `Default rate set to $${data.payPerDeleteRate}/deletion` });
+    },
+    onError: () => toast({ title: 'Error', description: 'Failed to save billing rate', variant: 'destructive' }),
+  });
+
   const openAddDialog = () => {
     setNewEvent({ accountName: '', bureau: 'Experian', billingRate: defaultRate });
     setAddOpen(true);
@@ -6086,7 +6142,7 @@ function PayPerDeleteTab({ uploadId, report }: { uploadId: number; report: (Cred
             <AdminCardTitle icon={<DollarSign className="h-5 w-5 text-yellow-400" />}>Pay-Per-Delete Billing Tracker</AdminCardTitle>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
-                <span className="text-xs text-[hsl(var(--admin-text-muted))]">Default $</span>
+                <span className="text-xs text-[hsl(var(--admin-text-muted))]">Rate/item ($)</span>
                 <Input
                   type="number"
                   step="0.01"
@@ -6094,6 +6150,16 @@ function PayPerDeleteTab({ uploadId, report }: { uploadId: number; report: (Cred
                   onChange={e => setDefaultRate(e.target.value)}
                   className="h-7 w-20 text-xs bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white"
                 />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs text-emerald-400 hover:text-emerald-300 px-2"
+                  disabled={saveRateMutation.isPending}
+                  onClick={() => saveRateMutation.mutate(defaultRate)}
+                  title="Save billing rate for this client"
+                >
+                  {saveRateMutation.isPending ? '...' : 'Save'}
+                </Button>
               </div>
               <Button onClick={printInvoice} size="sm" variant="outline" disabled={events.length === 0} className="border-[hsl(var(--admin-border))] text-white h-7 text-xs">
                 <Printer className="h-3 w-3 mr-1" /> Invoice
