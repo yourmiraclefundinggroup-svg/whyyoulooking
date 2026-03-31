@@ -5657,7 +5657,10 @@ function AffiliatesPage() {
     queryKey: ['/api/admin/affiliates', signupsAffiliateId, 'signups'],
     queryFn: async () => {
       if (!signupsAffiliateId) return [];
-      const res = await fetch(`/api/admin/affiliates/${signupsAffiliateId}/signups`, { credentials: 'include' });
+      const res = await fetch(`/api/admin/affiliates/${signupsAffiliateId}/signups`, {
+        credentials: 'include',
+        headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
+      });
       if (!res.ok) throw new Error('Failed');
       return res.json();
     },
@@ -6069,8 +6072,11 @@ function PayPerDeleteTab({ uploadId, report }: { uploadId: number; report: (Cred
     queryKey: ['/api/admin/deletion-events', clientId],
     queryFn: async () => {
       if (!clientId) return [];
-      const res = await fetch(`/api/admin/deletion-events/${clientId}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch');
+      const res = await fetch(`/api/admin/deletion-events/${clientId}`, {
+        credentials: 'include',
+        headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
+      });
+      if (!res.ok) throw new Error('Failed to fetch deletion events');
       return res.json();
     },
     enabled: !!clientId,
