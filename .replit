@@ -42,3 +42,7 @@ integrations = ["javascript_anthropic:1.0.0", "javascript_sendgrid:1.0.0", "java
 
 [userenv.shared]
 OPENCLAW_API_KEY = "ss_b64da37c30d784fd9b32014d2fd6231f168cdb892cc6c4ebf22bb61ca2a2805d"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
