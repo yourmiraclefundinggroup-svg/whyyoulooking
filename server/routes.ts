@@ -5883,7 +5883,9 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
         return res.status(403).json({ error: "Admin access required" });
       }
 
-      const { uploadId, clientId, bureau, letterType, disputeItemIds, clientInfo, items, isFraud } = req.body;
+      const { uploadId, clientId, bureau, letterType, disputeItemIds, clientInfo, items, isFraud, format, bureauCount } = req.body;
+      const isMetro2 = format === 'metro2';
+      const isAllBureaus = bureauCount === 'all';
 
       // Support both old format (disputeItemIds) and new format (items array)
       let selectedItems: any[] = [];
@@ -5949,13 +5951,30 @@ I am disputing these fraudulent accounts under the Fair Credit Reporting Act (FC
 I have filed a police report and/or FTC Identity Theft Report regarding this fraud. Please block these fraudulent accounts immediately.
 ` : '';
 
+      const bureauLine = isAllBureaus
+        ? 'BUREAU: Experian, Equifax, AND TransUnion (generate separate letter sections for each bureau)'
+        : `BUREAU: ${bureau}`;
+
+      const metro2Section = isMetro2 ? `
+FORMAT: Metro2 Credit Bureau Data Standard Dispute
+This letter must use Metro2 field codes and structured data format as recognized by credit bureaus' automated dispute systems.
+For each disputed item, include the following Metro2 fields where applicable:
+- K4 Segment: Consumer dispute identifier
+- DA Segment: Account number being disputed
+- Status Code fields: Reference the specific Metro2 status codes that are being challenged
+- Include reference to CDIA (Consumer Data Industry Association) Metro2 format compliance
+- Use the phrase "METRO2 FORMAT DISPUTE" prominently in the letter header
+- Request that the bureau review the Metro2 data field codes associated with each account
+- Specifically cite Metro2 compliance standards in your dispute reasoning
+` : '';
+
       const letterPrompt = `Generate a professional credit dispute letter for the following:
 
 CLIENT: ${clientName || clientInfo?.name || 'Client Name'}
 ADDRESS: ${clientAddress || clientInfo?.address || 'Client Address'}
-BUREAU: ${bureau}
+${bureauLine}
 LETTER TYPE: ${letterType} (${letterType === 'round1' ? 'Initial Dispute' : letterType === 'round2' ? 'Follow-up Dispute' : letterType === 'validation' ? 'Debt Validation' : letterType === 'goodwill' ? 'Goodwill Request' : letterType === 'fraud' ? 'Identity Theft/Fraud Dispute' : 'Inquiry Removal'})
-${isFraud ? '\n**THIS IS A FRAUD/IDENTITY THEFT DISPUTE** - Include FCRA Section 605B language for identity theft blocking.\n' : ''}
+${isFraud ? '\n**THIS IS A FRAUD/IDENTITY THEFT DISPUTE** - Include FCRA Section 605B language for identity theft blocking.\n' : ''}${metro2Section}
 ITEMS TO DISPUTE (with full account details):
 ${itemsDescription}
 
@@ -5967,7 +5986,9 @@ Generate a complete, professional dispute letter that:
 5. Requests proper verification/investigation
 6. Sets a ${isFraud ? '4 business day (identity theft)' : '30-day'} response deadline
 7. Is ready to print and mail
+${isMetro2 ? '8. Uses Metro2 data standard references and K4/DA segment field code language throughout\n9. Includes "METRO2 FORMAT DISPUTE" in the heading\n10. References CDIA Metro2 compliance standards' : ''}
 ${isFraud ? '8. Includes identity theft affidavit language and references FCRA Section 605B\n9. Mentions that a police report/FTC Identity Theft Report has been filed' : ''}
+${isAllBureaus ? '\nIMPORTANT: Generate a SEPARATE, complete letter for each bureau (Experian, Equifax, TransUnion). Separate each bureau letter with "--- [BUREAU NAME] LETTER ---".' : ''}
 
 IMPORTANT: The dispute letter MUST include the specific account number and date for EVERY disputed item. This is legally required to ensure proper identification of the accounts.`;
 
@@ -6315,6 +6336,142 @@ If you are just answering a question (not updating the letter), just respond nor
     } catch (error: any) {
       console.error("Error fetching client calendar events:", error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============================================================
+  // LEADS CRM API
+  // ============================================================
+
+  app.get("/api/admin/leads", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const allLeads = await storage.getLeads();
+      res.json(allLeads);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch leads" });
+    }
+  });
+
+  app.post("/api/admin/leads", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const lead = await storage.createLead(req.body);
+      res.json(lead);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create lead" });
+    }
+  });
+
+  app.patch("/api/admin/leads/:id", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const lead = await storage.updateLead(Number(req.params.id), req.body);
+      if (!lead) return res.status(404).json({ error: "Lead not found" });
+      res.json(lead);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update lead" });
+    }
+  });
+
+  app.delete("/api/admin/leads/:id", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      await storage.deleteLead(Number(req.params.id));
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete lead" });
+    }
+  });
+
+  // ============================================================
+  // AFFILIATES API
+  // ============================================================
+
+  app.get("/api/admin/affiliates", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const allAffiliates = await storage.getAffiliates();
+      res.json(allAffiliates);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch affiliates" });
+    }
+  });
+
+  app.post("/api/admin/affiliates", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const affiliate = await storage.createAffiliate(req.body);
+      res.json(affiliate);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create affiliate" });
+    }
+  });
+
+  app.patch("/api/admin/affiliates/:id", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const affiliate = await storage.updateAffiliate(Number(req.params.id), req.body);
+      if (!affiliate) return res.status(404).json({ error: "Affiliate not found" });
+      res.json(affiliate);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update affiliate" });
+    }
+  });
+
+  // ============================================================
+  // DELETION EVENTS (PAY-PER-DELETE) API
+  // ============================================================
+
+  app.get("/api/admin/deletion-events", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const events = await storage.getAllDeletionEvents();
+      res.json(events);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch deletion events" });
+    }
+  });
+
+  app.get("/api/admin/deletion-events/:clientId", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const events = await storage.getDeletionEvents(Number(req.params.clientId));
+      res.json(events);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch deletion events" });
+    }
+  });
+
+  app.post("/api/admin/deletion-events", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const event = await storage.createDeletionEvent(req.body);
+      res.json(event);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create deletion event" });
+    }
+  });
+
+  app.patch("/api/admin/deletion-events/:id", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const event = await storage.updateDeletionEvent(Number(req.params.id), req.body);
+      if (!event) return res.status(404).json({ error: "Deletion event not found" });
+      res.json(event);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update deletion event" });
     }
   });
 

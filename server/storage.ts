@@ -9,6 +9,7 @@ import {
   studentLoans, loanNegotiations, loanDocuments,
   creditReportUploads, creditReportAccounts, creditReportInquiries, creditReportCollections,
   creditReportPublicRecords, disputeItems, disputeLettersNew, disputeCalendarEvents,
+  leads, affiliates, affiliateSignups, deletionEvents,
   type User,
   type InsertUser,
   type CreditReport, type InsertCreditReport,
@@ -53,7 +54,11 @@ import {
   type CreditReportPublicRecord, type InsertCreditReportPublicRecord,
   type DisputeItem, type InsertDisputeItem,
   type DisputeLetterNew, type InsertDisputeLetterNew,
-  type DisputeCalendarEvent, type InsertDisputeCalendarEvent
+  type DisputeCalendarEvent, type InsertDisputeCalendarEvent,
+  type Lead, type InsertLead,
+  type Affiliate, type InsertAffiliate,
+  type AffiliateSignup, type InsertAffiliateSignup,
+  type DeletionEvent, type InsertDeletionEvent
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
@@ -295,6 +300,30 @@ export interface IStorage {
   getDisputeCalendarEvent(id: number): Promise<DisputeCalendarEvent | undefined>;
   createDisputeCalendarEvent(event: InsertDisputeCalendarEvent): Promise<DisputeCalendarEvent>;
   updateDisputeCalendarEvent(id: number, updates: Partial<DisputeCalendarEvent>): Promise<DisputeCalendarEvent | undefined>;
+
+  // Leads CRM
+  getLeads(): Promise<Lead[]>;
+  getLead(id: number): Promise<Lead | undefined>;
+  createLead(lead: InsertLead): Promise<Lead>;
+  updateLead(id: number, updates: Partial<Lead>): Promise<Lead | undefined>;
+  deleteLead(id: number): Promise<void>;
+
+  // Affiliates
+  getAffiliates(): Promise<Affiliate[]>;
+  getAffiliate(id: number): Promise<Affiliate | undefined>;
+  getAffiliateByCode(code: string): Promise<Affiliate | undefined>;
+  createAffiliate(affiliate: InsertAffiliate): Promise<Affiliate>;
+  updateAffiliate(id: number, updates: Partial<Affiliate>): Promise<Affiliate | undefined>;
+
+  // Affiliate Signups
+  getAffiliateSignups(affiliateId: number): Promise<AffiliateSignup[]>;
+  createAffiliateSignup(signup: InsertAffiliateSignup): Promise<AffiliateSignup>;
+
+  // Deletion Events (Pay-Per-Delete)
+  getDeletionEvents(clientId: number): Promise<DeletionEvent[]>;
+  getAllDeletionEvents(): Promise<DeletionEvent[]>;
+  createDeletionEvent(event: InsertDeletionEvent): Promise<DeletionEvent>;
+  updateDeletionEvent(id: number, updates: Partial<DeletionEvent>): Promise<DeletionEvent | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -918,6 +947,84 @@ export class DatabaseStorage implements IStorage {
 
   async updateDisputeCalendarEvent(id: number, updates: Partial<DisputeCalendarEvent>): Promise<DisputeCalendarEvent | undefined> {
     const [result] = await db.update(disputeCalendarEvents).set(updates).where(eq(disputeCalendarEvents.id, id)).returning();
+    return result || undefined;
+  }
+
+  // Leads CRM
+  async getLeads(): Promise<Lead[]> {
+    return await db.select().from(leads).orderBy(leads.createdAt);
+  }
+
+  async getLead(id: number): Promise<Lead | undefined> {
+    const [lead] = await db.select().from(leads).where(eq(leads.id, id));
+    return lead || undefined;
+  }
+
+  async createLead(lead: InsertLead): Promise<Lead> {
+    const [result] = await db.insert(leads).values(lead).returning();
+    return result;
+  }
+
+  async updateLead(id: number, updates: Partial<Lead>): Promise<Lead | undefined> {
+    const [result] = await db.update(leads).set({ ...updates, stageUpdatedAt: new Date() }).where(eq(leads.id, id)).returning();
+    return result || undefined;
+  }
+
+  async deleteLead(id: number): Promise<void> {
+    await db.delete(leads).where(eq(leads.id, id));
+  }
+
+  // Affiliates
+  async getAffiliates(): Promise<Affiliate[]> {
+    return await db.select().from(affiliates).orderBy(affiliates.createdAt);
+  }
+
+  async getAffiliate(id: number): Promise<Affiliate | undefined> {
+    const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.id, id));
+    return affiliate || undefined;
+  }
+
+  async getAffiliateByCode(code: string): Promise<Affiliate | undefined> {
+    const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.code, code));
+    return affiliate || undefined;
+  }
+
+  async createAffiliate(affiliate: InsertAffiliate): Promise<Affiliate> {
+    const [result] = await db.insert(affiliates).values(affiliate).returning();
+    return result;
+  }
+
+  async updateAffiliate(id: number, updates: Partial<Affiliate>): Promise<Affiliate | undefined> {
+    const [result] = await db.update(affiliates).set(updates).where(eq(affiliates.id, id)).returning();
+    return result || undefined;
+  }
+
+  // Affiliate Signups
+  async getAffiliateSignups(affiliateId: number): Promise<AffiliateSignup[]> {
+    return await db.select().from(affiliateSignups).where(eq(affiliateSignups.affiliateId, affiliateId));
+  }
+
+  async createAffiliateSignup(signup: InsertAffiliateSignup): Promise<AffiliateSignup> {
+    const [result] = await db.insert(affiliateSignups).values(signup).returning();
+    return result;
+  }
+
+  // Deletion Events (Pay-Per-Delete)
+  async getDeletionEvents(clientId: number): Promise<DeletionEvent[]> {
+    return await db.select().from(deletionEvents).where(eq(deletionEvents.clientId, clientId));
+  }
+
+  async getAllDeletionEvents(): Promise<DeletionEvent[]> {
+    return await db.select().from(deletionEvents).orderBy(deletionEvents.deletedAt);
+  }
+
+  async createDeletionEvent(event: InsertDeletionEvent): Promise<DeletionEvent> {
+    const [result] = await db.insert(deletionEvents).values(event).returning();
+    return result;
+  }
+
+  async updateDeletionEvent(id: number, updates: Partial<DeletionEvent>): Promise<DeletionEvent | undefined> {
+    const [result] = await db.update(deletionEvents).set(updates).where(eq(deletionEvents.id, id)).returning();
     return result || undefined;
   }
 }
@@ -2308,6 +2415,84 @@ export class MemStorage implements IStorage {
 
   async updateDisputeCalendarEvent(id: number, updates: Partial<DisputeCalendarEvent>): Promise<DisputeCalendarEvent | undefined> {
     const [result] = await db.update(disputeCalendarEvents).set(updates).where(eq(disputeCalendarEvents.id, id)).returning();
+    return result || undefined;
+  }
+
+  // Leads CRM
+  async getLeads(): Promise<Lead[]> {
+    return await db.select().from(leads).orderBy(leads.createdAt);
+  }
+
+  async getLead(id: number): Promise<Lead | undefined> {
+    const [lead] = await db.select().from(leads).where(eq(leads.id, id));
+    return lead || undefined;
+  }
+
+  async createLead(lead: InsertLead): Promise<Lead> {
+    const [result] = await db.insert(leads).values(lead).returning();
+    return result;
+  }
+
+  async updateLead(id: number, updates: Partial<Lead>): Promise<Lead | undefined> {
+    const [result] = await db.update(leads).set({ ...updates, stageUpdatedAt: new Date() }).where(eq(leads.id, id)).returning();
+    return result || undefined;
+  }
+
+  async deleteLead(id: number): Promise<void> {
+    await db.delete(leads).where(eq(leads.id, id));
+  }
+
+  // Affiliates
+  async getAffiliates(): Promise<Affiliate[]> {
+    return await db.select().from(affiliates).orderBy(affiliates.createdAt);
+  }
+
+  async getAffiliate(id: number): Promise<Affiliate | undefined> {
+    const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.id, id));
+    return affiliate || undefined;
+  }
+
+  async getAffiliateByCode(code: string): Promise<Affiliate | undefined> {
+    const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.code, code));
+    return affiliate || undefined;
+  }
+
+  async createAffiliate(affiliate: InsertAffiliate): Promise<Affiliate> {
+    const [result] = await db.insert(affiliates).values(affiliate).returning();
+    return result;
+  }
+
+  async updateAffiliate(id: number, updates: Partial<Affiliate>): Promise<Affiliate | undefined> {
+    const [result] = await db.update(affiliates).set(updates).where(eq(affiliates.id, id)).returning();
+    return result || undefined;
+  }
+
+  // Affiliate Signups
+  async getAffiliateSignups(affiliateId: number): Promise<AffiliateSignup[]> {
+    return await db.select().from(affiliateSignups).where(eq(affiliateSignups.affiliateId, affiliateId));
+  }
+
+  async createAffiliateSignup(signup: InsertAffiliateSignup): Promise<AffiliateSignup> {
+    const [result] = await db.insert(affiliateSignups).values(signup).returning();
+    return result;
+  }
+
+  // Deletion Events (Pay-Per-Delete)
+  async getDeletionEvents(clientId: number): Promise<DeletionEvent[]> {
+    return await db.select().from(deletionEvents).where(eq(deletionEvents.clientId, clientId));
+  }
+
+  async getAllDeletionEvents(): Promise<DeletionEvent[]> {
+    return await db.select().from(deletionEvents).orderBy(deletionEvents.deletedAt);
+  }
+
+  async createDeletionEvent(event: InsertDeletionEvent): Promise<DeletionEvent> {
+    const [result] = await db.insert(deletionEvents).values(event).returning();
+    return result;
+  }
+
+  async updateDeletionEvent(id: number, updates: Partial<DeletionEvent>): Promise<DeletionEvent | undefined> {
+    const [result] = await db.update(deletionEvents).set(updates).where(eq(deletionEvents.id, id)).returning();
     return result || undefined;
   }
 }

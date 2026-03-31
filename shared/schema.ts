@@ -1201,3 +1201,75 @@ export type WhiteLabelAccount = typeof whiteLabelAccounts.$inferSelect;
 export type InsertWhiteLabelAccount = z.infer<typeof insertWhiteLabelAccountSchema>;
 export type WhiteLabelOnboardingStep = typeof whiteLabelOnboardingSteps.$inferSelect;
 export type InsertWhiteLabelOnboardingStep = z.infer<typeof insertWhiteLabelOnboardingStepSchema>;
+
+// ============================================
+// DISPUTEFOX COMPETITOR FEATURE TABLES
+// ============================================
+
+// Lead CRM Pipeline
+export const leads = pgTable("leads", {
+  id: serial("id").primaryKey(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  source: text("source"), // "referral", "website", "affiliate", "cold_call", "social"
+  stage: text("stage").notNull().default("new"), // "new", "contacted", "consultation", "onboarded", "archived"
+  creditScoreEstimate: integer("credit_score_estimate"),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  stageUpdatedAt: timestamp("stage_updated_at").defaultNow().notNull(),
+});
+
+// Affiliate Program
+export const affiliates = pgTable("affiliates", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  commissionType: text("commission_type").notNull().default("flat"), // "flat" | "percent"
+  commissionRate: decimal("commission_rate", { precision: 10, scale: 2 }).notNull().default("25.00"),
+  totalClients: integer("total_clients").notNull().default(0),
+  totalEarned: decimal("total_earned", { precision: 10, scale: 2 }).notNull().default("0.00"),
+  totalPaid: decimal("total_paid", { precision: 10, scale: 2 }).notNull().default("0.00"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Affiliate Signup Tracking
+export const affiliateSignups = pgTable("affiliate_signups", {
+  id: serial("id").primaryKey(),
+  affiliateId: integer("affiliate_id").references(() => affiliates.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  commissionAmount: decimal("commission_amount", { precision: 10, scale: 2 }),
+  commissionPaid: boolean("commission_paid").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Pay-Per-Delete Billing Events
+export const deletionEvents = pgTable("deletion_events", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").references(() => users.id).notNull(),
+  uploadId: integer("upload_id").references(() => creditReportUploads.id),
+  accountName: text("account_name").notNull(),
+  bureau: text("bureau").notNull(),
+  billingRate: decimal("billing_rate", { precision: 10, scale: 2 }).notNull().default("0.00"),
+  billedAt: timestamp("billed_at"),
+  isPaid: boolean("is_paid").notNull().default(false),
+  deletedAt: timestamp("deleted_at").defaultNow().notNull(),
+});
+
+export const insertLeadSchema = createInsertSchema(leads).omit({ id: true, createdAt: true, stageUpdatedAt: true });
+export const insertAffiliateSchema = createInsertSchema(affiliates).omit({ id: true, createdAt: true });
+export const insertAffiliateSignupSchema = createInsertSchema(affiliateSignups).omit({ id: true, createdAt: true });
+export const insertDeletionEventSchema = createInsertSchema(deletionEvents).omit({ id: true, deletedAt: true });
+
+export type Lead = typeof leads.$inferSelect;
+export type InsertLead = z.infer<typeof insertLeadSchema>;
+export type Affiliate = typeof affiliates.$inferSelect;
+export type InsertAffiliate = z.infer<typeof insertAffiliateSchema>;
+export type AffiliateSignup = typeof affiliateSignups.$inferSelect;
+export type InsertAffiliateSignup = z.infer<typeof insertAffiliateSignupSchema>;
+export type DeletionEvent = typeof deletionEvents.$inferSelect;
+export type InsertDeletionEvent = z.infer<typeof insertDeletionEventSchema>;

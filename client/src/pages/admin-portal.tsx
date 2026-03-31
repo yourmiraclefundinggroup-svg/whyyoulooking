@@ -16,7 +16,7 @@ import { FollowUpAlerts } from "@/components/follow-up-alerts";
 import { BureauResponseAnalysis } from "@/components/bureau-response-analysis";
 import { SecureChat } from "@/components/secure-chat";
 import { AdminSettings } from "@/components/admin-settings";
-import { User, CreditReport, CreditIssue, Dispute, CreditReportUpload, CreditReportAccount, CreditReportInquiry, CreditReportCollection, CreditReportPublicRecord, DisputeLetterNew, DisputeCalendarEvent } from "@shared/schema";
+import { User, CreditReport, CreditIssue, Dispute, CreditReportUpload, CreditReportAccount, CreditReportInquiry, CreditReportCollection, CreditReportPublicRecord, DisputeLetterNew, DisputeCalendarEvent, Lead, Affiliate, DeletionEvent } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -75,6 +75,12 @@ import {
   ArrowDown,
   Minus,
   Calendar,
+  Share2,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  Phone,
+  RefreshCw,
 } from "lucide-react";
 
 export default function AdminPortal() {
@@ -208,6 +214,10 @@ export default function AdminPortal() {
       />;
     } else if (location === "/admin-portal/mail") {
       return <MailQueuePage clientUsers={clientUsers} />;
+    } else if (location === "/admin-portal/leads") {
+      return <LeadsCRMPage />;
+    } else if (location === "/admin-portal/affiliates") {
+      return <AffiliatesPage />;
     } else if (location === "/admin-portal/analytics") {
       return <AnalyticsPage clientUsers={clientUsers} />;
     } else if (location === "/admin-portal/white-label") {
@@ -2221,6 +2231,9 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   const [isGeneratingDispute, setIsGeneratingDispute] = useState(false);
   const [disputeBureau, setDisputeBureau] = useState<'EXPERIAN' | 'EQUIFAX' | 'TRANSUNION'>('EXPERIAN');
   const [disputeLetterType, setDisputeLetterType] = useState<'round1' | 'round2' | 'validation' | 'fraud'>('round1');
+  const [letterFormat, setLetterFormat] = useState<'standard' | 'metro2'>('standard');
+  const [bureauCount, setBureauCount] = useState<'single' | 'all'>('single');
+  const [progressReportOpen, setProgressReportOpen] = useState(false);
   
   const { data: report, isLoading: reportLoading } = useQuery<CreditReportUpload & { clientName?: string; clientAddress?: { line1?: string; line2?: string; city?: string; state?: string; zip?: string } }>({
     queryKey: ['/api/admin/credit-report-uploads', reportId],
@@ -2323,7 +2336,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   });
 
   const generateLetterMutation = useMutation({
-    mutationFn: async (data: { items: SelectedItem[]; letterType: string; bureau: string; isFraud: boolean }) => {
+    mutationFn: async (data: { items: SelectedItem[]; letterType: string; bureau: string; isFraud: boolean; format?: string; bureauCount?: string }) => {
       const response = await apiRequest('POST', '/api/admin/dispute-letters-new/generate', {
         uploadId: reportId,
         clientId: report?.userId,
@@ -2336,7 +2349,9 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
         })),
         letterType: data.letterType,
         bureau: data.bureau,
-        isFraud: data.isFraud
+        isFraud: data.isFraud,
+        format: data.format || 'standard',
+        bureauCount: data.bureauCount || 'single',
       });
       return response.json();
     },
@@ -2787,6 +2802,14 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
           <TabsTrigger value="team" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             <Users className="h-4 w-4 mr-1" />
             Team
+          </TabsTrigger>
+          <TabsTrigger value="progress-report" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-emerald-400">
+            <FileText className="h-4 w-4 mr-1" />
+            Progress Report
+          </TabsTrigger>
+          <TabsTrigger value="pay-per-delete" className="data-[state=active]:bg-yellow-600 data-[state=active]:text-white text-yellow-400">
+            <DollarSign className="h-4 w-4 mr-1" />
+            Pay-Per-Delete
           </TabsTrigger>
         </TabsList>
 
@@ -4560,6 +4583,138 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
           </AdminCard>
         </TabsContent>
 
+        <TabsContent value="progress-report" className="mt-6">
+          <AdminCard>
+            <AdminCardHeader>
+              <div className="flex items-center justify-between w-full">
+                <AdminCardTitle icon={<FileText className="h-5 w-5" />}>Client Progress Report</AdminCardTitle>
+                <Button
+                  onClick={() => {
+                    const printContent = document.getElementById('progress-report-printable');
+                    if (printContent) {
+                      const w = window.open('', '_blank');
+                      if (w) {
+                        w.document.write(`<html><head><title>Progress Report - ${report?.clientName || 'Client'}</title><style>
+                          body{font-family:Arial,sans-serif;padding:40px;color:#000;max-width:800px;margin:0 auto}
+                          h1{color:#1a1a1a;border-bottom:3px solid #f59e0b;padding-bottom:12px}
+                          h2{color:#374151;font-size:16px;margin-top:24px}
+                          .stat{display:inline-block;background:#f3f4f6;border-radius:8px;padding:12px 20px;margin:6px;text-align:center}
+                          .stat-val{font-size:28px;font-weight:bold;color:#f59e0b}
+                          .stat-lbl{font-size:11px;color:#6b7280;margin-top:2px}
+                          table{width:100%;border-collapse:collapse;margin-top:12px}
+                          th{background:#f3f4f6;padding:8px;text-align:left;font-size:12px;color:#374151}
+                          td{padding:8px;border-bottom:1px solid #e5e7eb;font-size:12px}
+                          .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}
+                          .badge-red{background:#fee2e2;color:#dc2626}
+                          .badge-green{background:#dcfce7;color:#16a34a}
+                          .badge-yellow{background:#fef9c3;color:#ca8a04}
+                          @media print{body{padding:20px}}
+                        </style></head><body>`);
+                        w.document.write(printContent.innerHTML);
+                        w.document.write('</body></html>');
+                        w.document.close();
+                        w.print();
+                      }
+                    }
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Print / Save PDF
+                </Button>
+              </div>
+            </AdminCardHeader>
+            <AdminCardContent>
+              <div id="progress-report-printable">
+                <h1>Credit Repair Progress Report</h1>
+                <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '4px' }}>
+                  Client: <strong>{report?.clientName || `Client #${report?.userId}`}</strong> &nbsp;|&nbsp; 
+                  Report Date: <strong>{new Date().toLocaleDateString()}</strong> &nbsp;|&nbsp;
+                  Bureau: <strong>{report?.bureau}</strong>
+                </p>
+
+                <h2>Score Summary</h2>
+                <div>
+                  <div className="stat">
+                    <div className="stat-val">{report?.creditScore || '—'}</div>
+                    <div className="stat-lbl">Current Score</div>
+                  </div>
+                  <div className="stat">
+                    <div className="stat-val">{accounts.length}</div>
+                    <div className="stat-lbl">Total Accounts</div>
+                  </div>
+                  <div className="stat">
+                    <div className="stat-val text-red-500">{collections.length}</div>
+                    <div className="stat-lbl">Collections</div>
+                  </div>
+                  <div className="stat">
+                    <div className="stat-val text-yellow-500">{inquiries.length}</div>
+                    <div className="stat-lbl">Inquiries</div>
+                  </div>
+                  <div className="stat">
+                    <div className="stat-val text-green-500">{letters.length}</div>
+                    <div className="stat-lbl">Letters Generated</div>
+                  </div>
+                </div>
+
+                {letters.length > 0 && (
+                  <>
+                    <h2>Dispute Letters</h2>
+                    <table>
+                      <thead>
+                        <tr><th>Bureau</th><th>Type</th><th>Status</th><th>Date</th></tr>
+                      </thead>
+                      <tbody>
+                        {letters.map((l) => (
+                          <tr key={l.id}>
+                            <td>{l.bureau}</td>
+                            <td className="capitalize">{l.letterType?.replace('_', ' ')}</td>
+                            <td>
+                              <span className={`badge ${l.status === 'sent' ? 'badge-green' : l.status === 'approved' ? 'badge-yellow' : 'badge-red'}`}>
+                                {l.status}
+                              </span>
+                            </td>
+                            <td>{new Date(l.createdAt).toLocaleDateString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
+                )}
+
+                {collections.length > 0 && (
+                  <>
+                    <h2>Collections</h2>
+                    <table>
+                      <thead>
+                        <tr><th>Agency</th><th>Original Creditor</th><th>Amount</th><th>Status</th></tr>
+                      </thead>
+                      <tbody>
+                        {collections.map((c) => (
+                          <tr key={c.id}>
+                            <td>{c.agencyName}</td>
+                            <td>{c.originalCreditor || '—'}</td>
+                            <td>{c.amount ? `$${c.amount.toLocaleString()}` : '—'}</td>
+                            <td>{c.status || 'Unknown'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
+                )}
+
+                <p style={{ marginTop: '40px', fontSize: '11px', color: '#9ca3af' }}>
+                  Generated by ScoreShift Credit Repair Platform — {new Date().toLocaleString()}
+                </p>
+              </div>
+            </AdminCardContent>
+          </AdminCard>
+        </TabsContent>
+
+        <TabsContent value="pay-per-delete" className="mt-6">
+          <PayPerDeleteTab uploadId={reportId} report={report} />
+        </TabsContent>
+
       </Tabs>
 
       <Dialog open={createEventOpen} onOpenChange={setCreateEventOpen}>
@@ -4678,6 +4833,41 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                <Label className="text-blue-400 font-medium text-sm mb-2 block">Letter Format</Label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setLetterFormat('standard')}
+                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-all ${letterFormat === 'standard' ? 'bg-blue-600 text-white' : 'bg-[hsl(var(--admin-bg))] text-[hsl(var(--admin-text-muted))] hover:text-white'}`}
+                  >Standard</button>
+                  <button
+                    onClick={() => setLetterFormat('metro2')}
+                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-all ${letterFormat === 'metro2' ? 'bg-blue-600 text-white' : 'bg-[hsl(var(--admin-bg))] text-[hsl(var(--admin-text-muted))] hover:text-white'}`}
+                  >Metro2</button>
+                </div>
+                {letterFormat === 'metro2' && (
+                  <p className="text-[10px] text-blue-300 mt-1">Metro2 format uses bureau data field codes (K4, DA, etc.)</p>
+                )}
+              </div>
+              <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+                <Label className="text-purple-400 font-medium text-sm mb-2 block">Target Bureaus</Label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setBureauCount('single')}
+                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-all ${bureauCount === 'single' ? 'bg-purple-600 text-white' : 'bg-[hsl(var(--admin-bg))] text-[hsl(var(--admin-text-muted))] hover:text-white'}`}
+                  >1 Bureau</button>
+                  <button
+                    onClick={() => setBureauCount('all')}
+                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-all ${bureauCount === 'all' ? 'bg-purple-600 text-white' : 'bg-[hsl(var(--admin-bg))] text-[hsl(var(--admin-text-muted))] hover:text-white'}`}
+                  >All 3</button>
+                </div>
+                {bureauCount === 'all' && (
+                  <p className="text-[10px] text-purple-300 mt-1">Sends to Experian, Equifax & TransUnion</p>
+                )}
+              </div>
+            </div>
+
             <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
               <h4 className="font-medium text-white mb-2">Items to Dispute ({selectedItems.length})</h4>
               <div className="space-y-2 max-h-[150px] overflow-y-auto">
@@ -4738,7 +4928,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 Cancel
               </Button>
               <Button
-                onClick={() => generateLetterMutation.mutate({ items: selectedItems, letterType, bureau: letterBureau, isFraud: isFraudDispute || letterType === 'fraud' })}
+                onClick={() => generateLetterMutation.mutate({ items: selectedItems, letterType, bureau: letterBureau, isFraud: isFraudDispute || letterType === 'fraud', format: letterFormat, bureauCount })}
                 disabled={generateLetterMutation.isPending || selectedItems.length === 0}
                 className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
                 data-testid="button-generate"
@@ -4991,6 +5181,600 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
       </Dialog>
 
 
+    </div>
+  );
+}
+
+// ============================================================
+// LEADS CRM PAGE — Kanban pipeline for prospective clients
+// ============================================================
+const LEAD_STAGES = [
+  { id: 'new', label: 'New Lead', color: 'border-blue-500 bg-blue-500/10' },
+  { id: 'contacted', label: 'Contacted', color: 'border-yellow-500 bg-yellow-500/10' },
+  { id: 'consultation', label: 'Consultation', color: 'border-purple-500 bg-purple-500/10' },
+  { id: 'onboarded', label: 'Onboarded', color: 'border-green-500 bg-green-500/10' },
+  { id: 'archived', label: 'Archived', color: 'border-gray-500 bg-gray-500/10' },
+];
+
+function LeadsCRMPage() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [addLeadOpen, setAddLeadOpen] = useState(false);
+  const [newLead, setNewLead] = useState({ firstName: '', lastName: '', email: '', phone: '', source: 'website', creditScoreEstimate: '', notes: '' });
+
+  const { data: leads = [], isLoading } = useQuery<Lead[]>({
+    queryKey: ['/api/admin/leads'],
+  });
+
+  const createLeadMutation = useMutation({
+    mutationFn: async (data: typeof newLead) => {
+      const response = await apiRequest('POST', '/api/admin/leads', {
+        ...data,
+        creditScoreEstimate: data.creditScoreEstimate ? parseInt(data.creditScoreEstimate) : null,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/leads'] });
+      setAddLeadOpen(false);
+      setNewLead({ firstName: '', lastName: '', email: '', phone: '', source: 'website', creditScoreEstimate: '', notes: '' });
+      toast({ title: 'Lead added', description: 'New lead added to pipeline.' });
+    },
+    onError: () => toast({ title: 'Error', description: 'Failed to add lead.', variant: 'destructive' }),
+  });
+
+  const moveLeadMutation = useMutation({
+    mutationFn: async ({ id, stage }: { id: number; stage: string }) => {
+      const response = await apiRequest('PATCH', `/api/admin/leads/${id}`, { stage });
+      return response.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/admin/leads'] }),
+  });
+
+  const deleteLeadMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest('DELETE', `/api/admin/leads/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/leads'] });
+      toast({ title: 'Lead removed' });
+    },
+  });
+
+  const totalLeads = leads.length;
+  const newLeadsCount = leads.filter(l => l.stage === 'new').length;
+  const onboardedCount = leads.filter(l => l.stage === 'onboarded').length;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <UserPlus className="h-7 w-7 text-[hsl(var(--admin-accent))]" />
+            Leads CRM
+          </h1>
+          <p className="text-[hsl(var(--admin-text-muted))]">Manage your prospective client pipeline.</p>
+        </div>
+        <Button onClick={() => setAddLeadOpen(true)} className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white">
+          <Plus className="h-4 w-4 mr-2" /> Add Lead
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <AdminStatCard label="Total Leads" value={totalLeads} icon={<UserPlus className="h-5 w-5" />} />
+        <AdminStatCard label="New Leads" value={newLeadsCount} icon={<ArrowRight className="h-5 w-5" />} />
+        <AdminStatCard label="Onboarded" value={onboardedCount} icon={<CheckCircle className="h-5 w-5" />} />
+      </div>
+
+      <div className="overflow-x-auto pb-4">
+        <div className="flex gap-4 min-w-max">
+          {LEAD_STAGES.map(stage => {
+            const stageLeads = leads.filter(l => l.stage === stage.id);
+            return (
+              <div key={stage.id} className={`w-64 rounded-xl border-2 p-3 ${stage.color}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-white">{stage.label}</h3>
+                  <span className="text-xs bg-[hsl(var(--admin-bg))]/50 text-[hsl(var(--admin-text-muted))] px-2 py-0.5 rounded-full">{stageLeads.length}</span>
+                </div>
+                <div className="space-y-2">
+                  {stageLeads.map(lead => (
+                    <div key={lead.id} className="bg-[hsl(var(--admin-card))] rounded-lg p-3 border border-[hsl(var(--admin-border))]">
+                      <div className="flex items-start justify-between gap-1">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-medium text-sm truncate">{lead.firstName} {lead.lastName}</p>
+                          <p className="text-[hsl(var(--admin-text-muted))] text-xs truncate">{lead.email}</p>
+                          {lead.phone && <p className="text-[hsl(var(--admin-text-muted))] text-xs flex items-center gap-1 mt-0.5"><Phone className="h-3 w-3" />{lead.phone}</p>}
+                          {lead.creditScoreEstimate && <p className="text-yellow-400 text-xs mt-1">~{lead.creditScoreEstimate} score</p>}
+                          {lead.source && <span className="text-[10px] bg-[hsl(var(--admin-bg))]/70 text-[hsl(var(--admin-text-subtle))] px-1.5 py-0.5 rounded mt-1 inline-block capitalize">{lead.source.replace('_', ' ')}</span>}
+                        </div>
+                        <button onClick={() => deleteLeadMutation.mutate(lead.id)} className="text-red-400/60 hover:text-red-400 flex-shrink-0">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <div className="flex gap-1 mt-2 flex-wrap">
+                        {LEAD_STAGES.filter(s => s.id !== lead.stage).slice(0, 2).map(s => (
+                          <button
+                            key={s.id}
+                            onClick={() => moveLeadMutation.mutate({ id: lead.id, stage: s.id })}
+                            className="text-[10px] px-2 py-0.5 rounded bg-[hsl(var(--admin-bg))]/60 text-[hsl(var(--admin-text-muted))] hover:text-white transition-colors"
+                          >
+                            → {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  {stageLeads.length === 0 && (
+                    <div className="text-center py-6 text-[hsl(var(--admin-text-subtle))] text-xs">No leads</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <Dialog open={addLeadOpen} onOpenChange={setAddLeadOpen}>
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
+              Add New Lead
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">First Name</Label>
+                <Input value={newLead.firstName} onChange={e => setNewLead(p => ({ ...p, firstName: e.target.value }))} placeholder="John" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm" />
+              </div>
+              <div>
+                <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Last Name</Label>
+                <Input value={newLead.lastName} onChange={e => setNewLead(p => ({ ...p, lastName: e.target.value }))} placeholder="Doe" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Email</Label>
+              <Input type="email" value={newLead.email} onChange={e => setNewLead(p => ({ ...p, email: e.target.value }))} placeholder="john@email.com" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Phone</Label>
+                <Input value={newLead.phone} onChange={e => setNewLead(p => ({ ...p, phone: e.target.value }))} placeholder="(555) 000-0000" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm" />
+              </div>
+              <div>
+                <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Est. Credit Score</Label>
+                <Input type="number" value={newLead.creditScoreEstimate} onChange={e => setNewLead(p => ({ ...p, creditScoreEstimate: e.target.value }))} placeholder="580" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Source</Label>
+              <Select value={newLead.source} onValueChange={v => setNewLead(p => ({ ...p, source: v }))}>
+                <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                  {['website', 'referral', 'affiliate', 'cold_call', 'social', 'other'].map(s => (
+                    <SelectItem key={s} value={s} className="capitalize">{s.replace('_', ' ')}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Notes</Label>
+              <Input value={newLead.notes} onChange={e => setNewLead(p => ({ ...p, notes: e.target.value }))} placeholder="Any relevant notes..." className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm" />
+            </div>
+            <div className="flex gap-3 justify-end pt-2 border-t border-[hsl(var(--admin-border))]">
+              <Button variant="outline" onClick={() => setAddLeadOpen(false)} className="border-[hsl(var(--admin-border))] text-white">Cancel</Button>
+              <Button
+                onClick={() => createLeadMutation.mutate(newLead)}
+                disabled={createLeadMutation.isPending || !newLead.firstName || !newLead.email}
+                className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
+              >
+                {createLeadMutation.isPending ? 'Adding...' : 'Add Lead'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// ============================================================
+// AFFILIATES PAGE — Manage affiliate partners and commissions
+// ============================================================
+function AffiliatesPage() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [addOpen, setAddOpen] = useState(false);
+  const [newAffiliate, setNewAffiliate] = useState({ name: '', email: '', code: '', commissionType: 'flat', commissionRate: '25.00' });
+
+  const { data: affiliates = [], isLoading } = useQuery<Affiliate[]>({
+    queryKey: ['/api/admin/affiliates'],
+  });
+
+  const createAffiliateMutation = useMutation({
+    mutationFn: async (data: typeof newAffiliate) => {
+      const response = await apiRequest('POST', '/api/admin/affiliates', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/affiliates'] });
+      setAddOpen(false);
+      setNewAffiliate({ name: '', email: '', code: '', commissionType: 'flat', commissionRate: '25.00' });
+      toast({ title: 'Affiliate added successfully.' });
+    },
+    onError: () => toast({ title: 'Error', description: 'Failed to add affiliate.', variant: 'destructive' }),
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
+      const response = await apiRequest('PATCH', `/api/admin/affiliates/${id}`, { isActive });
+      return response.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/admin/affiliates'] }),
+  });
+
+  const totalEarned = affiliates.reduce((sum, a) => sum + parseFloat(String(a.totalEarned || 0)), 0);
+  const totalClients = affiliates.reduce((sum, a) => sum + (a.totalClients || 0), 0);
+
+  const generateCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return 'AFF-' + Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <Share2 className="h-7 w-7 text-[hsl(var(--admin-accent))]" />
+            Affiliate Program
+          </h1>
+          <p className="text-[hsl(var(--admin-text-muted))]">Manage partners, referral codes, and commissions.</p>
+        </div>
+        <Button onClick={() => { setNewAffiliate(p => ({ ...p, code: generateCode() })); setAddOpen(true); }} className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white">
+          <Plus className="h-4 w-4 mr-2" /> Add Affiliate
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <AdminStatCard label="Total Affiliates" value={affiliates.length} icon={<Share2 className="h-5 w-5" />} />
+        <AdminStatCard label="Clients Referred" value={totalClients} icon={<Users className="h-5 w-5" />} />
+        <AdminStatCard label="Total Earned" value={`$${totalEarned.toFixed(2)}`} icon={<DollarSign className="h-5 w-5" />} />
+      </div>
+
+      <AdminCard>
+        <AdminCardHeader>
+          <AdminCardTitle icon={<Share2 className="h-5 w-5" />}>Affiliate Partners</AdminCardTitle>
+        </AdminCardHeader>
+        <AdminCardContent>
+          {isLoading ? (
+            <div className="text-center py-8 text-[hsl(var(--admin-text-muted))]">Loading affiliates...</div>
+          ) : affiliates.length === 0 ? (
+            <div className="text-center py-12">
+              <Share2 className="h-12 w-12 text-[hsl(var(--admin-text-subtle))] mx-auto mb-3" />
+              <p className="text-[hsl(var(--admin-text-muted))]">No affiliates yet. Add your first partner.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[hsl(var(--admin-text-muted))] border-b border-[hsl(var(--admin-border))]">
+                    <th className="text-left py-2 px-3 font-medium">Affiliate</th>
+                    <th className="text-left py-2 px-3 font-medium">Code</th>
+                    <th className="text-left py-2 px-3 font-medium">Commission</th>
+                    <th className="text-left py-2 px-3 font-medium">Clients</th>
+                    <th className="text-left py-2 px-3 font-medium">Earned</th>
+                    <th className="text-left py-2 px-3 font-medium">Paid</th>
+                    <th className="text-left py-2 px-3 font-medium">Status</th>
+                    <th className="text-left py-2 px-3 font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {affiliates.map(aff => (
+                    <tr key={aff.id} className="border-b border-[hsl(var(--admin-border))]/50 hover:bg-[hsl(var(--admin-bg))]/30">
+                      <td className="py-3 px-3">
+                        <p className="text-white font-medium">{aff.name}</p>
+                        <p className="text-xs text-[hsl(var(--admin-text-muted))]">{aff.email}</p>
+                      </td>
+                      <td className="py-3 px-3">
+                        <code className="text-[hsl(var(--admin-accent))] bg-[hsl(var(--admin-bg))]/50 px-2 py-0.5 rounded text-xs font-mono">{aff.code}</code>
+                      </td>
+                      <td className="py-3 px-3 text-white">
+                        {aff.commissionType === 'flat' ? `$${parseFloat(String(aff.commissionRate)).toFixed(2)}` : `${parseFloat(String(aff.commissionRate)).toFixed(1)}%`}
+                      </td>
+                      <td className="py-3 px-3 text-white">{aff.totalClients}</td>
+                      <td className="py-3 px-3 text-green-400">${parseFloat(String(aff.totalEarned || 0)).toFixed(2)}</td>
+                      <td className="py-3 px-3 text-yellow-400">${parseFloat(String(aff.totalPaid || 0)).toFixed(2)}</td>
+                      <td className="py-3 px-3">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${aff.isActive ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                          {aff.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3">
+                        <button
+                          onClick={() => toggleActiveMutation.mutate({ id: aff.id, isActive: !aff.isActive })}
+                          className="text-xs text-[hsl(var(--admin-text-muted))] hover:text-white transition-colors"
+                        >
+                          {aff.isActive ? 'Deactivate' : 'Activate'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </AdminCardContent>
+      </AdminCard>
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
+              Add Affiliate Partner
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Full Name</Label>
+                <Input value={newAffiliate.name} onChange={e => setNewAffiliate(p => ({ ...p, name: e.target.value }))} placeholder="Jane Smith" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm" />
+              </div>
+              <div>
+                <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Email</Label>
+                <Input type="email" value={newAffiliate.email} onChange={e => setNewAffiliate(p => ({ ...p, email: e.target.value }))} placeholder="jane@example.com" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Referral Code</Label>
+              <div className="flex gap-2">
+                <Input value={newAffiliate.code} onChange={e => setNewAffiliate(p => ({ ...p, code: e.target.value.toUpperCase() }))} placeholder="AFF-XXXXXX" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm font-mono" />
+                <Button size="sm" variant="outline" onClick={() => setNewAffiliate(p => ({ ...p, code: generateCode() }))} className="border-[hsl(var(--admin-border))] text-white h-8 px-3 text-xs">
+                  <RefreshCw className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Commission Type</Label>
+                <Select value={newAffiliate.commissionType} onValueChange={v => setNewAffiliate(p => ({ ...p, commissionType: v }))}>
+                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                    <SelectItem value="flat">Flat Amount ($)</SelectItem>
+                    <SelectItem value="percent">Percentage (%)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Rate</Label>
+                <Input type="number" step="0.01" value={newAffiliate.commissionRate} onChange={e => setNewAffiliate(p => ({ ...p, commissionRate: e.target.value }))} className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm" />
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end pt-2 border-t border-[hsl(var(--admin-border))]">
+              <Button variant="outline" onClick={() => setAddOpen(false)} className="border-[hsl(var(--admin-border))] text-white">Cancel</Button>
+              <Button
+                onClick={() => createAffiliateMutation.mutate(newAffiliate)}
+                disabled={createAffiliateMutation.isPending || !newAffiliate.name || !newAffiliate.email || !newAffiliate.code}
+                className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
+              >
+                {createAffiliateMutation.isPending ? 'Adding...' : 'Add Affiliate'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// ============================================================
+// PAY-PER-DELETE TAB — Track deletion events and billing
+// ============================================================
+function PayPerDeleteTab({ uploadId, report }: { uploadId: number | null; report: any | null }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const clientId = report?.userId;
+
+  const [addOpen, setAddOpen] = useState(false);
+  const [newEvent, setNewEvent] = useState({ accountName: '', bureau: 'Experian', billingRate: '99.00' });
+
+  const { data: allEvents = [], isLoading } = useQuery<DeletionEvent[]>({
+    queryKey: ['/api/admin/deletion-events', clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+      const res = await fetch(`/api/admin/deletion-events/${clientId}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch');
+      return res.json();
+    },
+    enabled: !!clientId,
+  });
+
+  const events = uploadId ? allEvents.filter(e => e.uploadId === uploadId) : allEvents;
+
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof newEvent) => {
+      const response = await apiRequest('POST', '/api/admin/deletion-events', {
+        clientId,
+        uploadId: uploadId || null,
+        accountName: data.accountName,
+        bureau: data.bureau,
+        billingRate: data.billingRate,
+        isPaid: false,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/deletion-events', clientId] });
+      setAddOpen(false);
+      setNewEvent({ accountName: '', bureau: 'Experian', billingRate: '99.00' });
+      toast({ title: 'Deletion event logged.' });
+    },
+    onError: () => toast({ title: 'Error', description: 'Failed to log deletion event.', variant: 'destructive' }),
+  });
+
+  const markPaidMutation = useMutation({
+    mutationFn: async ({ id, isPaid }: { id: number; isPaid: boolean }) => {
+      const response = await apiRequest('PATCH', `/api/admin/deletion-events/${id}`, {
+        isPaid,
+        billedAt: isPaid ? new Date().toISOString() : null,
+      });
+      return response.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/admin/deletion-events', clientId] }),
+  });
+
+  const totalRevenue = events.reduce((sum, e) => sum + parseFloat(String(e.billingRate || 0)), 0);
+  const paidRevenue = events.filter(e => e.isPaid).reduce((sum, e) => sum + parseFloat(String(e.billingRate || 0)), 0);
+  const unpaidRevenue = totalRevenue - paidRevenue;
+
+  if (!clientId) {
+    return (
+      <AdminCard>
+        <AdminCardContent>
+          <div className="text-center py-12">
+            <DollarSign className="h-12 w-12 text-[hsl(var(--admin-text-subtle))] mx-auto mb-3" />
+            <p className="text-[hsl(var(--admin-text-muted))]">No client selected. Open this tab from a client's dispute hub.</p>
+          </div>
+        </AdminCardContent>
+      </AdminCard>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-3 gap-4">
+        <AdminStatCard label="Items Deleted" value={events.length} icon={<CheckCircle className="h-5 w-5 text-green-400" />} />
+        <AdminStatCard label="Total Billed" value={`$${totalRevenue.toFixed(2)}`} icon={<DollarSign className="h-5 w-5 text-yellow-400" />} />
+        <AdminStatCard label="Outstanding" value={`$${unpaidRevenue.toFixed(2)}`} icon={<AlertCircle className="h-5 w-5 text-red-400" />} />
+      </div>
+
+      <AdminCard>
+        <AdminCardHeader>
+          <div className="flex items-center justify-between w-full">
+            <AdminCardTitle icon={<DollarSign className="h-5 w-5 text-yellow-400" />}>Pay-Per-Delete Billing Tracker</AdminCardTitle>
+            <Button onClick={() => setAddOpen(true)} size="sm" className="bg-yellow-600 hover:bg-yellow-700 text-white">
+              <Plus className="h-4 w-4 mr-1" /> Log Deletion
+            </Button>
+          </div>
+        </AdminCardHeader>
+        <AdminCardContent>
+          {isLoading ? (
+            <div className="text-center py-8 text-[hsl(var(--admin-text-muted))]">Loading...</div>
+          ) : events.length === 0 ? (
+            <div className="text-center py-12">
+              <DollarSign className="h-12 w-12 text-[hsl(var(--admin-text-subtle))] mx-auto mb-3" />
+              <p className="text-[hsl(var(--admin-text-muted))]">No deleted items logged yet. Log a deletion when a bureau confirms removal.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[hsl(var(--admin-text-muted))] border-b border-[hsl(var(--admin-border))]">
+                    <th className="text-left py-2 px-3 font-medium">Account</th>
+                    <th className="text-left py-2 px-3 font-medium">Bureau</th>
+                    <th className="text-left py-2 px-3 font-medium">Billing Rate</th>
+                    <th className="text-left py-2 px-3 font-medium">Deleted</th>
+                    <th className="text-left py-2 px-3 font-medium">Status</th>
+                    <th className="text-left py-2 px-3 font-medium">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {events.map(event => (
+                    <tr key={event.id} className="border-b border-[hsl(var(--admin-border))]/50 hover:bg-[hsl(var(--admin-bg))]/30">
+                      <td className="py-3 px-3 text-white font-medium">{event.accountName}</td>
+                      <td className="py-3 px-3 text-[hsl(var(--admin-text-muted))]">{event.bureau}</td>
+                      <td className="py-3 px-3 text-yellow-400 font-semibold">${parseFloat(String(event.billingRate)).toFixed(2)}</td>
+                      <td className="py-3 px-3 text-[hsl(var(--admin-text-muted))] text-xs">
+                        {event.deletedAt ? new Date(event.deletedAt).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="py-3 px-3">
+                        {event.isPaid ? (
+                          <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-medium flex items-center gap-1 w-fit">
+                            <CheckCircle className="h-3 w-3" /> Paid
+                          </span>
+                        ) : (
+                          <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-medium flex items-center gap-1 w-fit">
+                            <XCircle className="h-3 w-3" /> Unpaid
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3">
+                        <button
+                          onClick={() => markPaidMutation.mutate({ id: event.id, isPaid: !event.isPaid })}
+                          className={`text-xs px-3 py-1 rounded transition-colors ${
+                            event.isPaid
+                              ? 'bg-gray-600/40 text-gray-300 hover:bg-gray-500/40'
+                              : 'bg-green-600/40 text-green-300 hover:bg-green-500/40'
+                          }`}
+                        >
+                          {event.isPaid ? 'Mark Unpaid' : 'Mark Paid'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {paidRevenue > 0 && (
+                <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center justify-between">
+                  <span className="text-green-400 text-sm font-medium">Total Collected</span>
+                  <span className="text-green-400 text-lg font-bold">${paidRevenue.toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </AdminCardContent>
+      </AdminCard>
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-yellow-400" />
+              Log Deleted Item
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Account / Item Name</Label>
+              <Input value={newEvent.accountName} onChange={e => setNewEvent(p => ({ ...p, accountName: e.target.value }))} placeholder="e.g. Capital One Collection" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm" />
+            </div>
+            <div>
+              <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Bureau</Label>
+              <Select value={newEvent.bureau} onValueChange={v => setNewEvent(p => ({ ...p, bureau: v }))}>
+                <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                  <SelectItem value="Experian">Experian</SelectItem>
+                  <SelectItem value="Equifax">Equifax</SelectItem>
+                  <SelectItem value="TransUnion">TransUnion</SelectItem>
+                  <SelectItem value="All 3">All 3 Bureaus</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Billing Rate ($)</Label>
+              <Input type="number" step="0.01" value={newEvent.billingRate} onChange={e => setNewEvent(p => ({ ...p, billingRate: e.target.value }))} className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm" />
+            </div>
+            <div className="flex gap-3 justify-end pt-2 border-t border-[hsl(var(--admin-border))]">
+              <Button variant="outline" onClick={() => setAddOpen(false)} className="border-[hsl(var(--admin-border))] text-white">Cancel</Button>
+              <Button
+                onClick={() => createMutation.mutate(newEvent)}
+                disabled={createMutation.isPending || !newEvent.accountName}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white"
+              >
+                {createMutation.isPending ? 'Logging...' : 'Log Deletion'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

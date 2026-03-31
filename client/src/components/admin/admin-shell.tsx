@@ -28,6 +28,9 @@ import {
   Brain,
   TrendingUp,
   Mail,
+  UserPlus,
+  Share2,
+  DollarSign,
 } from "lucide-react";
 
 interface AdminShellContextType {
@@ -68,6 +71,7 @@ const navGroups: NavGroup[] = [
     label: "Clients",
     items: [
       { href: "/admin-portal/clients", label: "Clients", icon: Users },
+      { href: "/admin-portal/leads", label: "Leads CRM", icon: UserPlus },
       { href: "/admin-portal/chat", label: "Messages", icon: MessageSquare },
     ],
   },
@@ -90,6 +94,7 @@ const navGroups: NavGroup[] = [
     label: "Business",
     items: [
       { href: "/admin-portal/analytics", label: "Analytics", icon: TrendingUp },
+      { href: "/admin-portal/affiliates", label: "Affiliates", icon: Share2 },
       { href: "/admin-portal/white-label", label: "White Label", icon: Package },
     ],
   },
