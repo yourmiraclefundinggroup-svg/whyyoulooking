@@ -1401,13 +1401,18 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
 
   const filteredLetters = statusFilter === 'all'
     ? allLetters
-    : allLetters.filter(l => l.status === statusFilter);
+    : statusFilter === 'delivered'
+      ? allLetters.filter(l => l.lobStatus === 'delivered')
+      : statusFilter === 'ready'
+        ? allLetters.filter(l => l.status === 'approved')
+        : allLetters.filter(l => l.status === statusFilter);
 
   const statusCounts = {
     all: allLetters.length,
     draft: allLetters.filter(l => l.status === 'draft').length,
-    approved: allLetters.filter(l => l.status === 'approved').length,
+    ready: allLetters.filter(l => l.status === 'approved').length,
     sent: allLetters.filter(l => l.status === 'sent').length,
+    delivered: allLetters.filter(l => l.lobStatus === 'delivered').length,
   };
 
   const toggleBulkSelect = (id: number) => {
@@ -1444,7 +1449,7 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {(Object.entries(statusCounts) as [string, number][]).map(([status, count]) => (
           <button
             key={status}
@@ -1526,10 +1531,12 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
                       </AdminTableCell>
                       <AdminTableCell>
                         <AdminBadge variant={
-                          letter.status === 'sent' ? 'success' :
+                          letter.lobStatus === 'delivered' ? 'success' :
+                          letter.status === 'sent' ? 'info' :
                           letter.status === 'approved' ? 'warning' : 'default'
                         }>
-                          {letter.status}
+                          {letter.lobStatus === 'delivered' ? 'Delivered' :
+                           letter.status === 'approved' ? 'Ready' : letter.status}
                         </AdminBadge>
                       </AdminTableCell>
                       <AdminTableCell>
@@ -1585,8 +1592,13 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
             <div className="space-y-4">
               <div className="flex gap-2 flex-wrap">
                 {getBureauBadge(selectedLetter.bureau || '')}
-                <AdminBadge variant={selectedLetter.status === 'sent' ? 'success' : 'warning'}>
-                  {selectedLetter.status}
+                <AdminBadge variant={
+                  selectedLetter.lobStatus === 'delivered' ? 'success' :
+                  selectedLetter.status === 'sent' ? 'info' :
+                  selectedLetter.status === 'approved' ? 'warning' : 'default'
+                }>
+                  {selectedLetter.lobStatus === 'delivered' ? 'Delivered' :
+                   selectedLetter.status === 'approved' ? 'Ready' : selectedLetter.status}
                 </AdminBadge>
                 <span className="text-xs text-[hsl(var(--admin-text-muted))] capitalize">{selectedLetter.letterType}</span>
               </div>
@@ -2819,10 +2831,6 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
             <Calendar className="h-4 w-4 mr-1" />
             Calendar
           </TabsTrigger>
-          <TabsTrigger value="diff-view" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
-            <GitCompare className="h-4 w-4 mr-1" />
-            Compare
-          </TabsTrigger>
           <TabsTrigger value="lob-tracking" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             <Mail className="h-4 w-4 mr-1" />
             Certified Mail
@@ -2834,6 +2842,10 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
           <TabsTrigger value="team" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             <Users className="h-4 w-4 mr-1" />
             Team
+          </TabsTrigger>
+          <TabsTrigger value="diff-view" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            <GitCompare className="h-4 w-4 mr-1" />
+            Compare
           </TabsTrigger>
         </TabsList>
 
@@ -4144,7 +4156,18 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                                 <Button
                                   size="sm"
                                   className="bg-blue-600 hover:bg-blue-700 text-white"
-                                  onClick={() => { setSelectedLetter(letter); setLobSendOpen(true); }}
+                                  onClick={() => {
+                                    setSelectedLetter(letter);
+                                    setLobAddress({
+                                      fromName: report?.clientName || '',
+                                      fromAddressLine1: report?.clientAddress?.line1 || '',
+                                      fromAddressLine2: report?.clientAddress?.line2 || '',
+                                      fromCity: report?.clientAddress?.city || '',
+                                      fromState: report?.clientAddress?.state || '',
+                                      fromZip: report?.clientAddress?.zip || '',
+                                    });
+                                    setLobSendOpen(true);
+                                  }}
                                 >
                                   <Send className="h-4 w-4 mr-2" />
                                   Send via Certified Mail
