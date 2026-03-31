@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useUserContext } from "@/hooks/use-user-context";
 import type { CreditIssue } from "@shared/schema";
 
 interface DisputeLetterModalProps {
@@ -15,14 +16,57 @@ interface DisputeLetterModalProps {
   issue?: CreditIssue;
 }
 
+function deriveLetterType(issueType: string, description?: string): string {
+  const t = (issueType || "").toLowerCase();
+  const d = (description || "").toLowerCase();
+  if (t.includes("late_payment") || t.includes("late payment")) return "late_payment_metro2";
+  if (t.includes("closed_school") || t.includes("closed school")) return "closed_school";
+  const isStudentLoan = t.includes("student_loan") || t.includes("student loan");
+  const hasClosedSchoolKeyword =
+    d.includes("closed school") || d.includes("school closed") || d.includes("school closure") || d.includes("discharge");
+  if (isStudentLoan && hasClosedSchoolKeyword) return "closed_school";
+  if (t.includes("identity") || t.includes("fraud")) return "identity_theft";
+  return "general";
+}
+
 export function DisputeLetterModal({ open, onOpenChange, issue }: DisputeLetterModalProps) {
   const [bureau, setBureau] = useState<string>("");
   const [letterContent, setLetterContent] = useState<string>("");
   const { toast } = useToast();
+  const { isAdmin } = useUserContext();
 
   const generateLetterMutation = useMutation({
-    mutationFn: async (data: { issueType: string; description: string; creditor: string; amount?: number | null; dateAdded: Date; impact: number; bureau: string }) => {
-      const response = await apiRequest("POST", "/api/generate-dispute-letter", data);
+    mutationFn: async (data: {
+      issueType: string;
+      description: string;
+      creditor: string;
+      bureau: string;
+      letterType: string;
+      clientId?: number;
+    }) => {
+      if (isAdmin && data.clientId) {
+        const response = await apiRequest("POST", "/api/admin/generate-dispute-letter", {
+          issue: {
+            type: data.issueType,
+            description: data.description,
+            creditor: data.creditor,
+          },
+          clientName: "",
+          clientId: data.clientId,
+          bureau: data.bureau,
+          roundNumber: 1,
+          letterType: data.letterType,
+        });
+        const result = await response.json();
+        return { letterContent: result.letter };
+      }
+      const response = await apiRequest("POST", "/api/generate-dispute-letter", {
+        issueType: data.issueType,
+        description: data.description,
+        creditor: data.creditor,
+        bureau: data.bureau,
+        letterType: data.letterType,
+      });
       return response.json();
     },
     onSuccess: (data) => {
@@ -71,10 +115,9 @@ export function DisputeLetterModal({ open, onOpenChange, issue }: DisputeLetterM
       issueType: issue.type,
       description: issue.description,
       creditor: issue.creditor,
-      amount: issue.amount,
-      dateAdded: issue.dateAdded,
-      impact: issue.impact,
       bureau,
+      letterType: deriveLetterType(issue.type, issue.description),
+      clientId: issue.userId,
     });
   };
 
@@ -82,7 +125,7 @@ export function DisputeLetterModal({ open, onOpenChange, issue }: DisputeLetterM
     if (!issue || !bureau || !letterContent) return;
 
     const expectedResponse = new Date();
-    expectedResponse.setDate(expectedResponse.getDate() + 30); // 30 days from now
+    expectedResponse.setDate(expectedResponse.getDate() + 30);
 
     createDisputeMutation.mutate({
       userId: issue.userId,

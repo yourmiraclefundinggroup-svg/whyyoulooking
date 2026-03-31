@@ -14,6 +14,8 @@ export const users = pgTable("users", {
   state: text("state"),
   zipCode: text("zip_code"),
   smsOptIn: boolean("sms_opt_in").default(false),
+  dateOfBirth: text("date_of_birth"),
+  ssnLast4: text("ssn_last4"),
   password: text("password").notNull(),
   accessLevel: text("access_level").notNull().default("STANDARD"), // STANDARD, CLIENT_VIEWER, BETA_TESTER, ADMIN
   isTestUser: boolean("is_test_user").default(false),

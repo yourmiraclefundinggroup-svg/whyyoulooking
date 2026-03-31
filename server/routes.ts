@@ -1464,49 +1464,53 @@ Format the response as a complete business letter ready to send.`;
   });
 
   // AI Dispute Letter Generation
-  app.post("/api/generate-dispute-letter", async (req, res) => {
-    const { issueType, creditor, amount, description, bureau, dateAdded, impact } = req.body;
+  app.post("/api/generate-dispute-letter", authenticateToken, requireClientAccess, async (req, res) => {
+    const { issueType, creditor, description, bureau, letterType } = req.body;
     
     try {
-      if (!process.env.OPENAI_API_KEY) {
-        return res.status(400).json({ 
-          message: "OpenAI API key not configured. Please add your API key for AI dispute letter generation." 
-        });
-      }
-      
-      const letterContent = await aiService.generateDisputeLetter({
-        issueType,
-        creditor,
-        amount,
-        description,
-        bureau,
-        dateAdded: new Date(dateAdded),
-        impact
+      // Always derive user identity from the authenticated token — never trust caller-supplied userId
+      const authenticatedUser = (req as any).user;
+      const userProfile = await storage.getUser(authenticatedUser.id);
+
+      const { generateDisputeIQLetter, resolveLetterType, resolveBureau, resolveAccountType } = await import("./dispute-iq.js");
+
+      const resolvedLetterType = resolveLetterType(issueType || "", letterType, description);
+      const resolvedBureau = resolveBureau(bureau);
+      const resolvedAccountType = resolveAccountType(issueType);
+
+      const clientName = userProfile
+        ? `${userProfile.firstName} ${userProfile.lastName}`
+        : "Client";
+
+      const clientAddress = userProfile?.addressLine1
+        ? {
+            line1: userProfile.addressLine1,
+            city: userProfile.city || "City",
+            state: userProfile.state || "CA",
+            zip: userProfile.zipCode || "00000",
+          }
+        : { line1: "Address on File", city: "City", state: "CA", zip: "00000" };
+
+      const letterContent = await generateDisputeIQLetter({
+        clientName,
+        clientAddress,
+        clientDob: userProfile?.dateOfBirth ?? undefined,
+        clientSsnLast4: userProfile?.ssnLast4 ?? undefined,
+        clientPhone: userProfile?.phone ?? undefined,
+        clientEmail: userProfile?.email ?? undefined,
+        creditor: creditor || "Unknown Creditor",
+        accountNumber: "Unknown",
+        accountType: resolvedAccountType,
+        disputeReason: description || "This account contains inaccurate information.",
+        bureau: resolvedBureau,
+        roundNumber: 1,
+        clientState: userProfile?.state || "CA",
+        letterType: resolvedLetterType,
       });
 
       res.json({ letterContent });
     } catch (error: any) {
       console.error("Error generating dispute letter:", error);
-      
-      // Check if this is a quota error and provide demo letter
-      if (error.status === 429 || error.message?.includes('quota') || error.code === 'insufficient_quota') {
-        console.log("Route handler: API quota exceeded, providing demo dispute letter");
-        
-        const currentDate = new Date().toLocaleDateString();
-        const demoLetter = generateDemoDisputeLetter({
-          issueType,
-          creditor,
-          amount,
-          description,
-          bureau,
-          dateAdded: new Date(dateAdded),
-          impact,
-          currentDate
-        });
-        
-        return res.json({ letterContent: demoLetter });
-      }
-      
       res.status(500).json({ message: "Failed to generate dispute letter" });
     }
   });
@@ -3198,102 +3202,92 @@ Be thorough - extract EVERY negative item you can see. Use the EXACT names and a
         return res.status(403).json({ message: "Admin access required" });
       }
 
-      const { issue, clientName, clientAddress } = req.body;
-      
-      if (!process.env.OPENAI_API_KEY) {
-        return res.status(400).json({ 
-          message: "OpenAI API key not configured for AI dispute letter generation." 
-        });
+      const { issue, clientName: providedClientName, clientAddress, clientId, bureau, roundNumber, letterType } = req.body;
+
+      if (!issue) {
+        return res.status(400).json({ message: "issue is required" });
       }
 
-      // Generate a truly custom dispute letter using AI based on the specific issue
-      const letterPrompt = `You are a professional credit repair specialist. Generate a highly personalized, legally-compliant dispute letter for the following SPECIFIC credit issue:
+      // Resolve client profile fields for letter header
+      let clientProfile: Awaited<ReturnType<typeof storage.getUser>> = undefined;
+      if (clientId) {
+        clientProfile = await storage.getUser(clientId);
+      }
 
-CLIENT NAME: ${clientName}
-${clientAddress ? `CLIENT ADDRESS: ${clientAddress}` : ''}
+      // Derive clientName from profile when caller sends empty string or omits it
+      const clientName: string =
+        (typeof providedClientName === "string" && providedClientName.trim())
+          ? providedClientName.trim()
+          : clientProfile
+          ? `${clientProfile.firstName} ${clientProfile.lastName}`.trim()
+          : "Client";
 
-ISSUE DETAILS:
-- Type: ${issue.type}
-- Creditor/Company: ${issue.creditor}
-- Amount: ${issue.amount ? '$' + issue.amount.toLocaleString() : 'Not specified'}
-- Description: ${issue.description}
-- Suggested Action: ${issue.suggestedAction}
+      const { generateDisputeIQLetter, resolveLetterType, resolveBureau, resolveAccountType } = await import("./dispute-iq.js");
 
-Generate a professional dispute letter that:
-1. Is addressed to the appropriate credit bureau (Experian, Equifax, or TransUnion)
-2. Specifically mentions the EXACT creditor name "${issue.creditor}" 
-3. References the EXACT amount if provided
-4. Uses the specific dispute strategy: ${issue.suggestedAction}
-5. Cites relevant FCRA sections (§609, §611, §623)
-6. Includes proper legal language for maximum effectiveness
-7. Is personalized to this specific situation, NOT a generic template
-8. Requests verification, validation, or deletion as appropriate
-9. Sets a clear timeline for response (30 days per FCRA)
+      const resolvedLetterType = resolveLetterType(issue.type || "", letterType, issue.description);
+      const resolvedBureau = resolveBureau(bureau);
+      const resolvedAccountType = resolveAccountType(issue.type);
 
-Format as a complete, ready-to-send business letter with:
-- Today's date
-- Client name and address placeholder if not provided
-- Bureau address placeholder
-- Subject line with account reference
-- Professional salutation and closing
-- Signature line
+      // Parse client address — prefer stored profile, then object, then string
+      let parsedAddress = {
+        line1: "Address on File",
+        city: "City",
+        state: clientProfile?.state || "CA",
+        zip: clientProfile?.zipCode || "00000",
+      };
+      if (clientProfile?.addressLine1) {
+        parsedAddress = {
+          line1: clientProfile.addressLine1,
+          city: clientProfile.city || "City",
+          state: clientProfile.state || "CA",
+          zip: clientProfile.zipCode || "00000",
+        };
+      } else if (clientAddress && typeof clientAddress === "object" && !Array.isArray(clientAddress)) {
+        const addrObj = clientAddress as Record<string, unknown>;
+        parsedAddress = {
+          line1: typeof addrObj.line1 === "string" ? addrObj.line1 : "Address on File",
+          city: typeof addrObj.city === "string" ? addrObj.city : "City",
+          state: typeof addrObj.state === "string" ? addrObj.state : "CA",
+          zip: typeof addrObj.zip === "string" ? addrObj.zip : "00000",
+        };
+      } else if (typeof clientAddress === "string" && clientAddress) {
+        const parts = clientAddress.split(",").map((s: string) => s.trim());
+        parsedAddress = {
+          line1: parts[0] || "Address on File",
+          city: parts[1] || "City",
+          state: parts[2]?.split(" ")[0] || "CA",
+          zip: parts[2]?.split(" ")[1] || "00000",
+        };
+      }
 
-Make this letter SPECIFIC to the "${issue.creditor}" account and "${issue.type}" issue type.`;
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert credit repair specialist with extensive knowledge of FCRA laws and successful dispute strategies. Generate professional, personalized dispute letters that are specific to each unique credit issue. Never use generic templates - always customize based on the exact creditor, amount, and issue type provided."
-          },
-          {
-            role: "user",
-            content: letterPrompt
-          }
-        ],
-        max_tokens: 2000,
-        temperature: 0.4
+      const letter = await generateDisputeIQLetter({
+        clientName,
+        clientAddress: parsedAddress,
+        clientDob: clientProfile?.dateOfBirth ?? undefined,
+        clientSsnLast4: clientProfile?.ssnLast4 ?? undefined,
+        clientPhone: clientProfile?.phone ?? undefined,
+        clientEmail: clientProfile?.email ?? undefined,
+        creditor: issue.creditor || "Unknown Creditor",
+        accountNumber: issue.accountNumber || "Unknown",
+        accountType: resolvedAccountType,
+        disputeReason: issue.description || issue.suggestedAction || "This account contains inaccurate information.",
+        bureau: resolvedBureau,
+        roundNumber: roundNumber || 1,
+        clientState: clientProfile?.state || parsedAddress.state || "CA",
+        letterType: resolvedLetterType,
       });
-
-      const letter = response.choices[0]?.message?.content || '';
 
       res.json({
         letter,
         clientName,
         issueType: issue.type,
         creditor: issue.creditor,
+        letterType: resolvedLetterType,
         generatedAt: new Date().toISOString()
       });
 
     } catch (error: any) {
       console.error("Error generating dispute letter:", error);
-      
-      // If AI fails, fall back to demo letter
-      if (error.status === 429 || error.message?.includes('quota')) {
-        const { issue: fallbackIssue, clientName: fallbackClientName } = req.body;
-        const currentDate = new Date().toLocaleDateString();
-        const disputeLetter = generateDemoDisputeLetter({
-          issueType: fallbackIssue?.type || 'UNKNOWN',
-          creditor: fallbackIssue?.creditor || 'Unknown Creditor',
-          amount: fallbackIssue?.amount,
-          description: fallbackIssue?.description || '',
-          bureau: 'EXPERIAN',
-          dateAdded: new Date(),
-          impact: 1,
-          currentDate
-        });
-        
-        return res.json({
-          letter: disputeLetter,
-          clientName: fallbackClientName || 'Client',
-          issueType: fallbackIssue?.type || 'UNKNOWN',
-          creditor: fallbackIssue?.creditor || 'Unknown Creditor',
-          generatedAt: new Date().toISOString(),
-          note: "Generated using template due to API limits"
-        });
-      }
-      
       res.status(500).json({ error: "Failed to generate dispute letter" });
     }
   });
@@ -7109,33 +7103,72 @@ If you are just answering a question (not updating the letter), just respond nor
     }
   });
 
-  // POST /api/v1/generate-letter — AI generate a dispute letter
+  // POST /api/v1/generate-letter — AI generate a dispute letter (OpenClaw primary endpoint)
   app.post("/api/v1/generate-letter", openclawAuth, async (req, res) => {
     try {
-      const { clientId, issueType, creditor, accountNumber, description, bureau } = req.body;
-      if (!clientId || !issueType || !creditor) {
-        return res.status(400).json({ error: "clientId, issueType, creditor are required" });
+      const {
+        clientId, issueType, creditor, accountNumber, description, bureau,
+        roundNumber, letterType, accounts, clientAddress
+      } = req.body;
+
+      if (!clientId || !creditor) {
+        return res.status(400).json({ error: "clientId and creditor are required" });
       }
+
       const client = await storage.getUser(clientId);
       if (!client) return res.status(404).json({ error: "Client not found" });
-      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-      const prompt = `Generate a professional credit dispute letter for:
-Client: ${client.firstName} ${client.lastName}
-Issue Type: ${issueType}
-Creditor/Agency: ${creditor}
-Account Number: ${accountNumber || "Unknown"}
-Description: ${description || "This account is inaccurate and should be investigated"}
-Bureau: ${bureau || "All bureaus"}
 
-Write a formal, legally-sound dispute letter citing FCRA Section 611, requesting investigation and removal if unverifiable. Include placeholders for signature, address, date. Keep it professional and firm.`;
-      const message = await anthropic.messages.create({
-        model: "claude-opus-4-5",
-        max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
+      const { generateDisputeIQLetter, resolveLetterType, resolveBureau, resolveAccountType } = await import("./dispute-iq.js");
+
+      const resolvedLetterType = resolveLetterType(issueType || "", letterType, description);
+      const resolvedBureau = resolveBureau(bureau);
+      const resolvedAccountType = resolveAccountType(issueType);
+
+      const resolvedAddress = client.addressLine1
+        ? {
+            line1: client.addressLine1,
+            city: client.city || "City",
+            state: client.state || "CA",
+            zip: client.zipCode || "00000",
+          }
+        : clientAddress && typeof clientAddress === "object" && !Array.isArray(clientAddress)
+        ? (() => {
+            const addrObj = clientAddress as Record<string, unknown>;
+            return {
+              line1: typeof addrObj.line1 === "string" ? addrObj.line1 : "Address on File",
+              city: typeof addrObj.city === "string" ? addrObj.city : "City",
+              state: typeof addrObj.state === "string" ? addrObj.state : "CA",
+              zip: typeof addrObj.zip === "string" ? addrObj.zip : "00000",
+            };
+          })()
+        : { line1: "Address on File", city: "City", state: "CA", zip: "00000" };
+
+      const letterContent = await generateDisputeIQLetter({
+        clientName: `${client.firstName} ${client.lastName}`,
+        clientAddress: resolvedAddress,
+        clientDob: client.dateOfBirth ?? undefined,
+        clientSsnLast4: client.ssnLast4 ?? undefined,
+        clientPhone: client.phone ?? undefined,
+        clientEmail: client.email ?? undefined,
+        creditor,
+        accountNumber: accountNumber || "Unknown",
+        accounts: accounts || undefined,
+        accountType: resolvedAccountType,
+        disputeReason: description || "This account contains inaccurate information.",
+        bureau: resolvedBureau,
+        roundNumber: roundNumber || 1,
+        clientState: client.state || "CA",
+        letterType: resolvedLetterType,
       });
-      const letterContent = message.content[0].type === "text" ? message.content[0].text : "";
-      res.json({ letter: letterContent, client: { id: client.id, name: `${client.firstName} ${client.lastName}` } });
+
+      res.json({
+        letter: letterContent,
+        client: { id: client.id, name: `${client.firstName} ${client.lastName}` },
+        letterType: resolvedLetterType,
+        generatedAt: new Date().toISOString(),
+      });
     } catch (error: any) {
+      console.error("OpenClaw generate-letter error:", error);
       res.status(500).json({ error: error.message });
     }
   });

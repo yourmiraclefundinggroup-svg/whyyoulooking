@@ -195,7 +195,101 @@ GET  /api/v1/credit-reports/:id          Parsed credit report detail
 GET  /api/v1/disputes                    All disputes
 GET  /api/v1/letters                     All dispute letters
 GET  /api/v1/stats                       Platform-wide stats + integration status
-POST /api/v1/generate-letter             AI generate dispute letter
+POST /api/v1/generate-letter             AI generate dispute letter (Claude primary, full professional format)
+```
+
+#### POST /api/v1/generate-letter — DisputeIQ Letter Generation
+
+**Primary letter generation endpoint.** Uses Claude (Anthropic) exclusively. Generates professionally formatted, section-rich dispute letters matching real-world credit repair attorney standards.
+
+**Request body (`DisputeIQParams`):**
+```json
+{
+  "clientId": 1,
+  "creditor": "Portfolio Recovery Associates",
+  "accountNumber": "XXXX1234",
+  "issueType": "COLLECTION",
+  "description": "This account does not belong to me.",
+  "bureau": "EXPERIAN",
+  "roundNumber": 1,
+  "letterType": "general",
+  "accounts": [
+    {
+      "accountNumber": "XXXX1234",
+      "dateOpened": "2019-03-15",
+      "originalBalance": "$2,400",
+      "currentBalance": "$2,847",
+      "reportedStatus": "Collection/Charge-Off"
+    }
+  ]
+}
+```
+
+**Field reference:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| clientId | number | Yes | ID of the client in the ScoreShift database |
+| creditor | string | Yes | Creditor/furnisher name (exact as on credit report) |
+| accountNumber | string | No | Account number (last 4 or partial is fine) |
+| issueType | string | No | Free-form issue type; used for auto-detecting letterType if not provided |
+| description | string | No | Dispute reason / description of the inaccuracy |
+| bureau | "EXPERIAN" \| "EQUIFAX" \| "TRANSUNION" | No | Target bureau; defaults to EXPERIAN |
+| roundNumber | number (1–5) | No | Dispute round; drives escalation language. Defaults to 1 |
+| letterType | string | No | See letter type values below. Auto-detected from issueType if omitted |
+| accounts | DisputeIQAccount[] | No | Array of account objects for multi-account table in the letter |
+
+**`letterType` values:**
+
+| Value | When to use | Key legal content |
+|-------|-------------|-------------------|
+| `"general"` | Standard FCRA disputes, collections, charge-offs | FCRA §§ 1681e(b), 1681i(a), 1681i(a)(5)(A), 1681s-2 |
+| `"late_payment_metro2"` | Late payment entries; payment rating inaccuracies | Metro 2® CRRG Payment Rating, PHF, DOFD, XB Compliance Condition Code |
+| `"closed_school"` | Student loans from closed schools (e.g. Corinthian, ITT Tech) | 34 CFR § 685.214 Closed School Discharge, 20 U.S.C. § 1087(c) |
+| `"identity_theft"` | Fraudulently opened accounts | FCRA § 605B block demand, § 1681c-2, § 1681s-2(a)(6) |
+
+**Auto-detection rules** (when `letterType` is omitted):
+- issueType contains "late_payment" → `late_payment_metro2`
+- issueType contains "closed_school" or "closed school" → `closed_school`
+- issueType contains "identity" or "fraud" → `identity_theft`
+- Everything else → `general`
+
+**Generated letter structure:**
+```
+[Client name in ALL CAPS]
+[Address]
+[DOB, SSN last 4, phone, email — if on file]
+
+[Date]
+Sent Via Certified Mail — Return Receipt Requested
+
+[Full bureau mailing address]
+
+RE: Formal Dispute — [type] | Furnisher: [creditor] | Account: [number]
+
+Dear [Bureau] Dispute Department,
+
+I.   BACKGROUND
+II.  DISPUTED ACCOUNTS  [account table if multiple accounts]
+III. SPECIFIC INACCURACIES
+IV.  LEGAL BASIS  [statutes specific to letterType]
+V.   DEMANDS  [6–8 numbered demands]
+VI.  LEGAL CONSEQUENCES  [statutory damages, CFPB, state AG, private action]
+VII. ENCLOSURES  [tailored to letterType]
+
+[Signature block]
+
+NOTE: All three bureau addresses listed at bottom
+```
+
+**Response:**
+```json
+{
+  "letter": "JOHN DOE\n123 Main St\n...",
+  "client": { "id": 1, "name": "John Doe" },
+  "letterType": "general",
+  "generatedAt": "2026-03-31T12:00:00.000Z"
+}
 ```
 
 ---
@@ -302,12 +396,75 @@ curl -H "X-Api-Key: ss_b64da37c30d784fd9b32014d2fd6231f168cdb892cc6c4ebf22bb61ca
   https://<your-domain>/api/v1/stats
 ```
 
-### Generate a dispute letter
+### Generate a dispute letter (general FCRA)
 ```bash
 curl -X POST \
   -H "X-Api-Key: ss_b64da37c30d784fd9b32014d2fd6231f168cdb892cc6c4ebf22bb61ca2a2805d" \
   -H "Content-Type: application/json" \
-  -d '{"clientId": 1, "issueType": "COLLECTION", "creditor": "Portfolio Recovery", "description": "Account not mine"}' \
+  -d '{
+    "clientId": 1,
+    "issueType": "COLLECTION",
+    "creditor": "Portfolio Recovery Associates",
+    "accountNumber": "XXXX1234",
+    "description": "This collection account does not belong to me and should be investigated.",
+    "bureau": "EXPERIAN",
+    "roundNumber": 1,
+    "letterType": "general"
+  }' \
+  https://<your-domain>/api/v1/generate-letter
+```
+
+### Generate a late payment / Metro 2 dispute letter
+```bash
+curl -X POST \
+  -H "X-Api-Key: ss_b64da37c30d784fd9b32014d2fd6231f168cdb892cc6c4ebf22bb61ca2a2805d" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientId": 1,
+    "issueType": "LATE_PAYMENT",
+    "creditor": "Capital One",
+    "accountNumber": "XXXX5678",
+    "description": "Payment was made on time in March 2023 but is incorrectly reported as 30 days late.",
+    "bureau": "EQUIFAX",
+    "roundNumber": 1,
+    "letterType": "late_payment_metro2"
+  }' \
+  https://<your-domain>/api/v1/generate-letter
+```
+
+### Generate a closed school discharge letter
+```bash
+curl -X POST \
+  -H "X-Api-Key: ss_b64da37c30d784fd9b32014d2fd6231f168cdb892cc6c4ebf22bb61ca2a2805d" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientId": 1,
+    "issueType": "STUDENT_LOAN",
+    "creditor": "Navient",
+    "accountNumber": "XXXX9012",
+    "description": "Student loan from Corinthian Colleges, which closed in 2015. Client is eligible for closed school discharge under 34 CFR 685.214.",
+    "bureau": "TRANSUNION",
+    "roundNumber": 1,
+    "letterType": "closed_school"
+  }' \
+  https://<your-domain>/api/v1/generate-letter
+```
+
+### Generate an identity theft / FCRA 605B block letter
+```bash
+curl -X POST \
+  -H "X-Api-Key: ss_b64da37c30d784fd9b32014d2fd6231f168cdb892cc6c4ebf22bb61ca2a2805d" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientId": 1,
+    "issueType": "IDENTITY_THEFT",
+    "creditor": "Synchrony Bank",
+    "accountNumber": "XXXX3456",
+    "description": "This account was opened fraudulently without my knowledge or consent. I am a victim of identity theft.",
+    "bureau": "EXPERIAN",
+    "roundNumber": 1,
+    "letterType": "identity_theft"
+  }' \
   https://<your-domain>/api/v1/generate-letter
 ```
 
