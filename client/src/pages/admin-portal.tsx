@@ -2870,7 +2870,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
           <TabsTrigger value="public-records" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             Public Records ({publicRecords.length})
           </TabsTrigger>
-          <TabsTrigger value="create-dispute" className="data-[state=active]:bg-green-600 data-[state=active]:text-white text-green-400">
+          <TabsTrigger value="create-dispute" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             <Plus className="h-4 w-4 mr-1" />
             Create Dispute
           </TabsTrigger>
@@ -3484,7 +3484,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
             <div className="lg:col-span-2 space-y-6">
               <AdminCard>
                 <AdminCardHeader>
-                  <AdminCardTitle icon={<Plus className="h-5 w-5 text-green-400" />}>Select Items to Dispute</AdminCardTitle>
+                  <AdminCardTitle icon={<Plus className="h-5 w-5 text-[hsl(var(--admin-accent))]" />}>Select Items to Dispute</AdminCardTitle>
                 </AdminCardHeader>
                 <AdminCardContent>
                   <div className="space-y-4">
@@ -3885,7 +3885,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                               toast({ title: 'Error', description: 'Failed to save letter', variant: 'destructive' });
                             }
                           }}
-                          className="bg-green-600 hover:bg-green-700 text-white"
+                          className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white"
                           data-testid="button-save-dispute-letter"
                         >
                           <CheckSquare className="h-4 w-4 mr-1" />
@@ -4008,7 +4008,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                     </div>
 
                     <Button
-                      className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white"
                       disabled={disputeItems.filter(d => d.selected).length === 0 || isGeneratingDispute}
                       onClick={async () => {
                         setIsGeneratingDispute(true);
@@ -5059,7 +5059,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                       setGenerateLetterOpen(false);
                       setSelectedItems([]);
                     }}
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white"
                     data-testid="button-approve-letter"
                   >
                     <CheckSquare className="h-4 w-4 mr-2" />
@@ -5179,7 +5179,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                     <Button
                       size="sm"
                       onClick={() => { updateLetterMutation.mutate({ id: selectedLetter.id, status: 'approved' }); setViewLetterOpen(false); }}
-                      className="bg-green-600 hover:bg-green-700 text-white"
+                      className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white"
                       disabled={updateLetterMutation.isPending}
                       data-testid="button-approve-view"
                     >
@@ -5234,7 +5234,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                         setMarkRemovedAccountName('');
                         setMarkRemovedOpen(true);
                       }}
-                      className="text-green-400 hover:text-green-300 text-xs border border-green-500/30 hover:bg-green-500/10"
+                      className="text-[hsl(var(--admin-accent))] hover:text-[hsl(var(--admin-accent-deep))] text-xs border border-[hsl(var(--admin-accent))]/30 hover:bg-[hsl(var(--admin-accent))]/10"
                       title="Bureau confirmed this item was removed — logs a pay-per-delete event"
                     >
                       <CheckCircle className="h-3 w-3 mr-1" />
@@ -5401,7 +5401,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                   });
                 }}
                 disabled={createDeletionEventMutation.isPending || !markRemovedAccountName.trim()}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                className="flex-1 bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white"
               >
                 {createDeletionEventMutation.isPending ? 'Logging...' : 'Confirm Removal'}
               </Button>
@@ -6214,7 +6214,7 @@ function PayPerDeleteTab({ uploadId, report }: { uploadId: number; report: (Cred
                           className={`text-xs px-3 py-1 rounded transition-colors ${
                             event.isPaid
                               ? 'bg-[hsl(var(--admin-card))] text-[hsl(var(--admin-text-muted))] hover:bg-[hsl(var(--admin-border))]/60'
-                              : 'bg-green-600/40 text-green-300 hover:bg-green-500/40'
+                              : 'bg-[hsl(var(--admin-success))]/40 text-[hsl(var(--admin-success))]/90 hover:bg-[hsl(var(--admin-success))]/50'
                           }`}
                         >
                           {event.isPaid ? 'Mark Unpaid' : 'Mark Paid'}
