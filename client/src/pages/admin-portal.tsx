@@ -2270,7 +2270,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   });
 
   // Fetch per-client billing rate from server (used as default in mark-removed dialog)
-  const clientUserId = (report as any)?.userId;
+  const clientUserId = report?.userId;
   const { data: serverBillingRate } = useQuery<{ payPerDeleteRate: string }>({
     queryKey: ['/api/admin/users', clientUserId, 'billing-rate'],
     queryFn: async () => {
@@ -2444,9 +2444,8 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
 
   const createDeletionEventMutation = useMutation({
     mutationFn: async ({ accountName, billingRate, letterId }: { accountName: string; billingRate: string; letterId: number }) => {
-      const rpt = report as any;
-      if (!rpt) throw new Error('No report found');
-      const clientId = rpt.clientId ?? rpt.userId ?? rpt.uploadedByUserId;
+      if (!report) throw new Error('No report found');
+      const clientId = report.userId;
       const response = await apiRequest('POST', '/api/admin/deletion-events', {
         clientId,
         uploadId: reportId,

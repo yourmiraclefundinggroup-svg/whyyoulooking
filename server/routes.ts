@@ -6031,8 +6031,12 @@ I am disputing these fraudulent accounts under the Fair Credit Reporting Act (FC
 I have filed a police report and/or FTC Identity Theft Report regarding this fraud. Please block these fraudulent accounts immediately.
 ` : '';
 
+      // Use a machine-parseable delimiter that Claude reliably produces
+      const BUREAU_DELIMITER = (b: string) => `===BEGIN_${b}_LETTER===`;
+      const BUREAU_DELIMITER_END = (b: string) => `===END_${b}_LETTER===`;
+
       const bureauLine = isAllBureaus
-        ? 'BUREAU: Experian, Equifax, AND TransUnion (generate separate letter sections for each bureau)'
+        ? 'BUREAU: Experian, Equifax, AND TransUnion'
         : `BUREAU: ${bureau}`;
 
       const metro2Section = isMetro2 ? `
@@ -6068,7 +6072,7 @@ Generate a complete, professional dispute letter that:
 7. Is ready to print and mail
 ${isMetro2 ? '8. Uses Metro2 data standard references and K4/DA segment field code language throughout\n9. Includes "METRO2 FORMAT DISPUTE" in the heading\n10. References CDIA Metro2 compliance standards' : ''}
 ${isFraud ? '8. Includes identity theft affidavit language and references FCRA Section 605B\n9. Mentions that a police report/FTC Identity Theft Report has been filed' : ''}
-${isAllBureaus ? '\nIMPORTANT: Generate a SEPARATE, complete letter for each bureau (Experian, Equifax, TransUnion). Separate each bureau letter with "--- [BUREAU NAME] LETTER ---".' : ''}
+${isAllBureaus ? `\nCRITICAL OUTPUT FORMAT: Generate three SEPARATE, complete letters — one for each bureau. Wrap each letter with these EXACT delimiters on their own lines:\n===BEGIN_EXPERIAN_LETTER===\n[Experian letter here]\n===END_EXPERIAN_LETTER===\n===BEGIN_EQUIFAX_LETTER===\n[Equifax letter here]\n===END_EQUIFAX_LETTER===\n===BEGIN_TRANSUNION_LETTER===\n[TransUnion letter here]\n===END_TRANSUNION_LETTER===\nDo NOT deviate from this delimiter format. Each letter must be fully self-contained and address that bureau by name.` : ''}
 
 IMPORTANT: The dispute letter MUST include the specific account number and date for EVERY disputed item. This is legally required to ensure proper identification of the accounts.`;
 
@@ -6153,17 +6157,47 @@ Enclosures: Copy of ID, Proof of Address${isFraud ? ', Identity Theft Report/Pol
       // For 3-bureau (all) mode: split AI output into per-bureau letters and save each separately
       if (isAllBureaus) {
         const BUREAUS = ['EXPERIAN', 'EQUIFAX', 'TRANSUNION'] as const;
-        const letters = await Promise.all(BUREAUS.map(async (b) => {
-          // Try to extract this bureau's section from the combined AI output
-          const sectionRegex = new RegExp(
+
+        // Extract per-bureau content using the structured BEGIN/END delimiters
+        const extractBureauContent = (b: string, text: string): string | null => {
+          const begin = `===BEGIN_${b}_LETTER===`;
+          const end = `===END_${b}_LETTER===`;
+          const startIdx = text.indexOf(begin);
+          if (startIdx === -1) return null;
+          const contentStart = startIdx + begin.length;
+          const endIdx = text.indexOf(end, contentStart);
+          const raw = endIdx !== -1 ? text.slice(contentStart, endIdx) : text.slice(contentStart);
+          return raw.trim() || null;
+        };
+
+        // Also try legacy delimiter pattern as secondary fallback
+        const extractLegacyContent = (b: string, text: string): string | null => {
+          const pattern = new RegExp(
             `---\\s*${b}\\s*LETTER\\s*---([\\s\\S]*?)(?=---\\s*(?:EXPERIAN|EQUIFAX|TRANSUNION)\\s*LETTER\\s*---|$)`,
             'i'
           );
-          const match = letterContent.match(sectionRegex);
-          // Use the matched section or the full content as fallback (in case AI didn't split properly)
-          const bureauContent = match ? match[1].trim() : letterContent.replace(
-            /---\s*(EXPERIAN|EQUIFAX|TRANSUNION)\s*LETTER\s*---/gi, ''
-          ).trim();
+          const m = text.match(pattern);
+          return m ? m[1].trim() || null : null;
+        };
+
+        // Check how many bureau sections were found
+        const found = BUREAUS.filter(b => extractBureauContent(b, letterContent) || extractLegacyContent(b, letterContent));
+        if (found.length < 3) {
+          console.warn(`3-bureau split: only ${found.length}/3 sections found. Falling back to per-bureau copies.`);
+        }
+
+        // Strip all delimiter lines to get clean content for the fallback
+        const cleanedContent = letterContent
+          .replace(/===(?:BEGIN|END)_(?:EXPERIAN|EQUIFAX|TRANSUNION)_LETTER===/g, '')
+          .replace(/---\s*(?:EXPERIAN|EQUIFAX|TRANSUNION)\s*LETTER\s*---/gi, '')
+          .trim();
+
+        const letters = await Promise.all(BUREAUS.map(async (b) => {
+          // Try primary delimiter, then legacy delimiter, then fallback to cleaned full content
+          const bureauContent =
+            extractBureauContent(b, letterContent) ||
+            extractLegacyContent(b, letterContent) ||
+            cleanedContent;
 
           return storage.createDisputeLetterNew({
             clientId,
