@@ -132,6 +132,7 @@
   --admin-text-subtle:  220 8% 62%;
   --admin-accent:       38 92% 44%;
   --admin-accent-hover: 38 92% 38%;
+  --admin-accent-deep:  32 92% 30%;   /* deep warm gold for gradients - light mode */
   --admin-success:      142 60% 38%;
   --admin-warning:      38 92% 44%;
   --admin-danger:       0 84% 55%;

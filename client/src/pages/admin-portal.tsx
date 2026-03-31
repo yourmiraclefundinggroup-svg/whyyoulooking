@@ -5423,10 +5423,10 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
 // ============================================================
 const LEAD_STAGES = [
   { id: 'new', label: 'New Lead', color: 'border-[hsl(var(--admin-accent))] bg-[hsl(var(--admin-accent))]/10' },
-  { id: 'contacted', label: 'Contacted', color: 'border-sky-500 bg-sky-500/10' },
-  { id: 'consultation', label: 'Consultation', color: 'border-zinc-500 bg-zinc-500/10' },
-  { id: 'onboarded', label: 'Onboarded', color: 'border-green-500 bg-green-500/10' },
-  { id: 'archived', label: 'Archived', color: 'border-zinc-600 bg-zinc-600/10' },
+  { id: 'contacted', label: 'Contacted', color: 'border-[hsl(var(--admin-info))] bg-[hsl(var(--admin-info))]/10' },
+  { id: 'consultation', label: 'Consultation', color: 'border-[hsl(var(--admin-border-accent))] bg-[hsl(var(--admin-bg))]/50' },
+  { id: 'onboarded', label: 'Onboarded', color: 'border-[hsl(var(--admin-success))] bg-[hsl(var(--admin-success))]/10' },
+  { id: 'archived', label: 'Archived', color: 'border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/30' },
 ];
 
 function LeadsCRMPage() {
