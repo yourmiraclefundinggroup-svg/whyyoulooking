@@ -966,7 +966,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateLead(id: number, updates: Partial<Lead>): Promise<Lead | undefined> {
-    const [result] = await db.update(leads).set({ ...updates, stageUpdatedAt: new Date() }).where(eq(leads.id, id)).returning();
+    const setData: any = { ...updates };
+    if (updates.stage !== undefined) {
+      setData.stageUpdatedAt = new Date();
+    }
+    const [result] = await db.update(leads).set(setData).where(eq(leads.id, id)).returning();
     return result || undefined;
   }
 

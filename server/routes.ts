@@ -6426,6 +6426,62 @@ If you are just answering a question (not updating the letter), just respond nor
     }
   });
 
+  app.get("/api/admin/affiliates/:id/signups", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const signups = await storage.getAffiliateSignups(Number(req.params.id));
+      res.json(signups);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch affiliate signups" });
+    }
+  });
+
+  app.post("/api/admin/affiliates/:id/signups", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const affiliateId = Number(req.params.id);
+      const { userId, commissionAmount } = req.body;
+      const signup = await storage.createAffiliateSignup({ affiliateId, userId, commissionAmount, commissionPaid: false });
+      // Update affiliate totals
+      const affiliate = await storage.getAffiliate(affiliateId);
+      if (affiliate) {
+        await storage.updateAffiliate(affiliateId, {
+          totalClients: (affiliate.totalClients || 0) + 1,
+          totalEarned: (parseFloat(String(affiliate.totalEarned || 0)) + parseFloat(String(commissionAmount || affiliate.commissionRate))).toFixed(2) as any,
+        });
+      }
+      res.json(signup);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create affiliate signup" });
+    }
+  });
+
+  app.patch("/api/admin/affiliates/:id/signups/:signupId", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      // Mark commission paid - update affiliate totalPaid
+      const { commissionPaid } = req.body;
+      if (commissionPaid) {
+        const signups = await storage.getAffiliateSignups(Number(req.params.id));
+        const signup = signups.find(s => s.id === Number(req.params.signupId));
+        if (signup) {
+          const affiliate = await storage.getAffiliate(Number(req.params.id));
+          if (affiliate) {
+            await storage.updateAffiliate(Number(req.params.id), {
+              totalPaid: (parseFloat(String(affiliate.totalPaid || 0)) + parseFloat(String(signup.commissionAmount || 0))).toFixed(2) as any,
+            });
+          }
+        }
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update affiliate signup" });
+    }
+  });
+
   // ============================================================
   // DELETION EVENTS (PAY-PER-DELETE) API
   // ============================================================

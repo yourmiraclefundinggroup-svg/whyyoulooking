@@ -16,7 +16,7 @@ import { FollowUpAlerts } from "@/components/follow-up-alerts";
 import { BureauResponseAnalysis } from "@/components/bureau-response-analysis";
 import { SecureChat } from "@/components/secure-chat";
 import { AdminSettings } from "@/components/admin-settings";
-import { User, CreditReport, CreditIssue, Dispute, CreditReportUpload, CreditReportAccount, CreditReportInquiry, CreditReportCollection, CreditReportPublicRecord, DisputeLetterNew, DisputeCalendarEvent, Lead, Affiliate, DeletionEvent } from "@shared/schema";
+import { User, CreditReport, CreditIssue, Dispute, CreditReportUpload, CreditReportAccount, CreditReportInquiry, CreditReportCollection, CreditReportPublicRecord, DisputeLetterNew, DisputeCalendarEvent, Lead, Affiliate, AffiliateSignup, DeletionEvent } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -81,6 +81,7 @@ import {
   XCircle,
   Phone,
   RefreshCw,
+  Printer,
 } from "lucide-react";
 
 export default function AdminPortal() {
@@ -4633,29 +4634,82 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                   Bureau: <strong>{report?.bureau}</strong>
                 </p>
 
-                <h2>Score Summary</h2>
-                <div>
-                  <div className="stat">
-                    <div className="stat-val">{report?.creditScore || '—'}</div>
-                    <div className="stat-lbl">Current Score</div>
-                  </div>
-                  <div className="stat">
-                    <div className="stat-val">{accounts.length}</div>
-                    <div className="stat-lbl">Total Accounts</div>
-                  </div>
-                  <div className="stat">
-                    <div className="stat-val text-red-500">{collections.length}</div>
-                    <div className="stat-lbl">Collections</div>
-                  </div>
-                  <div className="stat">
-                    <div className="stat-val text-yellow-500">{inquiries.length}</div>
-                    <div className="stat-lbl">Inquiries</div>
-                  </div>
-                  <div className="stat">
-                    <div className="stat-val text-green-500">{letters.length}</div>
-                    <div className="stat-lbl">Letters Generated</div>
-                  </div>
-                </div>
+                {(() => {
+                  const allReportsForClient = [...allClientReports, ...(report ? [report] : [])];
+                  const sortedReports = [...allReportsForClient].sort((a, b) =>
+                    new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+                  );
+                  const earliestReport = sortedReports[0];
+                  const startingScore = earliestReport?.creditScore;
+                  const currentScore = report?.creditScore;
+                  const scoreDiff = startingScore && currentScore ? currentScore - startingScore : null;
+
+                  const removedLetters = letters.filter(l => l.status === 'deleted' || l.status === 'removed');
+                  const pendingLetters = letters.filter(l => l.status === 'pending' || l.status === 'draft');
+                  const sentLetters = letters.filter(l => l.status === 'sent' || l.status === 'mailed');
+
+                  const nextEvent = [...calendarEvents]
+                    .filter(e => e.scheduledSendDate && new Date(e.scheduledSendDate) >= new Date() && e.status !== 'completed')
+                    .sort((a, b) => new Date(a.scheduledSendDate!).getTime() - new Date(b.scheduledSendDate!).getTime())[0];
+
+                  return (
+                    <>
+                      <h2>Score Summary</h2>
+                      <div>
+                        {startingScore && startingScore !== currentScore && (
+                          <div className="stat">
+                            <div className="stat-val" style={{ color: '#6b7280' }}>{startingScore}</div>
+                            <div className="stat-lbl">Starting Score</div>
+                          </div>
+                        )}
+                        <div className="stat">
+                          <div className="stat-val">{currentScore || '—'}</div>
+                          <div className="stat-lbl">Current Score</div>
+                        </div>
+                        {scoreDiff !== null && scoreDiff !== 0 && (
+                          <div className="stat">
+                            <div className="stat-val" style={{ color: scoreDiff > 0 ? '#16a34a' : '#dc2626' }}>
+                              {scoreDiff > 0 ? '+' : ''}{scoreDiff} pts
+                            </div>
+                            <div className="stat-lbl">Score Change</div>
+                          </div>
+                        )}
+                        <div className="stat">
+                          <div className="stat-val">{accounts.length}</div>
+                          <div className="stat-lbl">Total Accounts</div>
+                        </div>
+                        <div className="stat">
+                          <div className="stat-val" style={{ color: '#dc2626' }}>{collections.length}</div>
+                          <div className="stat-lbl">Collections</div>
+                        </div>
+                        <div className="stat">
+                          <div className="stat-val" style={{ color: '#ca8a04' }}>{inquiries.length}</div>
+                          <div className="stat-lbl">Inquiries</div>
+                        </div>
+                        <div className="stat">
+                          <div className="stat-val" style={{ color: '#16a34a' }}>{removedLetters.length}</div>
+                          <div className="stat-lbl">Items Removed</div>
+                        </div>
+                        <div className="stat">
+                          <div className="stat-val" style={{ color: '#2563eb' }}>{sentLetters.length}</div>
+                          <div className="stat-lbl">Letters Sent</div>
+                        </div>
+                        <div className="stat">
+                          <div className="stat-val" style={{ color: '#ca8a04' }}>{pendingLetters.length}</div>
+                          <div className="stat-lbl">Pending Letters</div>
+                        </div>
+                      </div>
+                      {nextEvent && (
+                        <div style={{ marginTop: '16px', padding: '12px 16px', background: '#fffbeb', borderRadius: '8px', border: '1px solid #fde68a' }}>
+                          <strong style={{ color: '#92400e', fontSize: '12px' }}>Next Dispute Round:</strong>
+                          <span style={{ color: '#78350f', fontSize: '13px', marginLeft: '8px' }}>
+                            Round {nextEvent.round} — {nextEvent.scheduledSendDate ? new Date(nextEvent.scheduledSendDate).toLocaleDateString() : '—'}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
 
                 {letters.length > 0 && (
                   <>
@@ -5245,6 +5299,12 @@ function LeadsCRMPage() {
   const newLeadsCount = leads.filter(l => l.stage === 'new').length;
   const onboardedCount = leads.filter(l => l.stage === 'onboarded').length;
 
+  const daysInStage = (lead: Lead) => {
+    const ref = lead.stageUpdatedAt || lead.createdAt;
+    if (!ref) return 0;
+    return Math.floor((Date.now() - new Date(ref).getTime()) / 86400000);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -5284,23 +5344,30 @@ function LeadsCRMPage() {
                           <p className="text-white font-medium text-sm truncate">{lead.firstName} {lead.lastName}</p>
                           <p className="text-[hsl(var(--admin-text-muted))] text-xs truncate">{lead.email}</p>
                           {lead.phone && <p className="text-[hsl(var(--admin-text-muted))] text-xs flex items-center gap-1 mt-0.5"><Phone className="h-3 w-3" />{lead.phone}</p>}
-                          {lead.creditScoreEstimate && <p className="text-yellow-400 text-xs mt-1">~{lead.creditScoreEstimate} score</p>}
-                          {lead.source && <span className="text-[10px] bg-[hsl(var(--admin-bg))]/70 text-[hsl(var(--admin-text-subtle))] px-1.5 py-0.5 rounded mt-1 inline-block capitalize">{lead.source.replace('_', ' ')}</span>}
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            {lead.creditScoreEstimate && <span className="text-yellow-400 text-xs">~{lead.creditScoreEstimate}</span>}
+                            {lead.source && <span className="text-[10px] bg-[hsl(var(--admin-bg))]/70 text-[hsl(var(--admin-text-subtle))] px-1.5 py-0.5 rounded capitalize">{lead.source.replace('_', ' ')}</span>}
+                            <span className="text-[10px] text-[hsl(var(--admin-text-subtle))]">{daysInStage(lead)}d in stage</span>
+                          </div>
                         </div>
                         <button onClick={() => deleteLeadMutation.mutate(lead.id)} className="text-red-400/60 hover:text-red-400 flex-shrink-0">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                      <div className="flex gap-1 mt-2 flex-wrap">
-                        {LEAD_STAGES.filter(s => s.id !== lead.stage).slice(0, 2).map(s => (
-                          <button
-                            key={s.id}
-                            onClick={() => moveLeadMutation.mutate({ id: lead.id, stage: s.id })}
-                            className="text-[10px] px-2 py-0.5 rounded bg-[hsl(var(--admin-bg))]/60 text-[hsl(var(--admin-text-muted))] hover:text-white transition-colors"
-                          >
-                            → {s.label}
-                          </button>
-                        ))}
+                      <div className="mt-2">
+                        <Select
+                          value={lead.stage}
+                          onValueChange={(val) => moveLeadMutation.mutate({ id: lead.id, stage: val })}
+                        >
+                          <SelectTrigger className="h-6 text-[10px] bg-[hsl(var(--admin-bg))]/60 border-[hsl(var(--admin-border))]/50 text-[hsl(var(--admin-text-muted))]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                            {LEAD_STAGES.map(s => (
+                              <SelectItem key={s.id} value={s.id} className="text-xs">{s.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   ))}
@@ -5389,9 +5456,24 @@ function AffiliatesPage() {
   const queryClient = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [newAffiliate, setNewAffiliate] = useState({ name: '', email: '', code: '', commissionType: 'flat', commissionRate: '25.00' });
+  const [signupsAffiliateId, setSignupsAffiliateId] = useState<number | null>(null);
+  const [logSignupOpen, setLogSignupOpen] = useState(false);
+  const [logSignupAffId, setLogSignupAffId] = useState<number | null>(null);
+  const [signupClientId, setSignupClientId] = useState('');
 
   const { data: affiliates = [], isLoading } = useQuery<Affiliate[]>({
     queryKey: ['/api/admin/affiliates'],
+  });
+
+  const { data: signups = [] } = useQuery<AffiliateSignup[]>({
+    queryKey: ['/api/admin/affiliates', signupsAffiliateId, 'signups'],
+    queryFn: async () => {
+      if (!signupsAffiliateId) return [];
+      const res = await fetch(`/api/admin/affiliates/${signupsAffiliateId}/signups`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed');
+      return res.json();
+    },
+    enabled: !!signupsAffiliateId,
   });
 
   const createAffiliateMutation = useMutation({
@@ -5416,8 +5498,31 @@ function AffiliatesPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/admin/affiliates'] }),
   });
 
+  const logSignupMutation = useMutation({
+    mutationFn: async ({ affiliateId, userId }: { affiliateId: number; userId: number }) => {
+      const aff = affiliates.find(a => a.id === affiliateId);
+      const response = await apiRequest('POST', `/api/admin/affiliates/${affiliateId}/signups`, {
+        userId,
+        commissionAmount: aff?.commissionRate || '25.00',
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/affiliates'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/affiliates', logSignupAffId, 'signups'] });
+      setLogSignupOpen(false);
+      setSignupClientId('');
+      toast({ title: 'Client signup attributed to affiliate.' });
+    },
+    onError: () => toast({ title: 'Error', description: 'Failed to log signup.', variant: 'destructive' }),
+  });
+
   const totalEarned = affiliates.reduce((sum, a) => sum + parseFloat(String(a.totalEarned || 0)), 0);
   const totalClients = affiliates.reduce((sum, a) => sum + (a.totalClients || 0), 0);
+  const totalOwed = affiliates.reduce((sum, a) => {
+    const owed = parseFloat(String(a.totalEarned || 0)) - parseFloat(String(a.totalPaid || 0));
+    return sum + Math.max(0, owed);
+  }, 0);
 
   const generateCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -5439,10 +5544,11 @@ function AffiliatesPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <AdminStatCard label="Total Affiliates" value={affiliates.length} icon={<Share2 className="h-5 w-5" />} />
         <AdminStatCard label="Clients Referred" value={totalClients} icon={<Users className="h-5 w-5" />} />
         <AdminStatCard label="Total Earned" value={`$${totalEarned.toFixed(2)}`} icon={<DollarSign className="h-5 w-5" />} />
+        <AdminStatCard label="Commission Owed" value={`$${totalOwed.toFixed(2)}`} icon={<AlertCircle className="h-5 w-5" />} color="red" />
       </div>
 
       <AdminCard>
@@ -5468,43 +5574,90 @@ function AffiliatesPage() {
                     <th className="text-left py-2 px-3 font-medium">Clients</th>
                     <th className="text-left py-2 px-3 font-medium">Earned</th>
                     <th className="text-left py-2 px-3 font-medium">Paid</th>
+                    <th className="text-left py-2 px-3 font-medium text-red-400">Owed</th>
                     <th className="text-left py-2 px-3 font-medium">Status</th>
                     <th className="text-left py-2 px-3 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {affiliates.map(aff => (
-                    <tr key={aff.id} className="border-b border-[hsl(var(--admin-border))]/50 hover:bg-[hsl(var(--admin-bg))]/30">
-                      <td className="py-3 px-3">
-                        <p className="text-white font-medium">{aff.name}</p>
-                        <p className="text-xs text-[hsl(var(--admin-text-muted))]">{aff.email}</p>
-                      </td>
-                      <td className="py-3 px-3">
-                        <code className="text-[hsl(var(--admin-accent))] bg-[hsl(var(--admin-bg))]/50 px-2 py-0.5 rounded text-xs font-mono">{aff.code}</code>
-                      </td>
-                      <td className="py-3 px-3 text-white">
-                        {aff.commissionType === 'flat' ? `$${parseFloat(String(aff.commissionRate)).toFixed(2)}` : `${parseFloat(String(aff.commissionRate)).toFixed(1)}%`}
-                      </td>
-                      <td className="py-3 px-3 text-white">{aff.totalClients}</td>
-                      <td className="py-3 px-3 text-green-400">${parseFloat(String(aff.totalEarned || 0)).toFixed(2)}</td>
-                      <td className="py-3 px-3 text-yellow-400">${parseFloat(String(aff.totalPaid || 0)).toFixed(2)}</td>
-                      <td className="py-3 px-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${aff.isActive ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
-                          {aff.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3">
-                        <button
-                          onClick={() => toggleActiveMutation.mutate({ id: aff.id, isActive: !aff.isActive })}
-                          className="text-xs text-[hsl(var(--admin-text-muted))] hover:text-white transition-colors"
-                        >
-                          {aff.isActive ? 'Deactivate' : 'Activate'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {affiliates.map(aff => {
+                    const earned = parseFloat(String(aff.totalEarned || 0));
+                    const paid = parseFloat(String(aff.totalPaid || 0));
+                    const owed = Math.max(0, earned - paid);
+                    return (
+                      <tr key={aff.id} className="border-b border-[hsl(var(--admin-border))]/50 hover:bg-[hsl(var(--admin-bg))]/30">
+                        <td className="py-3 px-3">
+                          <p className="text-white font-medium">{aff.name}</p>
+                          <p className="text-xs text-[hsl(var(--admin-text-muted))]">{aff.email}</p>
+                        </td>
+                        <td className="py-3 px-3">
+                          <code className="text-[hsl(var(--admin-accent))] bg-[hsl(var(--admin-bg))]/50 px-2 py-0.5 rounded text-xs font-mono">{aff.code}</code>
+                        </td>
+                        <td className="py-3 px-3 text-white">
+                          {aff.commissionType === 'flat' ? `$${parseFloat(String(aff.commissionRate)).toFixed(2)}` : `${parseFloat(String(aff.commissionRate)).toFixed(1)}%`}
+                        </td>
+                        <td className="py-3 px-3">
+                          <button
+                            onClick={() => setSignupsAffiliateId(signupsAffiliateId === aff.id ? null : aff.id)}
+                            className="text-white hover:text-[hsl(var(--admin-accent))] font-medium transition-colors flex items-center gap-1"
+                          >
+                            {aff.totalClients}
+                            <Users className="h-3 w-3 opacity-60" />
+                          </button>
+                        </td>
+                        <td className="py-3 px-3 text-green-400">${earned.toFixed(2)}</td>
+                        <td className="py-3 px-3 text-yellow-400">${paid.toFixed(2)}</td>
+                        <td className="py-3 px-3">
+                          <span className={`font-semibold ${owed > 0 ? 'text-red-400' : 'text-gray-500'}`}>${owed.toFixed(2)}</span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${aff.isActive ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                            {aff.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => { setLogSignupAffId(aff.id); setLogSignupOpen(true); }}
+                              className="text-xs text-[hsl(var(--admin-accent))] hover:text-white transition-colors"
+                            >
+                              + Client
+                            </button>
+                            <span className="text-[hsl(var(--admin-border))]">|</span>
+                            <button
+                              onClick={() => toggleActiveMutation.mutate({ id: aff.id, isActive: !aff.isActive })}
+                              className="text-xs text-[hsl(var(--admin-text-muted))] hover:text-white transition-colors"
+                            >
+                              {aff.isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
+              {signupsAffiliateId && (
+                <div className="mt-4 p-4 bg-[hsl(var(--admin-bg))]/50 rounded-lg border border-[hsl(var(--admin-border))]/50">
+                  <h4 className="text-sm font-semibold text-white mb-3">
+                    Signups for {affiliates.find(a => a.id === signupsAffiliateId)?.name}
+                  </h4>
+                  {signups.length === 0 ? (
+                    <p className="text-xs text-[hsl(var(--admin-text-muted))]">No signups recorded yet. Click "+ Client" to attribute a client.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {signups.map(s => (
+                        <div key={s.id} className="flex items-center justify-between text-xs">
+                          <span className="text-[hsl(var(--admin-text-muted))]">Client #{s.userId}</span>
+                          <span className="text-green-400">${parseFloat(String(s.commissionAmount || 0)).toFixed(2)}</span>
+                          <span className={s.commissionPaid ? 'text-gray-400' : 'text-yellow-400'}>{s.commissionPaid ? 'Paid' : 'Owed'}</span>
+                          <span className="text-[hsl(var(--admin-text-subtle))]">{s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '—'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </AdminCardContent>
@@ -5569,6 +5722,48 @@ function AffiliatesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={logSignupOpen} onOpenChange={setLogSignupOpen}>
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
+              Attribute Client to Affiliate
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-xs text-[hsl(var(--admin-text-muted))]">
+              Affiliate: <strong className="text-white">{affiliates.find(a => a.id === logSignupAffId)?.name}</strong>
+              {' '} — Commission: <strong className="text-green-400">{(() => {
+                const aff = affiliates.find(a => a.id === logSignupAffId);
+                if (!aff) return '—';
+                return aff.commissionType === 'flat' ? `$${parseFloat(String(aff.commissionRate)).toFixed(2)}` : `${parseFloat(String(aff.commissionRate)).toFixed(1)}%`;
+              })()}</strong>
+            </p>
+            <div>
+              <Label className="text-[hsl(var(--admin-text-muted))] text-xs mb-1 block">Client User ID</Label>
+              <Input
+                type="number"
+                value={signupClientId}
+                onChange={e => setSignupClientId(e.target.value)}
+                placeholder="e.g. 42"
+                className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white h-8 text-sm"
+              />
+              <p className="text-[10px] text-[hsl(var(--admin-text-subtle))] mt-1">Find the client's ID on the Clients page.</p>
+            </div>
+            <div className="flex gap-3 justify-end pt-2 border-t border-[hsl(var(--admin-border))]">
+              <Button variant="outline" onClick={() => setLogSignupOpen(false)} className="border-[hsl(var(--admin-border))] text-white">Cancel</Button>
+              <Button
+                onClick={() => logSignupMutation.mutate({ affiliateId: logSignupAffId!, userId: parseInt(signupClientId) })}
+                disabled={logSignupMutation.isPending || !signupClientId || !logSignupAffId}
+                className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
+              >
+                {logSignupMutation.isPending ? 'Logging...' : 'Log Signup'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -5576,13 +5771,49 @@ function AffiliatesPage() {
 // ============================================================
 // PAY-PER-DELETE TAB — Track deletion events and billing
 // ============================================================
-function PayPerDeleteTab({ uploadId, report }: { uploadId: number | null; report: any | null }) {
+function PayPerDeleteTab({ uploadId, report }: { uploadId: number; report: (CreditReportUpload & { clientName?: string }) | undefined | null }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const clientId = report?.userId;
 
   const [addOpen, setAddOpen] = useState(false);
+  const [defaultRate, setDefaultRate] = useState('99.00');
   const [newEvent, setNewEvent] = useState({ accountName: '', bureau: 'Experian', billingRate: '99.00' });
+
+  const openAddDialog = () => {
+    setNewEvent({ accountName: '', bureau: 'Experian', billingRate: defaultRate });
+    setAddOpen(true);
+  };
+
+  const printInvoice = () => {
+    if (events.length === 0) return;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`
+      <html><head><title>Pay-Per-Delete Invoice</title>
+      <style>body{font-family:Arial,sans-serif;padding:40px;color:#111}h1{font-size:22px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:10px;text-align:left}th{background:#f5f5f5}tfoot td{font-weight:bold}.unpaid{color:#c00}.paid{color:#080}</style>
+      </head><body>
+      <h1>Pay-Per-Delete Invoice</h1>
+      <p><strong>Client:</strong> ${report?.clientName || `Client #${clientId}`}</p>
+      <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+      <table>
+        <thead><tr><th>Account</th><th>Bureau</th><th>Amount</th><th>Date Deleted</th><th>Status</th></tr></thead>
+        <tbody>${events.map(e => `
+          <tr>
+            <td>${e.accountName}</td>
+            <td>${e.bureau}</td>
+            <td>$${parseFloat(String(e.billingRate)).toFixed(2)}</td>
+            <td>${e.deletedAt ? new Date(e.deletedAt).toLocaleDateString() : '—'}</td>
+            <td class="${e.isPaid ? 'paid' : 'unpaid'}">${e.isPaid ? 'PAID' : 'UNPAID'}</td>
+          </tr>`).join('')}
+        </tbody>
+        <tfoot><tr><td colspan="2">Total</td><td>$${totalRevenue.toFixed(2)}</td><td></td><td class="paid">Collected: $${paidRevenue.toFixed(2)}</td></tr></tfoot>
+      </table>
+      </body></html>
+    `);
+    win.document.close();
+    win.print();
+  };
 
   const { data: allEvents = [], isLoading } = useQuery<DeletionEvent[]>({
     queryKey: ['/api/admin/deletion-events', clientId],
@@ -5656,11 +5887,26 @@ function PayPerDeleteTab({ uploadId, report }: { uploadId: number | null; report
 
       <AdminCard>
         <AdminCardHeader>
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center justify-between w-full flex-wrap gap-2">
             <AdminCardTitle icon={<DollarSign className="h-5 w-5 text-yellow-400" />}>Pay-Per-Delete Billing Tracker</AdminCardTitle>
-            <Button onClick={() => setAddOpen(true)} size="sm" className="bg-yellow-600 hover:bg-yellow-700 text-white">
-              <Plus className="h-4 w-4 mr-1" /> Log Deletion
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-[hsl(var(--admin-text-muted))]">Default $</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={defaultRate}
+                  onChange={e => setDefaultRate(e.target.value)}
+                  className="h-7 w-20 text-xs bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white"
+                />
+              </div>
+              <Button onClick={printInvoice} size="sm" variant="outline" disabled={events.length === 0} className="border-[hsl(var(--admin-border))] text-white h-7 text-xs">
+                <Printer className="h-3 w-3 mr-1" /> Invoice
+              </Button>
+              <Button onClick={openAddDialog} size="sm" className="bg-yellow-600 hover:bg-yellow-700 text-white h-7 text-xs">
+                <Plus className="h-3 w-3 mr-1" /> Log Deletion
+              </Button>
+            </div>
           </div>
         </AdminCardHeader>
         <AdminCardContent>
