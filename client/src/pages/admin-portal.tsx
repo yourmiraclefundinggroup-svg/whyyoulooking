@@ -210,6 +210,8 @@ export default function AdminPortal() {
       return <MailQueuePage clientUsers={clientUsers} />;
     } else if (location === "/admin-portal/analytics") {
       return <AnalyticsPage clientUsers={clientUsers} />;
+    } else if (location === "/admin-portal/white-label") {
+      return <AnalyticsPage clientUsers={clientUsers} />;
     } else if (location === "/admin-portal/settings") {
       return <SettingsPage />;
     } else if (location === "/admin-portal/users") {
@@ -1359,8 +1361,8 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
   };
 
   const selectAll = () => {
-    const unsent = filteredLetters.filter(l => l.status !== 'sent').map(l => l.id);
-    setBulkSelected(unsent.length === bulkSelected.length ? [] : unsent);
+    const readyToSend = filteredLetters.filter(l => l.status === 'approved').map(l => l.id);
+    setBulkSelected(readyToSend.length === bulkSelected.length ? [] : readyToSend);
   };
 
   return (
@@ -1411,9 +1413,9 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
             <AdminCardTitle icon={<Mail className="h-5 w-5" />}>
               {statusFilter === 'all' ? 'All Letters' : `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Letters`}
             </AdminCardTitle>
-            {filteredLetters.some(l => l.status !== 'sent') && (
+            {filteredLetters.some(l => l.status === 'approved') && (
               <Button variant="ghost" size="sm" onClick={selectAll} className="text-[hsl(var(--admin-text-muted))] hover:text-white">
-                {bulkSelected.length > 0 ? 'Deselect All' : 'Select All Pending'}
+                {bulkSelected.length > 0 ? 'Deselect All' : 'Select All Ready'}
               </Button>
             )}
           </div>
