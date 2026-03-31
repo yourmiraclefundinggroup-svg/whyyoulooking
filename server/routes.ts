@@ -6651,6 +6651,13 @@ If you are just answering a question (not updating the letter), just respond nor
       if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
       const affiliateId = Number(req.params.id);
       const { userId, commissionAmount } = req.body;
+      if (!userId || !affiliateId) return res.status(400).json({ error: "affiliateId and userId are required" });
+
+      // Idempotency: prevent duplicate signup attribution for the same affiliate + client
+      const existing = await storage.getAffiliateSignups(affiliateId);
+      const duplicate = existing.find(s => s.userId === Number(userId));
+      if (duplicate) return res.status(409).json({ error: "Client already attributed to this affiliate" });
+
       const signup = await storage.createAffiliateSignup({ affiliateId, userId, commissionAmount, commissionPaid: false });
       // Update affiliate totals
       const affiliate = await storage.getAffiliate(affiliateId);

@@ -2235,6 +2235,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   const [letterFormat, setLetterFormat] = useState<'standard' | 'metro2'>('standard');
   const [bureauCount, setBureauCount] = useState<'single' | 'all'>('single');
   const [progressReportOpen, setProgressReportOpen] = useState(false);
+  const [activeDisputeTab, setActiveDisputeTab] = useState('overview');
   const [markRemovedOpen, setMarkRemovedOpen] = useState(false);
   const [markRemovedAccountName, setMarkRemovedAccountName] = useState('');
   const [markRemovedRate, setMarkRemovedRate] = useState(() => {
@@ -2697,31 +2698,22 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
           <Button
             size="sm"
             onClick={() => {
-              const printContent = document.getElementById('progress-report-printable');
-              if (printContent) {
-                const w = window.open('', '_blank');
-                if (w) {
-                  w.document.write(`<html><head><title>Progress Report - ${report?.clientName || 'Client'}</title><style>body{font-family:Arial,sans-serif;padding:40px;color:#000;max-width:800px;margin:0 auto}h1{color:#1a1a1a;border-bottom:3px solid #f59e0b;padding-bottom:12px}h2{color:#374151;font-size:16px;margin-top:24px}.stat{display:inline-block;background:#f3f4f6;border-radius:8px;padding:12px 20px;margin:6px;text-align:center}.stat-val{font-size:28px;font-weight:bold;color:#f59e0b}.stat-lbl{font-size:11px;color:#6b7280;margin-top:2px}table{width:100%;border-collapse:collapse;margin-top:12px}th{background:#f3f4f6;padding:8px;text-align:left;font-size:12px}td{padding:8px;border-bottom:1px solid #e5e7eb;font-size:12px}.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}.badge-green{background:#dcfce7;color:#16a34a}.badge-yellow{background:#fef9c3;color:#ca8a04}.badge-red{background:#fee2e2;color:#dc2626}@media print{body{padding:20px}}</style></head><body>`);
-                  w.document.write(printContent.innerHTML);
-                  w.document.write('</body></html>');
-                  w.document.close();
-                  w.print();
-                }
-              } else {
-                // If not rendered yet, switch to the progress-report tab first
-                setProgressReportOpen(true);
-                setTimeout(() => {
-                  const el = document.getElementById('progress-report-printable');
-                  if (el) {
-                    const w = window.open('', '_blank');
-                    if (w) {
-                      w.document.write(`<html><head><title>Progress Report</title></head><body>${el.innerHTML}</body></html>`);
-                      w.document.close();
-                      w.print();
-                    }
+              // Switch to the progress-report tab to ensure content is mounted
+              setActiveDisputeTab('progress-report');
+              // Wait for the tab to render, then print
+              setTimeout(() => {
+                const el = document.getElementById('progress-report-printable');
+                if (el) {
+                  const w = window.open('', '_blank');
+                  if (w) {
+                    w.document.write(`<html><head><title>Progress Report - ${report?.clientName || 'Client'}</title><style>body{font-family:Arial,sans-serif;padding:40px;color:#000;max-width:800px;margin:0 auto}h1{color:#1a1a1a;border-bottom:3px solid #f59e0b;padding-bottom:12px}h2{color:#374151;font-size:16px;margin-top:24px}.stat{display:inline-block;background:#f3f4f6;border-radius:8px;padding:12px 20px;margin:6px;text-align:center}.stat-val{font-size:28px;font-weight:bold;color:#f59e0b}.stat-lbl{font-size:11px;color:#6b7280;margin-top:2px}table{width:100%;border-collapse:collapse;margin-top:12px}th{background:#f3f4f6;padding:8px;text-align:left;font-size:12px}td{padding:8px;border-bottom:1px solid #e5e7eb;font-size:12px}.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}.badge-green{background:#dcfce7;color:#16a34a}.badge-yellow{background:#fef9c3;color:#ca8a04}.badge-red{background:#fee2e2;color:#dc2626}@media print{body{padding:20px}}</style></head><body>`);
+                    w.document.write(el.innerHTML);
+                    w.document.write('</body></html>');
+                    w.document.close();
+                    w.print();
                   }
-                }, 500);
-              }
+                }
+              }, 300);
             }}
             variant="outline"
             className="border-emerald-500/50 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
@@ -2855,7 +2847,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
         </AdminCard>
       )}
 
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs value={activeDisputeTab} onValueChange={setActiveDisputeTab} className="w-full">
         <TabsList className="bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] p-1 flex-wrap h-auto gap-1">
           <TabsTrigger value="overview" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             Overview
