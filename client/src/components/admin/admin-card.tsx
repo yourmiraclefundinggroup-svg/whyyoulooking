@@ -80,7 +80,7 @@ interface AdminStatCardProps {
 
 export function AdminStatCard({ label, value, icon, trend, color = "orange" }: AdminStatCardProps) {
   const colorClasses = {
-    orange: "from-[hsl(var(--admin-accent))] to-[hsl(25,95%,45%)]",
+    orange: "from-[hsl(var(--admin-accent))] to-[hsl(var(--admin-accent-deep))]",
     blue: "from-blue-500 to-blue-600",
     green: "from-emerald-500 to-emerald-600",
     red: "from-red-500 to-red-600",

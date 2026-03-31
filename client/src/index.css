@@ -92,16 +92,16 @@
    Light = .light ancestor override
    ============================================================ */
 
-/* --- DARK MODE (DEFAULT) — exact scoreshift-v2 palette --- */
+/* --- DARK MODE (DEFAULT) — zinc near-black palette --- */
 .admin-theme {
-  /* Backgrounds: #050A14 → #0A1628 → #0F1E35 → #162540 */
-  --admin-bg:           222 60% 5%;   /* #050A14 */
-  --admin-bg-elevated:  222 60% 10%;  /* #0A1628 */
-  --admin-sidebar:      222 65% 4%;   /* slightly deeper than bg */
-  --admin-card:         222 56% 13%;  /* #0F1E35 */
-  --admin-card-hover:   222 49% 17%;  /* #162540 */
-  --admin-border:       222 35% 16%;  /* subtle border on navy */
-  --admin-border-accent:222 28% 22%;  /* slightly brighter border */
+  /* Backgrounds: zinc-950 → zinc-900 → zinc-800 */
+  --admin-bg:           240 10% 4%;   /* zinc-950 #09090b */
+  --admin-bg-elevated:  240 6% 7%;    /* zinc-900 ish */
+  --admin-sidebar:      240 10% 3%;   /* slightly deeper than bg */
+  --admin-card:         240 6% 10%;   /* zinc-900 #18181b */
+  --admin-card-hover:   240 4% 14%;   /* zinc-800 ish */
+  --admin-border:       240 4% 18%;   /* zinc-700 ish */
+  --admin-border-accent:240 4% 24%;   /* brighter border */
 
   /* Text: #F8FAFC / #94A3B8 */
   --admin-text:         210 40% 98%;  /* #F8FAFC */
@@ -111,6 +111,7 @@
   /* Accents */
   --admin-accent:       38 90% 51%;   /* gold #F59E0B */
   --admin-accent-hover: 38 90% 60%;   /* gold lighter */
+  --admin-accent-deep:  32 92% 38%;   /* deep warm gold for gradients */
   --admin-success:      160 68% 52%;  /* emerald #34D399 */
   --admin-warning:      38 90% 51%;   /* same gold */
   --admin-danger:       0 84% 60%;    /* red */

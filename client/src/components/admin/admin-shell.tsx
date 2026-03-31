@@ -181,7 +181,7 @@ export function AdminShell({ children }: AdminShellProps) {
             )}>
               <Link href="/admin-portal">
                 <div className="flex items-center gap-3 cursor-pointer">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(25,95%,45%)] flex items-center justify-center shadow-lg shadow-orange-500/20">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(var(--admin-accent-deep))] flex items-center justify-center shadow-lg shadow-[hsl(var(--admin-accent))]/20">
                     <Shield className="h-5 w-5 text-white" />
                   </div>
                   {!sidebarCollapsed && (
@@ -244,7 +244,7 @@ export function AdminShell({ children }: AdminShellProps) {
             {!sidebarCollapsed && (
               <div className="p-4 border-t border-[hsl(var(--admin-border))]">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(25,95%,45%)] flex items-center justify-center text-white font-semibold text-sm">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(var(--admin-accent-deep))] flex items-center justify-center text-white font-semibold text-sm">
                     {user?.firstName?.[0]}{user?.lastName?.[0]}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -311,7 +311,7 @@ export function AdminShell({ children }: AdminShellProps) {
               </Button>
 
               <div className="lg:hidden flex items-center gap-2 ml-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(25,95%,45%)] flex items-center justify-center text-white font-semibold text-xs">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(var(--admin-accent-deep))] flex items-center justify-center text-white font-semibold text-xs">
                   {user?.firstName?.[0]}{user?.lastName?.[0]}
                 </div>
               </div>
@@ -338,7 +338,7 @@ export function AdminShell({ children }: AdminShellProps) {
               >
                 <div className="flex items-center justify-between h-16 px-4 border-b border-[hsl(var(--admin-border))]">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(25,95%,45%)] flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(var(--admin-accent-deep))] flex items-center justify-center">
                       <Shield className="h-5 w-5 text-white" />
                     </div>
                     <div>
@@ -395,7 +395,7 @@ export function AdminShell({ children }: AdminShellProps) {
 
                 <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[hsl(var(--admin-border))]">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(25,95%,45%)] flex items-center justify-center text-white font-semibold">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(var(--admin-accent-deep))] flex items-center justify-center text-white font-semibold">
                       {user?.firstName?.[0]}{user?.lastName?.[0]}
                     </div>
                     <div className="flex-1">

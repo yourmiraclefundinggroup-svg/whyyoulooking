@@ -16,6 +16,7 @@ Preferred communication style: Simple, everyday language.
 - **Routing**: Wouter for lightweight client-side routing.
 - **Forms**: React Hook Form with Zod validation.
 - **UI/UX Decisions**: Animated credit score circles, gamified onboarding, mobile-optimized interfaces, professional layout with 12-tab navigation.
+- **Admin Portal Design System**: Zinc near-black dark mode (zinc-950 base), white/smoke light mode, single gold accent (`--admin-accent: 38 90% 51%`), deep gold gradient stop (`--admin-accent-deep: 32 92% 38%`). Semantic-only color use: amber=warnings, red=danger/derogatory/collections, green=success/approval, blue=info/hard-inquiries, late-payment severity (30d=yellow/60d=orange). Bureau badges intentionally kept: Experian=blue-500, Equifax=red-500, TransUnion=purple-500.
 
 ### Backend Architecture
 - **Framework**: Express.js with TypeScript.

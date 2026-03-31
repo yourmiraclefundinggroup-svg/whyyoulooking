@@ -322,7 +322,7 @@ function DashboardPage({ clientUsers }: { clientUsers: User[] }) {
                     {item.type === "dispute" && <FileText className="h-5 w-5 text-[hsl(var(--admin-accent))]" />}
                     {item.type === "mail" && <Package className="h-5 w-5 text-blue-400" />}
                     {item.type === "client" && <Users className="h-5 w-5 text-green-400" />}
-                    {item.type === "response" && <MessageCircle className="h-5 w-5 text-purple-400" />}
+                    {item.type === "response" && <MessageCircle className="h-5 w-5 text-[hsl(var(--admin-text-muted))]" />}
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-white">{item.action}</p>
@@ -602,7 +602,7 @@ function ClientManagementPage({
                 <p className="text-sm text-[hsl(var(--admin-text-muted))]">Active Issues</p>
               </div>
               <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
-                <div className="text-3xl font-bold text-amber-400">
+                <div className="text-3xl font-bold text-[hsl(var(--admin-accent))]">
                   {clientDisputes.filter((d: Dispute) => d.status === 'PENDING').length}
                 </div>
                 <p className="text-sm text-[hsl(var(--admin-text-muted))]">Pending Disputes</p>
@@ -773,13 +773,13 @@ function DisputeCenterPage({
           </div>
 
           {/* ── Dispute IQ™ Letter Generator ── */}
-          <AdminCard className="border-amber-500/40">
+          <AdminCard className="border-[hsl(var(--admin-accent))]/40">
             <AdminCardHeader>
               <div className="flex items-center justify-between w-full">
-                <AdminCardTitle icon={<Sparkles className="h-5 w-5 text-amber-400" />}>
+                <AdminCardTitle icon={<Sparkles className="h-5 w-5 text-[hsl(var(--admin-accent))]" />}>
                   Dispute IQ™ Letter Generator
                 </AdminCardTitle>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-[hsl(var(--admin-accent))]/20 text-[hsl(var(--admin-accent))] border border-[hsl(var(--admin-accent))]/30 font-semibold">
                   Dual-AI • GPT-4o + Claude
                 </span>
               </div>
@@ -865,14 +865,14 @@ function DisputeCenterPage({
                   onChange={(e) => setDisputeIQPriorResponse(e.target.value)}
                   placeholder="Paste the bureau's previous response here to craft a targeted escalation..."
                   rows={3}
-                  className="w-full rounded-md border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))] text-white text-sm px-3 py-2 placeholder:text-[hsl(var(--admin-text-muted))] focus:outline-none focus:ring-1 focus:ring-amber-500 resize-none"
+                  className="w-full rounded-md border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))] text-white text-sm px-3 py-2 placeholder:text-[hsl(var(--admin-text-muted))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--admin-accent))] resize-none"
                 />
               </div>
 
               <Button
                 onClick={() => disputeIQMutation.mutate()}
                 disabled={disputeIQMutation.isPending || !disputeIQSelectedIssue}
-                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold"
+                className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white font-semibold"
               >
                 {disputeIQMutation.isPending ? (
                   <>
@@ -891,7 +891,7 @@ function DisputeCenterPage({
               {generatedLetter && generatedLetterMeta && (
                 <div className="mt-4 space-y-2">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-[hsl(var(--admin-accent))]/20 text-[hsl(var(--admin-accent))] border border-[hsl(var(--admin-accent))]/30 font-semibold">
                       Dispute IQ™ — Unique Letter
                     </span>
                     <span className="text-xs text-[hsl(var(--admin-text-muted))]">
@@ -947,7 +947,7 @@ function DisputeCenterPage({
                       </div>
                       <Button
                         size="sm"
-                        className="w-full bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-purple-500/30"
+                        className="w-full bg-[hsl(var(--admin-accent))]/15 text-[hsl(var(--admin-accent))] border border-[hsl(var(--admin-accent))]/30 hover:bg-[hsl(var(--admin-accent))]/25"
                         onClick={() => {
                           setSelectedIssue(issue);
                           setDisputeModalOpen(true);
@@ -1689,12 +1689,12 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
       return (
         <div className="min-w-[140px]">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-amber-400 font-medium">Scoreshifting...</span>
+            <span className="text-xs text-[hsl(var(--admin-accent))] font-medium">Scoreshifting...</span>
             <span className="text-xs text-[hsl(var(--admin-text-muted))]">{Math.round(progress)}%</span>
           </div>
           <div className="w-full bg-[hsl(var(--admin-bg))] rounded-full h-2 overflow-hidden">
             <div 
-              className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full transition-all duration-500 ease-out"
+              className="bg-gradient-to-r from-[hsl(var(--admin-accent))] to-[hsl(var(--admin-accent-deep))] h-2 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -2858,7 +2858,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
           <TabsTrigger value="derogatory" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white text-red-400">
             Derogatory ({derogatoryCount})
           </TabsTrigger>
-          <TabsTrigger value="late-payments" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white text-yellow-400">
+          <TabsTrigger value="late-payments" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white text-[hsl(var(--admin-text-muted))]">
             Late Payments ({latePaymentCount})
           </TabsTrigger>
           <TabsTrigger value="inquiries" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
@@ -2905,7 +2905,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
             <FileText className="h-4 w-4 mr-1" />
             Progress Report
           </TabsTrigger>
-          <TabsTrigger value="pay-per-delete" className="data-[state=active]:bg-yellow-600 data-[state=active]:text-white text-yellow-400">
+          <TabsTrigger value="pay-per-delete" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white text-[hsl(var(--admin-accent))]">
             <DollarSign className="h-4 w-4 mr-1" />
             Pay-Per-Delete
           </TabsTrigger>
@@ -2976,22 +2976,22 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                     </div>
                   )}
                   {collections.length > 0 && (
-                    <div className="rounded-lg bg-orange-500/10 border border-orange-500/30 overflow-hidden">
-                      <div className="flex items-center justify-between p-3 border-b border-orange-500/20">
+                    <div className="rounded-lg bg-red-500/10 border border-red-500/30 overflow-hidden">
+                      <div className="flex items-center justify-between p-3 border-b border-red-500/20">
                         <div className="flex items-center gap-3">
-                          <Landmark className="h-5 w-5 text-orange-400" />
+                          <Landmark className="h-5 w-5 text-red-400" />
                           <span className="text-white font-medium">Collection Accounts</span>
                         </div>
-                        <span className="text-lg font-bold text-orange-400">{collections.length}</span>
+                        <span className="text-lg font-bold text-red-400">{collections.length}</span>
                       </div>
                       <div className="p-3 space-y-2">
                         {collections.map((collection) => (
-                          <div key={collection.id} className="flex items-center justify-between py-2 px-3 rounded bg-orange-500/5">
+                          <div key={collection.id} className="flex items-center justify-between py-2 px-3 rounded bg-red-500/5">
                             <div>
                               <span className="text-white text-sm font-medium">{collection.agencyName}</span>
-                              {collection.originalCreditor && <p className="text-xs text-orange-300">Original: {collection.originalCreditor}</p>}
+                              {collection.originalCreditor && <p className="text-xs text-red-300">Original: {collection.originalCreditor}</p>}
                             </div>
-                            <span className="text-orange-400 text-sm font-medium">{collection.amount ? `$${collection.amount.toLocaleString()}` : '--'}</span>
+                            <span className="text-red-400 text-sm font-medium">{collection.amount ? `$${collection.amount.toLocaleString()}` : '--'}</span>
                           </div>
                         ))}
                       </div>
@@ -3024,19 +3024,19 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                     </div>
                   )}
                   {inquiries.filter(i => i.inquiryType === 'hard').length > 0 && (
-                    <div className="rounded-lg bg-purple-500/10 border border-purple-500/30 overflow-hidden">
-                      <div className="flex items-center justify-between p-3 border-b border-purple-500/20">
+                    <div className="rounded-lg bg-[hsl(var(--admin-info))]/10 border border-[hsl(var(--admin-info))]/30 overflow-hidden">
+                      <div className="flex items-center justify-between p-3 border-b border-[hsl(var(--admin-info))]/20">
                         <div className="flex items-center gap-3">
-                          <SearchIcon className="h-5 w-5 text-purple-400" />
+                          <SearchIcon className="h-5 w-5 text-[hsl(var(--admin-info))]" />
                           <span className="text-white font-medium">Hard Inquiries</span>
                         </div>
-                        <span className="text-lg font-bold text-purple-400">{inquiries.filter(i => i.inquiryType === 'hard').length}</span>
+                        <span className="text-lg font-bold text-[hsl(var(--admin-info))]">{inquiries.filter(i => i.inquiryType === 'hard').length}</span>
                       </div>
                       <div className="p-3 space-y-2">
                         {inquiries.filter(i => i.inquiryType === 'hard').map((inquiry) => (
-                          <div key={inquiry.id} className="flex items-center justify-between py-2 px-3 rounded bg-purple-500/5">
+                          <div key={inquiry.id} className="flex items-center justify-between py-2 px-3 rounded bg-[hsl(var(--admin-info))]/5">
                             <span className="text-white text-sm font-medium">{inquiry.creditorName}</span>
-                            <span className="text-purple-300 text-xs">{inquiry.inquiryDate ? new Date(inquiry.inquiryDate).toLocaleDateString() : '--'}</span>
+                            <span className="text-[hsl(var(--admin-text-muted))] text-xs">{inquiry.inquiryDate ? new Date(inquiry.inquiryDate).toLocaleDateString() : '--'}</span>
                           </div>
                         ))}
                       </div>
@@ -3906,7 +3906,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
             <div className="space-y-6">
               <AdminCard>
                 <AdminCardHeader>
-                  <AdminCardTitle icon={<Brain className="h-5 w-5 text-purple-400" />}>AI Assistant</AdminCardTitle>
+                  <AdminCardTitle icon={<Brain className="h-5 w-5 text-[hsl(var(--admin-accent))]" />}>AI Assistant</AdminCardTitle>
                 </AdminCardHeader>
                 <AdminCardContent>
                   <div className="space-y-4">
@@ -4508,7 +4508,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                                 size="sm"
                                 variant="outline"
                                 onClick={() => updateCalendarEventMutation.mutate({ id: event.id, status: 'follow-up' })}
-                                className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+                                className="border-[hsl(var(--admin-accent))]/50 text-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/10"
                                 data-testid={`button-follow-up-${event.id}`}
                               >
                                 <Clock className="h-4 w-4 mr-1" />
@@ -5001,20 +5001,20 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                   <p className="text-[10px] text-blue-300 mt-1">Metro2 format uses bureau data field codes (K4, DA, etc.)</p>
                 )}
               </div>
-              <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
-                <Label className="text-purple-400 font-medium text-sm mb-2 block">Target Bureaus</Label>
+              <div className="p-3 rounded-lg bg-[hsl(var(--admin-accent))]/10 border border-[hsl(var(--admin-accent))]/30">
+                <Label className="text-[hsl(var(--admin-accent))] font-medium text-sm mb-2 block">Target Bureaus</Label>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setBureauCount('single')}
-                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-all ${bureauCount === 'single' ? 'bg-purple-600 text-white' : 'bg-[hsl(var(--admin-bg))] text-[hsl(var(--admin-text-muted))] hover:text-white'}`}
+                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-all ${bureauCount === 'single' ? 'bg-[hsl(var(--admin-accent))] text-white' : 'bg-[hsl(var(--admin-bg))] text-[hsl(var(--admin-text-muted))] hover:text-white'}`}
                   >1 Bureau</button>
                   <button
                     onClick={() => setBureauCount('all')}
-                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-all ${bureauCount === 'all' ? 'bg-purple-600 text-white' : 'bg-[hsl(var(--admin-bg))] text-[hsl(var(--admin-text-muted))] hover:text-white'}`}
+                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-all ${bureauCount === 'all' ? 'bg-[hsl(var(--admin-accent))] text-white' : 'bg-[hsl(var(--admin-bg))] text-[hsl(var(--admin-text-muted))] hover:text-white'}`}
                   >All 3</button>
                 </div>
                 {bureauCount === 'all' && (
-                  <p className="text-[10px] text-purple-300 mt-1">Sends to Experian, Equifax & TransUnion</p>
+                  <p className="text-[10px] text-[hsl(var(--admin-accent))]/70 mt-1">Sends to Experian, Equifax & TransUnion</p>
                 )}
               </div>
             </div>
@@ -5422,11 +5422,11 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
 // LEADS CRM PAGE — Kanban pipeline for prospective clients
 // ============================================================
 const LEAD_STAGES = [
-  { id: 'new', label: 'New Lead', color: 'border-blue-500 bg-blue-500/10' },
-  { id: 'contacted', label: 'Contacted', color: 'border-yellow-500 bg-yellow-500/10' },
-  { id: 'consultation', label: 'Consultation', color: 'border-purple-500 bg-purple-500/10' },
+  { id: 'new', label: 'New Lead', color: 'border-[hsl(var(--admin-accent))] bg-[hsl(var(--admin-accent))]/10' },
+  { id: 'contacted', label: 'Contacted', color: 'border-sky-500 bg-sky-500/10' },
+  { id: 'consultation', label: 'Consultation', color: 'border-zinc-500 bg-zinc-500/10' },
   { id: 'onboarded', label: 'Onboarded', color: 'border-green-500 bg-green-500/10' },
-  { id: 'archived', label: 'Archived', color: 'border-gray-500 bg-gray-500/10' },
+  { id: 'archived', label: 'Archived', color: 'border-zinc-600 bg-zinc-600/10' },
 ];
 
 function LeadsCRMPage() {
@@ -5524,7 +5524,7 @@ function LeadsCRMPage() {
                           <p className="text-[hsl(var(--admin-text-muted))] text-xs truncate">{lead.email}</p>
                           {lead.phone && <p className="text-[hsl(var(--admin-text-muted))] text-xs flex items-center gap-1 mt-0.5"><Phone className="h-3 w-3" />{lead.phone}</p>}
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            {lead.creditScoreEstimate && <span className="text-yellow-400 text-xs">~{lead.creditScoreEstimate}</span>}
+                            {lead.creditScoreEstimate && <span className="text-[hsl(var(--admin-accent))] text-xs">~{lead.creditScoreEstimate}</span>}
                             {lead.source && <span className="text-[10px] bg-[hsl(var(--admin-bg))]/70 text-[hsl(var(--admin-text-subtle))] px-1.5 py-0.5 rounded capitalize">{lead.source.replace('_', ' ')}</span>}
                             <span className="text-[10px] text-[hsl(var(--admin-text-subtle))]">{daysInStage(lead)}d in stage</span>
                           </div>
@@ -5796,7 +5796,7 @@ function AffiliatesPage() {
                           </button>
                         </td>
                         <td className="py-3 px-3 text-green-400">${earned.toFixed(2)}</td>
-                        <td className="py-3 px-3 text-yellow-400">${paid.toFixed(2)}</td>
+                        <td className="py-3 px-3 text-[hsl(var(--admin-accent))]">${paid.toFixed(2)}</td>
                         <td className="py-3 px-3">
                           <span className={`font-semibold ${owed > 0 ? 'text-red-400' : 'text-gray-500'}`}>${owed.toFixed(2)}</span>
                         </td>
@@ -5840,7 +5840,7 @@ function AffiliatesPage() {
                         <div key={s.id} className="flex items-center justify-between text-xs">
                           <span className="text-[hsl(var(--admin-text-muted))]">Client #{s.userId}</span>
                           <span className="text-green-400">${parseFloat(String(s.commissionAmount || 0)).toFixed(2)}</span>
-                          <span className={s.commissionPaid ? 'text-gray-400' : 'text-yellow-400'}>{s.commissionPaid ? 'Paid' : 'Owed'}</span>
+                          <span className={s.commissionPaid ? 'text-[hsl(var(--admin-text-subtle))]' : 'text-[hsl(var(--admin-accent))]'}>{s.commissionPaid ? 'Paid' : 'Owed'}</span>
                           <span className="text-[hsl(var(--admin-text-subtle))]">{s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '—'}</span>
                         </div>
                       ))}
@@ -6129,14 +6129,14 @@ function PayPerDeleteTab({ uploadId, report }: { uploadId: number; report: (Cred
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-4">
         <AdminStatCard label="Items Deleted" value={events.length} icon={<CheckCircle className="h-5 w-5 text-green-400" />} />
-        <AdminStatCard label="Total Billed" value={`$${totalRevenue.toFixed(2)}`} icon={<DollarSign className="h-5 w-5 text-yellow-400" />} />
+        <AdminStatCard label="Total Billed" value={`$${totalRevenue.toFixed(2)}`} icon={<DollarSign className="h-5 w-5 text-[hsl(var(--admin-accent))]" />} />
         <AdminStatCard label="Outstanding" value={`$${unpaidRevenue.toFixed(2)}`} icon={<AlertCircle className="h-5 w-5 text-red-400" />} />
       </div>
 
       <AdminCard>
         <AdminCardHeader>
           <div className="flex items-center justify-between w-full flex-wrap gap-2">
-            <AdminCardTitle icon={<DollarSign className="h-5 w-5 text-yellow-400" />}>Pay-Per-Delete Billing Tracker</AdminCardTitle>
+            <AdminCardTitle icon={<DollarSign className="h-5 w-5 text-[hsl(var(--admin-accent))]" />}>Pay-Per-Delete Billing Tracker</AdminCardTitle>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
                 <span className="text-xs text-[hsl(var(--admin-text-muted))]">Rate/item ($)</span>
@@ -6161,7 +6161,7 @@ function PayPerDeleteTab({ uploadId, report }: { uploadId: number; report: (Cred
               <Button onClick={printInvoice} size="sm" variant="outline" disabled={events.length === 0} className="border-[hsl(var(--admin-border))] text-white h-7 text-xs">
                 <Printer className="h-3 w-3 mr-1" /> Invoice
               </Button>
-              <Button onClick={openAddDialog} size="sm" className="bg-yellow-600 hover:bg-yellow-700 text-white h-7 text-xs">
+              <Button onClick={openAddDialog} size="sm" className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white h-7 text-xs">
                 <Plus className="h-3 w-3 mr-1" /> Log Deletion
               </Button>
             </div>
@@ -6193,7 +6193,7 @@ function PayPerDeleteTab({ uploadId, report }: { uploadId: number; report: (Cred
                     <tr key={event.id} className="border-b border-[hsl(var(--admin-border))]/50 hover:bg-[hsl(var(--admin-bg))]/30">
                       <td className="py-3 px-3 text-white font-medium">{event.accountName}</td>
                       <td className="py-3 px-3 text-[hsl(var(--admin-text-muted))]">{event.bureau}</td>
-                      <td className="py-3 px-3 text-yellow-400 font-semibold">${parseFloat(String(event.billingRate)).toFixed(2)}</td>
+                      <td className="py-3 px-3 text-[hsl(var(--admin-accent))] font-semibold">${parseFloat(String(event.billingRate)).toFixed(2)}</td>
                       <td className="py-3 px-3 text-[hsl(var(--admin-text-muted))] text-xs">
                         {event.deletedAt ? new Date(event.deletedAt).toLocaleDateString() : '—'}
                       </td>
@@ -6239,7 +6239,7 @@ function PayPerDeleteTab({ uploadId, report }: { uploadId: number; report: (Cred
         <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-yellow-400" />
+              <DollarSign className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
               Log Deleted Item
             </DialogTitle>
           </DialogHeader>
@@ -6271,7 +6271,7 @@ function PayPerDeleteTab({ uploadId, report }: { uploadId: number; report: (Cred
               <Button
                 onClick={() => createMutation.mutate(newEvent)}
                 disabled={createMutation.isPending || !newEvent.accountName}
-                className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white"
               >
                 {createMutation.isPending ? 'Logging...' : 'Log Deletion'}
               </Button>
