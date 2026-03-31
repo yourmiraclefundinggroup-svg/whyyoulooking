@@ -210,6 +210,8 @@ export default function AdminPortal() {
       return <MailQueuePage clientUsers={clientUsers} />;
     } else if (location === "/admin-portal/analytics") {
       return <AnalyticsPage clientUsers={clientUsers} />;
+    } else if (location === "/admin-portal/white-label") {
+      return <WhiteLabelPage />;
     } else if (location === "/admin-portal/settings") {
       return <SettingsPage />;
     } else if (location === "/admin-portal/users") {
@@ -1162,6 +1164,65 @@ function BureauAnalysisPage() {
   );
 }
 
+function WhiteLabelPage() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">White Label</h1>
+        <p className="text-[hsl(var(--admin-text-muted))]">Configure branding, domain, and platform settings.</p>
+      </div>
+      <AdminCard>
+        <AdminCardHeader>
+          <AdminCardTitle icon={<Package className="h-5 w-5" />}>White Label Configuration</AdminCardTitle>
+        </AdminCardHeader>
+        <AdminCardContent>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-white mb-2 block">Brand Name</Label>
+                <Input defaultValue="ScoreShift" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white" />
+              </div>
+              <div>
+                <Label className="text-white mb-2 block">Custom Domain</Label>
+                <Input defaultValue="app.scoreshift.com" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white" />
+              </div>
+              <div>
+                <Label className="text-white mb-2 block">Primary Color</Label>
+                <div className="flex items-center gap-2">
+                  <input type="color" defaultValue="#3B82F6" className="h-10 rounded-lg cursor-pointer" />
+                  <Input defaultValue="#3B82F6" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white font-mono text-sm flex-1" />
+                </div>
+              </div>
+              <div>
+                <Label className="text-white mb-2 block">Support Email</Label>
+                <Input defaultValue="support@scoreshift.com" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white" />
+              </div>
+            </div>
+            <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-white font-medium">Client Capacity</h4>
+                <span className="text-[hsl(var(--admin-text-muted))] text-sm">847 / 1,000</span>
+              </div>
+              <div className="w-full bg-[hsl(var(--admin-bg))] h-2 rounded-full overflow-hidden">
+                <div className="bg-[hsl(var(--admin-accent))] h-full" style={{ width: '84.7%' }}></div>
+              </div>
+              <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-2">84.7% capacity used</p>
+            </div>
+            <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+              <h4 className="text-white font-medium mb-3">API Key</h4>
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))]">
+                <input type="password" defaultValue="sk_live_..." className="flex-1 bg-transparent text-white outline-none font-mono text-sm" readOnly />
+                <Button size="sm" variant="outline" className="border-[hsl(var(--admin-border))] text-white hover:bg-[hsl(var(--admin-bg))]">Copy</Button>
+              </div>
+            </div>
+            <Button className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white">Save Configuration</Button>
+          </div>
+        </AdminCardContent>
+      </AdminCard>
+    </div>
+  );
+}
+
 function UsersRolesPage() {
   return (
     <div className="space-y-6">
@@ -1276,15 +1337,15 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
 
   const openLobSend = (letter: DisputeLetterNew) => {
     setSelectedLetter(letter);
-    const client = clientUsers.find(u => u.id === (letter as any).clientId);
+    const client = clientUsers.find(u => u.id === letter.clientId);
     if (client) {
       setLobAddress({
         fromName: `${client.firstName} ${client.lastName}`,
-        fromAddressLine1: (client as any).addressLine1 || '',
-        fromAddressLine2: (client as any).addressLine2 || '',
-        fromCity: (client as any).city || '',
-        fromState: (client as any).state || '',
-        fromZip: (client as any).zipCode || '',
+        fromAddressLine1: client.addressLine1 || '',
+        fromAddressLine2: client.addressLine2 || '',
+        fromCity: client.city || '',
+        fromState: client.state || '',
+        fromZip: client.zipCode || '',
       });
     }
     setLobSendOpen(true);
@@ -1298,14 +1359,14 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
     let sent = 0;
     for (const letter of readyLetters) {
       try {
-        const client = clientUsers.find(u => u.id === (letter as any).clientId);
+        const client = clientUsers.find(u => u.id === letter.clientId);
         const address = {
           fromName: client ? `${client.firstName} ${client.lastName}` : 'Client',
-          fromAddressLine1: (client as any)?.addressLine1 || '',
-          fromAddressLine2: (client as any)?.addressLine2 || '',
-          fromCity: (client as any)?.city || '',
-          fromState: (client as any)?.state || '',
-          fromZip: (client as any)?.zipCode || '',
+          fromAddressLine1: client?.addressLine1 || '',
+          fromAddressLine2: client?.addressLine2 || '',
+          fromCity: client?.city || '',
+          fromState: client?.state || '',
+          fromZip: client?.zipCode || '',
         };
         if (!address.fromAddressLine1 || !address.fromCity || !address.fromState || !address.fromZip) {
           toast({ title: `Skipped: ${letter.bureau}`, description: 'Client address not on file.', variant: 'destructive' });
@@ -1347,7 +1408,6 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
     draft: allLetters.filter(l => l.status === 'draft').length,
     approved: allLetters.filter(l => l.status === 'approved').length,
     sent: allLetters.filter(l => l.status === 'sent').length,
-    delivered: allLetters.filter(l => l.status === 'delivered').length,
   };
 
   const toggleBulkSelect = (id: number) => {
@@ -1355,7 +1415,7 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
   };
 
   const selectAll = () => {
-    const unsent = filteredLetters.filter(l => l.status !== 'sent' && l.status !== 'delivered').map(l => l.id);
+    const unsent = filteredLetters.filter(l => l.status !== 'sent').map(l => l.id);
     setBulkSelected(unsent.length === bulkSelected.length ? [] : unsent);
   };
 
@@ -1384,7 +1444,7 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {(Object.entries(statusCounts) as [string, number][]).map(([status, count]) => (
           <button
             key={status}
@@ -1407,7 +1467,7 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
             <AdminCardTitle icon={<Mail className="h-5 w-5" />}>
               {statusFilter === 'all' ? 'All Letters' : `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Letters`}
             </AdminCardTitle>
-            {filteredLetters.some(l => l.status !== 'sent' && l.status !== 'delivered') && (
+            {filteredLetters.some(l => l.status !== 'sent') && (
               <Button variant="ghost" size="sm" onClick={selectAll} className="text-[hsl(var(--admin-text-muted))] hover:text-white">
                 {bulkSelected.length > 0 ? 'Deselect All' : 'Select All Pending'}
               </Button>
@@ -1441,8 +1501,8 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
               </AdminTableHeader>
               <tbody>
                 {filteredLetters.map((letter) => {
-                  const client = clientUsers.find(u => u.id === (letter as any).clientId);
-                  const isSent = letter.status === 'sent' || letter.status === 'delivered';
+                  const client = clientUsers.find(u => u.id === letter.clientId);
+                  const isSent = letter.status === 'sent';
                   const isSelected = bulkSelected.includes(letter.id);
                   return (
                     <AdminTableRow key={letter.id} className={isSelected ? 'bg-[hsl(var(--admin-accent))]/10' : ''}>
@@ -1466,7 +1526,7 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
                       </AdminTableCell>
                       <AdminTableCell>
                         <AdminBadge variant={
-                          letter.status === 'sent' || letter.status === 'delivered' ? 'success' :
+                          letter.status === 'sent' ? 'success' :
                           letter.status === 'approved' ? 'warning' : 'default'
                         }>
                           {letter.status}
@@ -1533,7 +1593,7 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
               <pre className="whitespace-pre-wrap text-sm text-white bg-[hsl(var(--admin-bg))] p-4 rounded-lg border border-[hsl(var(--admin-border))] font-mono leading-relaxed max-h-[50vh] overflow-y-auto">
                 {selectedLetter.content}
               </pre>
-              {selectedLetter.status !== 'sent' && selectedLetter.status !== 'delivered' && (
+              {selectedLetter.status !== 'sent' && (
                 <Button
                   className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white"
                   onClick={() => { setViewLetterOpen(false); openLobSend(selectedLetter); }}
@@ -2755,13 +2815,13 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
             <Send className="h-4 w-4 mr-1" />
             Send Mail
           </TabsTrigger>
-          <TabsTrigger value="diff-view" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
-            <GitCompare className="h-4 w-4 mr-1" />
-            Compare
-          </TabsTrigger>
           <TabsTrigger value="calendar" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             <Calendar className="h-4 w-4 mr-1" />
             Calendar
+          </TabsTrigger>
+          <TabsTrigger value="diff-view" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
+            <GitCompare className="h-4 w-4 mr-1" />
+            Compare
           </TabsTrigger>
           <TabsTrigger value="lob-tracking" className="data-[state=active]:bg-[hsl(var(--admin-accent))] data-[state=active]:text-white">
             <Mail className="h-4 w-4 mr-1" />
@@ -4049,7 +4109,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 ) : (
                   <div className="space-y-4">
                     {letters.map((letter) => {
-                      const isSent = letter.status === 'sent' || letter.status === 'delivered';
+                      const isSent = letter.status === 'sent';
                       return (
                         <div key={letter.id} className={`p-4 rounded-lg border ${isSent ? 'bg-green-500/10 border-green-500/30' : 'bg-[hsl(var(--admin-bg))]/50 border-[hsl(var(--admin-border))]'}`}>
                           <div className="flex items-center justify-between">

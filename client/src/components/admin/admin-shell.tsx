@@ -90,6 +90,7 @@ const navGroups: NavGroup[] = [
     label: "Business",
     items: [
       { href: "/admin-portal/analytics", label: "Analytics", icon: TrendingUp },
+      { href: "/admin-portal/white-label", label: "White Label", icon: Package },
     ],
   },
   {

@@ -15,7 +15,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
 import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
-import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users, disputeLettersNew } from "@shared/schema";
+import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users, disputeLettersNew, disputes } from "@shared/schema";
 import { z } from "zod";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
@@ -4030,16 +4030,16 @@ Please contact this lead within 24 hours.
         .from(disputeLettersNew)
         .where(sql`status = 'sent' AND sent_date >= date_trunc('month', current_date)`);
 
-      const [uploadCountResult] = await db
+      const [activeDisputesResult] = await db
         .select({ count: sql<number>`count(*)` })
-        .from(creditReportUploads)
-        .where(sql`status = 'pending' OR status = 'processing'`);
+        .from(disputes)
+        .where(sql`status IN ('PENDING', 'SENT', 'DELIVERED', 'FOLLOW_UP_REQUIRED')`);
 
       res.json({
         totalClients: Number(clientCountResult?.count ?? 0),
         totalLetters: Number(letterCountResult?.count ?? 0),
         lettersSentThisMonth: Number(sentLettersResult?.count ?? 0),
-        activeDisputes: Number(uploadCountResult?.count ?? 0),
+        activeDisputes: Number(activeDisputesResult?.count ?? 0),
       });
     } catch (error: any) {
       console.error("Error fetching admin stats:", error);
