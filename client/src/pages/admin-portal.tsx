@@ -222,7 +222,7 @@ export default function AdminPortal() {
     } else if (location === "/admin-portal/analytics") {
       return <AnalyticsPage clientUsers={clientUsers} />;
     } else if (location === "/admin-portal/white-label") {
-      return <AnalyticsPage clientUsers={clientUsers} />;
+      return <WhiteLabelPage />;
     } else if (location === "/admin-portal/settings") {
       return <SettingsPage />;
     } else if (location === "/admin-portal/users") {
@@ -1074,6 +1074,65 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
                 <AdminBadge variant="success" className="mt-2">{item.trend}</AdminBadge>
               </div>
             ))}
+          </div>
+        </AdminCardContent>
+      </AdminCard>
+    </div>
+  );
+}
+
+function WhiteLabelPage() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-[hsl(var(--admin-text))]">White Label Configuration</h2>
+        <p className="text-[hsl(var(--admin-text-muted))] mt-1">Customize your branded portal settings, domain, and API access.</p>
+      </div>
+      <AdminCard>
+        <AdminCardHeader>
+          <AdminCardTitle icon={<Package className="h-5 w-5" />}>White Label Configuration</AdminCardTitle>
+        </AdminCardHeader>
+        <AdminCardContent>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-[hsl(var(--admin-text))] mb-2 block">Brand Name</Label>
+                <Input defaultValue="ScoreShift" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]" />
+              </div>
+              <div>
+                <Label className="text-[hsl(var(--admin-text))] mb-2 block">Custom Domain</Label>
+                <Input defaultValue="app.scoreshift.com" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]" />
+              </div>
+              <div>
+                <Label className="text-[hsl(var(--admin-text))] mb-2 block">Primary Color</Label>
+                <div className="flex items-center gap-2">
+                  <input type="color" defaultValue="#3B82F6" className="h-10 rounded-lg cursor-pointer" />
+                  <Input defaultValue="#3B82F6" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] font-mono text-sm flex-1" />
+                </div>
+              </div>
+              <div>
+                <Label className="text-[hsl(var(--admin-text))] mb-2 block">Support Email</Label>
+                <Input defaultValue="support@scoreshift.com" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]" />
+              </div>
+            </div>
+            <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-[hsl(var(--admin-text))] font-medium">Client Capacity</h4>
+                <span className="text-[hsl(var(--admin-text-muted))] text-sm">847 / 1,000</span>
+              </div>
+              <div className="w-full bg-[hsl(var(--admin-bg))] h-2 rounded-full overflow-hidden">
+                <div className="bg-[hsl(var(--admin-accent))] h-full" style={{ width: '84.7%' }}></div>
+              </div>
+              <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-2">84.7% capacity used</p>
+            </div>
+            <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+              <h4 className="text-[hsl(var(--admin-text))] font-medium mb-3">API Key</h4>
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))]">
+                <input type="password" defaultValue="sk_live_..." className="flex-1 bg-transparent text-[hsl(var(--admin-text))] outline-none font-mono text-sm" readOnly />
+                <Button size="sm" variant="outline" className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] hover:bg-[hsl(var(--admin-bg))]">Copy</Button>
+              </div>
+            </div>
+            <Button className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white">Save Configuration</Button>
           </div>
         </AdminCardContent>
       </AdminCard>

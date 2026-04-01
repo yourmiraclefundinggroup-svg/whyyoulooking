@@ -140,7 +140,7 @@ export function AdminShell({ children }: AdminShellProps) {
             "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200",
             isActive
               ? "bg-gradient-to-r from-[hsl(var(--admin-accent))]/20 to-[hsl(var(--admin-accent))]/5 text-[hsl(var(--admin-accent))] border-l-2 border-[hsl(var(--admin-accent))]"
-              : "text-[hsl(var(--admin-text-muted))] hover:text-white hover:bg-[hsl(var(--admin-card))]",
+              : "text-[hsl(var(--admin-text-muted))] hover:text-[hsl(var(--admin-text))] hover:bg-[hsl(var(--admin-card))]",
             sidebarCollapsed && "justify-center px-2"
           )}
           onClick={onClick}
@@ -200,7 +200,7 @@ export function AdminShell({ children }: AdminShellProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0 text-[hsl(var(--admin-text-muted))] hover:text-white hover:bg-[hsl(var(--admin-card))]"
+                  className="h-8 w-8 p-0 text-[hsl(var(--admin-text-muted))] hover:text-[hsl(var(--admin-text))] hover:bg-[hsl(var(--admin-card))]"
                   onClick={() => setSidebarCollapsed(true)}
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -233,7 +233,7 @@ export function AdminShell({ children }: AdminShellProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full h-9 p-0 text-[hsl(var(--admin-text-muted))] hover:text-white hover:bg-[hsl(var(--admin-card))]"
+                  className="w-full h-9 p-0 text-[hsl(var(--admin-text-muted))] hover:text-[hsl(var(--admin-text))] hover:bg-[hsl(var(--admin-card))]"
                   onClick={() => setSidebarCollapsed(false)}
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -258,7 +258,7 @@ export function AdminShell({ children }: AdminShellProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 text-[hsl(var(--admin-text-muted))] hover:text-white hover:bg-[hsl(var(--admin-card))]"
+                    className="h-8 w-8 p-0 text-[hsl(var(--admin-text-muted))] hover:text-[hsl(var(--admin-text))] hover:bg-[hsl(var(--admin-card))]"
                     onClick={logout}
                   >
                     <LogOut className="h-4 w-4" />
@@ -282,7 +282,7 @@ export function AdminShell({ children }: AdminShellProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="lg:hidden h-9 w-9 p-0 text-[hsl(var(--admin-text-muted))] hover:text-white"
+                className="lg:hidden h-9 w-9 p-0 text-[hsl(var(--admin-text-muted))] hover:text-[hsl(var(--admin-text))]"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
                 {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -304,7 +304,7 @@ export function AdminShell({ children }: AdminShellProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="relative h-9 w-9 p-0 text-[hsl(var(--admin-text-muted))] hover:text-white hover:bg-[hsl(var(--admin-card))]"
+                className="relative h-9 w-9 p-0 text-[hsl(var(--admin-text-muted))] hover:text-[hsl(var(--admin-text))] hover:bg-[hsl(var(--admin-card))]"
               >
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-[hsl(var(--admin-accent))] rounded-full" />

@@ -1,4 +1,10 @@
 import { Shield, Mail } from 'lucide-react'
+import { Link } from 'wouter'
+
+const linkRoutes: Record<string, string> = {
+  'Privacy Policy': '/privacy-policy',
+  'Terms of Service': '/terms',
+}
 
 export function Footer() {
   const cols = [
@@ -55,9 +61,15 @@ export function Footer() {
               <ul className="flex flex-col gap-2.5">
                 {col.links.map((link) => (
                   <li key={link}>
-                    <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
-                      {link}
-                    </a>
+                    {linkRoutes[link] ? (
+                      <Link href={linkRoutes[link]} className="text-sm text-slate-400 hover:text-white transition-colors">
+                        {link}
+                      </Link>
+                    ) : (
+                      <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
+                        {link}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -71,8 +83,8 @@ export function Footer() {
             © 2026 ScoreShift, Inc. All rights reserved.
           </p>
           <div className="flex items-center gap-6 text-sm text-slate-500">
-            <a href="#" className="hover:text-slate-300 transition-colors">Privacy</a>
-            <a href="#" className="hover:text-slate-300 transition-colors">Terms</a>
+            <Link href="/privacy-policy" className="hover:text-slate-300 transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-slate-300 transition-colors">Terms</Link>
             <a href="#" className="hover:text-slate-300 transition-colors">FCRA Notice</a>
             <a href="#" className="hover:text-slate-300 transition-colors">Accessibility</a>
           </div>

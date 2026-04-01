@@ -117,39 +117,54 @@ const businessPlans = [
     ],
   },
   {
-    name: "White Label",
-    price: 399,
-    yearlyPrice: 333,
-    description: "Your brand. Your portal. CRC can't do this.",
+    name: "Starter",
+    price: 79.99,
+    yearlyPrice: 67,
+    description: "Launch your white-label credit repair brand",
     popular: false,
-    badge: "🏆 CRC DOESN'T OFFER THIS",
+    badge: null,
     crcComparison: "CRC has NO white label option at any price",
     features: [
-      "50 client seats",
-      "Full custom branding (logo, colors, domain)",
-      "Your clients never see ScoreShift",
-      "All Enterprise features",
-      "DSCR loan referral revenue",
-      "White label client portal",
-      "Custom onboarding flow",
+      "1 user",
+      "Up to 100 clients",
+      "Manual credit report upload",
+      "Client dashboard",
+      "Basic branding",
+      "Early access support",
     ],
   },
   {
-    name: "White Label Pro",
-    price: 799,
-    yearlyPrice: 666,
-    description: "200 clients under your brand. Maximum scale.",
-    popular: false,
-    badge: "🏆 EXCLUSIVE — No competitor offers this",
-    crcComparison: "CRC has NO white label at any price point",
+    name: "Growth",
+    price: 329.99,
+    yearlyPrice: 275,
+    description: "Scale your branded portal with a growing team",
+    popular: true,
+    badge: "Most Popular",
+    crcComparison: "CRC has NO white label option at any price",
     features: [
-      "200 client seats",
-      "Everything in White Label",
-      "Unlimited team members",
-      "API access + Zapier integration",
-      "Revenue sharing on DSCR loans",
-      "Priority support + dedicated CSM",
-      "Custom feature development",
+      "Up to 5 users",
+      "Up to 1,250 clients",
+      "Manual credit report upload",
+      "White-label branding",
+      "Client management tools",
+      "Priority support",
+    ],
+  },
+  {
+    name: "Scaling",
+    price: 459.99,
+    yearlyPrice: 384,
+    description: "Full white-label experience for high-volume shops",
+    popular: false,
+    badge: null,
+    crcComparison: "CRC has NO white label option at any price",
+    features: [
+      "Up to 10 users",
+      "Up to 2,500 clients",
+      "Manual credit report upload",
+      "Full white-label experience",
+      "Advanced client management",
+      "Priority support",
     ],
   },
 ];
@@ -326,6 +341,22 @@ export default function PricingPage() {
             ))}
           </div>
 
+          {/* Priority processing note — white-label only */}
+          {audience === "business" && (
+            <div
+              className="mb-10 flex items-start gap-3 px-5 py-4 rounded-xl border text-sm"
+              style={{
+                background: "rgba(245,158,11,0.06)",
+                borderColor: "rgba(245,158,11,0.2)",
+              }}
+            >
+              <span className="text-amber-400 mt-0.5 text-base leading-none flex-shrink-0">ℹ</span>
+              <p className="text-slate-300 leading-relaxed">
+                <span className="font-semibold text-amber-400">Current Version:</span> Credit reports are manually uploaded at this stage while direct credit bureau integration is being finalized.
+              </p>
+            </div>
+          )}
+
           {/* Feature comparison table */}
           <div className="mb-16">
             <h2 className="text-2xl font-black text-white text-center mb-8">Full Feature Comparison</h2>
@@ -346,7 +377,16 @@ export default function PricingPage() {
                 ))}
               </div>
 
-              {[
+              {(audience === "business" ? [
+                { label: "Users included", values: ["1 user", "Up to 5 users", "Up to 10 users"] },
+                { label: "Client seats", values: ["100 clients", "1,250 clients", "2,500 clients"] },
+                { label: "Manual credit report upload", values: [true, true, true] },
+                { label: "Client dashboard", values: [true, true, true] },
+                { label: "White-label branding", values: ["Basic", "Full", "Full"] },
+                { label: "Client management tools", values: [false, true, true] },
+                { label: "Advanced client management", values: [false, false, true] },
+                { label: "Priority support", values: [false, true, true] },
+              ] : [
                 { label: "Bureau monitoring", values: ["1 bureau", "All 3", "All 3"] },
                 { label: "AI dispute letters", values: ["3/mo", "Unlimited", "Unlimited"] },
                 { label: "Certified mail (Lob.com)", values: [false, true, true] },
@@ -354,7 +394,7 @@ export default function PricingPage() {
                 { label: "Score Map", values: [false, true, true] },
                 { label: "Loan Bridge (DSCR)", values: [false, false, true] },
                 { label: "Dedicated manager", values: [false, false, true] },
-              ].map((row, i) => (
+              ]).map((row, i) => (
                 <div
                   key={row.label}
                   className="grid text-sm border-t"
