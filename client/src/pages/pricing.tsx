@@ -276,7 +276,7 @@ export default function PricingPage() {
             >
               <span className="text-amber-400 mt-0.5 text-base leading-none flex-shrink-0">ℹ</span>
               <p className="text-slate-300 leading-relaxed">
-                <span className="font-semibold text-amber-400">Current Version:</span> Credit reports are manually uploaded at this stage while direct credit bureau integration is being finalized.
+                <span className="font-semibold text-amber-400">Current Version:</span> Credit reports are manually uploaded at this stage while direct credit integration is being finalized.
               </p>
             </div>
           )}
