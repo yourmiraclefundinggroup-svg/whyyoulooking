@@ -1023,7 +1023,7 @@ export const disputeItems = pgTable("dispute_items", {
 export const disputeLettersNew = pgTable("dispute_letters_new", {
   id: serial("id").primaryKey(),
   clientId: integer("client_id").references(() => users.id).notNull(),
-  uploadId: integer("upload_id").references(() => creditReportUploads.id).notNull(),
+  uploadId: integer("upload_id").references(() => creditReportUploads.id),
   letterType: text("letter_type", { enum: ["round1", "round2", "validation", "goodwill", "inquiry"] }).notNull(),
   bureau: text("bureau", { enum: ["EXPERIAN", "EQUIFAX", "TRANSUNION"] }).notNull(),
   content: text("content").notNull(),

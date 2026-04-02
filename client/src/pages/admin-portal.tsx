@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/components/theme-provider";
@@ -1325,6 +1325,66 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
   const [isBulkSending, setIsBulkSending] = useState(false);
   const [bulkProgress, setBulkProgress] = useState(0);
 
+  // Upload & Send state
+  const [uploadPanelOpen, setUploadPanelOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadClientId, setUploadClientId] = useState('');
+  const [uploadBureau, setUploadBureau] = useState('');
+  const [uploadLetterType, setUploadLetterType] = useState('round1');
+  const [uploadAddress, setUploadAddress] = useState({ fromName: '', fromAddressLine1: '', fromAddressLine2: '', fromCity: '', fromState: '', fromZip: '' });
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadAndSendMutation = useMutation({
+    mutationFn: async () => {
+      if (!uploadFile) throw new Error('No file selected');
+      const formData = new FormData();
+      formData.append('file', uploadFile);
+      formData.append('clientId', uploadClientId);
+      formData.append('bureau', uploadBureau);
+      formData.append('letterType', uploadLetterType);
+      Object.entries(uploadAddress).forEach(([k, v]) => { if (v) formData.append(k, v); });
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('/api/admin/upload-and-send-letter', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to send letter');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: 'Letter sent via certified mail!', description: `Tracking: ${data.trackingNumber || data.lobId}` });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/dispute-letters-new/all'] });
+      setUploadPanelOpen(false);
+      setUploadFile(null);
+      setUploadClientId('');
+      setUploadBureau('');
+      setUploadAddress({ fromName: '', fromAddressLine1: '', fromAddressLine2: '', fromCity: '', fromState: '', fromZip: '' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Send failed', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const handleClientSelect = (clientId: string) => {
+    setUploadClientId(clientId);
+    const client = clientUsers.find(u => String(u.id) === clientId);
+    if (client) {
+      setUploadAddress({
+        fromName: `${client.firstName} ${client.lastName}`,
+        fromAddressLine1: client.addressLine1 || '',
+        fromAddressLine2: client.addressLine2 || '',
+        fromCity: client.city || '',
+        fromState: client.state || '',
+        fromZip: client.zipCode || '',
+      });
+    }
+  };
+
   const { data: allLetters = [], isLoading: lettersLoading } = useQuery<DisputeLetterNew[]>({
     queryKey: ['/api/admin/dispute-letters-new/all'],
   });
@@ -1459,6 +1519,207 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
           </Button>
         )}
       </div>
+
+      {/* Upload & Send Panel */}
+      <AdminCard>
+        <AdminCardHeader>
+          <div className="flex items-center justify-between w-full">
+            <AdminCardTitle icon={<Upload className="h-5 w-5" />}>Upload & Send Letter</AdminCardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setUploadPanelOpen(!uploadPanelOpen)}
+              className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))] hover:text-[hsl(var(--admin-text))] hover:border-[hsl(var(--admin-accent))]/50"
+            >
+              {uploadPanelOpen ? 'Collapse' : 'Send an Existing Letter'}
+            </Button>
+          </div>
+        </AdminCardHeader>
+        {uploadPanelOpen && (
+          <AdminCardContent>
+            <p className="text-sm text-[hsl(var(--admin-text-muted))] mb-5">
+              Upload a dispute letter you already wrote and send it via Lob certified mail directly to the bureau.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left: File drop zone + bureau/client */}
+              <div className="space-y-4">
+                {/* File drop zone */}
+                <div
+                  className={`relative flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
+                    isDraggingOver
+                      ? 'border-[hsl(var(--admin-accent))] bg-[hsl(var(--admin-accent))]/10'
+                      : uploadFile
+                      ? 'border-green-500/50 bg-green-500/5'
+                      : 'border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50 hover:border-[hsl(var(--admin-accent))]/50'
+                  }`}
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }}
+                  onDragLeave={() => setIsDraggingOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDraggingOver(false);
+                    const f = e.dataTransfer.files[0];
+                    if (f) setUploadFile(f);
+                  }}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) setUploadFile(f); }}
+                  />
+                  {uploadFile ? (
+                    <>
+                      <FileText className="h-8 w-8 text-green-400 mb-2" />
+                      <p className="text-sm font-medium text-[hsl(var(--admin-text))]">{uploadFile.name}</p>
+                      <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-1">{(uploadFile.size / 1024).toFixed(0)} KB</p>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setUploadFile(null); }}
+                        className="mt-2 text-xs text-red-400 hover:text-red-300 underline"
+                      >
+                        Remove
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-8 w-8 text-[hsl(var(--admin-text-muted))] mb-2" />
+                      <p className="text-sm font-medium text-[hsl(var(--admin-text))]">Drop PDF here or click to browse</p>
+                      <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-1">PDF, DOC, DOCX — up to 20 MB</p>
+                    </>
+                  )}
+                </div>
+
+                {/* Client selector */}
+                <div>
+                  <Label className="text-[hsl(var(--admin-text))] mb-1.5 block text-sm">Client</Label>
+                  <Select value={uploadClientId} onValueChange={handleClientSelect}>
+                    <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]">
+                      <SelectValue placeholder="Select a client…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientUsers.map(u => (
+                        <SelectItem key={u.id} value={String(u.id)}>{u.firstName} {u.lastName}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Bureau selector */}
+                <div>
+                  <Label className="text-[hsl(var(--admin-text))] mb-1.5 block text-sm">Bureau</Label>
+                  <Select value={uploadBureau} onValueChange={setUploadBureau}>
+                    <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]">
+                      <SelectValue placeholder="Select bureau…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="EXPERIAN">Experian</SelectItem>
+                      <SelectItem value="EQUIFAX">Equifax</SelectItem>
+                      <SelectItem value="TRANSUNION">TransUnion</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Letter type */}
+                <div>
+                  <Label className="text-[hsl(var(--admin-text))] mb-1.5 block text-sm">Letter Type</Label>
+                  <Select value={uploadLetterType} onValueChange={setUploadLetterType}>
+                    <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="round1">Round 1</SelectItem>
+                      <SelectItem value="round2">Round 2</SelectItem>
+                      <SelectItem value="validation">Debt Validation</SelectItem>
+                      <SelectItem value="goodwill">Goodwill</SelectItem>
+                      <SelectItem value="inquiry">Inquiry Removal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Right: From address */}
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-[hsl(var(--admin-text))]">From Address <span className="text-[hsl(var(--admin-text-muted))] font-normal">(client's mailing address)</span></p>
+                <div>
+                  <Label className="text-[hsl(var(--admin-text))] mb-1.5 block text-sm">Full Name</Label>
+                  <Input
+                    value={uploadAddress.fromName}
+                    onChange={(e) => setUploadAddress(a => ({ ...a, fromName: e.target.value }))}
+                    placeholder="Jane Smith"
+                    className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[hsl(var(--admin-text))] mb-1.5 block text-sm">Street Address</Label>
+                  <Input
+                    value={uploadAddress.fromAddressLine1}
+                    onChange={(e) => setUploadAddress(a => ({ ...a, fromAddressLine1: e.target.value }))}
+                    placeholder="123 Main St"
+                    className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[hsl(var(--admin-text))] mb-1.5 block text-sm">Apt / Unit <span className="text-[hsl(var(--admin-text-muted))]">(optional)</span></Label>
+                  <Input
+                    value={uploadAddress.fromAddressLine2}
+                    onChange={(e) => setUploadAddress(a => ({ ...a, fromAddressLine2: e.target.value }))}
+                    placeholder="Apt 4B"
+                    className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-1">
+                    <Label className="text-[hsl(var(--admin-text))] mb-1.5 block text-sm">City</Label>
+                    <Input
+                      value={uploadAddress.fromCity}
+                      onChange={(e) => setUploadAddress(a => ({ ...a, fromCity: e.target.value }))}
+                      placeholder="Dallas"
+                      className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[hsl(var(--admin-text))] mb-1.5 block text-sm">State</Label>
+                    <Input
+                      value={uploadAddress.fromState}
+                      onChange={(e) => setUploadAddress(a => ({ ...a, fromState: e.target.value }))}
+                      placeholder="TX"
+                      maxLength={2}
+                      className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] uppercase"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[hsl(var(--admin-text))] mb-1.5 block text-sm">ZIP</Label>
+                    <Input
+                      value={uploadAddress.fromZip}
+                      onChange={(e) => setUploadAddress(a => ({ ...a, fromZip: e.target.value }))}
+                      placeholder="75001"
+                      className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]"
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white mt-2"
+                  disabled={
+                    !uploadFile || !uploadClientId || !uploadBureau ||
+                    !uploadAddress.fromName || !uploadAddress.fromAddressLine1 ||
+                    !uploadAddress.fromCity || !uploadAddress.fromState || !uploadAddress.fromZip ||
+                    uploadAndSendMutation.isPending
+                  }
+                  onClick={() => uploadAndSendMutation.mutate()}
+                >
+                  {uploadAndSendMutation.isPending ? (
+                    <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />Sending via Lob…</>
+                  ) : (
+                    <><Send className="h-4 w-4 mr-2" />Send via Certified Mail</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </AdminCardContent>
+        )}
+      </AdminCard>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {(Object.entries(statusCounts) as [string, number][]).map(([status, count]) => (

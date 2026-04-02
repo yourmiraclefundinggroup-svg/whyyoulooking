@@ -1,5 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import multer from "multer";
+import FormData from "form-data";
 import { storage } from "./storage";
 import { db } from "./db";
 import { 
@@ -5966,6 +5968,129 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
       });
     } catch (error: any) {
       console.error("Error sending letter via Lob:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Upload a pre-written dispute letter PDF and send via Lob certified mail
+  const uploadMemory = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+  app.post("/api/admin/upload-and-send-letter", authenticateToken, uploadMemory.single("file"), async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const file = (req as any).file as Express.Multer.File | undefined;
+      if (!file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const { clientId, bureau, fromName, fromAddressLine1, fromAddressLine2, fromCity, fromState, fromZip, letterType } = req.body;
+
+      if (!clientId || !bureau || !fromName || !fromAddressLine1 || !fromCity || !fromState || !fromZip) {
+        return res.status(400).json({ error: "clientId, bureau, and full from-address are required" });
+      }
+
+      const LOB_API_KEY = process.env.LOB_API_KEY;
+      if (!LOB_API_KEY) {
+        return res.status(500).json({ error: "Lob API key not configured" });
+      }
+
+      const bureauAddresses: Record<string, { name: string; line1: string; city: string; state: string; zip: string }> = {
+        EXPERIAN: { name: "Experian Information Solutions", line1: "P.O. Box 4500", city: "Allen", state: "TX", zip: "75013" },
+        EQUIFAX: { name: "Equifax Information Services", line1: "P.O. Box 740256", city: "Atlanta", state: "GA", zip: "30374" },
+        TRANSUNION: { name: "TransUnion Consumer Solutions", line1: "P.O. Box 2000", city: "Chester", state: "PA", zip: "19016" },
+      };
+
+      const toAddress = bureauAddresses[bureau as string];
+      if (!toAddress) {
+        return res.status(400).json({ error: `Unknown bureau: ${bureau}` });
+      }
+
+      // Create a disputeLettersNew record for tracking (uploadId is now nullable)
+      const { disputeLettersNew: lettersTable, users: usersTable } = await import("@shared/schema").then(m => m);
+      const { db } = await import("./db").then(m => m);
+      const { eq } = await import("drizzle-orm").then(m => m);
+
+      const [newLetter] = await db.insert(lettersTable).values({
+        clientId: parseInt(clientId),
+        uploadId: null,
+        letterType: (letterType || "round1") as any,
+        bureau: bureau as "EXPERIAN" | "EQUIFAX" | "TRANSUNION",
+        content: `[Uploaded PDF: ${file.originalname}]`,
+        generatedByAdminId: user.id,
+        status: "approved",
+      }).returning();
+
+      // Build multipart form data for Lob API using uploaded PDF buffer
+      const lobForm = new FormData();
+      lobForm.append("to[name]", toAddress.name);
+      lobForm.append("to[address_line1]", toAddress.line1);
+      lobForm.append("to[address_city]", toAddress.city);
+      lobForm.append("to[address_state]", toAddress.state);
+      lobForm.append("to[address_zip]", toAddress.zip);
+      lobForm.append("from[name]", fromName);
+      lobForm.append("from[address_line1]", fromAddressLine1);
+      if (fromAddressLine2) lobForm.append("from[address_line2]", fromAddressLine2);
+      lobForm.append("from[address_city]", fromCity);
+      lobForm.append("from[address_state]", fromState);
+      lobForm.append("from[address_zip]", fromZip);
+      lobForm.append("file", file.buffer, { filename: file.originalname, contentType: file.mimetype });
+      lobForm.append("color", "false");
+      lobForm.append("mail_type", "usps_certified");
+      lobForm.append("size", "us_letter");
+
+      const authHeader = "Basic " + Buffer.from(`${LOB_API_KEY}:`).toString("base64");
+
+      const lobResponse = await fetch("https://api.lob.com/v1/letters", {
+        method: "POST",
+        headers: {
+          "Authorization": authHeader,
+          ...lobForm.getHeaders(),
+        },
+        body: lobForm.getBuffer(),
+      });
+
+      const lobData = await lobResponse.json() as any;
+
+      if (!lobResponse.ok) {
+        // Delete the tracking record if Lob rejected it
+        await db.delete(lettersTable).where(eq(lettersTable.id, newLetter.id));
+        console.error("Lob API error:", lobData);
+        return res.status(502).json({ error: "Lob API error", details: lobData?.error?.message || JSON.stringify(lobData) });
+      }
+
+      const trackingNumber = lobData.tracking_number || lobData.id;
+      const today = new Date().toISOString().split("T")[0];
+
+      const [updated] = await db.update(lettersTable)
+        .set({
+          status: "sent",
+          sentDate: today,
+          trackingNumber,
+          lobId: lobData.id,
+          lobStatus: lobData.status,
+        })
+        .where(eq(lettersTable.id, newLetter.id))
+        .returning();
+
+      // Save client address to their user record if not already stored
+      await db.update(usersTable)
+        .set({ addressLine1: fromAddressLine1, addressLine2: fromAddressLine2 || null, city: fromCity, state: fromState, zipCode: fromZip })
+        .where(eq(usersTable.id, parseInt(clientId)));
+
+      res.json({
+        success: true,
+        letter: updated,
+        lobId: lobData.id,
+        trackingNumber,
+        lobStatus: lobData.status,
+        expectedDeliveryDate: lobData.expected_delivery_date,
+        url: lobData.url,
+      });
+    } catch (error: any) {
+      console.error("Error in upload-and-send-letter:", error);
       res.status(500).json({ error: error.message });
     }
   });
