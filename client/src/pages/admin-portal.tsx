@@ -1338,6 +1338,7 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
   const uploadAndSendMutation = useMutation({
     mutationFn: async () => {
       if (!uploadFile) throw new Error('No file selected');
+      if (uploadFile.type !== 'application/pdf') throw new Error('Only PDF files are accepted. Please convert your document to PDF first.');
       const formData = new FormData();
       formData.append('file', uploadFile);
       formData.append('clientId', uploadClientId);
@@ -1559,15 +1560,31 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
                     e.preventDefault();
                     setIsDraggingOver(false);
                     const f = e.dataTransfer.files[0];
-                    if (f) setUploadFile(f);
+                    if (f) {
+                      if (f.type !== 'application/pdf') {
+                        toast({ title: 'PDF required', description: 'Lob only accepts PDF files. Please convert your document to PDF first.', variant: 'destructive' });
+                        return;
+                      }
+                      setUploadFile(f);
+                    }
                   }}
                 >
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".pdf,.doc,.docx"
+                    accept=".pdf,application/pdf"
                     className="hidden"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) setUploadFile(f); }}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) {
+                        if (f.type !== 'application/pdf') {
+                          toast({ title: 'PDF required', description: 'Lob only accepts PDF files. Please convert your document to PDF first.', variant: 'destructive' });
+                          e.target.value = '';
+                          return;
+                        }
+                        setUploadFile(f);
+                      }
+                    }}
                   />
                   {uploadFile ? (
                     <>
@@ -1585,7 +1602,7 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
                     <>
                       <Upload className="h-8 w-8 text-[hsl(var(--admin-text-muted))] mb-2" />
                       <p className="text-sm font-medium text-[hsl(var(--admin-text))]">Drop PDF here or click to browse</p>
-                      <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-1">PDF, DOC, DOCX — up to 20 MB</p>
+                      <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-1">PDF only — up to 20 MB (Lob requirement)</p>
                     </>
                   )}
                 </div>

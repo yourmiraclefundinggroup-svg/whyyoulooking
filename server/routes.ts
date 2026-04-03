@@ -5986,6 +5986,10 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
         return res.status(400).json({ error: "No file uploaded" });
       }
 
+      if (file.mimetype !== "application/pdf") {
+        return res.status(400).json({ error: "Only PDF files are accepted. Lob cannot process DOCX or other formats. Please convert your document to PDF first." });
+      }
+
       const { clientId, bureau, fromName, fromAddressLine1, fromAddressLine2, fromCity, fromState, fromZip, letterType } = req.body;
 
       if (!clientId || !bureau || !fromName || !fromAddressLine1 || !fromCity || !fromState || !fromZip) {
