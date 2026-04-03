@@ -5911,7 +5911,7 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
       formParams.append("from[address_zip]", fromZip);
       formParams.append("file", letterHtml);
       formParams.append("color", "false");
-      formParams.append("mail_type", "usps_certified");
+      formParams.append("mail_type", "usps_first_class");
       formParams.append("size", "us_letter");
 
       const authHeader = "Basic " + Buffer.from(`${LOB_API_KEY}:`).toString("base64");
@@ -6038,7 +6038,7 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
       lobForm.append("from[address_zip]", fromZip);
       lobForm.append("file", file.buffer, { filename: file.originalname, contentType: file.mimetype });
       lobForm.append("color", "false");
-      lobForm.append("mail_type", "usps_certified");
+      lobForm.append("mail_type", "usps_first_class");
       lobForm.append("size", "us_letter");
 
       const authHeader = "Basic " + Buffer.from(`${LOB_API_KEY}:`).toString("base64");
