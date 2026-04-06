@@ -5914,7 +5914,6 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
       formParams.append("mail_type", "usps_first_class");
       formParams.append("extra_service", "certified");
       formParams.append("use_type", "operational");
-      formParams.append("size", "us_letter");
 
       const authHeader = "Basic " + Buffer.from(`${LOB_API_KEY}:`).toString("base64");
 
