@@ -1035,6 +1035,7 @@ export const disputeLettersNew = pgTable("dispute_letters_new", {
   sentDate: date("sent_date"),
   lobId: text("lob_id"),
   lobStatus: text("lob_status"),
+  expectedDeliveryDate: date("expected_delivery_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

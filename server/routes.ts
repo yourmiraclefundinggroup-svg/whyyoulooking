@@ -6101,6 +6101,60 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
     }
   });
 
+  // Sync Lob delivery status for all sent letters
+  app.post("/api/admin/sync-lob-status", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+
+      const LOB_API_KEY = process.env.LOB_API_KEY;
+      if (!LOB_API_KEY) return res.status(500).json({ error: "Lob API key not configured" });
+
+      const { disputeLettersNew: lettersTable } = await import("@shared/schema");
+      const { db } = await import("./db");
+      const { eq, isNotNull } = await import("drizzle-orm");
+
+      const authHeader = "Basic " + Buffer.from(`${LOB_API_KEY}:`).toString("base64");
+
+      // Get all letters that have been sent via Lob
+      const sentLetters = await db.select().from(lettersTable)
+        .where(isNotNull(lettersTable.lobId));
+
+      const results: any[] = [];
+      for (const letter of sentLetters) {
+        if (!letter.lobId) continue;
+        try {
+          const lobResp = await fetch(`https://api.lob.com/v1/letters/${letter.lobId}`, {
+            headers: { "Authorization": authHeader },
+          });
+          if (!lobResp.ok) continue;
+          const lobData = await lobResp.json() as any;
+
+          // Map Lob status to friendly labels
+          const rawStatus = lobData.status || letter.lobStatus || "";
+          const expectedDelivery = lobData.expected_delivery_date || null;
+
+          await db.update(lettersTable)
+            .set({
+              lobStatus: rawStatus,
+              expectedDeliveryDate: expectedDelivery,
+              trackingNumber: lobData.tracking_number || letter.trackingNumber,
+            })
+            .where(eq(lettersTable.id, letter.id));
+
+          results.push({ id: letter.id, lobStatus: rawStatus, expectedDeliveryDate: expectedDelivery, trackingNumber: lobData.tracking_number });
+        } catch (e) {
+          // skip individual failures, continue syncing rest
+        }
+      }
+
+      res.json({ synced: results.length, results });
+    } catch (error: any) {
+      console.error("Error syncing Lob status:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Generate AI-powered dispute letter for selected items
   app.post("/api/admin/dispute-letters-new/generate", authenticateToken, async (req, res) => {
     try {

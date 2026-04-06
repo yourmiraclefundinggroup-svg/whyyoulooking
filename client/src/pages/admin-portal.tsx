@@ -1325,6 +1325,24 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
   const [isBulkSending, setIsBulkSending] = useState(false);
   const [bulkProgress, setBulkProgress] = useState(0);
 
+  // Sync Lob delivery status mutation
+  const syncLobStatusMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('/api/admin/sync-lob-status', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Sync failed');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: `Status synced`, description: `Updated ${data.synced} letter${data.synced !== 1 ? 's' : ''} from Lob.` });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/dispute-letters-new/all'] });
+    },
+    onError: () => toast({ title: 'Sync failed', description: 'Could not reach Lob API.', variant: 'destructive' }),
+  });
+
   // Upload & Send state
   const [uploadPanelOpen, setUploadPanelOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -1456,6 +1474,21 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
     queryClient.invalidateQueries({ queryKey: ['/api/admin/dispute-letters-new/all'] });
     queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
     toast({ title: `Bulk send complete`, description: `${sent} of ${readyLetters.length} letters sent successfully.` });
+  };
+
+  const getLobStatusInfo = (letter: any) => {
+    const lob = (letter.lobStatus || '').toLowerCase();
+    const appStatus = letter.status || '';
+    if (lob === 'delivered') return { label: 'Delivered ✓', variant: 'success' as const, color: 'text-green-400' };
+    if (lob === 'processed_for_delivery') return { label: 'Out for Delivery', variant: 'success' as const, color: 'text-green-400' };
+    if (lob === 'in_local_area') return { label: 'In Local Area', variant: 'info' as const, color: 'text-blue-400' };
+    if (lob === 'in_transit') return { label: 'In Transit', variant: 'info' as const, color: 'text-blue-400' };
+    if (lob === 're-routed') return { label: 'Re-routed', variant: 'warning' as const, color: 'text-yellow-400' };
+    if (lob === 'returned_to_sender') return { label: 'Returned to Sender', variant: 'default' as const, color: 'text-red-400' };
+    if (lob === 'processed' || appStatus === 'sent') return { label: 'Mailed — Pending USPS Scan', variant: 'info' as const, color: 'text-amber-400' };
+    if (appStatus === 'approved') return { label: 'Ready to Send', variant: 'warning' as const, color: 'text-yellow-400' };
+    if (appStatus === 'draft') return { label: 'Draft', variant: 'default' as const, color: 'text-[hsl(var(--admin-text-muted))]' };
+    return { label: appStatus || 'Unknown', variant: 'default' as const, color: 'text-[hsl(var(--admin-text-muted))]' };
   };
 
   const getBureauBadge = (bureau: string) => {
@@ -1757,15 +1790,31 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
 
       <AdminCard>
         <AdminCardHeader>
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center justify-between w-full flex-wrap gap-2">
             <AdminCardTitle icon={<Mail className="h-5 w-5" />}>
               {statusFilter === 'all' ? 'All Letters' : `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Letters`}
             </AdminCardTitle>
-            {filteredLetters.some(l => l.status === 'approved') && (
-              <Button variant="ghost" size="sm" onClick={selectAll} className="text-[hsl(var(--admin-text-muted))] hover:text-white">
-                {bulkSelected.length > 0 ? 'Deselect All' : 'Select All Ready'}
+            <div className="flex items-center gap-2">
+              {filteredLetters.some(l => l.status === 'approved') && (
+                <Button variant="ghost" size="sm" onClick={selectAll} className="text-[hsl(var(--admin-text-muted))] hover:text-white">
+                  {bulkSelected.length > 0 ? 'Deselect All' : 'Select All Ready'}
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => syncLobStatusMutation.mutate()}
+                disabled={syncLobStatusMutation.isPending}
+                className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))] hover:text-white hover:border-[hsl(var(--admin-accent))]/50 gap-1.5"
+              >
+                {syncLobStatusMutation.isPending ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" />
+                ) : (
+                  <RefreshCw className="h-3 w-3" />
+                )}
+                Sync Delivery Status
               </Button>
-            )}
+            </div>
           </div>
         </AdminCardHeader>
         <AdminCardContent>
@@ -1787,9 +1836,10 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
                   <AdminTableHead>Client</AdminTableHead>
                   <AdminTableHead>Bureau</AdminTableHead>
                   <AdminTableHead>Type</AdminTableHead>
-                  <AdminTableHead>Status</AdminTableHead>
-                  <AdminTableHead>Created</AdminTableHead>
-                  <AdminTableHead>Tracking</AdminTableHead>
+                  <AdminTableHead>Delivery Status</AdminTableHead>
+                  <AdminTableHead>Sent</AdminTableHead>
+                  <AdminTableHead>Est. Delivery</AdminTableHead>
+                  <AdminTableHead>Tracking #</AdminTableHead>
                   <AdminTableHead>Actions</AdminTableHead>
                 </tr>
               </AdminTableHeader>
@@ -1798,6 +1848,10 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
                   const client = clientUsers.find(u => u.id === letter.clientId);
                   const isSent = letter.status === 'sent';
                   const isSelected = bulkSelected.includes(letter.id);
+                  const statusInfo = getLobStatusInfo(letter);
+                  const uspsUrl = letter.trackingNumber
+                    ? `https://tools.usps.com/go/TrackConfirmAction?tLabels=${letter.trackingNumber}`
+                    : null;
                   return (
                     <AdminTableRow key={letter.id} className={isSelected ? 'bg-[hsl(var(--admin-accent))]/10' : ''}>
                       <AdminTableCell>
@@ -1819,23 +1873,37 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
                         <span className="text-white capitalize">{letter.letterType}</span>
                       </AdminTableCell>
                       <AdminTableCell>
-                        <AdminBadge variant={
-                          letter.lobStatus === 'delivered' ? 'success' :
-                          letter.status === 'sent' ? 'info' :
-                          letter.status === 'approved' ? 'warning' : 'default'
-                        }>
-                          {letter.lobStatus === 'delivered' ? 'Delivered' :
-                           letter.status === 'approved' ? 'Ready' : letter.status}
+                        <AdminBadge variant={statusInfo.variant}>
+                          {statusInfo.label}
                         </AdminBadge>
                       </AdminTableCell>
                       <AdminTableCell>
-                        <span className="text-[hsl(var(--admin-text-muted))]">
-                          {letter.createdAt ? new Date(letter.createdAt).toLocaleDateString() : '--'}
+                        <span className="text-[hsl(var(--admin-text-muted))] text-xs">
+                          {letter.sentDate ? new Date(letter.sentDate).toLocaleDateString() : letter.createdAt ? new Date(letter.createdAt).toLocaleDateString() : '--'}
+                        </span>
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        <span className="text-[hsl(var(--admin-text-muted))] text-xs">
+                          {(letter as any).expectedDeliveryDate
+                            ? new Date((letter as any).expectedDeliveryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                            : isSent ? <span className="text-amber-500/70">Pending scan</span> : '—'}
                         </span>
                       </AdminTableCell>
                       <AdminTableCell>
                         {letter.trackingNumber ? (
-                          <span className="text-xs text-[hsl(var(--admin-text-muted))] font-mono">{letter.trackingNumber}</span>
+                          <div className="space-y-0.5">
+                            <p className="text-xs text-[hsl(var(--admin-text-muted))] font-mono truncate max-w-[130px]">{letter.trackingNumber}</p>
+                            {uspsUrl && (
+                              <a
+                                href={uspsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-[hsl(var(--admin-accent))] hover:underline flex items-center gap-0.5"
+                              >
+                                Track on USPS ↗
+                              </a>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-xs text-[hsl(var(--admin-text-subtle))]">—</span>
                         )}
