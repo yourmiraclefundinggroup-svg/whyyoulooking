@@ -437,9 +437,9 @@ function ClientIntakeCard({ client, onUpdated }: { client: User; onUpdated: () =
     zipCode: client.zipCode || "",
     dateOfBirth: client.dateOfBirth || "",
     ssnLast4: client.ssnLast4 || "",
-    caseType: (client as any).caseType || "STANDARD",
-    policeReportNumber: (client as any).policeReportNumber || "",
-    ftcReportNumber: (client as any).ftcReportNumber || "",
+    caseType: client.caseType || "STANDARD",
+    policeReportNumber: client.policeReportNumber || "",
+    ftcReportNumber: client.ftcReportNumber || "",
   });
 
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
@@ -462,7 +462,7 @@ function ClientIntakeCard({ client, onUpdated }: { client: User; onUpdated: () =
       setEditing(false);
       onUpdated();
     },
-    onError: (e: any) => toast({ title: "Save failed", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Save failed", description: e.message, variant: "destructive" }),
   });
 
   const uploadDoc = async (docType: "id_photo" | "police_report" | "ftc_report", file: File) => {
@@ -628,7 +628,7 @@ function ClientIntakeCard({ client, onUpdated }: { client: User; onUpdated: () =
           <div className="pt-2 border-t border-[hsl(var(--admin-border))]">
             <Label className="text-xs font-medium text-[hsl(var(--admin-text-muted))] mb-2 block">Identity Documents</Label>
             <div className="space-y-2">
-              <DocUploadBtn docType="id_photo" label="Upload ID Photo" existing={(client as any).idPhotoPath} />
+              <DocUploadBtn docType="id_photo" label="Upload ID Photo" existing={client.idPhotoPath ?? undefined} />
             </div>
           </div>
 
@@ -644,18 +644,18 @@ function ClientIntakeCard({ client, onUpdated }: { client: User; onUpdated: () =
                     <Label className={labelClass}>Police Report #</Label>
                     {editing
                       ? <Input className={`${fieldClass} mt-1`} value={form.policeReportNumber} onChange={e => setForm(p => ({ ...p, policeReportNumber: e.target.value }))} placeholder="Case number" />
-                      : <p className="text-sm text-[hsl(var(--admin-text))] mt-1 font-mono">{(client as any).policeReportNumber || <span className="text-[hsl(var(--admin-text-subtle))] italic">Not set</span>}</p>}
+                      : <p className="text-sm text-[hsl(var(--admin-text))] mt-1 font-mono">{client.policeReportNumber || <span className="text-[hsl(var(--admin-text-subtle))] italic">Not set</span>}</p>}
                   </div>
                   <div>
                     <Label className={labelClass}>FTC Report #</Label>
                     {editing
                       ? <Input className={`${fieldClass} mt-1`} value={form.ftcReportNumber} onChange={e => setForm(p => ({ ...p, ftcReportNumber: e.target.value }))} placeholder="Confirmation #" />
-                      : <p className="text-sm text-[hsl(var(--admin-text))] mt-1 font-mono">{(client as any).ftcReportNumber || <span className="text-[hsl(var(--admin-text-subtle))] italic">Not set</span>}</p>}
+                      : <p className="text-sm text-[hsl(var(--admin-text))] mt-1 font-mono">{client.ftcReportNumber || <span className="text-[hsl(var(--admin-text-subtle))] italic">Not set</span>}</p>}
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <DocUploadBtn docType="police_report" label="Upload Police Report" existing={(client as any).policeReportPath} />
-                  <DocUploadBtn docType="ftc_report" label="Upload FTC Report" existing={(client as any).ftcReportPath} />
+                  <DocUploadBtn docType="police_report" label="Upload Police Report" existing={client.policeReportPath ?? undefined} />
+                  <DocUploadBtn docType="ftc_report" label="Upload FTC Report" existing={client.ftcReportPath ?? undefined} />
                 </div>
               </div>
             </div>
@@ -5625,7 +5625,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[hsl(var(--admin-text-muted))] text-sm">Bureau</Label>
-                <Select value={packetBureau} onValueChange={(v: any) => setPacketBureau(v)}>
+                <Select value={packetBureau} onValueChange={(v) => setPacketBureau(v as 'EXPERIAN' | 'EQUIFAX' | 'TRANSUNION')}>
                   <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]">
                     <SelectValue />
                   </SelectTrigger>
@@ -5638,7 +5638,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               </div>
               <div className="space-y-2">
                 <Label className="text-[hsl(var(--admin-text-muted))] text-sm">Dispute Round</Label>
-                <Select value={packetLetterType} onValueChange={(v: any) => setPacketLetterType(v)}>
+                <Select value={packetLetterType} onValueChange={(v) => setPacketLetterType(v as 'round1' | 'round2' | 'validation' | 'fraud')}>
                   <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]">
                     <SelectValue />
                   </SelectTrigger>
@@ -5836,7 +5836,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
       </Dialog>
 
       <Dialog open={generateLetterOpen} onOpenChange={setGenerateLetterOpen}>
-        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
               <Sparkles className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
@@ -5847,8 +5847,8 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[hsl(var(--admin-text-muted))]">Letter Type</Label>
-                <Select value={letterType} onValueChange={(v: any) => setLetterType(v)}>
-                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white">
+                <Select value={letterType} onValueChange={(v) => setLetterType(v)}>
+                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
@@ -5863,8 +5863,8 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               </div>
               <div className="space-y-2">
                 <Label className="text-[hsl(var(--admin-text-muted))]">Target Bureau</Label>
-                <Select value={letterBureau} onValueChange={(v: any) => setLetterBureau(v)}>
-                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white">
+                <Select value={letterBureau} onValueChange={(v) => setLetterBureau(v)}>
+                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
@@ -5929,11 +5929,11 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
             </div>
 
             <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
-              <h4 className="font-medium text-white mb-2">Items to Dispute ({selectedItems.length})</h4>
+              <h4 className="font-medium text-[hsl(var(--admin-text))] mb-2">Items to Dispute ({selectedItems.length})</h4>
               <div className="space-y-2 max-h-[150px] overflow-y-auto">
                 {selectedItems.map((item) => (
                   <div key={`${item.type}-${item.id}`} className="flex items-center justify-between text-sm">
-                    <span className="text-white">{item.name}</span>
+                    <span className="text-[hsl(var(--admin-text))]">{item.name}</span>
                     <span className="text-xs px-2 py-0.5 rounded bg-[hsl(var(--admin-accent))]/20 text-[hsl(var(--admin-accent))] capitalize">{item.type.replace('_', ' ')}</span>
                   </div>
                 ))}
@@ -5943,7 +5943,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
             {generatedLetter && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-white">Generated Letter Preview</h4>
+                  <h4 className="font-medium text-[hsl(var(--admin-text))]">Generated Letter Preview</h4>
                   <AdminBadge variant="success">Generated</AdminBadge>
                 </div>
                 <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] max-h-[200px] overflow-y-auto">
@@ -5954,7 +5954,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                     variant="outline"
                     size="sm"
                     onClick={() => downloadLetterAsPdf(generatedLetter)}
-                    className="border-[hsl(var(--admin-border))] text-white hover:bg-[hsl(var(--admin-bg))]"
+                    className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))] hover:bg-[hsl(var(--admin-bg))]"
                     data-testid="button-download-generated"
                   >
                     <FileText className="h-4 w-4 mr-2" />
@@ -5982,7 +5982,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               <Button
                 variant="outline"
                 onClick={() => { setGenerateLetterOpen(false); setGeneratedLetter(null); }}
-                className="border-[hsl(var(--admin-border))] text-white hover:bg-[hsl(var(--admin-bg))]"
+                className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))] hover:bg-[hsl(var(--admin-bg))]"
                 data-testid="button-cancel-generate"
               >
                 Cancel
