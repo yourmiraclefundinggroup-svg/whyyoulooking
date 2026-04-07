@@ -700,9 +700,9 @@ function ClientManagementPage({
                 <Input
                   id="firstName"
                   value={newClient.firstName}
-                  onChange={(e) => setNewClient((prev: any) => ({ ...prev, firstName: e.target.value }))}
+                  onChange={(e) => setNewClient((prev) => ({ ...prev, firstName: e.target.value }))}
                   placeholder="John"
-                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))]"
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] placeholder:text-[hsl(var(--admin-text-subtle))]"
                   required
                   data-testid="input-first-name"
                 />
@@ -712,9 +712,9 @@ function ClientManagementPage({
                 <Input
                   id="lastName"
                   value={newClient.lastName}
-                  onChange={(e) => setNewClient((prev: any) => ({ ...prev, lastName: e.target.value }))}
+                  onChange={(e) => setNewClient((prev) => ({ ...prev, lastName: e.target.value }))}
                   placeholder="Doe"
-                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))]"
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] placeholder:text-[hsl(var(--admin-text-subtle))]"
                   required
                   data-testid="input-last-name"
                 />
@@ -725,9 +725,9 @@ function ClientManagementPage({
                   id="email"
                   type="email"
                   value={newClient.email}
-                  onChange={(e) => setNewClient((prev: any) => ({ ...prev, email: e.target.value }))}
+                  onChange={(e) => setNewClient((prev) => ({ ...prev, email: e.target.value }))}
                   placeholder="john.doe@example.com"
-                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))]"
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] placeholder:text-[hsl(var(--admin-text-subtle))]"
                   required
                   data-testid="input-email"
                 />
@@ -738,9 +738,9 @@ function ClientManagementPage({
                   id="password"
                   type="password"
                   value={newClient.password}
-                  onChange={(e) => setNewClient((prev: any) => ({ ...prev, password: e.target.value }))}
+                  onChange={(e) => setNewClient((prev) => ({ ...prev, password: e.target.value }))}
                   placeholder="Set a secure password"
-                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white placeholder:text-[hsl(var(--admin-text-subtle))]"
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] placeholder:text-[hsl(var(--admin-text-subtle))]"
                   required
                   data-testid="input-password"
                 />
@@ -792,7 +792,7 @@ function ClientManagementPage({
                           {client.firstName?.[0]}{client.lastName?.[0]}
                         </div>
                         <div>
-                          <div className="font-medium text-white">{client.firstName} {client.lastName}</div>
+                          <div className="font-medium text-[hsl(var(--admin-text))]">{client.firstName} {client.lastName}</div>
                           <div className="text-sm text-[hsl(var(--admin-text-muted))]">{client.email}</div>
                         </div>
                       </div>
@@ -2203,7 +2203,7 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
       <Dialog open={viewLetterOpen} onOpenChange={setViewLetterOpen}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
           <DialogHeader>
-            <DialogTitle className="text-white">Letter Preview</DialogTitle>
+            <DialogTitle className="text-[hsl(var(--admin-text))]">Letter Preview</DialogTitle>
           </DialogHeader>
           {selectedLetter && (
             <div className="space-y-4">
@@ -2239,7 +2239,7 @@ function MailQueuePage({ clientUsers }: { clientUsers: User[] }) {
       <Dialog open={lobSendOpen} onOpenChange={setLobSendOpen}>
         <DialogContent className="max-w-lg bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
+            <DialogTitle className="text-[hsl(var(--admin-text))] flex items-center gap-2">
               <Send className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
               Send via Certified Mail (Lob.com)
             </DialogTitle>
@@ -6179,9 +6179,9 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
 
       {/* Lob Certified Mail Send Dialog */}
       <Dialog open={lobSendOpen} onOpenChange={setLobSendOpen}>
-        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-md">
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
+            <DialogTitle className="text-[hsl(var(--admin-text))] flex items-center gap-2">
               <Send className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
               Send via Certified Mail
             </DialogTitle>
@@ -6257,9 +6257,9 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
 
       {/* Mark Account Removed — Pay-Per-Delete Dialog */}
       <Dialog open={markRemovedOpen} onOpenChange={setMarkRemovedOpen}>
-        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-sm">
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
+            <DialogTitle className="text-[hsl(var(--admin-text))] flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-400" />
               Log Bureau Removal
             </DialogTitle>
