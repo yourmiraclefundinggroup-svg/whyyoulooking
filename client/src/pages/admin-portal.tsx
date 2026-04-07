@@ -2871,6 +2871,8 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   const [packetContent, setPacketContent] = useState<string>('');
   const [packetPreviewOpen, setPacketPreviewOpen] = useState(false);
   const [generatingPacket, setGeneratingPacket] = useState(false);
+  const [packetNoteEditing, setPacketNoteEditing] = useState(false);
+  const [packetNote, setPacketNote] = useState<string>('');
 
   const [viewLetterOpen, setViewLetterOpen] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState<DisputeLetterNew | null>(null);
@@ -3191,80 +3193,109 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   };
 
   const calculateAccountSeverity = (account: CreditReportAccount): { score: number; strategy: string; reason: string } => {
-    let score = 0;
     const reasons: string[] = [];
-    if (account.derogatoryFlags && account.derogatoryFlags.length > 0) {
-      score += 40;
-      reasons.push('Derogatory marks');
+    let score = 0;
+
+    // Priority 1: Illegal reinsertion markers (§1681i(a)(5)(B) — score 95 base)
+    const remarkStr = (account.remarks || '').toLowerCase();
+    const derStr = (account.derogatoryFlags || []).join(' ').toLowerCase();
+    if (remarkStr.includes('reinsert') || derStr.includes('reinsert')) {
+      score = 95; reasons.push('Potential illegal reinsertion (§1681i(a)(5)(B))');
     }
-    const lateCount = (account.latePayments?.days30 || 0) + (account.latePayments?.days60 || 0) + (account.latePayments?.days90 || 0);
-    if (lateCount > 0) {
-      score += Math.min(lateCount * 5, 30);
-      reasons.push(`${lateCount} late payments`);
+    // Priority 2: Identity theft / mixed file signals (score 90 base)
+    else if (remarkStr.includes('fraud') || remarkStr.includes('identity') || remarkStr.includes('not mine') || derStr.includes('fraud')) {
+      score = 90; reasons.push('Identity theft / fraud marker — §605B block eligible');
     }
-    if (account.status?.toLowerCase().includes('chargeoff')) {
-      score += 50;
-      reasons.push('Charge-off status');
+    else if (remarkStr.includes('mixed') || remarkStr.includes('wrong consumer')) {
+      score = 85; reasons.push('Mixed file — wrong consumer data');
     }
-    if (account.status?.toLowerCase().includes('collection')) {
-      score += 45;
-      reasons.push('In collections');
+    // Priority 3: Metro 2 data violations (score 80 base)
+    else if (!account.dateReported && (account.latePayments?.days30 || account.latePayments?.days60 || account.latePayments?.days90)) {
+      score = 80; reasons.push('Metro 2 DA field missing — DOFD not reported');
     }
-    if (account.balance && account.balance > 1000) {
-      score += 10;
-      reasons.push('High balance');
+    // Priority 4: Late payment re-aging (§1681c(a) 7-year rule)
+    else if (account.latePayments && ((account.latePayments.days90 || 0) > 0)) {
+      const lateCount = (account.latePayments.days30 || 0) + (account.latePayments.days60 || 0) + (account.latePayments.days90 || 0);
+      score = 75 + Math.min(lateCount * 2, 10);
+      reasons.push(`${account.latePayments.days90} × 90-day late — re-aging risk §1681c`);
     }
+    // Priority 5: Charge-off
+    else if (account.status?.toLowerCase().includes('chargeoff') || account.status?.toLowerCase().includes('charge off') || account.status?.toLowerCase().includes('charged off')) {
+      score = 70; reasons.push('Charge-off — §1681e(b) accuracy violation');
+    }
+    else {
+      // Standard derogatory
+      if (account.derogatoryFlags && account.derogatoryFlags.length > 0) {
+        score = 45; reasons.push('Derogatory marks');
+      }
+      const lateCount = (account.latePayments?.days30 || 0) + (account.latePayments?.days60 || 0) + (account.latePayments?.days90 || 0);
+      if (lateCount > 0) {
+        score = Math.max(score, 40) + Math.min(lateCount * 3, 15);
+        reasons.push(`${lateCount} late payment(s)`);
+      }
+      if (account.balance && account.balance > 5000) {
+        score += 5; reasons.push('High balance');
+      }
+      if (score === 0) { score = 20; reasons.push('Standard account dispute'); }
+    }
+
     let strategy = 'Request Validation';
-    if (score >= 50) strategy = 'Dispute as Inaccurate';
-    if (score >= 70) strategy = 'Request Deletion - FCRA Violation';
-    if (score >= 85) strategy = 'Escalate to CFPB';
-    return { score: Math.min(score, 100), strategy, reason: reasons.join(', ') || 'Standard dispute' };
+    if (score >= 90) strategy = 'Emergency — §605B Block / CFPB Complaint';
+    else if (score >= 80) strategy = 'Metro 2 Violation — Request DA Field Correction';
+    else if (score >= 70) strategy = 'FCRA §1681c Violation — Demand Deletion';
+    else if (score >= 50) strategy = 'Dispute as Inaccurate';
+    return { score: Math.min(score, 100), strategy, reason: reasons.join('; ') || 'Standard dispute' };
   };
 
   const calculateInquirySeverity = (inquiry: CreditReportInquiry): { score: number; strategy: string; reason: string } => {
-    let score = 0;
     const reasons: string[] = [];
+    let score = 0;
     if (inquiry.inquiryType === 'hard') {
-      score += 30;
-      reasons.push('Hard inquiry');
+      score = 50;
+      reasons.push('Hard inquiry — §1681b permissible purpose required');
       const inquiryDate = inquiry.inquiryDate ? new Date(inquiry.inquiryDate) : null;
       if (inquiryDate) {
         const monthsAgo = (Date.now() - inquiryDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
-        if (monthsAgo < 6) { score += 20; reasons.push('Recent inquiry'); }
-        else if (monthsAgo < 12) { score += 10; reasons.push('Within last year'); }
+        if (monthsAgo < 3) { score = 65; reasons.push('Recent (< 3 months) — high impact'); }
+        else if (monthsAgo < 6) { score = 58; reasons.push('Recent inquiry'); }
+        else if (monthsAgo < 12) { score = 52; reasons.push('Within last year'); }
       }
     } else {
-      score += 5;
+      score = 10;
       reasons.push('Soft inquiry');
     }
     let strategy = 'Monitor Only';
-    if (inquiry.inquiryType === 'hard') {
-      strategy = 'Request Written Authorization';
-      if (score >= 40) strategy = 'Dispute Unauthorized Inquiry';
-    }
-    return { score: Math.min(score, 100), strategy, reason: reasons.join(', ') || 'Standard inquiry' };
+    if (score >= 60) strategy = 'Dispute — No Permissible Purpose §1681b';
+    else if (score >= 50) strategy = 'Request Written Authorization';
+    return { score: Math.min(score, 100), strategy, reason: reasons.join('; ') || 'Standard inquiry' };
   };
 
   const calculateCollectionSeverity = (collection: CreditReportCollection): { score: number; strategy: string; reason: string } => {
-    let score = 60;
-    const reasons: string[] = ['Collection account'];
+    const reasons: string[] = [];
+    let score = 65;
+    reasons.push('Collection account — §1681e(b) accuracy dispute');
     if (collection.amount && collection.amount > 500) {
-      score += 15;
-      reasons.push(`$${collection.amount.toLocaleString()} balance`);
+      score += 5;
+      reasons.push(`$${(collection.amount).toLocaleString()} balance`);
     }
     if (collection.amount && collection.amount > 2000) {
-      score += 15;
+      score += 5;
     }
     const dateOpened = collection.dateOpened ? new Date(collection.dateOpened) : null;
     if (dateOpened) {
       const yearsAgo = (Date.now() - dateOpened.getTime()) / (1000 * 60 * 60 * 24 * 365);
-      if (yearsAgo > 5) { score -= 20; reasons.push('Older than 5 years'); }
-      else if (yearsAgo < 2) { score += 10; reasons.push('Recent collection'); }
+      if (yearsAgo > 7) { score = 30; reasons.push('Potentially past 7-year limit §1681c'); }
+      else if (yearsAgo > 5) { score -= 10; reasons.push('Older than 5 years'); }
+      else if (yearsAgo < 2) { score += 5; reasons.push('Recent collection'); }
     }
-    let strategy = 'Request Debt Validation';
-    if (score >= 70) strategy = 'Dispute Collection Validity';
-    if (score >= 85) strategy = 'Challenge with Pay-for-Delete Negotiation';
-    return { score: Math.min(score, 100), strategy, reason: reasons.join(', ') };
+    const remarkStr = (collection.remarks || '').toLowerCase();
+    if (remarkStr.includes('paid') || remarkStr.includes('settled')) {
+      score = Math.max(score, 70); reasons.push('Paid/settled — should be updated or removed');
+    }
+    let strategy = 'Request Debt Validation §1692g';
+    if (score >= 75) strategy = 'Dispute — Request Full Deletion';
+    else if (score >= 65) strategy = 'Validate then Pay-for-Delete';
+    return { score: Math.min(score, 100), strategy, reason: reasons.join('; ') };
   };
 
   const calculatePublicRecordSeverity = (record: CreditReportPublicRecord): { score: number; strategy: string; reason: string } => {
@@ -3487,22 +3518,12 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setPacketOpen(true)}
+                  onClick={openPacketDialogWithAutoSelect}
                   className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))] hover:text-white gap-1.5"
                   data-testid="button-generate-packet"
                 >
                   <Package className="h-4 w-4" />
                   Professional Packet
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={openPacketDialogWithAutoSelect}
-                  className="border-[hsl(var(--admin-accent))]/50 text-[hsl(var(--admin-accent))] hover:text-white hover:bg-[hsl(var(--admin-accent))]/20 gap-1.5"
-                  data-testid="button-auto-packet"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Auto-Select Top 2
                 </Button>
                 <Button
                   size="sm"
@@ -5827,97 +5848,170 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
       </Dialog>
 
       {/* Professional Packet Preview Dialog */}
-      <Dialog open={packetPreviewOpen} onOpenChange={setPacketPreviewOpen}>
+      <Dialog open={packetPreviewOpen} onOpenChange={(open) => { setPacketPreviewOpen(open); if (!open) { setPacketNoteEditing(false); } }}>
         <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
               Professional Dispute Packet Preview
+              <span className="ml-auto text-xs font-normal text-[hsl(var(--admin-text-muted))]">
+                {packetBureau} • {packetLetterType === 'round1' ? 'Round 1' : packetLetterType === 'round2' ? 'Round 2' : packetLetterType === 'validation' ? 'Validation' : 'Fraud/ID Theft'}
+              </span>
             </DialogTitle>
-            <p className="text-sm text-[hsl(var(--admin-text-muted))] mt-1">
-              Review the packet before saving or mailing. Copy the content to use in the Generate Letter flow.
+            <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-1">
+              FCRA-compliant dispute packet with statute citations, Metro 2 violations, and numbered demands. Review, annotate, then send or save.
             </p>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto min-h-0 mt-4">
-            <pre className="text-xs text-[hsl(var(--admin-text))] whitespace-pre-wrap font-mono bg-[hsl(var(--admin-bg))] rounded-lg p-4 border border-[hsl(var(--admin-border))] leading-relaxed">
-              {packetContent}
-            </pre>
+          <div className="flex-1 overflow-y-auto min-h-0 mt-3 space-y-3">
+            {/* Structured packet display — parse section headers for visual formatting */}
+            <div className="rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))] overflow-hidden">
+              <div className="px-4 py-2 bg-[hsl(var(--admin-accent))]/10 border-b border-[hsl(var(--admin-border))] flex items-center gap-2">
+                <FileText className="h-4 w-4 text-[hsl(var(--admin-accent))]" />
+                <span className="text-xs font-semibold text-[hsl(var(--admin-accent))]">DISPUTE LETTER</span>
+                <span className="ml-auto text-xs text-[hsl(var(--admin-text-muted))]">{selectedItems.length} item(s)</span>
+              </div>
+              <pre className="text-xs text-[hsl(var(--admin-text))] whitespace-pre-wrap font-mono p-4 leading-relaxed max-h-[350px] overflow-y-auto">
+                {packetContent}
+              </pre>
+            </div>
+            {/* Attached admin note */}
+            {packetNote && !packetNoteEditing && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-amber-400">Admin Note (attached to packet)</span>
+                  <button onClick={() => setPacketNoteEditing(true)} className="text-xs text-[hsl(var(--admin-text-muted))] hover:text-white">Edit</button>
+                </div>
+                <p className="text-xs text-[hsl(var(--admin-text))]">{packetNote}</p>
+              </div>
+            )}
+            {packetNoteEditing && (
+              <div className="rounded-lg border border-[hsl(var(--admin-accent))]/30 bg-[hsl(var(--admin-bg))] p-3 space-y-2">
+                <Label className="text-xs text-[hsl(var(--admin-accent))] font-medium">Admin Note (will be attached when saving)</Label>
+                <Textarea
+                  value={packetNote}
+                  onChange={e => setPacketNote(e.target.value)}
+                  placeholder="Add any internal notes about this dispute packet (e.g., client situation, special circumstances, escalation notes)..."
+                  className="text-xs min-h-[80px] bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] resize-none"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
+                  onClick={() => setPacketNoteEditing(false)}
+                >
+                  Done
+                </Button>
+              </div>
+            )}
           </div>
-          <div className="flex-shrink-0 flex gap-3 pt-4 border-t border-[hsl(var(--admin-border))] mt-4">
-            <Button
-              variant="outline"
-              className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
-              onClick={() => {
-                navigator.clipboard.writeText(packetContent);
-                toast({ title: "Copied to clipboard" });
-              }}
-            >
-              Copy Text
-            </Button>
-            <Button
-              variant="outline"
-              className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
-              onClick={() => {
-                setPacketPreviewOpen(false);
-                setGenerateLetterOpen(true);
-              }}
-            >
-              Use in Letter Flow →
-            </Button>
-            <Button
-              variant="outline"
-              className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
-              onClick={() => {
-                const clientName = report?.clientName?.replace(/\s+/g, '_') || 'client';
-                const bureauLabel = packetBureau.toLowerCase();
-                const filename = `dispute_packet_${clientName}_${bureauLabel}.txt`;
-                const blob = new Blob([packetContent], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                toast({ title: "Downloaded", description: filename });
-              }}
-            >
-              <Download className="h-4 w-4 mr-1" />
-              Download
-            </Button>
-            <Button
-              className="ml-auto bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white gap-2"
-              onClick={async () => {
-                if (!report?.userId) return;
-                const resp = await fetch('/api/admin/dispute-letters', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-                  },
-                  body: JSON.stringify({
-                    clientId: report.userId,
-                    uploadId: reportId,
-                    letterType: packetLetterType,
-                    bureau: packetBureau,
-                    content: packetContent,
-                    status: 'draft',
-                    disputeItemIds: selectedItems.map(i => i.id),
-                  }),
-                });
-                if (resp.ok) {
-                  toast({ title: "Packet saved as draft", description: "Find it in Letters & Tracking" });
-                  queryClient.invalidateQueries({ queryKey: [`/api/admin/dispute-letters?uploadId=${reportId}`] });
+          <div className="flex-shrink-0 pt-4 border-t border-[hsl(var(--admin-border))] mt-3 space-y-3">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
+                onClick={() => {
+                  const fullText = packetNote ? `${packetContent}\n\n---\nADMIN NOTE: ${packetNote}` : packetContent;
+                  navigator.clipboard.writeText(fullText);
+                  toast({ title: "Copied to clipboard" });
+                }}
+              >
+                Copy Text
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
+                onClick={() => setPacketNoteEditing(prev => !prev)}
+              >
+                <Edit3 className="h-3 w-3 mr-1" />
+                {packetNote ? 'Edit Note' : 'Add Note'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
+                onClick={() => {
+                  const clientName = report?.clientName?.replace(/\s+/g, '_') || 'client';
+                  const bureauLabel = packetBureau.toLowerCase();
+                  const filename = `dispute_packet_${clientName}_${bureauLabel}.txt`;
+                  const fullText = packetNote ? `${packetContent}\n\n---\nADMIN NOTE: ${packetNote}` : packetContent;
+                  const blob = new Blob([fullText], { type: 'text/plain' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = filename;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                  toast({ title: "Downloaded", description: filename });
+                }}
+              >
+                <Download className="h-3 w-3 mr-1" />
+                Download
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
+                onClick={() => {
                   setPacketPreviewOpen(false);
-                } else {
-                  toast({ title: "Save failed", variant: "destructive" });
-                }
-              }}
-            >
-              <Save className="h-4 w-4" />
-              Save as Draft
-            </Button>
+                  setGenerateLetterOpen(true);
+                }}
+              >
+                Use in Letter Flow →
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="flex-1 border border-[hsl(var(--admin-accent))]/50 bg-transparent hover:bg-[hsl(var(--admin-accent))]/10 text-[hsl(var(--admin-accent))] gap-2"
+                onClick={() => {
+                  setPacketPreviewOpen(false);
+                  setActiveDisputeTab('lob-tracking');
+                  toast({ title: "Switching to Certified Mail", description: "Configure certified mail sending in the Certified Mail tab." });
+                }}
+              >
+                <Mail className="h-4 w-4" />
+                Send via Certified Mail
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1 bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white gap-2"
+                onClick={async () => {
+                  if (!report?.userId) return;
+                  const fullContent = packetNote ? `${packetContent}\n\n---\nADMIN NOTE: ${packetNote}` : packetContent;
+                  const resp = await fetch('/api/admin/dispute-letters', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+                    },
+                    body: JSON.stringify({
+                      clientId: report.userId,
+                      uploadId: reportId,
+                      letterType: packetLetterType,
+                      bureau: packetBureau,
+                      content: fullContent,
+                      status: 'draft',
+                      disputeItemIds: selectedItems.map(i => i.id),
+                    }),
+                  });
+                  if (resp.ok) {
+                    toast({ title: "Packet saved as draft", description: "Find it in Letters & Tracking" });
+                    queryClient.invalidateQueries({ queryKey: [`/api/admin/dispute-letters?uploadId=${reportId}`] });
+                    setPacketPreviewOpen(false);
+                    setPacketNote('');
+                  } else {
+                    toast({ title: "Save failed", variant: "destructive" });
+                  }
+                }}
+              >
+                <Save className="h-4 w-4" />
+                Save as Draft
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

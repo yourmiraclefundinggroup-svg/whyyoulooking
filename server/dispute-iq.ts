@@ -6,6 +6,29 @@ export type LetterType = "closed_school" | "late_payment_metro2" | "identity_the
 export type DisputeAccountType = "collection" | "late_payment" | "charge_off" | "inquiry" | "public_record" | "other";
 export type DisputeBureau = "EXPERIAN" | "EQUIFAX" | "TRANSUNION";
 
+/**
+ * Priority hierarchy for dispute item scoring (highest to lowest actionability):
+ * 1. Illegal reinsertion (§1681i(a)(5)(B)) — highest legal violation, strong damages
+ * 2. Identity theft / mixed file — fraud, §605B block available, 4-day removal
+ * 3. Metro 2 data field violations — DA field, K4 payment pattern, ACCT_STATUS, DOFD re-aging
+ * 4. Late payment re-aging — §1681c(a)(4) 7-year clock manipulation
+ * 5. Collections / charge-offs — high credit score impact, debt validation leverage
+ * 6. Hard inquiries — §1681b permissible purpose violations
+ * 7. Standard derogatory accounts — baseline dispute leverage
+ */
+export const DISPUTE_PRIORITY = {
+  ILLEGAL_REINSERTION: 95,
+  IDENTITY_THEFT: 90,
+  MIXED_FILE: 85,
+  METRO2_VIOLATION: 80,
+  LATE_REAGING: 75,
+  CHARGE_OFF: 70,
+  COLLECTION: 65,
+  HARD_INQUIRY: 50,
+  DEROGATORY: 45,
+  STANDARD: 20,
+} as const;
+
 const VALID_BUREAUS: DisputeBureau[] = ["EXPERIAN", "EQUIFAX", "TRANSUNION"];
 const VALID_ACCOUNT_TYPES: DisputeAccountType[] = ["collection", "late_payment", "charge_off", "inquiry", "public_record", "other"];
 const VALID_LETTER_TYPES: LetterType[] = ["closed_school", "late_payment_metro2", "identity_theft", "general"];
