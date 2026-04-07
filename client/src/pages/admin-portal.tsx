@@ -5591,7 +5591,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               <Button
                 variant="outline"
                 onClick={() => setCreateEventOpen(false)}
-                className="border-[hsl(var(--admin-border))] text-white hover:bg-[hsl(var(--admin-bg))]"
+                className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))] hover:bg-[hsl(var(--admin-bg))]"
               >
                 Cancel
               </Button>
@@ -5610,7 +5610,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
 
       {/* Professional Dispute Packet Dialog */}
       <Dialog open={packetOpen} onOpenChange={setPacketOpen}>
-        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
               <Package className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
@@ -5626,7 +5626,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               <div className="space-y-2">
                 <Label className="text-[hsl(var(--admin-text-muted))] text-sm">Bureau</Label>
                 <Select value={packetBureau} onValueChange={(v: any) => setPacketBureau(v)}>
-                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white">
+                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
@@ -5639,7 +5639,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               <div className="space-y-2">
                 <Label className="text-[hsl(var(--admin-text-muted))] text-sm">Dispute Round</Label>
                 <Select value={packetLetterType} onValueChange={(v: any) => setPacketLetterType(v)}>
-                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white">
+                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
@@ -5664,7 +5664,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                   {selectedItems.map(item => (
                     <div key={`${item.type}-${item.id}`} className="flex items-center gap-2 p-2 rounded bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
                       <span className="text-[hsl(var(--admin-accent))] text-xs">✓</span>
-                      <span className="text-sm text-white">{item.name}</span>
+                      <span className="text-sm text-[hsl(var(--admin-text))]">{item.name}</span>
                       <span className="ml-auto text-xs text-[hsl(var(--admin-text-muted))] capitalize">{item.type.replace("_", " ")}</span>
                     </div>
                   ))}
@@ -5763,7 +5763,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
 
       {/* Professional Packet Preview Dialog */}
       <Dialog open={packetPreviewOpen} onOpenChange={setPacketPreviewOpen}>
-        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-[hsl(var(--admin-accent))]" />

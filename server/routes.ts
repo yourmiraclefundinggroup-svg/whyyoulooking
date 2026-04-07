@@ -1,5 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import fs from "fs";
+import nodePath from "path";
 import multer from "multer";
 import FormData from "form-data";
 import { storage } from "./storage";
@@ -1293,7 +1295,7 @@ Format the response as a complete business letter ready to send.`;
       const clientId = parseInt(req.params.id);
       const docType = req.body.docType as string; // "id_photo" | "police_report" | "ftc_report"
       if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-      const filePath = `/uploads/intake/${req.file.filename}`;
+      const filename = req.file.filename;
       const fieldMap: Record<string, string> = {
         id_photo: "idPhotoPath",
         police_report: "policeReportPath",
@@ -1301,11 +1303,25 @@ Format the response as a complete business letter ready to send.`;
       };
       const field = fieldMap[docType];
       if (!field) return res.status(400).json({ error: "Invalid docType" });
-      const updated = await storage.updateUser(clientId, { [field]: filePath });
+      const updated = await storage.updateUser(clientId, { [field]: filename });
       if (!updated) return res.status(404).json({ error: "Client not found" });
-      res.json({ path: filePath, field });
+      res.json({ filename, field });
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Upload failed" });
+    }
+  });
+
+  // Authenticated intake document serving (admin-only, not public)
+  app.get("/api/admin/intake-doc/:filename", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const filename = req.params.filename.replace(/[^a-zA-Z0-9._-]/g, "");
+      const filePath = nodePath.join(process.cwd(), "uploads", "intake", filename);
+      if (!fs.existsSync(filePath)) return res.status(404).json({ error: "File not found" });
+      res.sendFile(filePath);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 

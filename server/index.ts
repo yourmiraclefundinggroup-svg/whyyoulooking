@@ -9,7 +9,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
-app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 app.use((req, res, next) => {
   const start = Date.now();
