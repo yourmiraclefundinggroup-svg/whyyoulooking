@@ -26,6 +26,58 @@ export interface PacketOptions {
   items: PacketItem[];
   enclosures?: string[];
   adminName?: string;
+  policeReportNumber?: string;
+  ftcReportNumber?: string;
+  adminNote?: string;
+}
+
+/** Render the packet as structured HTML for PDF/preview display */
+export function generatePacketHTML(content: string, meta: { clientName: string; bureau: string; letterType: string; date: string }): string {
+  const bureauColors: Record<string, string> = {
+    EXPERIAN: '#2563eb', EQUIFAX: '#dc2626', TRANSUNION: '#7c3aed',
+  };
+  const color = bureauColors[meta.bureau] || '#d97706';
+  const sections = content.split(/(?=═{10,}|─{10,})/);
+
+  const htmlSections = content
+    .split('\n')
+    .map(line => {
+      const trimmed = line.trim();
+      if (/^═+$/.test(trimmed)) return `<hr style="border: 2px solid ${color}; margin: 12px 0;" />`;
+      if (/^─+$/.test(trimmed)) return `<hr style="border: 1px solid #e5e7eb; margin: 8px 0;" />`;
+      if (/^DISPUTE #\d+:/i.test(trimmed)) return `<h3 style="color: ${color}; font-size: 14px; font-weight: bold; margin: 16px 0 4px; padding: 8px; background: #f9fafb; border-left: 4px solid ${color};">${trimmed}</h3>`;
+      if (/^(PACKAGE CONTENTS|DISPUTED ITEMS|LEGAL NOTICE|CONSUMER IDENTIFICATION|Applicable FCRA|Metro 2 Data|Specific Demands|Account Details):/.test(trimmed)) return `<h4 style="color: #374151; font-size: 12px; font-weight: 600; margin: 10px 0 4px; text-transform: uppercase; letter-spacing: 0.05em;">${trimmed}</h4>`;
+      if (/^RE: FORMAL/.test(trimmed)) return `<div style="font-size: 13px; font-weight: bold; color: #111827; margin: 8px 0; padding: 8px; background: #fef3c7; border-left: 4px solid #f59e0b;">${trimmed}</div>`;
+      if (trimmed.startsWith('•') || trimmed.startsWith('⚠')) return `<div style="padding-left: 16px; margin: 2px 0; color: #374151;">${trimmed}</div>`;
+      if (/^\d+\.\d+\s/.test(trimmed)) return `<div style="padding-left: 24px; margin: 2px 0; color: #1f2937;">${trimmed}</div>`;
+      if (/^\d+\.\s/.test(trimmed)) return `<div style="padding-left: 16px; margin: 2px 0; color: #374151;">${trimmed}</div>`;
+      if (trimmed === '') return '<br />';
+      return `<div style="color: #1f2937; line-height: 1.6;">${trimmed}</div>`;
+    })
+    .join('\n');
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Dispute Packet — ${meta.clientName} — ${meta.bureau}</title>
+<style>
+  body { font-family: 'Times New Roman', serif; font-size: 12pt; padding: 40px; max-width: 820px; margin: 0 auto; color: #111827; }
+  .cover { border: 2px solid ${color}; border-radius: 8px; padding: 24px; margin-bottom: 32px; }
+  .cover-title { font-size: 20px; font-weight: bold; color: ${color}; margin-bottom: 8px; }
+  .cover-badge { display: inline-block; background: ${color}; color: white; padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 16px; }
+  @media print { body { padding: 20px; } }
+</style>
+</head>
+<body>
+<div class="cover">
+  <div class="cover-badge">${meta.bureau}</div>
+  <div class="cover-title">Professional Credit Dispute Packet</div>
+  <div style="color: #6b7280; font-size: 12px;">Prepared for: <strong>${meta.clientName}</strong> &nbsp;|&nbsp; Date: ${meta.date} &nbsp;|&nbsp; Type: ${meta.letterType}</div>
+</div>
+${htmlSections}
+</body>
+</html>`;
 }
 
 const BUREAU_ADDRESSES: Record<string, string[]> = {
@@ -185,7 +237,7 @@ function letterTypeContext(type: string): { title: string; intro: string } {
 }
 
 export function generateProfessionalDisputePacket(options: PacketOptions): string {
-  const { client, bureau, letterType, items, enclosures = [], adminName } = options;
+  const { client, bureau, letterType, items, enclosures = [], adminName, policeReportNumber, ftcReportNumber, adminNote } = options;
   const today = new Date();
   const dateStr = today.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const ctx = letterTypeContext(letterType);
@@ -227,14 +279,27 @@ export function generateProfessionalDisputePacket(options: PacketOptions): strin
   lines.push(ctx.intro);
   lines.push("");
 
+  // ── Identity theft / fraud refs in header ───────────────────────────
+  if (letterType === "fraud") {
+    if (policeReportNumber) lines.push(`Police Report #: ${policeReportNumber}`);
+    if (ftcReportNumber) lines.push(`FTC Identity Theft Report #: ${ftcReportNumber}`);
+    if (policeReportNumber || ftcReportNumber) lines.push("");
+  }
+
   // ── Contents Table ──────────────────────────────────────────────────
   lines.push("PACKAGE CONTENTS:");
   lines.push("─".repeat(72));
+  const baseEnclosures = ["Copy of Government-Issued Photo ID", "Proof of Address"];
+  if (letterType === "fraud") {
+    if (ftcReportNumber) baseEnclosures.push(`FTC Identity Theft Report (Complaint #: ${ftcReportNumber})`);
+    else baseEnclosures.push("FTC Identity Theft Report (IdentityTheft.gov)");
+    if (policeReportNumber) baseEnclosures.push(`Local Police Report (#: ${policeReportNumber})`);
+    baseEnclosures.push("Signed Identity Theft Affidavit");
+  }
   const packageContents = [
     "1. Dispute Cover Letter (this document)",
-    "2. Copy of Government-Issued Photo ID",
-    "3. Proof of Address",
-    ...enclosures.map((e, i) => `${i + 4}. ${e}`),
+    ...baseEnclosures.map((e, i) => `${i + 2}. ${e}`),
+    ...enclosures.map((e, i) => `${i + 2 + baseEnclosures.length}. ${e}`),
   ];
   packageContents.forEach(item => lines.push(`  ${item}`));
   lines.push("─".repeat(72));
@@ -318,6 +383,14 @@ export function generateProfessionalDisputePacket(options: PacketOptions): strin
   lines.push("");
   lines.push("Enclosures:");
   packageContents.forEach(pc => lines.push(`  ${pc}`));
+
+  if (adminNote) {
+    lines.push("");
+    lines.push("─".repeat(72));
+    lines.push("INTERNAL ADMIN NOTE (not included in mailed letter):");
+    lines.push(adminNote);
+    lines.push("─".repeat(72));
+  }
 
   return lines.join("\n");
 }

@@ -1330,14 +1330,20 @@ Format the response as a complete business letter ready to send.`;
     try {
       const user = (req as any).user;
       if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
-      const { clientId, bureau, letterType, items } = req.body;
+      const { clientId, bureau, letterType, items, policeReportNumber, ftcReportNumber, adminNote, enclosures } = req.body;
       if (!clientId || !bureau || !letterType || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "clientId, bureau, letterType, and items[] required" });
       }
       const client = await storage.getUser(clientId);
       if (!client) return res.status(404).json({ error: "Client not found" });
       const { generateProfessionalDisputePacket } = await import("./dispute-packet");
-      const packet = generateProfessionalDisputePacket({ client, bureau, letterType, items });
+      const packet = generateProfessionalDisputePacket({
+        client, bureau, letterType, items,
+        enclosures: Array.isArray(enclosures) ? enclosures : [],
+        policeReportNumber: policeReportNumber || undefined,
+        ftcReportNumber: ftcReportNumber || undefined,
+        adminNote: adminNote || undefined,
+      });
       res.json({ content: packet, clientName: `${client.firstName} ${client.lastName}` });
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Failed to generate packet" });

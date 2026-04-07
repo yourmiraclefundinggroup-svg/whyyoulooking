@@ -2873,6 +2873,9 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   const [generatingPacket, setGeneratingPacket] = useState(false);
   const [packetNoteEditing, setPacketNoteEditing] = useState(false);
   const [packetNote, setPacketNote] = useState<string>('');
+  const [packetPoliceReport, setPacketPoliceReport] = useState<string>('');
+  const [packetFtcReport, setPacketFtcReport] = useState<string>('');
+  const [packetClientName, setPacketClientName] = useState<string>('');
 
   const [viewLetterOpen, setViewLetterOpen] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState<DisputeLetterNew | null>(null);
@@ -3338,14 +3341,9 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
         return { id: rec.id, type: 'public_record' as const, name: rec.recordType || 'Unknown', severity: s.score, strategy: s.strategy, reason: s.reason };
       }),
     ];
+    // Always set selection to exactly the top 2 highest-severity items (deterministic default)
     const top2 = allScorable.sort((a, b) => b.severity - a.severity).slice(0, 2);
-    if (top2.length > 0) {
-      setSelectedItems(prev => {
-        const existing = new Set(prev.map(p => `${p.type}-${p.id}`));
-        const toAdd = top2.filter(item => !existing.has(`${item.type}-${item.id}`));
-        return [...prev, ...toAdd];
-      });
-    }
+    setSelectedItems(top2);
     setPacketOpen(true);
   };
 
@@ -5738,6 +5736,30 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               </div>
             </div>
 
+            {/* Fraud-specific fields */}
+            {packetLetterType === 'fraud' && (
+              <div className="grid grid-cols-2 gap-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+                <div className="space-y-1">
+                  <Label className="text-xs text-red-400 font-medium">Police Report # (optional)</Label>
+                  <Input
+                    value={packetPoliceReport}
+                    onChange={e => setPacketPoliceReport(e.target.value)}
+                    placeholder="e.g., 2024-001234"
+                    className="h-8 text-xs bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-red-400 font-medium">FTC Report # (optional)</Label>
+                  <Input
+                    value={packetFtcReport}
+                    onChange={e => setPacketFtcReport(e.target.value)}
+                    placeholder="e.g., 123456789"
+                    className="h-8 text-xs bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Items being disputed */}
             <div>
               <Label className="text-[hsl(var(--admin-text-muted))] text-sm mb-2 block">
@@ -5822,11 +5844,16 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                         bureau: packetBureau,
                         letterType: packetLetterType,
                         items: packetItems,
+                        policeReportNumber: packetLetterType === 'fraud' && packetPoliceReport ? packetPoliceReport : undefined,
+                        ftcReportNumber: packetLetterType === 'fraud' && packetFtcReport ? packetFtcReport : undefined,
                       }),
                     });
                     if (!resp.ok) throw new Error((await resp.json()).error || 'Generation failed');
                     const data = await resp.json();
                     setPacketContent(data.content);
+                    setPacketClientName(data.clientName || report?.clientName || '');
+                    setPacketNote('');
+                    setPacketNoteEditing(false);
                     setPacketOpen(false);
                     setPacketPreviewOpen(true);
                   } catch (e: any) {
@@ -5863,16 +5890,40 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
             </p>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto min-h-0 mt-3 space-y-3">
-            {/* Structured packet display — parse section headers for visual formatting */}
+            {/* Structured packet display — section-aware rendering */}
             <div className="rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))] overflow-hidden">
               <div className="px-4 py-2 bg-[hsl(var(--admin-accent))]/10 border-b border-[hsl(var(--admin-border))] flex items-center gap-2">
                 <FileText className="h-4 w-4 text-[hsl(var(--admin-accent))]" />
-                <span className="text-xs font-semibold text-[hsl(var(--admin-accent))]">DISPUTE LETTER</span>
-                <span className="ml-auto text-xs text-[hsl(var(--admin-text-muted))]">{selectedItems.length} item(s)</span>
+                <span className="text-xs font-semibold text-[hsl(var(--admin-accent))]">DISPUTE LETTER PREVIEW</span>
+                <span className="ml-auto text-xs text-[hsl(var(--admin-text-muted))]">{selectedItems.length} item(s) · {packetBureau} · {packetLetterType === 'round1' ? 'Round 1' : packetLetterType === 'round2' ? 'Round 2' : packetLetterType === 'validation' ? 'Debt Validation' : 'Fraud / ID Theft'}</span>
               </div>
-              <pre className="text-xs text-[hsl(var(--admin-text))] whitespace-pre-wrap font-mono p-4 leading-relaxed max-h-[350px] overflow-y-auto">
-                {packetContent}
-              </pre>
+              <div className="p-4 max-h-[420px] overflow-y-auto space-y-0.5">
+                {packetContent.split('\n').map((line, i) => {
+                  const trimmed = line.trim();
+                  if (trimmed.startsWith('═') || trimmed.startsWith('─')) {
+                    return <hr key={i} className="border-[hsl(var(--admin-border))] my-2" />;
+                  }
+                  if (/^[A-Z][A-Z\s\/\(\)]+:$/.test(trimmed)) {
+                    return <p key={i} className="text-[11px] font-bold tracking-widest text-[hsl(var(--admin-accent))] mt-3 mb-1 uppercase">{line}</p>;
+                  }
+                  if (/^▶/.test(trimmed)) {
+                    return <p key={i} className="text-xs text-green-400 pl-4 leading-relaxed">{line}</p>;
+                  }
+                  if (/^\d+\.\s/.test(trimmed)) {
+                    return <p key={i} className="text-xs text-[hsl(var(--admin-text))] pl-4 leading-relaxed">{line}</p>;
+                  }
+                  if (/^DEMAND \d+:/i.test(trimmed)) {
+                    return <p key={i} className="text-xs font-semibold text-amber-400 mt-2">{line}</p>;
+                  }
+                  if (/^(Account #:|Balance:|Status:|Opened:|Reported:)/i.test(trimmed)) {
+                    return <p key={i} className="text-xs text-[hsl(var(--admin-text-muted))] pl-2">{line}</p>;
+                  }
+                  if (trimmed === '') {
+                    return <div key={i} className="h-1.5" />;
+                  }
+                  return <p key={i} className="text-xs text-[hsl(var(--admin-text))] leading-relaxed">{line}</p>;
+                })}
+              </div>
             </div>
             {/* Attached admin note */}
             {packetNote && !packetNoteEditing && (
@@ -5932,24 +5983,36 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 variant="outline"
                 className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
                 onClick={() => {
-                  const clientName = report?.clientName?.replace(/\s+/g, '_') || 'client';
-                  const bureauLabel = packetBureau.toLowerCase();
-                  const filename = `dispute_packet_${clientName}_${bureauLabel}.txt`;
-                  const fullText = packetNote ? `${packetContent}\n\n---\nADMIN NOTE: ${packetNote}` : packetContent;
-                  const blob = new Blob([fullText], { type: 'text/plain' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = filename;
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url);
-                  toast({ title: "Downloaded", description: filename });
+                  const clientNameLabel = packetClientName || report?.clientName || 'Client';
+                  const bureauLabel = packetBureau;
+                  const title = `Dispute Packet — ${clientNameLabel} — ${bureauLabel}`;
+                  const noteHtml = packetNote
+                    ? `<div style="margin-top:32px;padding:12px 16px;background:#fffbeb;border:1px solid #f59e0b;border-radius:6px;font-size:11px;color:#92400e;"><strong>ADMIN NOTE (not included in mailed letter):</strong><br>${packetNote.replace(/\n/g, '<br>')}</div>`
+                    : '';
+                  const contentHtml = packetContent
+                    .split('\n')
+                    .map(line => {
+                      if (line.startsWith('═') || line.startsWith('─')) return `<hr style="border:none;border-top:1px solid #ccc;margin:8px 0;">`;
+                      if (/^[A-Z][A-Z\s\/]+:$/.test(line.trim())) return `<h3 style="font-size:13px;font-weight:700;margin:16px 0 4px;letter-spacing:0.05em;">${line}</h3>`;
+                      if (/^\d+\.\s/.test(line.trim()) || /^▶/.test(line.trim())) return `<p style="margin:4px 0 4px 20px;font-size:12px;">${line}</p>`;
+                      if (line.trim() === '') return `<p style="margin:6px 0;"></p>`;
+                      return `<p style="margin:3px 0;font-size:12px;">${line}</p>`;
+                    })
+                    .join('');
+                  const html = `<!DOCTYPE html><html><head><title>${title}</title><style>@media print{body{margin:1in}}.no-print{display:none}</style></head><body style="font-family:Georgia,serif;color:#111;max-width:750px;margin:40px auto;padding:0 24px;"><h1 style="font-size:16px;font-weight:700;border-bottom:2px solid #333;padding-bottom:8px;margin-bottom:20px;">${title}</h1>${contentHtml}${noteHtml}<div class="no-print" style="margin-top:30px;text-align:center;"><button onclick="window.print()" style="padding:10px 24px;background:#0f172a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">🖨 Print / Save as PDF</button></div></body></html>`;
+                  const win = window.open('', '_blank');
+                  if (win) {
+                    win.document.write(html);
+                    win.document.close();
+                    win.focus();
+                    setTimeout(() => win.print(), 500);
+                  } else {
+                    toast({ title: 'Popup blocked', description: 'Allow popups for this site to download PDF.', variant: 'destructive' });
+                  }
                 }}
               >
                 <Download className="h-3 w-3 mr-1" />
-                Download
+                Download PDF
               </Button>
               <Button
                 size="sm"
