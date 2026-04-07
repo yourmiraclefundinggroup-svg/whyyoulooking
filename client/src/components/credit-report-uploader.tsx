@@ -269,7 +269,7 @@ export function CreditReportUploader() {
 
               <TabsContent value="issues" className="space-y-4">
                 {analysisResult.aiAnalysis.issuesFound.map((issue, index) => (
-                  <Card key={index} className="border-l-4 border-l-red-500">
+                  <Card key={index} className="border-l-4 border-l-destructive">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
