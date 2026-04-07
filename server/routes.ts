@@ -7894,6 +7894,55 @@ ${denialLetterText}`
     }
   });
 
+  // PATCH /api/white-label/branding — save branding settings (create or update)
+  app.patch("/api/white-label/branding", authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { brandName, brandLogoUrl, primaryColor, accentColor, customDomain, supportEmail } = req.body;
+      const { whiteLabelAccounts } = await import("@shared/schema");
+      const { eq: eqOp } = await import("drizzle-orm");
+      const [existing] = await db.select().from(whiteLabelAccounts).where(eqOp(whiteLabelAccounts.ownerUserId, user.id)).limit(1);
+      const updates: Record<string, any> = {};
+      if (brandName !== undefined) updates.brandName = brandName;
+      if (brandLogoUrl !== undefined) updates.brandLogoUrl = brandLogoUrl;
+      if (primaryColor !== undefined) updates.primaryColor = primaryColor;
+      if (accentColor !== undefined) updates.accentColor = accentColor;
+      if (customDomain !== undefined) updates.customDomain = customDomain;
+      if (existing) {
+        await db.update(whiteLabelAccounts).set(updates).where(eqOp(whiteLabelAccounts.id, existing.id));
+        const [updated] = await db.select().from(whiteLabelAccounts).where(eqOp(whiteLabelAccounts.id, existing.id)).limit(1);
+        res.json({ success: true, account: updated });
+      } else {
+        // Auto-create account when saving branding for the first time
+        const [created] = await db.insert(whiteLabelAccounts).values({
+          ownerUserId: user.id,
+          brandName: brandName || "My Agency",
+          brandLogoUrl: brandLogoUrl || null,
+          primaryColor: primaryColor || "#0F172A",
+          accentColor: accentColor || "#F59E0B",
+          customDomain: customDomain || null,
+        }).returning();
+        res.status(201).json({ success: true, account: created });
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/white-label/branding — get branding for the current admin (used by UI to display live preview)
+  app.get("/api/white-label/branding", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { whiteLabelAccounts } = await import("@shared/schema");
+      const { eq: eqOp } = await import("drizzle-orm");
+      const [account] = await db.select().from(whiteLabelAccounts).where(eqOp(whiteLabelAccounts.ownerUserId, user.id)).limit(1);
+      if (!account) return res.json({ hasAccount: false, brandName: "ScoreShift", primaryColor: "#0F172A", accentColor: "#F59E0B" });
+      res.json({ hasAccount: true, ...account });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // --- Plan Management ---
   app.post("/api/admin/plans/assign", authenticateToken, async (req, res) => {
     try {

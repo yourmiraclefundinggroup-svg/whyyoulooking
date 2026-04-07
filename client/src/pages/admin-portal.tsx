@@ -1343,60 +1343,218 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
 }
 
 function WhiteLabelPage() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: branding, isLoading: brandingLoading } = useQuery<any>({
+    queryKey: ['/api/white-label/branding'],
+  });
+
+  const [brandName, setBrandName] = useState('');
+  const [brandLogoUrl, setBrandLogoUrl] = useState('');
+  const [primaryColor, setPrimaryColor] = useState('#0F172A');
+  const [accentColor, setAccentColor] = useState('#F59E0B');
+  const [customDomain, setCustomDomain] = useState('');
+
+  // Populate form when branding loads
+  const [hydrated, setHydrated] = useState(false);
+  if (branding && !hydrated && !brandingLoading) {
+    setBrandName(branding.brandName || '');
+    setBrandLogoUrl(branding.brandLogoUrl || '');
+    setPrimaryColor(branding.primaryColor || '#0F172A');
+    setAccentColor(branding.accentColor || '#F59E0B');
+    setCustomDomain(branding.customDomain || '');
+    setHydrated(true);
+  }
+
+  const saveMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await fetch('/api/white-label/branding', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Branding saved', description: 'Your portal branding has been updated.' });
+      queryClient.invalidateQueries({ queryKey: ['/api/white-label/branding'] });
+      setHydrated(false);
+    },
+    onError: (e: any) => toast({ title: 'Save failed', description: e.message, variant: 'destructive' }),
+  });
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-[hsl(var(--admin-text))]">White Label Configuration</h2>
-        <p className="text-[hsl(var(--admin-text-muted))] mt-1">Customize your branded portal settings, domain, and API access.</p>
+        <p className="text-[hsl(var(--admin-text-muted))] mt-1">Customize your branded portal settings and domain.</p>
       </div>
-      <AdminCard>
-        <AdminCardHeader>
-          <AdminCardTitle icon={<Package className="h-5 w-5" />}>White Label Configuration</AdminCardTitle>
-        </AdminCardHeader>
-        <AdminCardContent>
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-[hsl(var(--admin-text))] mb-2 block">Brand Name</Label>
-                <Input defaultValue="ScoreShift" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]" />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Settings form */}
+        <div className="lg:col-span-2 space-y-4">
+          <AdminCard>
+            <AdminCardHeader>
+              <AdminCardTitle icon={<Package className="h-5 w-5" />}>Brand Identity</AdminCardTitle>
+            </AdminCardHeader>
+            <AdminCardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-[hsl(var(--admin-text))] mb-2 block text-sm">Brand Name</Label>
+                    <Input
+                      value={brandName}
+                      onChange={e => setBrandName(e.target.value)}
+                      placeholder="Your Agency Name"
+                      className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[hsl(var(--admin-text))] mb-2 block text-sm">Custom Domain</Label>
+                    <Input
+                      value={customDomain}
+                      onChange={e => setCustomDomain(e.target.value)}
+                      placeholder="app.youragency.com"
+                      className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-[hsl(var(--admin-text))] mb-2 block text-sm">Logo URL</Label>
+                  <Input
+                    value={brandLogoUrl}
+                    onChange={e => setBrandLogoUrl(e.target.value)}
+                    placeholder="https://youragency.com/logo.png"
+                    className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]"
+                  />
+                  <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-1">Paste a public image URL — shown in sidebar and client portal</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-[hsl(var(--admin-text))] mb-2 block text-sm">Primary Color</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={primaryColor}
+                        onChange={e => setPrimaryColor(e.target.value)}
+                        className="h-10 w-12 rounded-lg cursor-pointer border border-[hsl(var(--admin-border))] bg-transparent"
+                      />
+                      <Input
+                        value={primaryColor}
+                        onChange={e => setPrimaryColor(e.target.value)}
+                        className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] font-mono text-sm flex-1"
+                        maxLength={7}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-[hsl(var(--admin-text))] mb-2 block text-sm">Accent Color</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={accentColor}
+                        onChange={e => setAccentColor(e.target.value)}
+                        className="h-10 w-12 rounded-lg cursor-pointer border border-[hsl(var(--admin-border))] bg-transparent"
+                      />
+                      <Input
+                        value={accentColor}
+                        onChange={e => setAccentColor(e.target.value)}
+                        className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] font-mono text-sm flex-1"
+                        maxLength={7}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white"
+                  onClick={() => saveMutation.mutate({ brandName, brandLogoUrl, primaryColor, accentColor, customDomain })}
+                  disabled={saveMutation.isPending || !brandName}
+                >
+                  {saveMutation.isPending ? 'Saving…' : 'Save Branding'}
+                </Button>
               </div>
-              <div>
-                <Label className="text-[hsl(var(--admin-text))] mb-2 block">Custom Domain</Label>
-                <Input defaultValue="app.scoreshift.com" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]" />
-              </div>
-              <div>
-                <Label className="text-[hsl(var(--admin-text))] mb-2 block">Primary Color</Label>
-                <div className="flex items-center gap-2">
-                  <input type="color" defaultValue="#3B82F6" className="h-10 rounded-lg cursor-pointer" />
-                  <Input defaultValue="#3B82F6" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] font-mono text-sm flex-1" />
+            </AdminCardContent>
+          </AdminCard>
+
+          <AdminCard>
+            <AdminCardHeader>
+              <AdminCardTitle icon={<Activity className="h-5 w-5" />}>Account Status</AdminCardTitle>
+            </AdminCardHeader>
+            <AdminCardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <span className="text-sm text-[hsl(var(--admin-text))]">Account Status</span>
+                  <AdminBadge variant={branding?.status === 'active' ? 'success' : 'warning'}>{branding?.status || 'Standard'}</AdminBadge>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <span className="text-sm text-[hsl(var(--admin-text))]">Plan Tier</span>
+                  <AdminBadge variant="info" className="capitalize">{branding?.planTier || 'standard'}</AdminBadge>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <span className="text-sm text-[hsl(var(--admin-text))]">Custom Domain</span>
+                  <span className="text-sm text-[hsl(var(--admin-text-muted))] font-mono">{branding?.customDomain || 'Not configured'}</span>
                 </div>
               </div>
-              <div>
-                <Label className="text-[hsl(var(--admin-text))] mb-2 block">Support Email</Label>
-                <Input defaultValue="support@scoreshift.com" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]" />
+            </AdminCardContent>
+          </AdminCard>
+        </div>
+
+        {/* Live Preview */}
+        <div>
+          <AdminCard>
+            <AdminCardHeader>
+              <AdminCardTitle icon={<Eye className="h-5 w-5" />}>Live Preview</AdminCardTitle>
+            </AdminCardHeader>
+            <AdminCardContent>
+              <div className="space-y-4">
+                {/* Mini sidebar preview */}
+                <div className="rounded-xl border border-[hsl(var(--admin-border))] overflow-hidden">
+                  <div
+                    className="px-4 py-3 flex items-center gap-3"
+                    style={{ background: primaryColor }}
+                  >
+                    {brandLogoUrl ? (
+                      <img src={brandLogoUrl} alt="Logo" className="w-8 h-8 rounded-lg object-contain bg-white/10" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: accentColor }}>
+                        <Shield className="h-4 w-4 text-white" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-bold text-sm text-white leading-none">{brandName || 'Your Brand'}</p>
+                      <p className="text-[10px] tracking-widest font-medium mt-0.5" style={{ color: accentColor }}>ADMIN</p>
+                    </div>
+                  </div>
+                  <div className="p-3 space-y-1 bg-[hsl(var(--admin-card))]">
+                    {['Dashboard', 'Clients', 'Disputes', 'Letters'].map((item, i) => (
+                      <div key={item} className={`px-3 py-2 rounded-lg text-xs flex items-center gap-2 ${i === 0 ? 'text-white font-medium' : 'text-[hsl(var(--admin-text-muted))]'}`} style={i === 0 ? { background: accentColor + '33', borderLeft: `2px solid ${accentColor}` } : {}}>
+                        <div className="w-3 h-3 rounded-sm" style={i === 0 ? { background: accentColor } : { background: 'currentColor', opacity: 0.3 }} />
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Color swatches */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <p className="text-xs text-[hsl(var(--admin-text-muted))] mb-1">Primary</p>
+                    <div className="h-8 rounded-lg border border-[hsl(var(--admin-border))]" style={{ background: primaryColor }} />
+                    <p className="text-xs font-mono text-[hsl(var(--admin-text-muted))] mt-1">{primaryColor}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-[hsl(var(--admin-text-muted))] mb-1">Accent</p>
+                    <div className="h-8 rounded-lg border border-[hsl(var(--admin-border))]" style={{ background: accentColor }} />
+                    <p className="text-xs font-mono text-[hsl(var(--admin-text-muted))] mt-1">{accentColor}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-[hsl(var(--admin-text-muted))] text-center">Preview updates as you type</p>
               </div>
-            </div>
-            <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-[hsl(var(--admin-text))] font-medium">Client Capacity</h4>
-                <span className="text-[hsl(var(--admin-text-muted))] text-sm">847 / 1,000</span>
-              </div>
-              <div className="w-full bg-[hsl(var(--admin-bg))] h-2 rounded-full overflow-hidden">
-                <div className="bg-[hsl(var(--admin-accent))] h-full" style={{ width: '84.7%' }}></div>
-              </div>
-              <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-2">84.7% capacity used</p>
-            </div>
-            <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
-              <h4 className="text-[hsl(var(--admin-text))] font-medium mb-3">API Key</h4>
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))]">
-                <input type="password" defaultValue="sk_live_..." className="flex-1 bg-transparent text-[hsl(var(--admin-text))] outline-none font-mono text-sm" readOnly />
-                <Button size="sm" variant="outline" className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] hover:bg-[hsl(var(--admin-bg))]">Copy</Button>
-              </div>
-            </div>
-            <Button className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white">Save Configuration</Button>
-          </div>
-        </AdminCardContent>
-      </AdminCard>
+            </AdminCardContent>
+          </AdminCard>
+        </div>
+      </div>
     </div>
   );
 }
@@ -2876,6 +3034,10 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   const [packetPoliceReport, setPacketPoliceReport] = useState<string>('');
   const [packetFtcReport, setPacketFtcReport] = useState<string>('');
   const [packetClientName, setPacketClientName] = useState<string>('');
+  // Direct Lob send from packet preview
+  const [lobPacketSendOpen, setLobPacketSendOpen] = useState(false);
+  const [lobPacketResult, setLobPacketResult] = useState<{ trackingNumber: string; expectedDelivery?: string } | null>(null);
+  const [lobPacketFrom, setLobPacketFrom] = useState({ name: '', line1: '', line2: '', city: '', state: '', zip: '' });
 
   const [viewLetterOpen, setViewLetterOpen] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState<DisputeLetterNew | null>(null);
@@ -3120,6 +3282,34 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
     onError: (error: Error) => {
       toast({ title: 'Lob Error', description: error.message, variant: 'destructive' });
     }
+  });
+
+  const lobPacketSendMutation = useMutation({
+    mutationFn: async () => {
+      if (!report) throw new Error("No report selected");
+      const clientAddr = report.clientAddress;
+      if (!clientAddr?.line1 || !clientAddr?.city || !clientAddr?.state || !clientAddr?.zip) {
+        throw new Error("Client address is incomplete. Update it in the intake card first.");
+      }
+      const res = await fetch('/api/lob/send-letter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
+        body: JSON.stringify({
+          clientId: report.userId,
+          bureau: packetBureau,
+          letterContent: packetContent,
+          clientName: report.clientName || packetClientName,
+          clientAddress: clientAddr,
+        }),
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Lob send failed'); }
+      return res.json() as Promise<{ trackingNumber: string; expectedDelivery?: string; lobId: string }>;
+    },
+    onSuccess: (data) => {
+      setLobPacketResult({ trackingNumber: data.trackingNumber, expectedDelivery: data.expectedDelivery });
+      queryClient.invalidateQueries({ queryKey: ['/api/lob/mailings'] });
+    },
+    onError: (e: Error) => toast({ title: 'Send failed', description: e.message, variant: 'destructive' }),
   });
 
   const createDeletionEventMutation = useMutation({
@@ -5377,54 +5567,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
 
         {/* White Label Configuration Tab */}
         <TabsContent value="white-label" className="mt-6">
-          <AdminCard>
-            <AdminCardHeader>
-              <AdminCardTitle icon={<Package className="h-5 w-5" />}>White Label Configuration</AdminCardTitle>
-            </AdminCardHeader>
-            <AdminCardContent>
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-white mb-2 block">Brand Name</Label>
-                    <Input defaultValue="ScoreShift" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white" />
-                  </div>
-                  <div>
-                    <Label className="text-white mb-2 block">Custom Domain</Label>
-                    <Input defaultValue="app.scoreshift.com" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white" />
-                  </div>
-                  <div>
-                    <Label className="text-white mb-2 block">Primary Color</Label>
-                    <div className="flex items-center gap-2">
-                      <input type="color" defaultValue="#3B82F6" className="h-10 rounded-lg cursor-pointer" />
-                      <Input defaultValue="#3B82F6" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white font-mono text-sm flex-1" />
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-white mb-2 block">Support Email</Label>
-                    <Input defaultValue="support@scoreshift.com" className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white" />
-                  </div>
-                </div>
-                <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-white font-medium">Client Capacity</h4>
-                    <span className="text-[hsl(var(--admin-text-muted))] text-sm">847 / 1,000</span>
-                  </div>
-                  <div className="w-full bg-[hsl(var(--admin-bg))] h-2 rounded-full overflow-hidden">
-                    <div className="bg-[hsl(var(--admin-accent))] h-full" style={{ width: '84.7%' }}></div>
-                  </div>
-                  <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-2">84.7% capacity used</p>
-                </div>
-                <div className="p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
-                  <h4 className="text-white font-medium mb-3">API Key</h4>
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))]">
-                    <input type="password" defaultValue="sk_live_..." className="flex-1 bg-transparent text-white outline-none font-mono text-sm" readOnly />
-                    <Button size="sm" variant="outline" className="border-[hsl(var(--admin-border))] text-white hover:bg-[hsl(var(--admin-bg))]">Copy</Button>
-                  </div>
-                </div>
-                <Button className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white">Save Configuration</Button>
-              </div>
-            </AdminCardContent>
-          </AdminCard>
+          <WhiteLabelPage />
         </TabsContent>
 
         {/* Team Management Tab */}
@@ -6058,13 +6201,12 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 size="sm"
                 className="flex-1 border border-[hsl(var(--admin-accent))]/50 bg-transparent hover:bg-[hsl(var(--admin-accent))]/10 text-[hsl(var(--admin-accent))] gap-2"
                 onClick={() => {
-                  setPacketPreviewOpen(false);
-                  setActiveDisputeTab('lob-tracking');
-                  toast({ title: "Go to Certified Mail", description: "Upload this packet and configure certified mail delivery in the Certified Mail tab." });
+                  setLobPacketResult(null);
+                  setLobPacketSendOpen(true);
                 }}
               >
-                <Mail className="h-4 w-4" />
-                Go to Certified Mail Tab
+                <Send className="h-4 w-4" />
+                Send via Certified Mail
               </Button>
               <Button
                 size="sm"
@@ -6103,6 +6245,90 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Direct Lob send dialog from packet preview */}
+      <Dialog open={lobPacketSendOpen} onOpenChange={(open) => { setLobPacketSendOpen(open); if (!open) { setLobPacketResult(null); } }}>
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
+              Send via Certified Mail
+            </DialogTitle>
+          </DialogHeader>
+
+          {lobPacketResult ? (
+            <div className="py-4 space-y-4">
+              <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30 text-center">
+                <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
+                <p className="font-semibold text-green-300 text-sm">Letter Sent via Certified Mail!</p>
+                <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-1">Lob is now printing and mailing this letter.</p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <span className="text-xs text-[hsl(var(--admin-text-muted))]">Tracking Number</span>
+                  <span className="text-xs font-mono text-[hsl(var(--admin-text))]">{lobPacketResult.trackingNumber}</span>
+                </div>
+                {lobPacketResult.expectedDelivery && (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                    <span className="text-xs text-[hsl(var(--admin-text-muted))]">Expected Delivery</span>
+                    <span className="text-xs text-[hsl(var(--admin-text))]">{new Date(lobPacketResult.expectedDelivery).toLocaleDateString()}</span>
+                  </div>
+                )}
+              </div>
+              <Button
+                className="w-full bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white"
+                onClick={() => { setLobPacketSendOpen(false); setPacketPreviewOpen(false); setActiveDisputeTab('lob-tracking'); }}
+              >
+                View in Tracking Tab
+              </Button>
+            </div>
+          ) : (
+            <div className="py-4 space-y-4">
+              {/* Sending to */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-[hsl(var(--admin-text-muted))] uppercase tracking-wider">Sending To</p>
+                <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <p className="text-sm font-medium text-[hsl(var(--admin-text))]">{report?.clientName || packetClientName || '—'}</p>
+                  {report?.clientAddress?.line1 ? (
+                    <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-0.5">
+                      {report.clientAddress.line1}{report.clientAddress.line2 ? `, ${report.clientAddress.line2}` : ''}<br />
+                      {report.clientAddress.city}, {report.clientAddress.state} {report.clientAddress.zip}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-red-400 mt-1">No address on file — update in the client intake card first.</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <span className="text-xs text-[hsl(var(--admin-text-muted))]">Bureau:</span>
+                  <span className={`text-xs font-semibold ${packetBureau === 'EXPERIAN' ? 'text-blue-400' : packetBureau === 'EQUIFAX' ? 'text-red-400' : 'text-purple-400'}`}>{packetBureau}</span>
+                  <span className="text-xs text-[hsl(var(--admin-text-muted))] ml-auto">Certified Mail + Return Receipt</span>
+                </div>
+              </div>
+
+              <p className="text-xs text-[hsl(var(--admin-text-muted))] bg-[hsl(var(--admin-bg))]/50 rounded-lg p-3 border border-[hsl(var(--admin-border))]">
+                Lob will print and mail this letter on your behalf via USPS Certified Mail. A tracking number will be assigned automatically.
+              </p>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
+                  onClick={() => setLobPacketSendOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white"
+                  onClick={() => lobPacketSendMutation.mutate()}
+                  disabled={lobPacketSendMutation.isPending || !report?.clientAddress?.line1}
+                >
+                  {lobPacketSendMutation.isPending ? 'Sending…' : 'Confirm & Send'}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

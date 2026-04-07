@@ -1,4 +1,5 @@
 import { useState, createContext, useContext } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -121,6 +122,12 @@ export function AdminShell({ children }: AdminShellProps) {
   const [location] = useLocation();
   const { user, logout } = useUserContext();
 
+  const { data: branding } = useQuery<{ brandName?: string; brandLogoUrl?: string; primaryColor?: string; accentColor?: string }>({
+    queryKey: ['/api/white-label/branding'],
+    staleTime: 60_000,
+  });
+  const brandName = branding?.brandName || 'ScoreShift';
+
   const isActiveRoute = (href: string) => {
     if (href === "/admin-portal") {
       return location === "/admin-portal" || location === "/admin-portal/";
@@ -190,7 +197,7 @@ export function AdminShell({ children }: AdminShellProps) {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -10 }}
                     >
-                      <span className="font-bold text-lg text-white">ScoreShift</span>
+                      <span className="font-bold text-lg text-white">{brandName}</span>
                       <span className="block text-[10px] font-medium text-[hsl(var(--admin-accent))] tracking-wider">ADMIN</span>
                     </motion.div>
                   )}
@@ -342,7 +349,7 @@ export function AdminShell({ children }: AdminShellProps) {
                       <Shield className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <span className="font-bold text-lg text-white">ScoreShift</span>
+                      <span className="font-bold text-lg text-white">{brandName}</span>
                       <span className="block text-[10px] font-medium text-[hsl(var(--admin-accent))] tracking-wider">ADMIN</span>
                     </div>
                   </div>
