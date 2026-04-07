@@ -97,6 +97,8 @@ export interface DisputeIQParams {
   priorResponse?: string;
   clientState: string;
   letterType?: LetterType;
+  policeReportNumber?: string;
+  ftcReportNumber?: string;
 }
 
 const BUREAU_FULL_ADDRESSES: Record<string, { name: string; address: string }> = {
@@ -440,6 +442,8 @@ BUREAU: ${bureauInfo.name.toUpperCase()} | LETTER TYPE: ${letterTypeLabel} — R
 CREDITOR/FURNISHER: ${params.creditor}
 ${accountSummary}
 DISPUTE REASON: ${params.disputeReason}
+${params.policeReportNumber ? `POLICE REPORT #: ${params.policeReportNumber}` : ""}
+${params.ftcReportNumber ? `FTC IDENTITY THEFT REPORT #: ${params.ftcReportNumber}` : ""}
 ${params.priorResponse ? `PRIOR RESPONSE: ${params.priorResponse}` : ""}
 ${escalationContext ? `ESCALATION NOTE: ${escalationContext}` : ""}
 ${stateLawNote ? `STATE LAW: ${stateLawNote}` : ""}
@@ -464,14 +468,14 @@ Consumer Dispute Department
 ─────────────────────────────────────────────────────────────────────
 RE: FORMAL CREDIT DISPUTE — ${letterTypeLabel.toUpperCase()} ${letterTypeSections.reLineExtra}
     Furnisher/Creditor: ${params.creditor}
-    ${accountSummary}
+    ${accountSummary}${params.policeReportNumber ? `\n    Police Report #: ${params.policeReportNumber}` : ""}${params.ftcReportNumber ? `\n    FTC Report #: ${params.ftcReportNumber}` : ""}
 ─────────────────────────────────────────────────────────────────────
 
 PACKAGE CONTENTS:
 ─────────────────────────────────────────────────────────────────────
   1. Dispute Cover Letter (this document)
   2. Copy of Government-Issued Photo ID
-  3. Proof of Address${effectiveLetterType === "identity_theft" ? "\n  4. FTC Identity Theft Report\n  5. Signed Identity Theft Affidavit" : effectiveLetterType === "closed_school" ? "\n  4. Documentation of School Closure Date" : ""}
+  3. Proof of Address${effectiveLetterType === "identity_theft" ? `\n  4. FTC Identity Theft Report${params.ftcReportNumber ? ` (Complaint #: ${params.ftcReportNumber})` : ""}\n  5. Signed Identity Theft Affidavit${params.policeReportNumber ? `\n  6. Local Police Report (#: ${params.policeReportNumber})` : ""}` : effectiveLetterType === "closed_school" ? "\n  4. Documentation of School Closure Date" : ""}
 ─────────────────────────────────────────────────────────────────────
 
 To Whom It May Concern:

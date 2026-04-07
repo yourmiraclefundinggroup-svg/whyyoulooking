@@ -3348,14 +3348,14 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
     // Auto-populate police/FTC report numbers from client intake record if available
     const clientRecord = report?.userId ? clientUsers.find(u => u.id === report.userId) : null;
     if (clientRecord) {
-      if ((clientRecord as any).policeReportNumber) {
-        setPacketPoliceReport((clientRecord as any).policeReportNumber);
+      if (clientRecord.policeReportNumber) {
+        setPacketPoliceReport(clientRecord.policeReportNumber);
       }
-      if ((clientRecord as any).ftcReportNumber) {
-        setPacketFtcReport((clientRecord as any).ftcReportNumber);
+      if (clientRecord.ftcReportNumber) {
+        setPacketFtcReport(clientRecord.ftcReportNumber);
       }
       // If client is identity theft case, default to fraud letter type
-      if ((clientRecord as any).caseType === 'IDENTITY_THEFT') {
+      if (clientRecord.caseType === 'IDENTITY_THEFT') {
         setPacketLetterType('fraud');
       }
     }
@@ -5978,9 +5978,9 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 variant="outline"
                 className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
                 onClick={() => {
-                  const fullText = packetNote ? `${packetContent}\n\n---\nADMIN NOTE: ${packetNote}` : packetContent;
-                  navigator.clipboard.writeText(fullText);
-                  toast({ title: "Copied to clipboard" });
+                  // Copy only the mailable letter content — admin note is internal-only
+                  navigator.clipboard.writeText(packetContent);
+                  toast({ title: "Copied to clipboard", description: "Letter content copied (admin note excluded)" });
                 }}
               >
                 Copy Text
@@ -6071,7 +6071,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 className="flex-1 bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white gap-2"
                 onClick={async () => {
                   if (!report?.userId) return;
-                  const fullContent = packetNote ? `${packetContent}\n\n---\nADMIN NOTE: ${packetNote}` : packetContent;
+                  // Save only the packet letter content — admin note stays internal/UI-only
                   const resp = await fetch('/api/admin/dispute-letters', {
                     method: 'POST',
                     headers: {
@@ -6083,7 +6083,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                       uploadId: reportId,
                       letterType: packetLetterType,
                       bureau: packetBureau,
-                      content: fullContent,
+                      content: packetContent,
                       status: 'draft',
                       disputeItemIds: selectedItems.map(i => i.id),
                     }),
