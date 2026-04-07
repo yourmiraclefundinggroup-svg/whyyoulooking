@@ -88,6 +88,7 @@ import {
   IdCard,
   Edit3,
   X,
+  Download,
 } from "lucide-react";
 
 export default function AdminPortal() {
@@ -2870,6 +2871,7 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   const [packetContent, setPacketContent] = useState<string>('');
   const [packetPreviewOpen, setPacketPreviewOpen] = useState(false);
   const [generatingPacket, setGeneratingPacket] = useState(false);
+
   const [viewLetterOpen, setViewLetterOpen] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState<DisputeLetterNew | null>(null);
   const [trackingNumberInput, setTrackingNumberInput] = useState('');
@@ -3286,6 +3288,36 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
     return { score: Math.min(score, 100), strategy, reason: reasons.join(', ') || 'Public record item' };
   };
 
+  const openPacketDialogWithAutoSelect = () => {
+    const allScorable: SelectedItem[] = [
+      ...accounts.map(acc => {
+        const s = calculateAccountSeverity(acc);
+        return { id: acc.id, type: 'account' as const, name: acc.creditorName || 'Unknown', severity: s.score, strategy: s.strategy, reason: s.reason };
+      }),
+      ...collections.map(col => {
+        const s = calculateCollectionSeverity(col);
+        return { id: col.id, type: 'collection' as const, name: col.agencyName || 'Unknown', severity: s.score, strategy: s.strategy, reason: s.reason };
+      }),
+      ...inquiries.map(inq => {
+        const s = calculateInquirySeverity(inq);
+        return { id: inq.id, type: 'inquiry' as const, name: inq.creditorName || 'Unknown', severity: s.score, strategy: s.strategy, reason: s.reason };
+      }),
+      ...publicRecords.map(rec => {
+        const s = calculatePublicRecordSeverity(rec);
+        return { id: rec.id, type: 'public_record' as const, name: rec.recordType || 'Unknown', severity: s.score, strategy: s.strategy, reason: s.reason };
+      }),
+    ];
+    const top2 = allScorable.sort((a, b) => b.severity - a.severity).slice(0, 2);
+    if (top2.length > 0) {
+      setSelectedItems(prev => {
+        const existing = new Set(prev.map(p => `${p.type}-${p.id}`));
+        const toAdd = top2.filter(item => !existing.has(`${item.type}-${item.id}`));
+        return [...prev, ...toAdd];
+      });
+    }
+    setPacketOpen(true);
+  };
+
   const toggleItemSelection = (id: number, type: SelectedItem['type'], name: string, severityData: { score: number; strategy: string; reason: string }) => {
     setSelectedItems(prev => {
       const exists = prev.find(item => item.id === id && item.type === type);
@@ -3461,6 +3493,16 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 >
                   <Package className="h-4 w-4" />
                   Professional Packet
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={openPacketDialogWithAutoSelect}
+                  className="border-[hsl(var(--admin-accent))]/50 text-[hsl(var(--admin-accent))] hover:text-white hover:bg-[hsl(var(--admin-accent))]/20 gap-1.5"
+                  data-testid="button-auto-packet"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Auto-Select Top 2
                 </Button>
                 <Button
                   size="sm"
@@ -3735,6 +3777,29 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               </AdminCardContent>
             </AdminCard>
           </div>
+
+          {/* Quick Action: Auto-generate dispute packet from top issues */}
+          {(accounts.length > 0 || collections.length > 0 || inquiries.length > 0 || publicRecords.length > 0) && (
+            <div className="mt-6 p-4 rounded-xl bg-[hsl(var(--admin-accent))]/10 border border-[hsl(var(--admin-accent))]/30 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Package className="h-6 w-6 text-[hsl(var(--admin-accent))]" />
+                <div>
+                  <p className="text-white font-semibold text-sm">Professional Dispute Packet</p>
+                  <p className="text-xs text-[hsl(var(--admin-text-muted))]">
+                    AI auto-selects the top 2 highest-severity items and generates a comprehensive FCRA-compliant dispute letter.
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={openPacketDialogWithAutoSelect}
+                className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white gap-2 whitespace-nowrap"
+                data-testid="button-overview-packet"
+              >
+                <Sparkles className="h-4 w-4" />
+                Generate Packet
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="accounts" className="mt-6">
@@ -5798,6 +5863,28 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               }}
             >
               Use in Letter Flow →
+            </Button>
+            <Button
+              variant="outline"
+              className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
+              onClick={() => {
+                const clientName = report?.clientName?.replace(/\s+/g, '_') || 'client';
+                const bureauLabel = packetBureau.toLowerCase();
+                const filename = `dispute_packet_${clientName}_${bureauLabel}.txt`;
+                const blob = new Blob([packetContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                toast({ title: "Downloaded", description: filename });
+              }}
+            >
+              <Download className="h-4 w-4 mr-1" />
+              Download
             </Button>
             <Button
               className="ml-auto bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white gap-2"
