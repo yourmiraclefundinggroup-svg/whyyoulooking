@@ -6060,11 +6060,11 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 onClick={() => {
                   setPacketPreviewOpen(false);
                   setActiveDisputeTab('lob-tracking');
-                  toast({ title: "Switching to Certified Mail", description: "Configure certified mail sending in the Certified Mail tab." });
+                  toast({ title: "Go to Certified Mail", description: "Upload this packet and configure certified mail delivery in the Certified Mail tab." });
                 }}
               >
                 <Mail className="h-4 w-4" />
-                Send via Certified Mail
+                Go to Certified Mail Tab
               </Button>
               <Button
                 size="sm"
