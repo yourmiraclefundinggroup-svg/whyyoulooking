@@ -2505,20 +2505,20 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
               Upload Report
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+          <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]">
             <DialogHeader>
-              <DialogTitle className="text-white">Upload Credit Report</DialogTitle>
+              <DialogTitle className="text-[hsl(var(--admin-text))]">Upload Credit Report</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleCreateUpload} className="space-y-4">
               <div className="space-y-2">
                 <Label className="text-[hsl(var(--admin-text))]">Client</Label>
                 <Select value={newUpload.userId} onValueChange={(v) => setNewUpload({ ...newUpload, userId: v })}>
-                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white" data-testid="select-client">
+                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]" data-testid="select-client">
                     <SelectValue placeholder="Select a client" />
                   </SelectTrigger>
                   <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
                     {clientUsers.map(client => (
-                      <SelectItem key={client.id} value={client.id.toString()} className="text-white hover:bg-[hsl(var(--admin-bg))]">
+                      <SelectItem key={client.id} value={client.id.toString()} className="text-[hsl(var(--admin-text))] hover:bg-[hsl(var(--admin-bg))]">
                         {client.firstName} {client.lastName}
                       </SelectItem>
                     ))}
@@ -2572,7 +2572,7 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
                     {selectedFile ? (
                       <div className="space-y-2">
                         <FileText className="h-10 w-10 mx-auto text-[hsl(var(--admin-accent))]" />
-                        <p className="text-sm font-medium text-white">{selectedFile.name}</p>
+                        <p className="text-sm font-medium text-[hsl(var(--admin-text))]">{selectedFile.name}</p>
                         <p className="text-xs text-[hsl(var(--admin-text-muted))]">
                           {(selectedFile.size / 1024).toFixed(1)} KB
                         </p>
@@ -2598,7 +2598,7 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
                     ) : (
                       <div className="space-y-2">
                         <Upload className="h-10 w-10 mx-auto text-[hsl(var(--admin-text-muted))]" />
-                        <p className="text-sm text-white">
+                        <p className="text-sm text-[hsl(var(--admin-text))]">
                           <span className="text-[hsl(var(--admin-accent))] font-medium">Click to upload</span> or drag and drop
                         </p>
                         <p className="text-xs text-[hsl(var(--admin-text-muted))]">
@@ -2626,27 +2626,27 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
                 <div className="space-y-2">
                   <Label className="text-[hsl(var(--admin-text))]">Bureau</Label>
                   <Select value={newUpload.bureau} onValueChange={(v: "EXPERIAN" | "EQUIFAX" | "TRANSUNION") => setNewUpload({ ...newUpload, bureau: v })}>
-                    <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white" data-testid="select-bureau">
+                    <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]" data-testid="select-bureau">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
-                      <SelectItem value="EXPERIAN" className="text-white hover:bg-[hsl(var(--admin-bg))]">Experian</SelectItem>
-                      <SelectItem value="EQUIFAX" className="text-white hover:bg-[hsl(var(--admin-bg))]">Equifax</SelectItem>
-                      <SelectItem value="TRANSUNION" className="text-white hover:bg-[hsl(var(--admin-bg))]">TransUnion</SelectItem>
+                      <SelectItem value="EXPERIAN">Experian</SelectItem>
+                      <SelectItem value="EQUIFAX">Equifax</SelectItem>
+                      <SelectItem value="TRANSUNION">TransUnion</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[hsl(var(--admin-text))]">Format</Label>
                   <Select value={newUpload.sourceFormat} onValueChange={(v: "pdf" | "html" | "txt" | "csv") => setNewUpload({ ...newUpload, sourceFormat: v })}>
-                    <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white" data-testid="select-format">
+                    <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]" data-testid="select-format">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
-                      <SelectItem value="pdf" className="text-white hover:bg-[hsl(var(--admin-bg))]">PDF</SelectItem>
-                      <SelectItem value="html" className="text-white hover:bg-[hsl(var(--admin-bg))]">HTML</SelectItem>
-                      <SelectItem value="txt" className="text-white hover:bg-[hsl(var(--admin-bg))]">TXT</SelectItem>
-                      <SelectItem value="csv" className="text-white hover:bg-[hsl(var(--admin-bg))]">CSV</SelectItem>
+                      <SelectItem value="pdf">PDF</SelectItem>
+                      <SelectItem value="html">HTML</SelectItem>
+                      <SelectItem value="txt">TXT</SelectItem>
+                      <SelectItem value="csv">CSV</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -2658,7 +2658,7 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
                   value={newUpload.creditScore}
                   onChange={(e) => setNewUpload({ ...newUpload, creditScore: e.target.value })}
                   placeholder="e.g., 720"
-                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white"
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))]"
                   data-testid="input-credit-score"
                 />
               </div>
