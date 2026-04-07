@@ -88,11 +88,12 @@
 
 /* ============================================================
    Admin Portal Theme System
-   Dark = default (matches scoreshift-v2 design system)
-   Light = .light ancestor override
+   Variables defined at :root (dark default) and .light (override)
+   so they are accessible inside Radix UI portals and everywhere.
    ============================================================ */
 
 /* --- DARK MODE (DEFAULT) — zinc near-black palette --- */
+:root,
 .admin-theme {
   /* Backgrounds: zinc-950 → zinc-900 → zinc-800 */
   --admin-bg:           240 10% 4%;   /* zinc-950 #09090b */
@@ -119,6 +120,7 @@
 }
 
 /* --- LIGHT MODE OVERRIDE --- */
+.light,
 .light .admin-theme {
   --admin-bg:           210 30% 96%;
   --admin-bg-elevated:  0 0% 100%;
@@ -139,19 +141,42 @@
   --admin-info:         213 80% 48%;
 }
 
-/* Light mode text overrides — fix hardcoded text-white classes */
-.light .admin-theme .text-white {
+/* Light mode: fix text-white elements inside admin portal and all Radix portals */
+.light .admin-theme .text-white,
+.light [data-radix-popper-content-wrapper] .text-white,
+.light [role="dialog"] .text-white {
   color: hsl(220 25% 12%) !important;
 }
 .light .admin-theme .text-slate-300,
 .light .admin-theme .text-slate-400,
-.light .admin-theme .text-slate-500 {
+.light .admin-theme .text-slate-500,
+.light [data-radix-popper-content-wrapper] .text-slate-300,
+.light [data-radix-popper-content-wrapper] .text-slate-400,
+.light [data-radix-popper-content-wrapper] .text-slate-500,
+.light [role="dialog"] .text-slate-300,
+.light [role="dialog"] .text-slate-400,
+.light [role="dialog"] .text-slate-500 {
   color: hsl(220 12% 40%) !important;
 }
 .light .admin-theme pre { color: hsl(220 25% 12%); }
 .light .admin-theme aside {
   background: hsl(220 25% 97%) !important;
   border-color: hsl(220 18% 88%) !important;
+}
+
+/* Radix portal dialogs/popovers — ensure light mode variables cascade correctly */
+.light [role="dialog"],
+.light [data-radix-popper-content-wrapper] {
+  --admin-bg:           210 30% 96%;
+  --admin-bg-elevated:  0 0% 100%;
+  --admin-card:         0 0% 100%;
+  --admin-card-hover:   210 30% 98%;
+  --admin-border:       220 18% 88%;
+  --admin-text:         220 25% 12%;
+  --admin-text-muted:   220 12% 46%;
+  --admin-text-subtle:  220 8% 62%;
+  --admin-accent:       38 92% 44%;
+  --admin-info:         213 80% 48%;
 }
 
 @layer base {

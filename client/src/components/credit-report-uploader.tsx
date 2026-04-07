@@ -48,7 +48,6 @@ export function CreditReportUploader() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Fetch all users for selection
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
   });
@@ -80,7 +79,6 @@ export function CreditReportUploader() {
       return response.json();
     },
     onSuccess: (result) => {
-      // Open new tab with the generated letter
       const letterWindow = window.open("", "_blank");
       if (letterWindow) {
         letterWindow.document.write(`
@@ -125,7 +123,7 @@ export function CreditReportUploader() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const fileData = e.target?.result as string;
-      const base64Data = fileData.split(',')[1]; // Remove data:mime;base64, prefix
+      const base64Data = fileData.split(',')[1];
       
       uploadMutation.mutate({
         userId: selectedUserId,
@@ -161,7 +159,7 @@ export function CreditReportUploader() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Upload className="h-5 w-5 text-blue-600" />
+            <Upload className="h-5 w-5 text-blue-500" />
             <span>Credit Report AI Analysis</span>
           </CardTitle>
         </CardHeader>
@@ -195,35 +193,39 @@ export function CreditReportUploader() {
 
           {/* File Upload Area */}
           <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
-            } ${uploadMutation.isPending ? 'opacity-50' : ''}`}
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+              dragOver
+                ? 'border-primary bg-primary/5'
+                : 'border-border hover:border-primary/50'
+            } ${uploadMutation.isPending ? 'opacity-50 pointer-events-none' : ''}`}
             onDrop={handleDrop}
             onDragOver={(e) => {
               e.preventDefault();
               setDragOver(true);
             }}
             onDragLeave={() => setDragOver(false)}
+            onClick={() => fileInputRef.current?.click()}
           >
             {uploadMutation.isPending ? (
               <div className="flex items-center justify-center space-x-2">
-                <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent"></div>
-                <span className="text-blue-600">Analyzing credit report with AI...</span>
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                <span className="text-primary">Analyzing credit report with AI...</span>
               </div>
             ) : (
               <>
-                <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-medium text-foreground mb-2">
                   Upload Credit Report or Screenshot
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-muted-foreground mb-4">
                   Drag and drop your file here, or click to browse
                 </p>
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   Supports: PDF, PNG, JPG, JPEG (Max 10MB)
                 </p>
                 <Button
-                  onClick={() => fileInputRef.current?.click()}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                   disabled={!selectedUserId || uploadMutation.isPending}
                 >
                   <Upload className="h-4 w-4 mr-2" />
@@ -248,11 +250,11 @@ export function CreditReportUploader() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Zap className="h-5 w-5 text-yellow-600" />
+                <Zap className="h-5 w-5 text-yellow-500" />
                 <span>AI Analysis Results</span>
                 <Badge variant="secondary">{analysisResult.aiAnalysis.issuesFound.length} Issues Found</Badge>
               </div>
-              <Badge className="bg-blue-100 text-blue-800">
+              <Badge className="bg-blue-500/15 text-blue-500 dark:text-blue-400 border-0">
                 Credit Score: {analysisResult.aiAnalysis.creditScore}
               </Badge>
             </CardTitle>
@@ -274,16 +276,16 @@ export function CreditReportUploader() {
                           <Badge variant={issue.impact === 'HIGH' ? 'destructive' : issue.impact === 'MEDIUM' ? 'default' : 'secondary'}>
                             {issue.impact} Impact
                           </Badge>
-                          <span className="font-medium">{issue.type.replace('_', ' ')}</span>
+                          <span className="font-medium text-foreground">{issue.type.replace('_', ' ')}</span>
                         </div>
                         {issue.amount && (
-                          <span className="font-bold text-lg">${issue.amount.toLocaleString()}</span>
+                          <span className="font-bold text-lg text-foreground">${issue.amount.toLocaleString()}</span>
                         )}
                       </div>
-                      <p className="text-gray-700 mb-2">
+                      <p className="text-foreground mb-2">
                         <strong>{issue.creditor}:</strong> {issue.description}
                       </p>
-                      <p className="text-sm text-blue-600">
+                      <p className="text-sm text-blue-500 dark:text-blue-400">
                         <strong>Suggested Action:</strong> {issue.suggestedAction}
                       </p>
                     </CardContent>
@@ -292,16 +294,16 @@ export function CreditReportUploader() {
               </TabsContent>
 
               <TabsContent value="recommendations" className="space-y-4">
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-green-800 mb-3 flex items-center">
+                <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-lg">
+                  <h4 className="font-medium text-green-600 dark:text-green-400 mb-3 flex items-center">
                     <TrendingUp className="h-4 w-4 mr-2" />
                     AI Recommendations
                   </h4>
                   <ul className="space-y-2">
                     {analysisResult.aiAnalysis.recommendations.map((rec, index) => (
                       <li key={index} className="flex items-start space-x-2">
-                        <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
-                        <span className="text-green-700">{rec}</span>
+                        <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-green-700 dark:text-green-300 text-sm">{rec}</span>
                       </li>
                     ))}
                   </ul>
@@ -311,10 +313,10 @@ export function CreditReportUploader() {
               <TabsContent value="letters" className="space-y-4">
                 <div className="grid gap-4">
                   {analysisResult.aiAnalysis.issuesFound.map((issue, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={index} className="flex items-center justify-between p-4 border border-border rounded-lg bg-card">
                       <div>
-                        <p className="font-medium">{issue.creditor} - {issue.type.replace('_', ' ')}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">{issue.description}</p>
+                        <p className="font-medium text-foreground">{issue.creditor} - {issue.type.replace('_', ' ')}</p>
+                        <p className="text-sm text-muted-foreground">{issue.description}</p>
                       </div>
                       <Button
                         size="sm"

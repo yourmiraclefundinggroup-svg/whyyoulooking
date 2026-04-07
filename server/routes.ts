@@ -1247,6 +1247,87 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
+  // ── Client Intake Routes ────────────────────────────────────────────
+  const intakeDiskStorage = multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      const { mkdirSync } = require("fs");
+      mkdirSync("uploads/intake", { recursive: true });
+      cb(null, "uploads/intake");
+    },
+    filename: (_req, file, cb) => {
+      const ext = file.originalname.split(".").pop() || "bin";
+      cb(null, `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`);
+    },
+  });
+  const uploadIntake = multer({
+    storage: intakeDiskStorage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+      cb(null, allowed.includes(file.mimetype));
+    },
+  });
+
+  app.patch("/api/admin/users/:id/intake", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const clientId = parseInt(req.params.id);
+      const allowedFields = ["firstName", "lastName", "phone", "addressLine1", "addressLine2",
+        "city", "state", "zipCode", "dateOfBirth", "ssnLast4", "caseType",
+        "policeReportNumber", "ftcReportNumber"];
+      const updates: Record<string, any> = {};
+      allowedFields.forEach(f => { if (req.body[f] !== undefined) updates[f] = req.body[f]; });
+      const updated = await storage.updateUser(clientId, updates);
+      if (!updated) return res.status(404).json({ error: "Client not found" });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to update intake" });
+    }
+  });
+
+  app.post("/api/admin/users/:id/intake-doc", authenticateToken, uploadIntake.single("file"), async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const clientId = parseInt(req.params.id);
+      const docType = req.body.docType as string; // "id_photo" | "police_report" | "ftc_report"
+      if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+      const filePath = `/uploads/intake/${req.file.filename}`;
+      const fieldMap: Record<string, string> = {
+        id_photo: "idPhotoPath",
+        police_report: "policeReportPath",
+        ftc_report: "ftcReportPath",
+      };
+      const field = fieldMap[docType];
+      if (!field) return res.status(400).json({ error: "Invalid docType" });
+      const updated = await storage.updateUser(clientId, { [field]: filePath });
+      if (!updated) return res.status(404).json({ error: "Client not found" });
+      res.json({ path: filePath, field });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Upload failed" });
+    }
+  });
+
+  // ── Professional Dispute Packet Generation ────────────────────────────
+  app.post("/api/admin/dispute-packet/generate", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin access required" });
+      const { clientId, bureau, letterType, items } = req.body;
+      if (!clientId || !bureau || !letterType || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "clientId, bureau, letterType, and items[] required" });
+      }
+      const client = await storage.getUser(clientId);
+      if (!client) return res.status(404).json({ error: "Client not found" });
+      const { generateProfessionalDisputePacket } = await import("./dispute-packet");
+      const packet = generateProfessionalDisputePacket({ client, bureau, letterType, items });
+      res.json({ content: packet, clientName: `${client.firstName} ${client.lastName}` });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to generate packet" });
+    }
+  });
+
   // Authentication Routes
   app.post("/api/auth/login", async (req, res) => {
     try {

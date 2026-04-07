@@ -38,15 +38,19 @@ Preferred communication style: Simple, everyday language.
 - **Credit Repair Workflow**: Credit report import/analysis, issue identification, AI dispute letter generation, certified mail sending, tracking number monitoring, follow-up alerts, results tracking.
 - **Beta Testing Data Flow**: Admin-created access codes, feature unlocking, feedback collection, usage analytics, bug/suggestion management.
 - **Security**: Token-based authentication, role-based access control (ADMIN vs CLIENT_VIEWER), secure password management (hashed passwords, forced resets, strong password requirements), elimination of hardcoded credentials.
-- **File Management**: Mobile-optimized document viewing and downloading, secure document upload (ID, SSN, bank statements, bureau responses).
+- **File Management**: Mobile-optimized document viewing and downloading, secure document upload (ID, SSN, bank statements, bureau responses). Intake docs (ID photos, police/FTC reports) stored in `/uploads/intake/` via multer disk storage.
+- **Client Intake System**: Editable client profile card in admin portal showing address, DOB, SSN last 4, case type (Standard/Identity Theft), ID photo upload. Identity Theft cases unlock police report #, FTC report #, and document uploads. API: `PATCH /api/admin/users/:id/intake`, `POST /api/admin/users/:id/intake-doc`.
 - **Client Password Management**: Secure password change interface, strong password requirements, secure reset API.
 - **Admin Portal**: Comprehensive client management, credit data access, user management, support monitoring, business metrics, AI usage tracking.
 - **AI Assistant**: Real-time responses, conversation storage, dispute letter generation.
 - **Credit Report AI Analysis**: Upload system with drag-and-drop, AI dispute letter generation, real-time credit analysis identifying issues.
+- **Professional Dispute Packet Generator**: `server/dispute-packet.ts` generates comprehensive dispute letters with FCRA statute citations (§1681e(b), §1681i, §1681s-2(b), §1681b, §1681c-2), Metro 2 field violations (DA field, K4 payment pattern, ACCT_STATUS), numbered demands per item, cover page with package contents table. Preview dialog in Dispute Hub with copy/save-as-draft options. API: `POST /api/admin/dispute-packet/generate`.
 - **Credit Monitoring Service Integration**: Display of connection status and active monitoring.
 - **Business Credit Portal**: System for business credit building, funding options, trade lines, eligibility scoring.
 - **Secure Chat System**: Admin-client communication with encrypted document uploads.
 - **Comprehensive Analytics Dashboard**: Real business metrics, AI usage tracking, KPI monitoring.
+- **Admin Portal Theme System**: Dark/light mode via ThemeProvider. `--admin-*` CSS vars in `:root` (dark) and `.light` (override). Portal dialogs (SelectContent, DialogContent) inherit theme via Radix data attributes.
+- **Admin Settings**: Integrated with ThemeProvider for consistent theme toggle. Uses `auth_token` key for localStorage authentication.
 
 ## External Dependencies
 

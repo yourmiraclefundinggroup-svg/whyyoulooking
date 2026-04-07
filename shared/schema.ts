@@ -37,6 +37,13 @@ export const users = pgTable("users", {
   subscriptionStartDate: timestamp("subscription_start_date"),
   subscriptionEndDate: timestamp("subscription_end_date"),
   billingCycle: text("billing_cycle").default("monthly"), // monthly, yearly
+  // Client intake fields
+  caseType: text("case_type").default("STANDARD"), // STANDARD | IDENTITY_THEFT
+  idPhotoPath: text("id_photo_path"),
+  policeReportNumber: text("police_report_number"),
+  ftcReportNumber: text("ftc_report_number"),
+  policeReportPath: text("police_report_path"),
+  ftcReportPath: text("ftc_report_path"),
   // CROA & AI compliance consent fields
   croaDisclosureAccepted: boolean("croa_disclosure_accepted").default(false),
   croaDisclosureTimestamp: timestamp("croa_disclosure_timestamp"),

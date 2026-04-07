@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -82,6 +83,11 @@ import {
   Phone,
   RefreshCw,
   Printer,
+  FileUp,
+  Save,
+  IdCard,
+  Edit3,
+  X,
 } from "lucide-react";
 
 export default function AdminPortal() {
@@ -185,6 +191,7 @@ export default function AdminPortal() {
         setNewClient={setNewClient}
         handleCreateClient={handleCreateClient}
         createClientMutation={createClientMutation}
+        onRefetchUsers={() => queryClient.invalidateQueries({ queryKey: ['/api/users'] })}
       />;
     } else if (location === "/admin-portal/credit-reports") {
       return <CreditReportsPage clientUsers={clientUsers} />;
@@ -415,10 +422,255 @@ function DashboardPage({ clientUsers }: { clientUsers: User[] }) {
   );
 }
 
+// ─── Client Intake Card ──────────────────────────────────────────────────────
+function ClientIntakeCard({ client, onUpdated }: { client: User; onUpdated: () => void }) {
+  const { toast } = useToast();
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    firstName: client.firstName || "",
+    lastName: client.lastName || "",
+    phone: client.phone || "",
+    addressLine1: client.addressLine1 || "",
+    addressLine2: client.addressLine2 || "",
+    city: client.city || "",
+    state: client.state || "",
+    zipCode: client.zipCode || "",
+    dateOfBirth: client.dateOfBirth || "",
+    ssnLast4: client.ssnLast4 || "",
+    caseType: (client as any).caseType || "STANDARD",
+    policeReportNumber: (client as any).policeReportNumber || "",
+    ftcReportNumber: (client as any).ftcReportNumber || "",
+  });
+
+  const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const resp = await fetch(`/api/admin/users/${client.id}/intake`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+        body: JSON.stringify(form),
+      });
+      if (!resp.ok) throw new Error((await resp.json()).error || "Save failed");
+      return resp.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Client profile saved" });
+      setEditing(false);
+      onUpdated();
+    },
+    onError: (e: any) => toast({ title: "Save failed", description: e.message, variant: "destructive" }),
+  });
+
+  const uploadDoc = async (docType: "id_photo" | "police_report" | "ftc_report", file: File) => {
+    setUploadingDoc(docType);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("docType", docType);
+      const resp = await fetch(`/api/admin/users/${client.id}/intake-doc`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+        body: fd,
+      });
+      if (!resp.ok) throw new Error((await resp.json()).error || "Upload failed");
+      toast({ title: "Document uploaded" });
+      onUpdated();
+    } catch (e: any) {
+      toast({ title: "Upload failed", description: e.message, variant: "destructive" });
+    } finally {
+      setUploadingDoc(null);
+    }
+  };
+
+  const DocUploadBtn = ({ docType, label, existing }: { docType: "id_photo" | "police_report" | "ftc_report"; label: string; existing?: string }) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+    return (
+      <div className="flex items-center gap-2">
+        <input ref={inputRef} type="file" className="hidden" accept="image/*,application/pdf"
+          onChange={e => { const f = e.target.files?.[0]; if (f) uploadDoc(docType, f); }} />
+        <Button size="sm" variant="outline"
+          className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))] hover:text-[hsl(var(--admin-text))] gap-1.5"
+          disabled={uploadingDoc === docType}
+          onClick={() => inputRef.current?.click()}>
+          <FileUp className="h-3.5 w-3.5" />
+          {uploadingDoc === docType ? "Uploading..." : label}
+        </Button>
+        {existing && <span className="text-xs text-green-500">✓ On file</span>}
+      </div>
+    );
+  };
+
+  const isIdentityTheft = form.caseType === "IDENTITY_THEFT";
+
+  const fieldClass = "bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] placeholder:text-[hsl(var(--admin-text-subtle))] h-8 text-sm";
+  const labelClass = "text-xs text-[hsl(var(--admin-text-muted))]";
+
+  return (
+    <AdminCard>
+      <AdminCardHeader>
+        <div className="flex items-center justify-between w-full">
+          <AdminCardTitle icon={<IdCard className="h-5 w-5" />}>Client Intake Profile</AdminCardTitle>
+          {!editing ? (
+            <Button size="sm" variant="outline"
+              className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))] hover:text-[hsl(var(--admin-text))] gap-1.5"
+              onClick={() => setEditing(true)}>
+              <Edit3 className="h-3.5 w-3.5" /> Edit
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline"
+                className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))] gap-1"
+                onClick={() => setEditing(false)}>
+                <X className="h-3.5 w-3.5" /> Cancel
+              </Button>
+              <Button size="sm"
+                className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white gap-1.5"
+                disabled={saveMutation.isPending}
+                onClick={() => saveMutation.mutate()}>
+                <Save className="h-3.5 w-3.5" />
+                {saveMutation.isPending ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          )}
+        </div>
+      </AdminCardHeader>
+      <AdminCardContent>
+        <div className="space-y-4">
+          {/* Case Type */}
+          <div>
+            <Label className={labelClass}>Case Type</Label>
+            {editing ? (
+              <Select value={form.caseType} onValueChange={v => setForm(p => ({ ...p, caseType: v }))}>
+                <SelectTrigger className={`${fieldClass} mt-1`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="STANDARD">Standard Credit Repair</SelectItem>
+                  <SelectItem value="IDENTITY_THEFT">Identity Theft Recovery</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="mt-1 flex items-center gap-2">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                  isIdentityTheft ? "bg-red-500/15 text-red-400 border border-red-500/30" : "bg-green-500/15 text-green-400 border border-green-500/30"
+                }`}>
+                  {isIdentityTheft ? "⚠ Identity Theft Recovery" : "✓ Standard Credit Repair"}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Name & Contact */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className={labelClass}>First Name</Label>
+              {editing ? <Input className={`${fieldClass} mt-1`} value={form.firstName} onChange={e => setForm(p => ({ ...p, firstName: e.target.value }))} />
+                : <p className="text-sm text-[hsl(var(--admin-text))] mt-1">{client.firstName}</p>}
+            </div>
+            <div>
+              <Label className={labelClass}>Last Name</Label>
+              {editing ? <Input className={`${fieldClass} mt-1`} value={form.lastName} onChange={e => setForm(p => ({ ...p, lastName: e.target.value }))} />
+                : <p className="text-sm text-[hsl(var(--admin-text))] mt-1">{client.lastName}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className={labelClass}>Phone</Label>
+              {editing ? <Input className={`${fieldClass} mt-1`} value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="(555) 000-0000" />
+                : <p className="text-sm text-[hsl(var(--admin-text))] mt-1">{client.phone || <span className="text-[hsl(var(--admin-text-subtle))] italic">Not set</span>}</p>}
+            </div>
+            <div>
+              <Label className={labelClass}>Date of Birth</Label>
+              {editing ? <Input type="date" className={`${fieldClass} mt-1`} value={form.dateOfBirth} onChange={e => setForm(p => ({ ...p, dateOfBirth: e.target.value }))} />
+                : <p className="text-sm text-[hsl(var(--admin-text))] mt-1">{client.dateOfBirth || <span className="text-[hsl(var(--admin-text-subtle))] italic">Not set</span>}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className={labelClass}>SSN Last 4</Label>
+              {editing ? <Input className={`${fieldClass} mt-1`} value={form.ssnLast4} onChange={e => setForm(p => ({ ...p, ssnLast4: e.target.value.replace(/\D/g, "").slice(0, 4) }))} placeholder="####" maxLength={4} />
+                : <p className="text-sm text-[hsl(var(--admin-text))] mt-1 font-mono">{client.ssnLast4 ? `***-**-${client.ssnLast4}` : <span className="text-[hsl(var(--admin-text-subtle))] italic">Not set</span>}</p>}
+            </div>
+          </div>
+
+          {/* Address */}
+          <div className="pt-2 border-t border-[hsl(var(--admin-border))]">
+            <Label className="text-xs font-medium text-[hsl(var(--admin-text-muted))] mb-2 block">Mailing Address</Label>
+            {editing ? (
+              <div className="space-y-2">
+                <Input className={fieldClass} value={form.addressLine1} onChange={e => setForm(p => ({ ...p, addressLine1: e.target.value }))} placeholder="Street Address" />
+                <Input className={fieldClass} value={form.addressLine2} onChange={e => setForm(p => ({ ...p, addressLine2: e.target.value }))} placeholder="Apt / Suite (optional)" />
+                <div className="grid grid-cols-3 gap-2">
+                  <Input className={fieldClass} value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} placeholder="City" />
+                  <Input className={fieldClass} value={form.state} onChange={e => setForm(p => ({ ...p, state: e.target.value.toUpperCase().slice(0, 2) }))} placeholder="ST" maxLength={2} />
+                  <Input className={fieldClass} value={form.zipCode} onChange={e => setForm(p => ({ ...p, zipCode: e.target.value.replace(/\D/g, "").slice(0, 5) }))} placeholder="ZIP" maxLength={5} />
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-[hsl(var(--admin-text))]">
+                {client.addressLine1 ? (
+                  <>
+                    {client.addressLine1}{client.addressLine2 ? `, ${client.addressLine2}` : ""}<br />
+                    {[client.city, client.state, client.zipCode].filter(Boolean).join(", ")}
+                  </>
+                ) : <span className="text-[hsl(var(--admin-text-subtle))] italic">No address on file</span>}
+              </p>
+            )}
+          </div>
+
+          {/* Documents */}
+          <div className="pt-2 border-t border-[hsl(var(--admin-border))]">
+            <Label className="text-xs font-medium text-[hsl(var(--admin-text-muted))] mb-2 block">Identity Documents</Label>
+            <div className="space-y-2">
+              <DocUploadBtn docType="id_photo" label="Upload ID Photo" existing={(client as any).idPhotoPath} />
+            </div>
+          </div>
+
+          {/* Identity Theft Fields */}
+          {isIdentityTheft && (
+            <div className="pt-2 border-t border-red-500/30">
+              <Label className="text-xs font-medium text-red-400 mb-3 block flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5" /> Identity Theft Documentation
+              </Label>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className={labelClass}>Police Report #</Label>
+                    {editing
+                      ? <Input className={`${fieldClass} mt-1`} value={form.policeReportNumber} onChange={e => setForm(p => ({ ...p, policeReportNumber: e.target.value }))} placeholder="Case number" />
+                      : <p className="text-sm text-[hsl(var(--admin-text))] mt-1 font-mono">{(client as any).policeReportNumber || <span className="text-[hsl(var(--admin-text-subtle))] italic">Not set</span>}</p>}
+                  </div>
+                  <div>
+                    <Label className={labelClass}>FTC Report #</Label>
+                    {editing
+                      ? <Input className={`${fieldClass} mt-1`} value={form.ftcReportNumber} onChange={e => setForm(p => ({ ...p, ftcReportNumber: e.target.value }))} placeholder="Confirmation #" />
+                      : <p className="text-sm text-[hsl(var(--admin-text))] mt-1 font-mono">{(client as any).ftcReportNumber || <span className="text-[hsl(var(--admin-text-subtle))] italic">Not set</span>}</p>}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <DocUploadBtn docType="police_report" label="Upload Police Report" existing={(client as any).policeReportPath} />
+                  <DocUploadBtn docType="ftc_report" label="Upload FTC Report" existing={(client as any).ftcReportPath} />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </AdminCardContent>
+    </AdminCard>
+  );
+}
+
 function ClientManagementPage({ 
   clientUsers, selectedClientId, setSelectedClientId, selectedClient, 
   clientCreditReport, clientIssues, clientDisputes, newClient, setNewClient, 
-  handleCreateClient, createClientMutation 
+  handleCreateClient, createClientMutation,
+  onRefetchUsers,
 }: any) {
   return (
     <div className="space-y-6">
@@ -563,59 +815,67 @@ function ClientManagementPage({
       </div>
 
       {selectedClient && (
-        <AdminCard>
-          <AdminCardHeader>
-            <AdminCardTitle>
-              {selectedClient.firstName} {selectedClient.lastName}
-            </AdminCardTitle>
-          </AdminCardHeader>
-          <AdminCardContent>
-            {/* No credit report banner */}
-            {!clientCreditReport?.creditScore && (
-              <div className="mb-4 p-4 rounded-lg border border-amber-500/40 bg-amber-500/10 flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-amber-300">No Credit Report on File</p>
-                  <p className="text-xs text-amber-400/80 mt-0.5">
-                    This client has no credit data yet. Upload their credit report file so the AI can parse it and populate their dashboard.
-                  </p>
+        <>
+          <AdminCard>
+            <AdminCardHeader>
+              <AdminCardTitle>
+                {selectedClient.firstName} {selectedClient.lastName}
+              </AdminCardTitle>
+            </AdminCardHeader>
+            <AdminCardContent>
+              {/* No credit report banner */}
+              {!clientCreditReport?.creditScore && (
+                <div className="mb-4 p-4 rounded-lg border border-amber-500/40 bg-amber-500/10 flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-amber-300">No Credit Report on File</p>
+                    <p className="text-xs text-amber-400/80 mt-0.5">
+                      This client has no credit data yet. Upload their credit report file so the AI can parse it and populate their dashboard.
+                    </p>
+                  </div>
+                  <Link href="/admin-portal/credit-reports">
+                    <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white text-xs flex-shrink-0">
+                      <Upload className="h-3 w-3 mr-1" />
+                      Upload Report
+                    </Button>
+                  </Link>
                 </div>
-                <Link href="/admin-portal/credit-reports">
-                  <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white text-xs flex-shrink-0">
-                    <Upload className="h-3 w-3 mr-1" />
-                    Upload Report
-                  </Button>
-                </Link>
-              </div>
-            )}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
-                <div className="text-3xl font-bold text-[hsl(var(--admin-accent))]">
-                  {clientCreditReport?.creditScore || '---'}
+              )}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <div className="text-3xl font-bold text-[hsl(var(--admin-accent))]">
+                    {clientCreditReport?.creditScore || '---'}
+                  </div>
+                  <p className="text-sm text-[hsl(var(--admin-text-muted))]">Credit Score</p>
                 </div>
-                <p className="text-sm text-[hsl(var(--admin-text-muted))]">Credit Score</p>
-              </div>
-              <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
-                <div className="text-3xl font-bold text-red-400">
-                  {clientIssues.length}
+                <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <div className="text-3xl font-bold text-red-400">
+                    {clientIssues.length}
+                  </div>
+                  <p className="text-sm text-[hsl(var(--admin-text-muted))]">Active Issues</p>
                 </div>
-                <p className="text-sm text-[hsl(var(--admin-text-muted))]">Active Issues</p>
-              </div>
-              <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
-                <div className="text-3xl font-bold text-[hsl(var(--admin-accent))]">
-                  {clientDisputes.filter((d: Dispute) => d.status === 'PENDING').length}
+                <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <div className="text-3xl font-bold text-[hsl(var(--admin-accent))]">
+                    {clientDisputes.filter((d: Dispute) => d.status === 'PENDING').length}
+                  </div>
+                  <p className="text-sm text-[hsl(var(--admin-text-muted))]">Pending Disputes</p>
                 </div>
-                <p className="text-sm text-[hsl(var(--admin-text-muted))]">Pending Disputes</p>
-              </div>
-              <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
-                <div className="text-3xl font-bold text-[hsl(var(--admin-accent))]">
-                  {clientDisputes.length}
+                <div className="text-center p-4 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                  <div className="text-3xl font-bold text-[hsl(var(--admin-accent))]">
+                    {clientDisputes.length}
+                  </div>
+                  <p className="text-sm text-[hsl(var(--admin-text-muted))]">Total Disputes</p>
                 </div>
-                <p className="text-sm text-[hsl(var(--admin-text-muted))]">Total Disputes</p>
               </div>
-            </div>
-          </AdminCardContent>
-        </AdminCard>
+            </AdminCardContent>
+          </AdminCard>
+
+          {/* Client Intake Card */}
+          <ClientIntakeCard
+            client={selectedClient}
+            onUpdated={onRefetchUsers}
+          />
+        </>
       )}
     </div>
   );
@@ -2603,6 +2863,13 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   const [isFraudDispute, setIsFraudDispute] = useState(false);
   const [letterBureau, setLetterBureau] = useState<'EXPERIAN' | 'EQUIFAX' | 'TRANSUNION'>('EXPERIAN');
   const [generatedLetter, setGeneratedLetter] = useState<DisputeLetterNew | null>(null);
+  // Professional packet state
+  const [packetOpen, setPacketOpen] = useState(false);
+  const [packetBureau, setPacketBureau] = useState<'EXPERIAN' | 'EQUIFAX' | 'TRANSUNION'>('EXPERIAN');
+  const [packetLetterType, setPacketLetterType] = useState<'round1' | 'round2' | 'validation' | 'fraud'>('round1');
+  const [packetContent, setPacketContent] = useState<string>('');
+  const [packetPreviewOpen, setPacketPreviewOpen] = useState(false);
+  const [generatingPacket, setGeneratingPacket] = useState(false);
   const [viewLetterOpen, setViewLetterOpen] = useState(false);
   const [selectedLetter, setSelectedLetter] = useState<DisputeLetterNew | null>(null);
   const [trackingNumberInput, setTrackingNumberInput] = useState('');
@@ -3184,6 +3451,16 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                   data-testid="button-clear-selection"
                 >
                   Clear All
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPacketOpen(true)}
+                  className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))] hover:text-white gap-1.5"
+                  data-testid="button-generate-packet"
+                >
+                  <Package className="h-4 w-4" />
+                  Professional Packet
                 </Button>
                 <Button
                   size="sm"
@@ -5327,6 +5604,233 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 {createCalendarEventMutation.isPending ? 'Creating...' : 'Create Event'}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Professional Dispute Packet Dialog */}
+      <Dialog open={packetOpen} onOpenChange={setPacketOpen}>
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Package className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
+              Generate Professional Dispute Packet
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 py-4">
+            <div className="p-3 rounded-lg bg-[hsl(var(--admin-info))]/10 border border-[hsl(var(--admin-info))]/20 text-sm text-[hsl(var(--admin-text-muted))]">
+              Generates a comprehensive professional dispute letter with FCRA statute citations, Metro 2 field violations, numbered demands, and package contents table — ready to preview and mail via certified letter.
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[hsl(var(--admin-text-muted))] text-sm">Bureau</Label>
+                <Select value={packetBureau} onValueChange={(v: any) => setPacketBureau(v)}>
+                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                    <SelectItem value="EXPERIAN"><span className="text-blue-400">●</span> Experian</SelectItem>
+                    <SelectItem value="EQUIFAX"><span className="text-red-400">●</span> Equifax</SelectItem>
+                    <SelectItem value="TRANSUNION"><span className="text-purple-400">●</span> TransUnion</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[hsl(var(--admin-text-muted))] text-sm">Dispute Round</Label>
+                <Select value={packetLetterType} onValueChange={(v: any) => setPacketLetterType(v)}>
+                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))]">
+                    <SelectItem value="round1">Round 1 — Initial Dispute (§1681i)</SelectItem>
+                    <SelectItem value="round2">Round 2 — Method of Verification</SelectItem>
+                    <SelectItem value="validation">Debt Validation Request</SelectItem>
+                    <SelectItem value="fraud">Identity Theft / Fraud Removal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Items being disputed */}
+            <div>
+              <Label className="text-[hsl(var(--admin-text-muted))] text-sm mb-2 block">
+                Items to Dispute ({selectedItems.length} selected)
+              </Label>
+              {selectedItems.length === 0 ? (
+                <p className="text-sm text-amber-400 italic">No items selected — go back to the dispute queue and select items first.</p>
+              ) : (
+                <div className="space-y-1 max-h-[180px] overflow-y-auto pr-1">
+                  {selectedItems.map(item => (
+                    <div key={`${item.type}-${item.id}`} className="flex items-center gap-2 p-2 rounded bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                      <span className="text-[hsl(var(--admin-accent))] text-xs">✓</span>
+                      <span className="text-sm text-white">{item.name}</span>
+                      <span className="ml-auto text-xs text-[hsl(var(--admin-text-muted))] capitalize">{item.type.replace("_", " ")}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
+                onClick={() => setPacketOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white gap-2"
+                disabled={generatingPacket || selectedItems.length === 0}
+                onClick={async () => {
+                  if (!report?.userId) return;
+                  setGeneratingPacket(true);
+                  try {
+                    const packetItems = selectedItems.map(item => {
+                      if (item.type === 'account') {
+                        const acc = accounts.find(a => a.id === item.id);
+                        return {
+                          type: 'account' as const,
+                          creditorName: item.name,
+                          accountNumber: acc?.accountNumberMasked,
+                          balance: acc?.balance,
+                          status: acc?.status,
+                          dateOpened: acc?.dateOpened,
+                          dateReported: acc?.dateReported,
+                          paymentStatus: acc?.paymentStatus,
+                          latePayments: acc?.latePayments,
+                          derogatoryFlags: acc?.derogatoryFlags,
+                          remarks: acc?.remarks,
+                        };
+                      } else if (item.type === 'inquiry') {
+                        const inq = inquiries.find(i => i.id === item.id);
+                        return {
+                          type: 'inquiry' as const,
+                          creditorName: item.name,
+                          inquiryDate: inq?.inquiryDate,
+                        };
+                      } else if (item.type === 'collection') {
+                        const col = collections.find(c => c.id === item.id);
+                        return {
+                          type: 'collection' as const,
+                          creditorName: item.name,
+                          originalCreditor: col?.originalCreditor,
+                          amount: col?.amount,
+                          dateOpened: col?.dateOpened,
+                          dateReported: col?.dateReported,
+                          remarks: col?.remarks,
+                        };
+                      } else {
+                        return { type: 'public_record' as const, creditorName: item.name };
+                      }
+                    });
+                    const resp = await fetch('/api/admin/dispute-packet/generate', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+                      },
+                      body: JSON.stringify({
+                        clientId: report.userId,
+                        bureau: packetBureau,
+                        letterType: packetLetterType,
+                        items: packetItems,
+                      }),
+                    });
+                    if (!resp.ok) throw new Error((await resp.json()).error || 'Generation failed');
+                    const data = await resp.json();
+                    setPacketContent(data.content);
+                    setPacketOpen(false);
+                    setPacketPreviewOpen(true);
+                  } catch (e: any) {
+                    toast({ title: 'Error', description: e.message, variant: 'destructive' });
+                  } finally {
+                    setGeneratingPacket(false);
+                  }
+                }}
+              >
+                {generatingPacket ? (
+                  <><RefreshCw className="h-4 w-4 animate-spin" /> Generating...</>
+                ) : (
+                  <><Package className="h-4 w-4" /> Generate Packet</>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Professional Packet Preview Dialog */}
+      <Dialog open={packetPreviewOpen} onOpenChange={setPacketPreviewOpen}>
+        <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-[hsl(var(--admin-accent))]" />
+              Professional Dispute Packet Preview
+            </DialogTitle>
+            <p className="text-sm text-[hsl(var(--admin-text-muted))] mt-1">
+              Review the packet before saving or mailing. Copy the content to use in the Generate Letter flow.
+            </p>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto min-h-0 mt-4">
+            <pre className="text-xs text-[hsl(var(--admin-text))] whitespace-pre-wrap font-mono bg-[hsl(var(--admin-bg))] rounded-lg p-4 border border-[hsl(var(--admin-border))] leading-relaxed">
+              {packetContent}
+            </pre>
+          </div>
+          <div className="flex-shrink-0 flex gap-3 pt-4 border-t border-[hsl(var(--admin-border))] mt-4">
+            <Button
+              variant="outline"
+              className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
+              onClick={() => {
+                navigator.clipboard.writeText(packetContent);
+                toast({ title: "Copied to clipboard" });
+              }}
+            >
+              Copy Text
+            </Button>
+            <Button
+              variant="outline"
+              className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
+              onClick={() => {
+                setPacketPreviewOpen(false);
+                setGenerateLetterOpen(true);
+              }}
+            >
+              Use in Letter Flow →
+            </Button>
+            <Button
+              className="ml-auto bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white gap-2"
+              onClick={async () => {
+                if (!report?.userId) return;
+                const resp = await fetch('/api/admin/dispute-letters', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+                  },
+                  body: JSON.stringify({
+                    clientId: report.userId,
+                    uploadId: reportId,
+                    letterType: packetLetterType,
+                    bureau: packetBureau,
+                    content: packetContent,
+                    status: 'draft',
+                    disputeItemIds: selectedItems.map(i => i.id),
+                  }),
+                });
+                if (resp.ok) {
+                  toast({ title: "Packet saved as draft", description: "Find it in Letters & Tracking" });
+                  queryClient.invalidateQueries({ queryKey: [`/api/admin/dispute-letters?uploadId=${reportId}`] });
+                  setPacketPreviewOpen(false);
+                } else {
+                  toast({ title: "Save failed", variant: "destructive" });
+                }
+              }}
+            >
+              <Save className="h-4 w-4" />
+              Save as Draft
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

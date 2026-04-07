@@ -69,7 +69,7 @@ export function AccessCodeModal({ isOpen, onClose, onAccessGranted }: AccessCode
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center">
-            <Key className="h-5 w-5 mr-2 text-blue-600" />
+            <Key className="h-5 w-5 mr-2 text-blue-500" />
             Beta Access Code
           </DialogTitle>
         </DialogHeader>
@@ -78,13 +78,13 @@ export function AccessCodeModal({ isOpen, onClose, onAccessGranted }: AccessCode
           {!verifiedAccess ? (
             <>
               <div className="text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Lock className="h-8 w-8 text-blue-600" />
+                <div className="w-16 h-16 bg-blue-500/15 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Lock className="h-8 w-8 text-blue-500" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <h3 className="text-lg font-medium text-foreground mb-2">
                   Enter Your Access Code
                 </h3>
-                <p className="text-gray-600 text-sm">
+                <p className="text-muted-foreground text-sm">
                   You've been given a special access code to test our credit repair features.
                 </p>
               </div>
@@ -113,7 +113,7 @@ export function AccessCodeModal({ isOpen, onClose, onAccessGranted }: AccessCode
                 <Button
                   onClick={handleVerify}
                   disabled={validateMutation.isPending || !accessCode.trim()}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white"
                 >
                   {validateMutation.isPending ? "Verifying..." : "Verify Code"}
                 </Button>
@@ -122,22 +122,22 @@ export function AccessCodeModal({ isOpen, onClose, onAccessGranted }: AccessCode
           ) : (
             <>
               <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
+                <div className="w-16 h-16 bg-green-500/15 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="h-8 w-8 text-green-500" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <h3 className="text-lg font-medium text-foreground mb-2">
                   Access Granted!
                 </h3>
-                <p className="text-gray-600 text-sm mb-4">
+                <p className="text-muted-foreground text-sm mb-4">
                   You now have access to these beta features:
                 </p>
               </div>
 
               <div className="space-y-3">
-                <div className="bg-gray-50 rounded-lg p-3">
+                <div className="bg-muted rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Access Code:</span>
-                    <code className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                    <span className="text-sm font-medium text-foreground">Access Code:</span>
+                    <code className="px-2 py-1 bg-blue-500/15 text-blue-500 dark:text-blue-400 rounded text-sm font-mono">
                       {verifiedAccess.accessCode}
                     </code>
                   </div>
@@ -153,7 +153,7 @@ export function AccessCodeModal({ isOpen, onClose, onAccessGranted }: AccessCode
 
               <Button
                 onClick={handleContinue}
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white"
               >
                 Continue to App
               </Button>
@@ -171,11 +171,9 @@ export function AccessCodePrompt() {
 
   const handleAccessGranted = (access: BetaAccess) => {
     setHasAccess(true);
-    // Store in localStorage for persistence
     localStorage.setItem('betaAccess', JSON.stringify(access));
   };
 
-  // Check for existing access on mount
   React.useEffect(() => {
     const storedAccess = localStorage.getItem('betaAccess');
     if (storedAccess) {
@@ -192,7 +190,7 @@ export function AccessCodePrompt() {
       <div className="fixed top-4 right-4 z-50">
         <Button
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 shadow-lg"
+          className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shadow-lg"
           size="sm"
         >
           <Key className="h-4 w-4 mr-2" />
