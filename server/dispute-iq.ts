@@ -293,6 +293,85 @@ function buildRoundEscalationContext(roundNumber: number, letterType: LetterType
   return escalations[roundNumber] || "";
 }
 
+/** Returns ▶-prefixed statute bullet lines for the legal basis section */
+function buildStatuteBullets(letterType: LetterType): string {
+  switch (letterType) {
+    case "identity_theft":
+      return [
+        "▶ FCRA § 605B (15 U.S.C. § 1681c-2) — 4-business-day block of identity theft tradelines upon receipt of identity theft report and ID.",
+        "▶ FCRA § 1681e(b) — Duty to maintain maximum possible accuracy; continued reporting of a fraudulent account violates this section.",
+        "▶ FCRA § 1681i(a) — Reinvestigation of disputed information; bureau must investigate and, if unverifiable, delete.",
+        "▶ FCRA § 1681s-2(a)(6) — Furnisher must cease reporting information identified as resulting from identity theft.",
+        "▶ 15 U.S.C. §§ 1681n/1681o — Civil liability: $100–$1,000 per violation, actual damages, punitive damages, attorney's fees.",
+      ].join("\n");
+    case "late_payment_metro2":
+      return [
+        "▶ FCRA § 1681e(b) — Maximum possible accuracy: Payment Rating codes must accurately reflect actual payment history.",
+        "▶ FCRA § 1681i(a) — Reinvestigation required within 30 days; unverifiable information must be deleted.",
+        "▶ FCRA § 1681i(a)(5)(A) — Prompt deletion if furnisher cannot verify the accuracy of the disputed entry.",
+        "▶ FCRA § 1681s-2(b) — Furnisher responsibility: must correct or delete inaccurate payment history after dispute notice.",
+        "▶ Metro 2® CRRG — Payment Rating Field 17A: Code must reflect actual payment status (00=current; 01–05=30–150 days late).",
+        "▶ Metro 2® CRRG — Payment History Profile (PHF): Each month must accurately reflect payment status, no re-aging.",
+        "▶ Metro 2® CRRG — DOFD must not be altered to extend the 7-year reporting period (FCRA § 1681c(a)(4)).",
+        "▶ Metro 2® CRRG — Compliance Condition Code XB must be applied during dispute investigation period.",
+      ].join("\n");
+    case "closed_school":
+      return [
+        "▶ 34 CFR § 685.214 — Closed School Discharge: 100% discharge of Direct Loans for students enrolled when school closed or within 120 days of withdrawal.",
+        "▶ 20 U.S.C. § 1087(c) — Statutory authority for closed school discharge (FFEL and Direct Loans).",
+        "▶ FCRA § 1681e(b) — Accuracy duty: discharged accounts must be reported accurately; continued negative reporting violates this section.",
+        "▶ FCRA § 1681i(a)(5)(A) — If servicer cannot verify discharge was applied, item must be deleted.",
+      ].join("\n");
+    default:
+      return [
+        "▶ FCRA § 1681e(b) — Maximum possible accuracy requirement; the reported information is inaccurate.",
+        "▶ FCRA § 1681i(a) — Reinvestigation of disputed information within 30 days of receipt.",
+        "▶ FCRA § 1681i(a)(5)(A) — Information that cannot be verified must be promptly deleted.",
+        "▶ FCRA § 1681s-2(b) — Furnisher must investigate disputes forwarded by credit bureaus and correct or delete inaccurate data.",
+        "▶ 15 U.S.C. §§ 1681n/1681o — Civil liability for willful or negligent noncompliance: statutory damages, actual damages, attorney's fees.",
+      ].join("\n");
+  }
+}
+
+/** Returns numbered demand lines for the demands section */
+function buildDemandBullets(letterType: LetterType, creditor: string): string {
+  switch (letterType) {
+    case "identity_theft":
+      return [
+        `1. IMMEDIATELY BLOCK this account pursuant to FCRA § 605B within 4 business days of receipt of this letter and enclosed identity theft report.`,
+        `2. Notify ${creditor} that this account is flagged as identity theft and they must cease all collection activity and credit reporting.`,
+        `3. Place a Fraud Alert on my credit file active for a minimum of one year.`,
+        `4. Provide a copy of my updated credit report reflecting the removal within 5 business days.`,
+        `5. Provide written confirmation of all blocks applied, including the effective date.`,
+      ].join("\n");
+    case "late_payment_metro2":
+      return [
+        `1. Conduct a reasonable reinvestigation of the disputed late payment entries with ${creditor}.`,
+        `2. Request from ${creditor} the complete Metro 2® Payment History Profile (PHF) and verify each Payment Rating code against actual payment records.`,
+        `3. Verify the Date of First Delinquency (DOFD) has not been re-aged beyond its original date.`,
+        `4. Apply Metro 2® Compliance Condition Code "XB" to this account immediately to flag it as disputed.`,
+        `5. If the late payment entries are unverifiable, delete the derogatory payment history and correct Payment Rating codes to "00."`,
+        `6. Provide written notice of investigation results within 5 business days of completion.`,
+      ].join("\n");
+    case "closed_school":
+      return [
+        `1. Immediately flag this account for investigation under the Closed School Discharge provisions of 34 CFR § 685.214.`,
+        `2. Contact ${creditor} and confirm whether a closed school discharge has been applied or is pending.`,
+        `3. Remove any derogatory reporting pending discharge confirmation.`,
+        `4. If servicer confirms discharge eligibility, permanently delete this tradeline from my credit report.`,
+        `5. Provide written confirmation of all actions taken, including the name and contact of each source contacted.`,
+      ].join("\n");
+    default:
+      return [
+        `1. Conduct a full reinvestigation of the disputed information with ${creditor} pursuant to FCRA § 1681i(a).`,
+        `2. If the information cannot be verified as accurate, delete it from my credit file within the statutory timeframe.`,
+        `3. If any information is corrected, provide an updated credit report reflecting the correction within 5 business days.`,
+        `4. Notify me in writing of the results of your investigation within 5 business days of completion.`,
+        `5. If deletion results from this dispute, do not reinsert the item without written notice pursuant to FCRA § 1681i(a)(5)(B).`,
+      ].join("\n");
+  }
+}
+
 export async function generateDisputeIQLetter(params: DisputeIQParams): Promise<string> {
   const bureauInfo = BUREAU_FULL_ADDRESSES[params.bureau];
   const effectiveLetterType: LetterType = params.letterType || "general";
@@ -345,112 +424,97 @@ export async function generateDisputeIQLetter(params: DisputeIQParams): Promise<
   };
   const stateLawNote = stateSpecific[params.clientState?.toUpperCase() || ""] || "";
 
-  const prompt = `You are an expert consumer rights attorney specializing in FCRA credit dispute letters. Generate a complete, professionally formatted dispute letter following the EXACT structure below. Write naturally and authoritatively — this must not read as a template, but as a genuine, individualized legal letter authored by the consumer.
+  // Build statute bullet blocks for legal basis section
+  const legalBasisBullets = buildStatuteBullets(effectiveLetterType);
+  const demandsBullets = buildDemandBullets(effectiveLetterType, params.creditor);
 
-Use the following verified data exactly as provided. Do not invent or alter any facts, names, numbers, or legal citations.
+  const prompt = `You are an expert consumer rights attorney and professional credit dispute specialist. Generate a complete, professional dispute packet letter in EXACT packet format below. Every section marker, bullet symbol, and line must appear exactly as shown. No bracketed placeholders may appear in the output — replace all with the real data provided.
 
----
-
-CLIENT HEADER DATA:
-${headerLines.join("\n")}
-
+DATA FOR THIS PACKET:
+═══════════════════════════════════════════════════════════════════════
+CLIENT: ${params.clientName}
+ADDRESS: ${params.clientAddress.line1}, ${params.clientAddress.city}, ${params.clientAddress.state} ${params.clientAddress.zip}
+${params.clientDob ? `DOB: ${params.clientDob}` : ""}${params.clientSsnLast4 ? `\nSSN (Last 4): ***-**-${params.clientSsnLast4}` : ""}${params.clientPhone ? `\nPhone: ${params.clientPhone}` : ""}${params.clientEmail ? `\nEmail: ${params.clientEmail}` : ""}
 DATE: ${formattedDate}
-MAILING METHOD: Sent Via Certified Mail — Return Receipt Requested
-
-BUREAU ADDRESS:
-${bureauInfo.address}
-Consumer Dispute Department
-
-RE: Formal Dispute — ${letterTypeLabel} ${letterTypeSections.reLineExtra}
-     Furnisher: ${params.creditor}
-     ${accountSummary}
-
----
-
-LETTER TYPE: ${letterTypeLabel} (Round ${params.roundNumber} of 5)
+BUREAU: ${bureauInfo.name.toUpperCase()} | LETTER TYPE: ${letterTypeLabel} — Round ${params.roundNumber} of 5
+CREDITOR/FURNISHER: ${params.creditor}
+${accountSummary}
 DISPUTE REASON: ${params.disputeReason}
-ACCOUNT TYPE: ${params.accountType}
-${params.priorResponse ? `PRIOR BUREAU RESPONSE ON FILE: ${params.priorResponse}` : ""}
-${escalationContext ? `ESCALATION CONTEXT (incorporate naturally): ${escalationContext}` : ""}
-${stateLawNote ? `STATE LAW NOTE (add as a brief sentence where appropriate): ${stateLawNote}` : ""}
+${params.priorResponse ? `PRIOR RESPONSE: ${params.priorResponse}` : ""}
+${escalationContext ? `ESCALATION NOTE: ${escalationContext}` : ""}
+${stateLawNote ? `STATE LAW: ${stateLawNote}` : ""}
+═══════════════════════════════════════════════════════════════════════
 
-ACCOUNTS TO DISPUTE:
-${accounts.map((a, i) => `Account ${i + 1}: ${a.accountNumber}${a.reportedStatus ? ` | Status: ${a.reportedStatus}` : ""}${a.currentBalance ? ` | Balance: ${a.currentBalance}` : ""}`).join("\n")}
+EXACT OUTPUT FORMAT — reproduce character-for-character including ═, ─, ▶ symbols:
 
-${accountTable ? `ACCOUNT TABLE (reproduce this exactly in Section II):\n${accountTable}` : ""}
+${params.clientName.toUpperCase()}
+${params.clientAddress.line1}
+${params.clientAddress.city}, ${params.clientAddress.state} ${params.clientAddress.zip}
+${params.clientDob ? `Date of Birth: ${params.clientDob}` : ""}
+${params.clientSsnLast4 ? `SSN (Last 4): ***-**-${params.clientSsnLast4}` : ""}
+${params.clientPhone ? `Phone: ${params.clientPhone}` : ""}
 
----
-
-REQUIRED LETTER STRUCTURE — follow this exact Roman numeral format:
-
-[HEADER BLOCK — client name in ALL CAPS, address lines, DOB/SSN last 4/phone/email if provided — one per line]
-
-[blank line]
 ${formattedDate}
-[blank line]
-Sent Via Certified Mail — Return Receipt Requested
-[blank line]
+
+Sent via Certified Mail — Return Receipt Requested
+
 ${bureauInfo.address}
 Consumer Dispute Department
-[blank line]
-RE: Formal ${letterTypeLabel} Dispute ${letterTypeSections.reLineExtra}
+
+─────────────────────────────────────────────────────────────────────
+RE: FORMAL CREDIT DISPUTE — ${letterTypeLabel.toUpperCase()} ${letterTypeSections.reLineExtra}
     Furnisher/Creditor: ${params.creditor}
     ${accountSummary}
-[blank line]
-Dear ${bureauInfo.name} Dispute Department,
-[blank line]
+─────────────────────────────────────────────────────────────────────
 
-I. BACKGROUND
-[2–3 sentences of factual, personalized background. Identify who the consumer is, what account(s) are in question, why they are disputed, and reference the dispute round number. Do NOT use placeholder language.]
+PACKAGE CONTENTS:
+─────────────────────────────────────────────────────────────────────
+  1. Dispute Cover Letter (this document)
+  2. Copy of Government-Issued Photo ID
+  3. Proof of Address${effectiveLetterType === "identity_theft" ? "\n  4. FTC Identity Theft Report\n  5. Signed Identity Theft Affidavit" : effectiveLetterType === "closed_school" ? "\n  4. Documentation of School Closure Date" : ""}
+─────────────────────────────────────────────────────────────────────
 
-[blank line]
+To Whom It May Concern:
 
-II. DISPUTED ACCOUNTS
-[Describe the disputed account(s). If multiple accounts, reproduce the account table provided above using Markdown table format. If single account, describe the account number, creditor, and reported status concisely.]
+[Write 2–3 sentences of personalized introduction. State who the consumer is, that they are writing to dispute inaccurate information under FCRA § 1681i, reference the letter round, and the creditor/account at issue. Do NOT use placeholder language.]
 
-[blank line]
+DISPUTED ITEMS (${accounts.length} total):
+═══════════════════════════════════════════════════════════════════════
+${accounts.map((a, i) => `
+ITEM ${i + 1}: ${params.creditor}
+Account #: ${a.accountNumber || "See enclosed documentation"}
+${a.reportedStatus ? `Status: ${a.reportedStatus}` : ""}${a.currentBalance ? `\nBalance: ${a.currentBalance}` : ""}${a.dateOpened ? `\nOpened: ${a.dateOpened}` : ""}
 
-III. SPECIFIC INACCURACIES
-[2–4 sentences describing the precise inaccuracy — what is wrong, why it is wrong, and what the correct information should be. Be specific to the letter type: for metro2 disputes mention Payment Rating/PHF/DOFD; for closed school mention discharge eligibility; for identity theft mention that the account was fraudulently opened.]
+INACCURACY: [Write 1–2 sentences describing the specific inaccuracy for this account based on the dispute reason: "${params.disputeReason}". Be concrete — name what field is wrong and why.]
 
-[blank line]
+LEGAL BASIS:
+${legalBasisBullets}
 
-${letterTypeSections.legalBasis}
+DEMANDS:
+${demandsBullets}
 
-[blank line]
+═══════════════════════════════════════════════════════════════════════`).join("\n")}
 
-${letterTypeSections.demands}
+LEGAL NOTICE:
+─────────────────────────────────────────────────────────────────────
+Pursuant to the FCRA, 15 U.S.C. § 1681i, you must complete your reinvestigation and provide written results within 30 days of receipt of this letter (or 45 days if the consumer furnishes additional information during the 30-day period). Any information that cannot be verified must be deleted. Failure to comply exposes your organization to civil liability under 15 U.S.C. §§ 1681n and 1681o, including actual damages, statutory damages of $100–$1,000 per violation, punitive damages, and attorney's fees.${escalationContext ? `\n\n${escalationContext}` : ""}${stateLawNote ? `\n\n${stateLawNote}` : ""}
 
-[blank line]
+Please send your written response and updated credit report to the address listed above. Do not telephone. All correspondence must be in writing.
 
-VI. LEGAL CONSEQUENCES
-I am fully aware of my rights under the Fair Credit Reporting Act. If this dispute is not resolved in a manner compliant with federal law within the statutory timeframe, I reserve all rights to:
-
-1. File a formal complaint with the Consumer Financial Protection Bureau (CFPB) at consumerfinance.gov.
-2. File a complaint with the Federal Trade Commission (FTC) and applicable state attorney general's office.
-3. Pursue private legal action under FCRA § 1681n (willful noncompliance) or § 1681o (negligent noncompliance), which provides for statutory damages of $100–$1,000 per violation, punitive damages, and attorney's fees.
-4. Seek injunctive relief to compel compliance if necessary.
-
-[blank line]
-
-${letterTypeSections.enclosures}
-
-[blank line]
 Sincerely,
 
-[3 blank lines for signature]
+
 
 ${params.clientName}
-Date: _______________________
+${params.clientPhone || ""}
+${formattedDate}
 
-[blank line]
----
-NOTE: If applicable, all three credit bureau addresses for reference:
-${ALL_BUREAU_ADDRESSES}
+Enclosures:
+  1. Dispute Cover Letter (this document)
+  2. Copy of Government-Issued Photo ID
+  3. Proof of Address${effectiveLetterType === "identity_theft" ? "\n  4. FTC Identity Theft Report\n  5. Signed Identity Theft Affidavit" : effectiveLetterType === "closed_school" ? "\n  4. Documentation of School Closure Date" : ""}
 
----
-
-Generate the complete, ready-to-send letter now. Use natural legal prose throughout. Do not include any instructions, meta-commentary, or bracketed placeholders in the output — replace all placeholders with the real data provided above.`;
+Generate the complete packet now. Reproduce ALL section markers (═, ─, ▶) exactly. Replace ONLY the bracketed instruction lines with real personalized prose. Do not add commentary or instructions.`;
 
   const response = await anthropic.messages.create({
     model: "claude-opus-4-5",

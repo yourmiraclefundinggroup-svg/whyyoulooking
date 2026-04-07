@@ -3344,6 +3344,22 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
     // Always set selection to exactly the top 2 highest-severity items (deterministic default)
     const top2 = allScorable.sort((a, b) => b.severity - a.severity).slice(0, 2);
     setSelectedItems(top2);
+
+    // Auto-populate police/FTC report numbers from client intake record if available
+    const clientRecord = report?.userId ? clientUsers.find(u => u.id === report.userId) : null;
+    if (clientRecord) {
+      if ((clientRecord as any).policeReportNumber) {
+        setPacketPoliceReport((clientRecord as any).policeReportNumber);
+      }
+      if ((clientRecord as any).ftcReportNumber) {
+        setPacketFtcReport((clientRecord as any).ftcReportNumber);
+      }
+      // If client is identity theft case, default to fraud letter type
+      if ((clientRecord as any).caseType === 'IDENTITY_THEFT') {
+        setPacketLetterType('fraud');
+      }
+    }
+
     setPacketOpen(true);
   };
 
@@ -5983,27 +5999,38 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                 variant="outline"
                 className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
                 onClick={() => {
+                  // HTML-escape helper to prevent XSS when injecting into document
+                  const esc = (s: string) => s
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+
                   const clientNameLabel = packetClientName || report?.clientName || 'Client';
                   const bureauLabel = packetBureau;
-                  const title = `Dispute Packet — ${clientNameLabel} — ${bureauLabel}`;
+                  const title = `Dispute Packet \u2014 ${clientNameLabel} \u2014 ${bureauLabel}`;
+                  const safeTitle = esc(title);
                   const noteHtml = packetNote
-                    ? `<div style="margin-top:32px;padding:12px 16px;background:#fffbeb;border:1px solid #f59e0b;border-radius:6px;font-size:11px;color:#92400e;"><strong>ADMIN NOTE (not included in mailed letter):</strong><br>${packetNote.replace(/\n/g, '<br>')}</div>`
+                    ? `<div style="margin-top:32px;padding:12px 16px;background:#fffbeb;border:1px solid #f59e0b;border-radius:6px;font-size:11px;color:#92400e;"><strong>ADMIN NOTE (not included in mailed letter):</strong><br>${esc(packetNote).replace(/\n/g, '<br>')}</div>`
                     : '';
                   const contentHtml = packetContent
                     .split('\n')
                     .map(line => {
-                      if (line.startsWith('═') || line.startsWith('─')) return `<hr style="border:none;border-top:1px solid #ccc;margin:8px 0;">`;
-                      if (/^[A-Z][A-Z\s\/]+:$/.test(line.trim())) return `<h3 style="font-size:13px;font-weight:700;margin:16px 0 4px;letter-spacing:0.05em;">${line}</h3>`;
-                      if (/^\d+\.\s/.test(line.trim()) || /^▶/.test(line.trim())) return `<p style="margin:4px 0 4px 20px;font-size:12px;">${line}</p>`;
+                      const safeLine = esc(line);
+                      if (line.startsWith('\u2550') || line.startsWith('\u2500')) return `<hr style="border:none;border-top:1px solid #ccc;margin:8px 0;">`;
+                      if (/^[A-Z][A-Z\s\/]+:$/.test(line.trim())) return `<h3 style="font-size:13px;font-weight:700;margin:16px 0 4px;letter-spacing:0.05em;">${safeLine}</h3>`;
+                      if (/^\d+\.\s/.test(line.trim()) || /^\u25b6/.test(line.trim())) return `<p style="margin:4px 0 4px 20px;font-size:12px;">${safeLine}</p>`;
                       if (line.trim() === '') return `<p style="margin:6px 0;"></p>`;
-                      return `<p style="margin:3px 0;font-size:12px;">${line}</p>`;
+                      return `<p style="margin:3px 0;font-size:12px;">${safeLine}</p>`;
                     })
                     .join('');
-                  const html = `<!DOCTYPE html><html><head><title>${title}</title><style>@media print{body{margin:1in}}.no-print{display:none}</style></head><body style="font-family:Georgia,serif;color:#111;max-width:750px;margin:40px auto;padding:0 24px;"><h1 style="font-size:16px;font-weight:700;border-bottom:2px solid #333;padding-bottom:8px;margin-bottom:20px;">${title}</h1>${contentHtml}${noteHtml}<div class="no-print" style="margin-top:30px;text-align:center;"><button onclick="window.print()" style="padding:10px 24px;background:#0f172a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">🖨 Print / Save as PDF</button></div></body></html>`;
                   const win = window.open('', '_blank');
                   if (win) {
-                    win.document.write(html);
-                    win.document.close();
+                    const doc = win.document;
+                    doc.open();
+                    doc.write(`<!DOCTYPE html><html><head><title>${safeTitle}</title><style>body{font-family:Georgia,serif;color:#111;max-width:750px;margin:40px auto;padding:0 24px}@media print{.no-print{display:none}body{margin:1in}}</style></head><body><h1 style="font-size:16px;font-weight:700;border-bottom:2px solid #333;padding-bottom:8px;margin-bottom:20px;">${safeTitle}</h1>${contentHtml}${noteHtml}<div class="no-print" style="margin-top:30px;text-align:center;"><button onclick="window.print()" style="padding:10px 24px;background:#0f172a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">Print / Save as PDF</button></div></body></html>`);
+                    doc.close();
                     win.focus();
                     setTimeout(() => win.print(), 500);
                   } else {

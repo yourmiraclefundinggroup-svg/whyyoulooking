@@ -37,7 +37,6 @@ export function generatePacketHTML(content: string, meta: { clientName: string; 
     EXPERIAN: '#2563eb', EQUIFAX: '#dc2626', TRANSUNION: '#7c3aed',
   };
   const color = bureauColors[meta.bureau] || '#d97706';
-  const sections = content.split(/(?=═{10,}|─{10,})/);
 
   const htmlSections = content
     .split('\n')
@@ -48,7 +47,7 @@ export function generatePacketHTML(content: string, meta: { clientName: string; 
       if (/^DISPUTE #\d+:/i.test(trimmed)) return `<h3 style="color: ${color}; font-size: 14px; font-weight: bold; margin: 16px 0 4px; padding: 8px; background: #f9fafb; border-left: 4px solid ${color};">${trimmed}</h3>`;
       if (/^(PACKAGE CONTENTS|DISPUTED ITEMS|LEGAL NOTICE|CONSUMER IDENTIFICATION|Applicable FCRA|Metro 2 Data|Specific Demands|Account Details):/.test(trimmed)) return `<h4 style="color: #374151; font-size: 12px; font-weight: 600; margin: 10px 0 4px; text-transform: uppercase; letter-spacing: 0.05em;">${trimmed}</h4>`;
       if (/^RE: FORMAL/.test(trimmed)) return `<div style="font-size: 13px; font-weight: bold; color: #111827; margin: 8px 0; padding: 8px; background: #fef3c7; border-left: 4px solid #f59e0b;">${trimmed}</div>`;
-      if (trimmed.startsWith('•') || trimmed.startsWith('⚠')) return `<div style="padding-left: 16px; margin: 2px 0; color: #374151;">${trimmed}</div>`;
+      if (trimmed.startsWith('▶')) return `<div style="padding-left: 16px; margin: 2px 0; color: #166534;">${trimmed}</div>`;
       if (/^\d+\.\d+\s/.test(trimmed)) return `<div style="padding-left: 24px; margin: 2px 0; color: #1f2937;">${trimmed}</div>`;
       if (/^\d+\.\s/.test(trimmed)) return `<div style="padding-left: 16px; margin: 2px 0; color: #374151;">${trimmed}</div>`;
       if (trimmed === '') return '<br />';
@@ -257,6 +256,8 @@ export function generateProfessionalDisputePacket(options: PacketOptions): strin
   // ── Header ──────────────────────────────────────────────────────────
   lines.push(dateStr);
   lines.push("");
+  lines.push("Sent via Certified Mail — Return Receipt Requested");
+  lines.push("");
   lines.push(clientAddr);
   lines.push("");
   lines.push(bureauAddress(bureau));
@@ -340,7 +341,7 @@ export function generateProfessionalDisputePacket(options: PacketOptions): strin
     const citations = fcraCitations(item);
     if (citations.length) {
       lines.push("Applicable FCRA Statutes:");
-      citations.forEach(c => lines.push(`  • ${c}`));
+      citations.forEach(c => lines.push(`  ▶ ${c}`));
       lines.push("");
     }
 
@@ -348,7 +349,7 @@ export function generateProfessionalDisputePacket(options: PacketOptions): strin
     const m2 = metro2Violations(item);
     if (m2.length) {
       lines.push("Metro 2 Data Reporting Violations:");
-      m2.forEach(v => lines.push(`  ⚠ ${v}`));
+      m2.forEach(v => lines.push(`  ▶ Metro 2® — ${v}`));
       lines.push("");
     }
 
