@@ -7486,6 +7486,8 @@ If you are just answering a question (not updating the letter), just respond nor
         returnReceipt: false,
       });
 
+      console.log(`[Lob] Letter created — client: ${clientName}, bureau: ${bureau}, lobId: ${result.lobId}, tracking: ${result.trackingNumber}`);
+
       // If a letterId was provided, update the tracking number in the DB
       if (letterId) {
         await db.update(disputeLettersNew)

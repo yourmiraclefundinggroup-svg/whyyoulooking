@@ -159,11 +159,16 @@ export async function sendDisputeLetter(
   };
 
   const credentials = Buffer.from(`${apiKey}:`).toString("base64");
+  // Unique idempotency key per request — prevents Lob from deduplicating letters
+  // that have the same from/to address and content sent close together
+  const idempotencyKey = `${Date.now()}-${Math.random().toString(36).slice(2)}-${options.bureau}-${options.clientName.replace(/\s+/g, '_').slice(0, 30)}`;
+
   const response = await fetch(`${LOB_API_BASE}/letters`, {
     method: "POST",
     headers: {
       "Authorization": `Basic ${credentials}`,
       "Content-Type": "application/json",
+      "Idempotency-Key": idempotencyKey,
     },
     body: JSON.stringify(payload),
   });
