@@ -6131,6 +6131,32 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
         status: "approved",
       }).returning();
 
+      // Normalize PDF to letter size (8.5×11") — Lob requires all pages have identical dimensions
+      let pdfBuffer: Buffer = file.buffer;
+      try {
+        const { PDFDocument } = await import("pdf-lib");
+        const LETTER_W = 612; // 8.5in × 72pt/in
+        const LETTER_H = 792; // 11in × 72pt/in
+        const srcDoc = await PDFDocument.load(pdfBuffer);
+        const newDoc = await PDFDocument.create();
+        for (let i = 0; i < srcDoc.getPageCount(); i++) {
+          const [embedded] = await newDoc.embedPages([srcDoc.getPage(i)]);
+          const newPage = newDoc.addPage([LETTER_W, LETTER_H]);
+          const scale = Math.min(LETTER_W / embedded.width, LETTER_H / embedded.height);
+          const drawW = embedded.width * scale;
+          const drawH = embedded.height * scale;
+          newPage.drawPage(embedded, {
+            x: (LETTER_W - drawW) / 2,
+            y: (LETTER_H - drawH) / 2,
+            width: drawW,
+            height: drawH,
+          });
+        }
+        pdfBuffer = Buffer.from(await newDoc.save());
+      } catch (pdfErr: any) {
+        console.warn("[PDF normalize] Could not normalize PDF, sending original:", pdfErr.message);
+      }
+
       // Build multipart form data for Lob API using uploaded PDF buffer
       const lobForm = new FormData();
       lobForm.append("to[name]", toAddress.name);
@@ -6144,7 +6170,7 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
       lobForm.append("from[address_city]", fromCity);
       lobForm.append("from[address_state]", fromState);
       lobForm.append("from[address_zip]", fromZip);
-      lobForm.append("file", file.buffer, { filename: file.originalname, contentType: file.mimetype });
+      lobForm.append("file", pdfBuffer, { filename: "letter.pdf", contentType: "application/pdf" });
       lobForm.append("color", "false");
       lobForm.append("mail_type", "usps_first_class");
       lobForm.append("extra_service", "certified");
