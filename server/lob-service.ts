@@ -112,15 +112,6 @@ export async function sendDisputeLetter(
     throw new Error(`Unknown bureau: ${options.bureau}`);
   }
 
-  // Build extra_services array
-  const extraServices: string[] = [];
-  if (options.certified !== false) {
-    extraServices.push("certified"); // default to certified
-  }
-  if (options.returnReceipt) {
-    extraServices.push("certified_return_receipt");
-  }
-
   // Wrap letter content in minimal HTML template
   const letterHtml = `
     <!DOCTYPE html>
@@ -137,12 +128,10 @@ export async function sendDisputeLetter(
     </html>
   `;
 
-  const payload = {
+  const payload: Record<string, any> = {
     description: `Dispute Letter — ${options.clientName} → ${options.bureau}`,
     to: toAddress,
     from: {
-      ...SCORESHIFT_RETURN_ADDRESS,
-      // Override return to client address for this letter
       name: options.clientName,
       address_line1: options.clientAddress.line1,
       address_line2: options.clientAddress.line2 || undefined,
@@ -154,9 +143,14 @@ export async function sendDisputeLetter(
     color: false,
     double_sided: false,
     address_placement: "top_first_page",
-    extra_services: extraServices.length > 0 ? extraServices : undefined,
     mail_type: "usps_first_class",
+    use_type: "operational",
   };
+
+  // Lob API uses singular extra_service (string), not extra_services (array)
+  if (options.certified !== false) {
+    payload.extra_service = "certified";
+  }
 
   const credentials = Buffer.from(`${apiKey}:`).toString("base64");
   // Unique idempotency key per request — prevents Lob from deduplicating letters
