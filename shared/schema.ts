@@ -20,7 +20,7 @@ export const users = pgTable("users", {
   accessLevel: text("access_level").notNull().default("STANDARD"), // STANDARD, CLIENT_VIEWER, BETA_TESTER, ADMIN
   isTestUser: boolean("is_test_user").default(false),
   testingNotes: text("testing_notes"), // Notes about their testing feedback
-  passwordResetRequired: boolean("password_reset_required").default(true), // Force password reset on first login
+  passwordResetRequired: boolean("password_reset_required").default(false),
   studentLoansEnrolled: boolean("student_loans_enrolled").default(false),
   monthlyStudentLoanPayment: decimal("monthly_student_loan_payment", { precision: 10, scale: 2 }),
   employmentInfo: json("employment_info").$type<{

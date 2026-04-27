@@ -344,15 +344,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    // New users require password reset unless they are admin
-    const userToInsert = {
-      ...insertUser,
-      passwordResetRequired: insertUser.accessLevel !== 'ADMIN'
-    };
-    
     const [user] = await db
       .insert(users)
-      .values(userToInsert)
+      .values(insertUser)
       .returning();
     return user;
   }
