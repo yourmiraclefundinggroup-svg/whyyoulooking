@@ -1,10 +1,11 @@
 /**
  * ScoreHero — Credit Score hero section.
- * Shows animated score, 3-bureau breakdown, sparkline chart, and score range bar.
+ * Shows Array live components when enrolled, or static placeholder data otherwise.
  */
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useRef } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Minus, Sparkles } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Sparkles, Loader2 } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -22,6 +23,10 @@ export interface ScoreData {
 
 interface ScoreHeroProps {
   data: ScoreData;
+  /** When provided and enrolled=true, renders Array live components instead of static data */
+  arrayToken?: { token: string; appKey: string };
+  isEnrolled?: boolean;
+  scriptReady?: boolean;
 }
 
 // Map a score to a color label for display
@@ -84,22 +89,120 @@ function BureauCard({ bureau, score, change }: BureauCardProps) {
 // Month labels for the sparkline x-axis
 const MONTH_LABELS = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
 
-export function ScoreHero({ data }: ScoreHeroProps) {
+/** Renders a single Array web component by tag name */
+function ArrayWebComponent({
+  tag,
+  token,
+  appKey,
+  scriptReady,
+  className = "w-full min-h-[200px]",
+}: {
+  tag: string;
+  token: string;
+  appKey: string;
+  scriptReady?: boolean;
+  className?: string;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || !token || !appKey) return;
+    if (scriptReady === false) return;
+    containerRef.current.innerHTML = "";
+    const el = document.createElement(tag);
+    el.setAttribute("token", token);
+    el.setAttribute("appKey", appKey);
+    containerRef.current.appendChild(el);
+    return () => {
+      if (containerRef.current) containerRef.current.innerHTML = "";
+    };
+  }, [tag, token, appKey, scriptReady]);
+
+  if (scriptReady === false) {
+    return (
+      <div className={`${className} flex items-center justify-center`}>
+        <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+      </div>
+    );
+  }
+
+  return <div ref={containerRef} className={className} />;
+}
+
+export function ScoreHero({ data, arrayToken, isEnrolled, scriptReady }: ScoreHeroProps) {
+  // Show live Array components when user is enrolled and token is available
+  if (isEnrolled && arrayToken?.token && arrayToken?.appKey) {
+    return (
+      <div className="space-y-4">
+        {/* Primary overview component */}
+        <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
+          <ArrayWebComponent
+            tag="array-credit-overview"
+            token={arrayToken.token}
+            appKey={arrayToken.appKey}
+            scriptReady={scriptReady}
+            className="w-full min-h-[220px]"
+          />
+        </div>
+
+        {/* Score tracker + debt analysis side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+              Score Tracker
+            </p>
+            <ArrayWebComponent
+              tag="array-score-tracker"
+              token={arrayToken.token}
+              appKey={arrayToken.appKey}
+              scriptReady={scriptReady}
+              className="w-full min-h-[180px]"
+            />
+          </div>
+          <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+              Debt Analysis
+            </p>
+            <ArrayWebComponent
+              tag="array-debt-analysis"
+              token={arrayToken.token}
+              appKey={arrayToken.appKey}
+              scriptReady={scriptReady}
+              className="w-full min-h-[180px]"
+            />
+          </div>
+        </div>
+
+        {/* Score simulator */}
+        <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+            Score Simulator
+          </p>
+          <ArrayWebComponent
+            tag="array-score-simulator"
+            token={arrayToken.token}
+            appKey={arrayToken.appKey}
+            scriptReady={scriptReady}
+            className="w-full min-h-[200px]"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Static fallback ────────────────────────────────────────────────────────
   const { scores, scoreChange, scoreHistory, lastUpdated } = data;
 
-  // Average across all three bureaus
   const avgScore = Math.round(
     (scores.experian + scores.equifax + scores.transunion) / 3
   );
   const avgChange = Math.round(
     (scoreChange.experian + scoreChange.equifax + scoreChange.transunion) / 3
   );
-  const { label: avgLabel, color: avgColor } = getScoreLabel(avgScore);
+  const { label: avgLabel } = getScoreLabel(avgScore);
 
-  // Score range bar: 300–850 = 550 pts total
   const scorePercent = Math.round(((avgScore - 300) / 550) * 100);
 
-  // Sparkline data
   const sparkData = scoreHistory.map((val, i) => ({
     month: MONTH_LABELS[i] ?? `M${i + 1}`,
     score: val,
@@ -126,7 +229,7 @@ export function ScoreHero({ data }: ScoreHeroProps) {
                   <TrendingUp className="h-3.5 w-3.5 mr-1" />
                   +{avgChange} pts this month
                 </Badge>
-                <span className={`text-sm font-semibold ${avgColor.replace("text-", "text-")} opacity-90 text-white/80`}>
+                <span className="text-sm font-semibold opacity-90 text-white/80">
                   {avgLabel}
                 </span>
               </div>

@@ -14,10 +14,11 @@
  * 10. Support Card        — SupportCard
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useQuery } from "@tanstack/react-query";
+import { useArrayScript } from "@/hooks/use-array-script";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { ScoreHero } from "@/components/dashboard/score-hero";
 import { DisputeTracker } from "@/components/dashboard/dispute-tracker";
@@ -227,7 +228,7 @@ const mockLoanData: LoanReadinessData = {
   targetScore: mockClient.targetScore,
 };
 
-// ─── Array component helper for dashboard ──────────────────────────────────
+// ─── Array types ────────────────────────────────────────────────────────────
 
 interface ArrayTokenData {
   token: string;
@@ -240,24 +241,6 @@ interface ArrayEnrollmentData {
   arrayUserId: string | null;
   productCodes: string[];
   enrolledAt: string | null;
-}
-
-function ArrayDashboardComponent({ tag, token, appKey }: { tag: string; token: string; appKey: string }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!containerRef.current || !token || !appKey) return;
-    containerRef.current.innerHTML = "";
-    const el = document.createElement(tag);
-    el.setAttribute("token", token);
-    el.setAttribute("appKey", appKey);
-    containerRef.current.appendChild(el);
-    return () => {
-      if (containerRef.current) containerRef.current.innerHTML = "";
-    };
-  }, [tag, token, appKey]);
-
-  return <div ref={containerRef} className="w-full min-h-[200px]" />;
 }
 
 // ─── Dashboard Component ────────────────────────────────────────────────────
@@ -283,6 +266,9 @@ export default function Dashboard() {
     enabled: !!user,
     retry: false,
   });
+
+  // Load Array web component script once we have the appKey
+  const { loaded: arrayScriptReady } = useArrayScript(arrayToken?.appKey ?? undefined);
 
   // isDemoMode: URL param ?demo=true OR user is a test account
   const isDemoMode =
@@ -398,42 +384,14 @@ export default function Dashboard() {
         )}
 
 
-        {/* ── 2. Credit Score Hero — live Array data if enrolled, else mock ── */}
-        {arrayEnrollment?.enrolled && arrayToken?.token && arrayToken?.appKey ? (
-          <div className="space-y-4">
-            <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
-              <ArrayDashboardComponent
-                tag="array-credit-overview"
-                token={arrayToken.token}
-                appKey={arrayToken.appKey}
-              />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
-                <ArrayDashboardComponent
-                  tag="array-score-tracker"
-                  token={arrayToken.token}
-                  appKey={arrayToken.appKey}
-                />
-              </div>
-              <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
-                <ArrayDashboardComponent
-                  tag="array-debt-analysis"
-                  token={arrayToken.token}
-                  appKey={arrayToken.appKey}
-                />
-              </div>
-            </div>
-            <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
-              <ArrayDashboardComponent
-                tag="array-score-simulator"
-                token={arrayToken.token}
-                appKey={arrayToken.appKey}
-              />
-            </div>
-          </div>
-        ) : (
-          (hasRealData || showMockData) && <ScoreHero data={scoreData} />
+        {/* ── 2. Credit Score Hero — live Array data if enrolled, else static ── */}
+        {(hasRealData || showMockData || arrayEnrollment?.enrolled) && (
+          <ScoreHero
+            data={scoreData}
+            arrayToken={arrayToken ? { token: arrayToken.token, appKey: arrayToken.appKey } : undefined}
+            isEnrolled={arrayEnrollment?.enrolled ?? false}
+            scriptReady={arrayScriptReady}
+          />
         )}
 
         {/* ── 9. Loan Readiness (prominent — above the fold on desktop) ── */}
