@@ -14,6 +14,7 @@ export function Navigation() {
 
   const navItems = [
     { href: "/credit-repair", label: "Dashboard" },
+    { href: "/credit-monitoring", label: "Credit Monitoring" },
     { href: "/credit-building", label: "Credit Building" },
     { href: "/billing", label: "Billing" },
     ...(canAccessEducation ? [{ href: "/education", label: "Education" }] : []),

@@ -7997,6 +7997,138 @@ ${denialLetterText}`
     }
   });
 
+  // ─── Array.com Integration ────────────────────────────────────────────────
+
+  // GET /api/array/token — generate a short-lived user token for Array web components
+  app.get("/api/array/token", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
+      const ARRAY_API_SECRET = process.env.ARRAY_API_SECRET;
+      const ARRAY_APP_KEY = process.env.ARRAY_APP_KEY;
+
+      if (!ARRAY_API_KEY || !ARRAY_API_SECRET || !ARRAY_APP_KEY) {
+        return res.status(500).json({ error: "Array credentials not configured" });
+      }
+
+      const arrayUserId = `scoreshift_user_${user.id}`;
+      const credentials = Buffer.from(`${ARRAY_API_KEY}:${ARRAY_API_SECRET}`).toString("base64");
+
+      const tokenResponse = await fetch("https://api.array.io/v2/user/token", {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${credentials}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: arrayUserId }),
+      });
+
+      if (!tokenResponse.ok) {
+        const errData = await tokenResponse.json().catch(() => ({})) as any;
+        console.error("[Array] Token generation failed:", errData);
+        return res.status(502).json({ error: "Failed to generate Array token", details: errData });
+      }
+
+      const tokenData = await tokenResponse.json() as any;
+      console.log(`[Array] Token generated for user ${user.id} (arrayUserId: ${arrayUserId})`);
+
+      res.json({
+        token: tokenData.token || tokenData.userToken || tokenData.access_token,
+        appKey: ARRAY_APP_KEY,
+        arrayUserId,
+      });
+    } catch (error: any) {
+      console.error("[Array] Token error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/array/enroll — enroll user in Array product codes
+  app.post("/api/array/enroll", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { productCode } = req.body;
+      const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
+      const ARRAY_API_SECRET = process.env.ARRAY_API_SECRET;
+
+      if (!ARRAY_API_KEY || !ARRAY_API_SECRET) {
+        return res.status(500).json({ error: "Array credentials not configured" });
+      }
+
+      const arrayUserId = `scoreshift_user_${user.id}`;
+      const credentials = Buffer.from(`${ARRAY_API_KEY}:${ARRAY_API_SECRET}`).toString("base64");
+
+      const enrollResponse = await fetch("https://api.array.io/v2/user/enroll", {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${credentials}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: arrayUserId, productCode }),
+      });
+
+      const enrollData = await enrollResponse.json().catch(() => ({})) as any;
+
+      if (!enrollResponse.ok) {
+        console.error("[Array] Enrollment failed:", enrollData);
+        return res.status(502).json({ error: "Array enrollment failed", details: enrollData });
+      }
+
+      // Persist enrollment in DB
+      const { arrayEnrollments } = await import("@shared/schema");
+      const existing = await db.select().from(arrayEnrollments).where(eq(arrayEnrollments.userId, user.id));
+
+      if (existing.length === 0) {
+        await db.insert(arrayEnrollments).values({
+          userId: user.id,
+          arrayUserId,
+          productCodes: productCode ? [productCode] : [],
+        });
+      } else {
+        const codes = existing[0].productCodes || [];
+        if (productCode && !codes.includes(productCode)) {
+          await db.update(arrayEnrollments)
+            .set({ productCodes: [...codes, productCode] })
+            .where(eq(arrayEnrollments.userId, user.id));
+        }
+      }
+
+      console.log(`[Array] Enrolled user ${user.id} in product code: ${productCode}`);
+      res.json({ success: true, arrayUserId, productCode });
+    } catch (error: any) {
+      console.error("[Array] Enroll error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/array/enrollment — check if current user has Array enrollment
+  app.get("/api/array/enrollment", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { arrayEnrollments } = await import("@shared/schema");
+      const [enrollment] = await db.select().from(arrayEnrollments).where(eq(arrayEnrollments.userId, user.id));
+      res.json({
+        enrolled: !!enrollment,
+        arrayUserId: enrollment?.arrayUserId || null,
+        productCodes: enrollment?.productCodes || [],
+        enrolledAt: enrollment?.enrolledAt || null,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET /api/admin/array/enrollments — admin: see which clients are enrolled in Array
+  app.get("/api/admin/array/enrollments", authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { arrayEnrollments } = await import("@shared/schema");
+      const enrollments = await db.select().from(arrayEnrollments);
+      res.json(enrollments);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

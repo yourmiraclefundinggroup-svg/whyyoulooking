@@ -28,6 +28,7 @@ import PrivacyPolicy from "@/pages/privacy-policy";
 import Terms from "@/pages/terms";
 import DenialDecoder from "@/pages/denial-decoder";
 import WhiteLabelOnboarding from "@/pages/white-label-onboarding";
+import CreditMonitoring from "@/pages/credit-monitoring";
 import NotFound from "@/pages/not-found";
 import { TrialUpgradeWall } from "@/components/trial-upgrade-wall";
 
@@ -148,6 +149,10 @@ function Router() {
           <Route path="/pricing" component={Pricing} />
           <Route path="/denial-decoder" component={DenialDecoder} />
           <Route path="/white-label/onboarding" component={WhiteLabelOnboarding} />
+          <Route path="/credit-monitoring">
+            <Navigation />
+            <CreditMonitoring />
+          </Route>
           <Route path="/credit-building-v2">
             <Navigation />
             <CreditBuildingV2 />

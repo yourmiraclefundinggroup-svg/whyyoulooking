@@ -1258,6 +1258,19 @@ export const affiliateSignups = pgTable("affiliate_signups", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Array.com enrollment tracking
+export const arrayEnrollments = pgTable("array_enrollments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  arrayUserId: text("array_user_id").notNull(),
+  enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
+  productCodes: text("product_codes").array().notNull().default([]),
+});
+
+export const insertArrayEnrollmentSchema = createInsertSchema(arrayEnrollments).omit({ id: true, enrolledAt: true });
+export type ArrayEnrollment = typeof arrayEnrollments.$inferSelect;
+export type InsertArrayEnrollment = z.infer<typeof insertArrayEnrollmentSchema>;
+
 // Pay-Per-Delete Billing Events
 export const deletionEvents = pgTable("deletion_events", {
   id: serial("id").primaryKey(),
