@@ -546,14 +546,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(200).json({ received: true, skipped: true });
       }
 
-      // Find the letter by lobId and update its status
-      const allLetters = await db.select().from(disputeLettersNew);
-      const letter = allLetters.find((l) => l.lobId === lobId);
-      if (letter) {
-        const updates: Record<string, any> = { lobStatus: newStatus };
-        if (newStatus === "delivered") updates.status = "mailed";
-        await db.update(disputeLettersNew).set(updates).where(eq(disputeLettersNew.id, letter.id));
-        console.log(`[Lob Webhook] Updated letter ${letter.id} status → ${newStatus}`);
+      // Find the letter by lobId directly and update its status
+      const updates: Record<string, any> = { lobStatus: newStatus };
+      if (newStatus === "delivered") updates.status = "mailed";
+      const result = await db
+        .update(disputeLettersNew)
+        .set(updates)
+        .where(eq(disputeLettersNew.lobId, lobId))
+        .returning({ id: disputeLettersNew.id });
+      if (result.length > 0) {
+        console.log(`[Lob Webhook] Updated letter ${result[0].id} status → ${newStatus}`);
       }
 
       res.status(200).json({ received: true });
