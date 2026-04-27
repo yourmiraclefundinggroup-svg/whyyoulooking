@@ -2,6 +2,8 @@ import Stripe from "stripe";
 import { db } from "./db";
 import { users, payments, invoices, subscriptionPlans, usageTracking } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { tierFromPriceId, TIER_FEATURES, type SubscriptionTier } from "./tier-features";
+import { enrollUserInArrayProducts } from "./array-service";
 
 /*
 <important_code_snippet_instructions>
@@ -123,6 +125,46 @@ export class StripeService {
   }
 
   /**
+   * Create a subscription for a named tier (starter/pro/elite) using env-var price IDs.
+   * This is used by the tier-aware pricing page checkout flow.
+   */
+  async createSubscriptionByTier(userId: number, tier: SubscriptionTier): Promise<Stripe.Subscription> {
+    const priceIdMap: Record<string, string | undefined> = {
+      starter: process.env.STRIPE_STARTER_PRICE_ID,
+      pro: process.env.STRIPE_PRO_PRICE_ID,
+      elite: process.env.STRIPE_ELITE_PRICE_ID,
+    };
+    const priceId = priceIdMap[tier];
+    if (!priceId) {
+      throw new Error(`No Stripe price ID configured for tier: ${tier}`);
+    }
+
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user) throw new Error('User not found');
+
+    const customerId = await this.createOrGetCustomer(userId, user.email, `${user.firstName} ${user.lastName}`);
+
+    const subscription = await stripe.subscriptions.create({
+      customer: customerId,
+      items: [{ price: priceId }],
+      payment_behavior: 'default_incomplete',
+      expand: ['latest_invoice.payment_intent'],
+      metadata: { userId: userId.toString(), tier },
+    });
+
+    await db.update(users)
+      .set({
+        stripeSubscriptionId: subscription.id,
+        subscriptionStatus: subscription.status.toUpperCase(),
+        subscriptionPlan: tier.charAt(0).toUpperCase() + tier.slice(1),
+        subscriptionStartDate: new Date(subscription.created * 1000),
+      })
+      .where(eq(users.id, userId));
+
+    return subscription;
+  }
+
+  /**
    * Cancel subscription
    */
   async cancelSubscription(userId: number): Promise<Stripe.Subscription> {
@@ -208,9 +250,31 @@ export class StripeService {
     }
   }
 
+  /**
+   * Resolve a userId from an invoice — first from metadata, then by stripeCustomerId lookup.
+   * Returns null if no matching user is found.
+   */
+  private async resolveUserIdFromInvoice(invoice: Stripe.Invoice): Promise<number | null> {
+    const metaId = parseInt(invoice.metadata?.userId || '0');
+    if (metaId) return metaId;
+
+    const customerId = typeof invoice.customer === 'string' ? invoice.customer : null;
+    if (!customerId) return null;
+
+    const [match] = await db.select({ id: users.id })
+      .from(users)
+      .where(eq(users.stripeCustomerId, customerId))
+      .limit(1);
+
+    return match?.id ?? null;
+  }
+
   private async handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<void> {
-    const userId = parseInt(invoice.metadata?.userId || '0');
-    if (!userId) return;
+    const userId = await this.resolveUserIdFromInvoice(invoice);
+    if (!userId) {
+      console.warn(`[Stripe] Could not resolve user for invoice ${invoice.id}`);
+      return;
+    }
 
     await db.insert(invoices).values({
       userId,
@@ -221,10 +285,31 @@ export class StripeService {
       status: 'PAID',
       paidAt: new Date(),
     });
+
+    // Resolve tier from price ID and update subscriptionTier + enroll Array products
+    if (invoice.subscription) {
+      try {
+        const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+        const priceId = subscription.items.data[0]?.price?.id;
+        const tier = priceId ? tierFromPriceId(priceId) : null;
+        if (tier) {
+          await db.update(users)
+            .set({ subscriptionTier: tier })
+            .where(eq(users.id, userId));
+          const productCodes = TIER_FEATURES[tier].arrayProductCodes;
+          if (productCodes.length > 0) {
+            await enrollUserInArrayProducts(userId, productCodes);
+          }
+          console.log(`[Stripe] Updated user ${userId} to tier: ${tier}`);
+        }
+      } catch (err) {
+        console.error(`[Stripe] Failed to resolve tier for invoice ${invoice.id}:`, err);
+      }
+    }
   }
 
   private async handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
-    const userId = parseInt(invoice.metadata?.userId || '0');
+    const userId = await this.resolveUserIdFromInvoice(invoice);
     if (!userId) return;
 
     // Update user subscription status
@@ -233,8 +318,36 @@ export class StripeService {
       .where(eq(users.id, userId));
   }
 
+  /**
+   * Resolve userId from a subscription — first from metadata, then by stripeSubscriptionId
+   * or stripeCustomerId lookup. Returns null if no matching user is found.
+   */
+  private async resolveUserIdFromSubscription(subscription: Stripe.Subscription): Promise<number | null> {
+    const metaId = parseInt(subscription.metadata?.userId || '0');
+    if (metaId) return metaId;
+
+    // Fall back to matching by stored subscription ID
+    const [bySubId] = await db.select({ id: users.id })
+      .from(users)
+      .where(eq(users.stripeSubscriptionId, subscription.id))
+      .limit(1);
+    if (bySubId) return bySubId.id;
+
+    // Fall back to customer ID
+    const customerId = typeof subscription.customer === 'string' ? subscription.customer : null;
+    if (customerId) {
+      const [byCustomer] = await db.select({ id: users.id })
+        .from(users)
+        .where(eq(users.stripeCustomerId, customerId))
+        .limit(1);
+      if (byCustomer) return byCustomer.id;
+    }
+
+    return null;
+  }
+
   private async handleSubscriptionUpdated(subscription: Stripe.Subscription): Promise<void> {
-    const userId = parseInt(subscription.metadata?.userId || '0');
+    const userId = await this.resolveUserIdFromSubscription(subscription);
     if (!userId) return;
 
     await db.update(users)
@@ -246,13 +359,17 @@ export class StripeService {
   }
 
   private async handleSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {
-    const userId = parseInt(subscription.metadata?.userId || '0');
-    if (!userId) return;
+    const userId = await this.resolveUserIdFromSubscription(subscription);
+    if (!userId) {
+      console.warn(`[Stripe] Could not resolve user for deleted subscription ${subscription.id}`);
+      return;
+    }
 
     await db.update(users)
       .set({
         subscriptionStatus: 'CANCELED',
         subscriptionEndDate: new Date(),
+        subscriptionTier: 'none',
       })
       .where(eq(users.id, userId));
   }

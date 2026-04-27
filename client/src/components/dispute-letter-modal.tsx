@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,6 +9,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useUserContext } from "@/hooks/use-user-context";
+import { ArrowRight, Lock } from "lucide-react";
 import type { CreditIssue } from "@shared/schema";
 
 interface DisputeLetterModalProps {
@@ -29,9 +31,17 @@ function deriveLetterType(issueType: string, description?: string): string {
   return "general";
 }
 
+interface DisputeLimitError {
+  limitReached: true;
+  used: number;
+  limit: number;
+  upgradeUrl: string;
+}
+
 export function DisputeLetterModal({ open, onOpenChange, issue }: DisputeLetterModalProps) {
   const [bureau, setBureau] = useState<string>("");
   const [letterContent, setLetterContent] = useState<string>("");
+  const [limitError, setLimitError] = useState<DisputeLimitError | null>(null);
   const { toast } = useToast();
   const { isAdmin } = useUserContext();
 
@@ -44,6 +54,7 @@ export function DisputeLetterModal({ open, onOpenChange, issue }: DisputeLetterM
       letterType: string;
       clientId?: number;
     }) => {
+      setLimitError(null);
       if (isAdmin && data.clientId) {
         const response = await apiRequest("POST", "/api/admin/generate-dispute-letter", {
           issue: {
@@ -60,13 +71,32 @@ export function DisputeLetterModal({ open, onOpenChange, issue }: DisputeLetterM
         const result = await response.json();
         return { letterContent: result.letter };
       }
-      const response = await apiRequest("POST", "/api/generate-dispute-letter", {
-        issueType: data.issueType,
-        description: data.description,
-        creditor: data.creditor,
-        bureau: data.bureau,
-        letterType: data.letterType,
+
+      const authToken = localStorage.getItem("auth_token");
+      const response = await fetch("/api/generate-dispute-letter", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          issueType: data.issueType,
+          description: data.description,
+          creditor: data.creditor,
+          bureau: data.bureau,
+          letterType: data.letterType,
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({})) as Record<string, unknown>;
+        if (response.status === 403 && errorData.limitReached) {
+          throw { limitReached: true, used: errorData.used, limit: errorData.limit, upgradeUrl: errorData.upgradeUrl ?? "/pricing" };
+        }
+        throw new Error((errorData.message as string) || "Failed to generate dispute letter");
+      }
+
       return response.json();
     },
     onSuccess: (data) => {
@@ -76,10 +106,15 @@ export function DisputeLetterModal({ open, onOpenChange, issue }: DisputeLetterM
         description: "AI dispute letter generated successfully",
       });
     },
-    onError: () => {
+    onError: (error: unknown) => {
+      const err = error as Record<string, unknown>;
+      if (err?.limitReached) {
+        setLimitError(err as unknown as DisputeLimitError);
+        return;
+      }
       toast({
         title: "Error",
-        description: "Failed to generate dispute letter with AI",
+        description: error instanceof Error ? error.message : "Failed to generate dispute letter with AI",
         variant: "destructive",
       });
     },
@@ -152,6 +187,24 @@ export function DisputeLetterModal({ open, onOpenChange, issue }: DisputeLetterM
             </div>
           )}
 
+          {limitError && (
+            <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
+              <Lock className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+              <div className="flex-1">
+                <p className="font-medium text-amber-900">Monthly dispute limit reached</p>
+                <p className="mt-1 text-sm text-amber-700">
+                  You have used {limitError.used} of {limitError.limit} dispute letters this month on your current plan.
+                  Upgrade to Pro for unlimited dispute letters.
+                </p>
+                <Link href="/checkout?tier=pro">
+                  <Button size="sm" className="mt-3 bg-amber-500 hover:bg-amber-400 text-black font-bold gap-1.5">
+                    Upgrade to Pro <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4">
             <div>
               <Label htmlFor="bureau">Select Credit Bureau</Label>
@@ -170,7 +223,7 @@ export function DisputeLetterModal({ open, onOpenChange, issue }: DisputeLetterM
             <div className="flex gap-2">
               <Button 
                 onClick={handleGenerateLetter}
-                disabled={!bureau || generateLetterMutation.isPending}
+                disabled={!bureau || generateLetterMutation.isPending || !!limitError}
                 className="bg-trust-blue hover:bg-blue-700"
               >
                 {generateLetterMutation.isPending ? "Generating AI Letter..." : "Generate AI Letter"}

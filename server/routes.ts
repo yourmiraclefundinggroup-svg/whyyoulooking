@@ -9,9 +9,9 @@ import { db } from "./db";
 import { 
   aiConversations, studentLoans, loanNegotiations,
   supportConversations, supportMessages, supportTickets, supportKnowledgeBase,
-  subscriptionPlans, payments, invoices
+  subscriptionPlans, payments, invoices, usageTracking
 } from "@shared/schema";
-import { eq, desc, sql, or } from "drizzle-orm";
+import { eq, desc, sql, or, and } from "drizzle-orm";
 import { aiService } from "./ai-service";
 import { stripeService } from "./stripe-service";
 import OpenAI from "openai";
@@ -20,6 +20,7 @@ import Stripe from "stripe";
 import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
 import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users, disputeLettersNew, disputes } from "@shared/schema";
+import { TIER_FEATURES, tierHasFeature, getDisputeLimit, type SubscriptionTier } from "./tier-features";
 import { z } from "zod";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
@@ -264,6 +265,22 @@ const requireClientAccess = (req: Request, res: Response, next: NextFunction) =>
   const user = (req as any).user;
   if (!user || (user.accessLevel !== 'CLIENT_VIEWER' && user.accessLevel !== 'ADMIN')) {
     return res.status(403).json({ message: 'Client access required' });
+  }
+  next();
+};
+
+const requireFeature = (feature: string) => (req: Request, res: Response, next: NextFunction) => {
+  const user = (req as any).user as { subscriptionTier?: string | null; accessLevel?: string } | undefined;
+  if (!user) return res.status(401).json({ message: 'Not authenticated' });
+  if (user.accessLevel === 'ADMIN') return next();
+  const tier = (user.subscriptionTier || 'none') as SubscriptionTier;
+  if (!tierHasFeature(tier, feature)) {
+    return res.status(403).json({
+      message: 'This feature requires a higher subscription plan.',
+      requiredFeature: feature,
+      currentTier: tier,
+      upgradeUrl: '/pricing',
+    });
   }
   next();
 };
@@ -1249,6 +1266,31 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
+  // Admin: set subscription tier override
+  app.patch("/api/admin/users/:id/tier", authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const { tier } = req.body;
+      const validTiers: SubscriptionTier[] = ["none", "starter", "pro", "elite"];
+      if (!validTiers.includes(tier)) {
+        return res.status(400).json({ error: `Invalid tier. Must be one of: ${validTiers.join(", ")}` });
+      }
+      const updated = await storage.updateUser(clientId, { subscriptionTier: tier });
+      if (!updated) return res.status(404).json({ error: "Client not found" });
+      // If upgrading, enroll Array product codes for this tier
+      const productCodes = TIER_FEATURES[tier as SubscriptionTier].arrayProductCodes;
+      if (productCodes.length > 0) {
+        const { enrollUserInArrayProducts } = await import("./array-service");
+        await enrollUserInArrayProducts(clientId, productCodes).catch((e: any) =>
+          console.error("[Array] Tier override enrollment error:", e)
+        );
+      }
+      res.json({ tier, userId: clientId });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to update tier" });
+    }
+  });
+
   // ── Client Intake Routes ────────────────────────────────────────────
   const intakeDiskStorage = multer.diskStorage({
     destination: (_req, _file, cb) => {
@@ -1569,12 +1611,53 @@ Format the response as a complete business letter ready to send.`;
   });
 
   // AI Dispute Letter Generation
-  app.post("/api/generate-dispute-letter", authenticateToken, requireClientAccess, async (req, res) => {
+  app.post("/api/generate-dispute-letter", authenticateToken, requireClientAccess, requireFeature("basic_disputes"), async (req, res) => {
     const { issueType, creditor, description, bureau, letterType } = req.body;
     
     try {
       // Always derive user identity from the authenticated token — never trust caller-supplied userId
       const authenticatedUser = (req as any).user;
+      const tier = (authenticatedUser.subscriptionTier || 'none') as SubscriptionTier;
+      const disputeLimit = getDisputeLimit(tier);
+
+      // Enforce monthly dispute limit for Starter (3/month)
+      if (disputeLimit !== null) {
+        const now = new Date();
+        const [usage] = await db.select()
+          .from(usageTracking)
+          .where(and(
+            eq(usageTracking.userId, authenticatedUser.id),
+            eq(usageTracking.month, now.getMonth() + 1),
+            eq(usageTracking.year, now.getFullYear()),
+          ))
+          .limit(1);
+
+        const currentCount = usage?.disputesGenerated ?? 0;
+        if (currentCount >= disputeLimit) {
+          return res.status(403).json({
+            message: `Monthly dispute letter limit reached (${disputeLimit}/month on ${tier} plan). Upgrade to Pro for unlimited letters.`,
+            limitReached: true,
+            used: currentCount,
+            limit: disputeLimit,
+            upgradeUrl: '/pricing',
+          });
+        }
+
+        // Increment usage count
+        if (usage) {
+          await db.update(usageTracking)
+            .set({ disputesGenerated: currentCount + 1 })
+            .where(eq(usageTracking.id, usage.id));
+        } else {
+          await db.insert(usageTracking).values({
+            userId: authenticatedUser.id,
+            month: now.getMonth() + 1,
+            year: now.getFullYear(),
+            disputesGenerated: 1,
+          });
+        }
+      }
+
       const userProfile = await storage.getUser(authenticatedUser.id);
 
       const { generateDisputeIQLetter, resolveLetterType, resolveBureau, resolveAccountType } = await import("./dispute-iq.js");
@@ -4750,6 +4833,26 @@ Please contact this lead within 24 hours.
     }
   });
 
+  app.post("/api/stripe/checkout-by-tier", authenticateToken, async (req, res) => {
+    try {
+      const { tier } = req.body;
+      const userId = (req as any).user.id;
+      const validTiers: SubscriptionTier[] = ["starter", "pro", "elite"];
+      if (!tier || !validTiers.includes(tier as SubscriptionTier)) {
+        return res.status(400).json({ error: "Invalid or missing tier. Must be starter, pro, or elite." });
+      }
+      const subscription = await stripeService.createSubscriptionByTier(userId, tier as SubscriptionTier);
+      res.json({
+        subscriptionId: subscription.id,
+        clientSecret: (subscription.latest_invoice as Stripe.Invoice)?.payment_intent?.client_secret,
+        status: subscription.status,
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Checkout failed";
+      res.status(500).json({ error: message });
+    }
+  });
+
   app.delete("/api/stripe/subscription", authenticateToken, async (req, res) => {
     try {
       const userId = (req as any).user.id;
@@ -4803,13 +4906,40 @@ Please contact this lead within 24 hours.
 
   // Stripe webhook endpoint
   app.post("/api/stripe/webhook", async (req, res) => {
+    const sig = req.headers["stripe-signature"] as string | undefined;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    let event: Stripe.Event;
+
+    if (webhookSecret && sig) {
+      const rawBody = (req as Request & { rawBody?: Buffer }).rawBody;
+      if (!rawBody) {
+        console.error("[Stripe] Raw body missing — cannot verify webhook signature");
+        return res.status(400).json({ error: "Raw body unavailable" });
+      }
+      try {
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-12-18" });
+        event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Signature verification failed";
+        console.error("[Stripe] Webhook signature verification failed:", message);
+        return res.status(400).json({ error: `Webhook error: ${message}` });
+      }
+    } else {
+      if (process.env.NODE_ENV === "production") {
+        console.error("[Stripe] STRIPE_WEBHOOK_SECRET not set — rejecting webhook in production");
+        return res.status(400).json({ error: "Webhook secret not configured" });
+      }
+      console.warn("[Stripe] Skipping signature verification (STRIPE_WEBHOOK_SECRET not set in dev)");
+      event = req.body as Stripe.Event;
+    }
+
     try {
-      const event = req.body as Stripe.Event;
       await stripeService.handleWebhook(event);
       res.json({ received: true });
-    } catch (error: any) {
-      console.error("Stripe webhook error:", error);
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Webhook handler error";
+      console.error("[Stripe] Webhook handler error:", message);
+      res.status(500).json({ error: message });
     }
   });
 
@@ -8000,7 +8130,7 @@ ${denialLetterText}`
   // ─── Array.com Integration ────────────────────────────────────────────────
 
   // GET /api/array/token — generate a short-lived user token for Array web components
-  app.get("/api/array/token", authenticateToken, requireClientAccess, async (req, res) => {
+  app.get("/api/array/token", authenticateToken, requireClientAccess, requireFeature("credit_overview"), async (req, res) => {
     try {
       const user = (req as any).user;
       const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
@@ -8065,6 +8195,21 @@ ${denialLetterText}`
 
       if (!ARRAY_API_KEY || !ARRAY_API_SECRET) {
         return res.status(500).json({ error: "Array credentials not configured" });
+      }
+
+      // Validate that the requested productCode is allowed for the user's subscription tier.
+      // Admins bypass this check.
+      if (user.accessLevel !== 'ADMIN' && productCode) {
+        const tier = (user.subscriptionTier || 'none') as SubscriptionTier;
+        const allowedCodes = TIER_FEATURES[tier]?.arrayProductCodes ?? [];
+        if (!allowedCodes.includes(productCode)) {
+          return res.status(403).json({
+            error: "This Array product code is not available on your current subscription plan.",
+            productCode,
+            currentTier: tier,
+            upgradeUrl: '/pricing',
+          });
+        }
       }
 
       const arrayUserId = `scoreshift_user_${user.id}`;

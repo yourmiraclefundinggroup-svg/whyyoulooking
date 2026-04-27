@@ -7,7 +7,12 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({
+  limit: '50mb',
+  verify: (req: Request, _res: Response, buf: Buffer) => {
+    (req as Request & { rawBody?: Buffer }).rawBody = buf;
+  },
+}));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
 app.use((req, res, next) => {

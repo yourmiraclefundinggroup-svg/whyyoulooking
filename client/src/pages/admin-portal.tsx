@@ -479,6 +479,70 @@ function ArrayEnrollmentBadge({ clientId }: { clientId: number }) {
 }
 
 // ─── Client Intake Card ──────────────────────────────────────────────────────
+function ClientTierOverride({ client, onUpdated }: { client: User; onUpdated: () => void }) {
+  const { toast } = useToast();
+  const [tier, setTier] = useState<string>(client.subscriptionTier ?? "none");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const resp = await fetch(`/api/admin/users/${client.id}/tier`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+        body: JSON.stringify({ tier }),
+      });
+      if (!resp.ok) throw new Error((await resp.json()).error || "Failed to update tier");
+      toast({ title: "Subscription tier updated", description: `Set to ${tier}` });
+      onUpdated();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to update tier";
+      toast({ title: "Failed to update tier", description: message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const tierColors: Record<string, string> = {
+    none: "text-slate-400",
+    starter: "text-amber-400",
+    pro: "text-blue-400",
+    elite: "text-violet-400",
+  };
+
+  return (
+    <div className="pt-2 border-t border-[hsl(var(--admin-border))]">
+      <Label className="text-xs font-medium text-[hsl(var(--admin-text-muted))] mb-2 block">Subscription Tier Override</Label>
+      <div className="flex items-center gap-2">
+        <Select value={tier} onValueChange={setTier}>
+          <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm flex-1">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">No Plan</SelectItem>
+            <SelectItem value="starter">Starter — $29/mo</SelectItem>
+            <SelectItem value="pro">Pro — $79/mo</SelectItem>
+            <SelectItem value="elite">Elite — $149/mo</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button size="sm"
+          className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white gap-1.5"
+          disabled={saving || tier === (client.subscriptionTier ?? "none")}
+          onClick={handleSave}>
+          {saving ? "Saving..." : "Apply"}
+        </Button>
+      </div>
+      <p className="text-xs text-[hsl(var(--admin-text-subtle))] mt-1">
+        Current: <span className={`font-medium ${tierColors[tier] || "text-slate-400"}`}>{tier === "none" ? "No active plan" : tier.charAt(0).toUpperCase() + tier.slice(1)}</span>
+        {" · "}Overrides Stripe — useful for trials and comp accounts.
+      </p>
+    </div>
+  );
+}
+
 function ClientIntakeCard({ client, onUpdated }: { client: User; onUpdated: () => void }) {
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
@@ -716,6 +780,9 @@ function ClientIntakeCard({ client, onUpdated }: { client: User; onUpdated: () =
               </div>
             </div>
           )}
+
+          {/* Subscription tier override */}
+          <ClientTierOverride client={client} onUpdated={onUpdated} />
         </div>
       </AdminCardContent>
     </AdminCard>

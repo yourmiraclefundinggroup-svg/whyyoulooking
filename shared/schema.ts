@@ -50,6 +50,8 @@ export const users = pgTable("users", {
   aiConsentAccepted: boolean("ai_consent_accepted").default(false),
   aiConsentTimestamp: timestamp("ai_consent_timestamp"),
   payPerDeleteRate: decimal("pay_per_delete_rate", { precision: 10, scale: 2 }).default("99.00"),
+  // Subscription tier for feature gating: none | starter | pro | elite
+  subscriptionTier: text("subscription_tier").default("none"), // none, starter, pro, elite
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

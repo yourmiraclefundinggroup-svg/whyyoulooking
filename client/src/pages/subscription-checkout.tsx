@@ -10,12 +10,72 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Check } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
-// Make sure to call `loadStripe` outside of a component's render to avoid
-// recreating the `Stripe` object on every render.
 if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
   throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
 }
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+
+type TierKey = "starter" | "pro" | "elite";
+
+const TIER_DISPLAY: Record<TierKey, {
+  name: string;
+  price: number;
+  description: string;
+  popular: boolean;
+  features: string[];
+}> = {
+  starter: {
+    name: "Starter",
+    price: 29,
+    description: "Essential credit repair tools",
+    popular: false,
+    features: [
+      "Dashboard access",
+      "Credit overview & score tracker",
+      "3 dispute letters / month",
+      "Email support",
+    ],
+  },
+  pro: {
+    name: "Pro",
+    price: 79,
+    description: "Unlimited disputes, alerts, and premium tools",
+    popular: true,
+    features: [
+      "Everything in Starter",
+      "Unlimited dispute letters",
+      "Credit Alerts (real-time)",
+      "Automated Lob.com certified mail",
+      "Score Simulator",
+      "Debt Analysis & Debt Navigator",
+      "Priority support",
+    ],
+  },
+  elite: {
+    name: "Elite",
+    price: 149,
+    description: "Full protection suite with identity & privacy tools",
+    popular: false,
+    features: [
+      "Everything in Pro",
+      "Identity Protect",
+      "Privacy Protect (data broker removal)",
+      "Subscription Manager",
+      "Student Loan Aid",
+      "White-label documents",
+      "Dedicated account manager",
+    ],
+  },
+};
+
+interface PlanDisplay {
+  name: string;
+  price: number;
+  description: string;
+  popular: boolean;
+  features: string[];
+  billingInterval: string;
+}
 
 interface SubscriptionPlan {
   id: number;
@@ -32,69 +92,75 @@ interface SubscriptionPlan {
 export default function SubscriptionCheckout() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [planId, setPlanId] = useState<number | null>(null);
-  const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
+  const [plan, setPlan] = useState<PlanDisplay | null>(null);
   const [clientSecret, setClientSecret] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Get plan ID from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const planIdFromUrl = urlParams.get('planId');
-    
-    if (!planIdFromUrl) {
-      setLocation('/billing');
-      return;
-    }
+    const tierParam = urlParams.get('tier') as TierKey | null;
+    const planIdParam = urlParams.get('planId');
 
-    setPlanId(parseInt(planIdFromUrl));
+    if (tierParam && TIER_DISPLAY[tierParam]) {
+      initializeTierCheckout(tierParam);
+    } else if (planIdParam) {
+      initializePlanCheckout(parseInt(planIdParam));
+    } else {
+      setLocation('/pricing');
+    }
   }, []);
 
-  useEffect(() => {
-    if (!planId) return;
+  const initializeTierCheckout = async (tier: TierKey) => {
+    try {
+      setIsLoading(true);
+      const info = TIER_DISPLAY[tier];
+      setPlan({ ...info, billingInterval: "month" });
 
-    const initializeCheckout = async () => {
-      try {
-        setIsLoading(true);
+      const response = await apiRequest('POST', '/api/stripe/checkout-by-tier', { tier });
+      const { clientSecret: secret } = await response.json();
+      setClientSecret(secret);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to initialize checkout";
+      toast({ title: "Checkout Error", description: message, variant: "destructive" });
+      setLocation('/pricing');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        // Fetch plan details
-        const plansResponse = await apiRequest('GET', '/api/subscription-plans');
-        const plans = await plansResponse.json();
-        const selectedPlan = plans.find((p: SubscriptionPlan) => p.id === planId);
-        
-        if (!selectedPlan) {
-          toast({
-            title: "Plan Not Found",
-            description: "The requested subscription plan could not be found.",
-            variant: "destructive",
-          });
-          setLocation('/billing');
-          return;
-        }
+  const initializePlanCheckout = async (planId: number) => {
+    try {
+      setIsLoading(true);
+      const plansResponse = await apiRequest('GET', '/api/subscription-plans');
+      const plans = await plansResponse.json();
+      const selectedPlan = plans.find((p: SubscriptionPlan) => p.id === planId);
 
-        setPlan(selectedPlan);
-
-        // Create subscription
-        const subscriptionResponse = await apiRequest('POST', '/api/stripe/subscription', {
-          planId: planId,
-        });
-
-        const { clientSecret: secret } = await subscriptionResponse.json();
-        setClientSecret(secret);
-      } catch (error: any) {
-        toast({
-          title: "Checkout Error",
-          description: error.message || "Failed to initialize checkout",
-          variant: "destructive",
-        });
+      if (!selectedPlan) {
+        toast({ title: "Plan Not Found", description: "The requested plan could not be found.", variant: "destructive" });
         setLocation('/billing');
-      } finally {
-        setIsLoading(false);
+        return;
       }
-    };
 
-    initializeCheckout();
-  }, [planId]);
+      setPlan({
+        name: selectedPlan.name,
+        price: parseFloat(selectedPlan.price),
+        description: selectedPlan.description,
+        popular: false,
+        features: selectedPlan.features,
+        billingInterval: selectedPlan.billingInterval,
+      });
+
+      const subscriptionResponse = await apiRequest('POST', '/api/stripe/subscription', { planId });
+      const { clientSecret: secret } = await subscriptionResponse.json();
+      setClientSecret(secret);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to initialize checkout";
+      toast({ title: "Checkout Error", description: message, variant: "destructive" });
+      setLocation('/billing');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handlePaymentSuccess = () => {
     toast({
@@ -128,9 +194,9 @@ export default function SubscriptionCheckout() {
             <CardDescription>Unable to initialize checkout process</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => setLocation('/billing')} className="w-full">
+            <Button onClick={() => setLocation('/pricing')} className="w-full">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Billing
+              Back to Pricing
             </Button>
           </CardContent>
         </Card>
@@ -144,7 +210,7 @@ export default function SubscriptionCheckout() {
         <div className="mb-8">
           <Button
             variant="ghost"
-            onClick={() => setLocation('/billing')}
+            onClick={() => setLocation('/pricing')}
             className="mb-4"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -157,13 +223,12 @@ export default function SubscriptionCheckout() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Plan Summary */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 {plan.name}
-                {plan.name === "Elite Plan" && (
-                  <Badge className="bg-blue-500 text-white">Most Popular</Badge>
+                {plan.popular && (
+                  <Badge className="bg-amber-500 text-black">Most Popular</Badge>
                 )}
               </CardTitle>
               <CardDescription>{plan.description}</CardDescription>
@@ -175,7 +240,7 @@ export default function SubscriptionCheckout() {
                   <span className="text-lg text-gray-600 font-normal">/{plan.billingInterval}</span>
                 </div>
                 <p className="text-sm text-gray-600 mt-1">
-                  Billed {plan.billingInterval}
+                  Billed {plan.billingInterval}ly · Cancel anytime
                 </p>
               </div>
 
@@ -203,18 +268,17 @@ export default function SubscriptionCheckout() {
             </CardContent>
           </Card>
 
-          {/* Payment Form */}
           <div>
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <StripePaymentForm
                 clientSecret={clientSecret}
-                amount={parseFloat(plan.price)}
+                amount={plan.price}
                 description={`${plan.name} Plan - Credit Repair Subscription`}
                 onSuccess={handlePaymentSuccess}
                 onError={handlePaymentError}
               />
             </Elements>
-            
+
             <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
               <p>🔒 Your payment information is secure and encrypted</p>
               <p className="mt-2">Cancel anytime from your billing settings</p>

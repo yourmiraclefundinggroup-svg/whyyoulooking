@@ -1,43 +1,59 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, ArrowLeft } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 
 const personalPlans = [
   {
-    name: "Pro",
+    name: "Starter",
+    tier: "starter",
     price: 29,
     yearlyPrice: 24,
-    description: "Everything you need to repair your credit",
+    description: "Get started with essential credit repair tools",
     popular: false,
     badge: null,
     features: [
-      "All 3 bureaus monitored",
-      "AI dispute letter generation",
-      "Document upload center",
-      "Client dashboard",
-      "Score Map roadmap",
-      "Credit Coach AI (24/7)",
+      "Dashboard access",
+      "Credit overview & score tracker",
+      "3 dispute letters / month",
+      "Credit report viewer",
       "Email support",
     ],
   },
   {
-    name: "Elite",
+    name: "Pro",
+    tier: "pro",
     price: 79,
     yearlyPrice: 66,
-    description: "Maximum power with loan pipeline access",
+    description: "Unlimited disputes, alerts, and premium tools",
     popular: true,
     badge: "Most Popular",
     features: [
-      "Everything in Pro",
-      "Unlimited Dispute IQ™ letters",
+      "Everything in Starter",
+      "Unlimited dispute letters",
+      "Credit Alerts (real-time)",
       "Automated Lob.com certified mail",
-      "Victory Room celebrations",
-      "Denial Decoder tool",
-      "Referral Engine ($25/referral)",
-      "Bureau Watchdog real-time alerts",
-      "DSCR LoanBridge™ pipeline access",
+      "Score Simulator",
+      "Debt Analysis & Debt Navigator",
       "Priority support",
+    ],
+  },
+  {
+    name: "Elite",
+    tier: "elite",
+    price: 149,
+    yearlyPrice: 124,
+    description: "Full protection suite with identity & privacy tools",
+    popular: false,
+    badge: null,
+    features: [
+      "Everything in Pro",
+      "Identity Protect",
+      "Privacy Protect (data broker removal)",
+      "Subscription Manager",
+      "Student Loan Aid",
+      "White-label documents",
+      "Dedicated account manager",
     ],
   },
 ];
@@ -101,7 +117,6 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "#050A14" }}>
-      {/* Navigation */}
       <nav
         className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b"
         style={{
@@ -140,7 +155,6 @@ export default function PricingPage() {
 
       <div className="pt-32 pb-24 px-4">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
           <div className="text-center mb-12">
             <div className="text-xs uppercase tracking-widest text-amber-400 mb-3 font-medium">Simple Pricing</div>
             <h1 className="text-5xl md:text-6xl font-black text-white tracking-tight mb-4">
@@ -151,7 +165,6 @@ export default function PricingPage() {
             </p>
           </div>
 
-          {/* Audience Toggle */}
           <div className="flex justify-center mb-8">
             <div
               className="flex rounded-full p-1"
@@ -183,7 +196,6 @@ export default function PricingPage() {
             </div>
           </div>
 
-          {/* Billing Toggle */}
           <div className="flex items-center justify-center gap-3 mb-12">
             <span className={`text-sm ${!yearly ? "text-white" : "text-slate-500"}`}>Monthly</span>
             <button
@@ -201,8 +213,7 @@ export default function PricingPage() {
             </span>
           </div>
 
-          {/* Plans Grid */}
-          <div className="grid md:grid-cols-3 gap-6 mb-16">
+          <div className={`grid gap-6 mb-16 ${plans.length === 3 ? "md:grid-cols-3" : "md:grid-cols-3"}`}>
             {plans.map((plan) => (
               <div
                 key={plan.name}
@@ -236,7 +247,7 @@ export default function PricingPage() {
                   </div>
                   {yearly && (
                     <div className="text-emerald-400 text-xs mt-1">
-                      Save ${(plan.price - plan.yearlyPrice) * 12}/year
+                      Save ${((plan.price - plan.yearlyPrice) * 12).toFixed(0)}/year
                     </div>
                   )}
                 </div>
@@ -250,7 +261,7 @@ export default function PricingPage() {
                   ))}
                 </ul>
 
-                <Link href="/signup">
+                <Link href={"tier" in plan ? `/checkout?tier=${plan.tier}` : "/signup"}>
                   <Button
                     className={`w-full font-bold ${
                       plan.popular
@@ -265,7 +276,6 @@ export default function PricingPage() {
             ))}
           </div>
 
-          {/* Priority processing note — white-label only */}
           {audience === "business" && (
             <div
               className="mb-10 flex items-start gap-3 px-5 py-4 rounded-xl border text-sm"
@@ -281,7 +291,6 @@ export default function PricingPage() {
             </div>
           )}
 
-          {/* Feature comparison table */}
           <div className="mb-16">
             <h2 className="text-2xl font-black text-white text-center mb-8">Full Feature Comparison</h2>
             <div
@@ -311,13 +320,19 @@ export default function PricingPage() {
                 { label: "Advanced client management", values: [false, false, true] },
                 { label: "Priority support", values: [false, true, true] },
               ] : [
-                { label: "Bureau monitoring", values: ["1 bureau", "All 3", "All 3"] },
-                { label: "AI dispute letters", values: ["3/mo", "Unlimited", "Unlimited"] },
+                { label: "Credit overview & score tracker", values: [true, true, true] },
+                { label: "Dispute letters", values: ["3/month", "Unlimited", "Unlimited"] },
+                { label: "Credit Alerts (real-time)", values: [false, true, true] },
                 { label: "Certified mail (Lob.com)", values: [false, true, true] },
-                { label: "Credit Coach AI", values: [false, true, true] },
-                { label: "Score Map", values: [false, true, true] },
-                { label: "Loan Bridge (DSCR)", values: [false, false, true] },
-                { label: "Dedicated manager", values: [false, false, true] },
+                { label: "Score Simulator", values: [false, true, true] },
+                { label: "Debt Analysis", values: [false, true, true] },
+                { label: "Debt Navigator", values: [false, true, true] },
+                { label: "Identity Protect", values: [false, false, true] },
+                { label: "Privacy Protect", values: [false, false, true] },
+                { label: "Subscription Manager", values: [false, false, true] },
+                { label: "Student Loan Aid", values: [false, false, true] },
+                { label: "White-label documents", values: [false, false, true] },
+                { label: "Dedicated account manager", values: [false, false, true] },
               ]).map((row, i) => (
                 <div
                   key={row.label}
@@ -347,7 +362,6 @@ export default function PricingPage() {
             </div>
           </div>
 
-          {/* FAQ */}
           <div className="max-w-2xl mx-auto">
             <h2 className="text-2xl font-black text-white text-center mb-8">Frequently Asked Questions</h2>
             <div className="space-y-4">
@@ -361,12 +375,12 @@ export default function PricingPage() {
                   a: "Yes. Upgrade or downgrade at any time. Changes take effect immediately and billing is prorated.",
                 },
                 {
-                  q: "What makes Dispute IQ™ different from regular dispute letters?",
-                  a: "Standard dispute letters use the same templates bureaus see thousands of times. Dispute IQ™ uses AI to generate unique, contextually appropriate letters each round so they can't be pattern-flagged.",
+                  q: "What's the difference between Starter, Pro, and Elite?",
+                  a: "Starter gives you the basics — credit overview, score tracking, and 3 dispute letters per month. Pro adds unlimited disputes, Credit Alerts, certified mail sending, Score Simulator, and Debt tools. Elite adds full identity protection, privacy guard, Subscription Manager, and Student Loan Aid.",
                 },
                 {
-                  q: "How does the DSCR loan pipeline work?",
-                  a: "When your score hits a target threshold, our Loan Bridge feature automatically connects you to our network of DSCR lenders who specialize in investment property loans.",
+                  q: "Do features unlock automatically after upgrading?",
+                  a: "Yes. When your payment processes, your tier updates immediately and all included features — including Array credit monitoring products — are activated automatically without any manual steps.",
                 },
               ].map((faq) => (
                 <div
@@ -382,7 +396,6 @@ export default function PricingPage() {
         </div>
       </div>
 
-      {/* Footer */}
       <footer
         className="py-8 px-4 border-t text-center text-slate-600 text-sm"
         style={{ borderColor: "rgba(255,255,255,0.06)" }}

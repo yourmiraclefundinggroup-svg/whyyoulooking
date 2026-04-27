@@ -1,27 +1,28 @@
 /**
  * Credit Monitoring — Array.com embedded components page.
  * Handles token generation, account enrollment, and rendering all Array web components.
+ * Features are gated by subscription tier (starter | pro | elite).
  */
 import { useState, useEffect, useRef, useCallback, ComponentType, type Ref } from "react";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useArrayScript } from "@/hooks/use-array-script";
+import { useFeatureAccess, FEATURES, type SubscriptionTier } from "@/hooks/use-feature-access";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Shield, CreditCard, TrendingUp, AlertTriangle, Eye, BookOpen,
-  GraduationCap, Navigation, Loader2, CheckCircle, Lock, RefreshCw
+  GraduationCap, Navigation, Loader2, CheckCircle, Lock, RefreshCw, ArrowRight
 } from "lucide-react";
+import { Link } from "wouter";
 
-// Typed attribute shape for all Array web components
 interface ArrayWebComponentProps {
   token: string;
   appKey: string;
 }
 
-// Declare Array web component custom elements for TypeScript
 declare global {
   namespace JSX {
     interface IntrinsicElements {
@@ -55,144 +56,60 @@ interface EnrollmentData {
   enrolledAt: string | null;
 }
 
-// Array component definitions with metadata
-const BASIC_COMPONENTS = [
-  {
-    id: "credit-overview",
-    tag: "array-credit-overview",
-    label: "Credit Overview",
-    icon: TrendingUp,
-    description: "Live 3-bureau credit scores and account summary",
-    color: "blue",
-  },
-  {
-    id: "credit-report",
-    tag: "array-credit-report",
-    label: "Full Credit Report (3B)",
-    icon: BookOpen,
-    description: "Complete tri-bureau credit report with all tradelines",
-    color: "indigo",
-  },
-  {
-    id: "score-tracker",
-    tag: "array-score-tracker",
-    label: "Score Tracker",
-    icon: TrendingUp,
-    description: "Track score changes over time across all bureaus",
-    color: "green",
-  },
-  {
-    id: "debt-analysis",
-    tag: "array-debt-analysis",
-    label: "Debt Analysis",
-    icon: CreditCard,
-    description: "Breakdown of your debts and utilization",
-    color: "amber",
-  },
-  {
-    id: "score-simulator",
-    tag: "array-score-simulator",
-    label: "Score Simulator",
-    icon: Navigation,
-    description: "See how financial decisions would affect your score",
-    color: "purple",
-  },
-];
+const TIER_UPGRADE_LABELS: Record<SubscriptionTier, string> = {
+  none: "Choose a Plan",
+  starter: "Upgrade to Starter",
+  pro: "Upgrade to Pro",
+  elite: "Upgrade to Elite",
+};
 
-const PREMIUM_COMPONENTS = [
-  {
-    id: "credit-alerts",
-    tag: "array-credit-alerts",
-    label: "Credit Alerts",
-    icon: AlertTriangle,
-    description: "Real-time alerts for changes to your credit file",
-    productCodes: ["exp3bStandardMonitoring", "creditScoreChangeAlertExp"],
-    color: "red",
-  },
-  {
-    id: "identity-protect",
-    tag: "array-identity-protect",
-    label: "Identity Protect",
-    icon: Shield,
-    description: "Identity theft monitoring and protection",
-    productCodes: ["idpBundle1Insurance1mmRestoreBundleMonitoring"],
-    color: "slate",
-  },
-  {
-    id: "privacy-protect",
-    tag: "array-privacy-protect",
-    label: "Privacy Protect",
-    icon: Eye,
-    description: "Remove your personal info from data broker sites",
-    productCodes: ["ppPIPApiMonitoringAndRemoval"],
-    color: "teal",
-  },
-  {
-    id: "subscription-manager",
-    tag: "array-subscription-manager",
-    label: "Subscription Manager",
-    icon: CreditCard,
-    description: "Manage your Array product subscriptions",
-    productCodes: ["subscriptionManagerEnrichmentAndCancellation", "smTxnSrcFinLnk"],
-    color: "zinc",
-  },
-  {
-    id: "student-loans",
-    tag: "array-sla-dashboard",
-    label: "Student Loan Aid",
-    icon: GraduationCap,
-    description: "Student loan aid enrollment and dashboard",
-    productCodes: ["pioStudentLoanAidSubmission"],
-    color: "cyan",
-  },
-  {
-    id: "debt-navigator",
-    tag: "array-debt-navigator",
-    label: "Debt Navigator",
-    icon: Navigation,
-    description: "Premium debt payoff planning and navigation",
-    productCodes: ["debtNavPremium"],
-    color: "violet",
-  },
-];
-
-function PremiumUpsell({ label, icon: Icon, description, productCodes, onActivate, isPending }: {
+function TierUpgradeCard({
+  label,
+  icon: Icon,
+  description,
+  requiredTier,
+}: {
   label: string;
   icon: ComponentType<{ className?: string }>;
   description: string;
-  productCodes: string[];
-  onActivate: (codes: string[]) => void;
-  isPending: boolean;
+  requiredTier: SubscriptionTier;
 }) {
+  const tierColors: Record<SubscriptionTier, string> = {
+    none: "amber",
+    starter: "amber",
+    pro: "blue",
+    elite: "violet",
+  };
+  const color = tierColors[requiredTier] || "amber";
+
   return (
-    <Card className="border-slate-200 bg-slate-50">
+    <Card className={`border-${color}-200 bg-${color}-50/50`}>
       <CardContent className="p-6">
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
-            <Icon className="h-5 w-5 text-slate-500" />
+          <div className={`w-10 h-10 rounded-full bg-${color}-100 flex items-center justify-center shrink-0`}>
+            <Icon className={`h-5 w-5 text-${color}-500`} />
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-semibold text-slate-700">{label}</h3>
               <Lock className="h-3.5 w-3.5 text-slate-400" />
+              <Badge
+                variant="outline"
+                className={`text-xs border-${color}-300 text-${color}-700 ml-auto`}
+              >
+                {requiredTier === "pro" ? "Pro" : requiredTier === "elite" ? "Elite" : "Starter"} feature
+              </Badge>
             </div>
-            <p className="text-sm text-slate-500 mb-3">{description}</p>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={isPending}
-              onClick={() => onActivate(productCodes)}
-              className="text-blue-600 border-blue-300 hover:bg-blue-50"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                  Activating...
-                </>
-              ) : (
-                "Activate Feature"
-              )}
-            </Button>
+            <p className="text-sm text-slate-500 mb-4">{description}</p>
+            <Link href={requiredTier !== "none" ? `/checkout?tier=${requiredTier}` : "/pricing"}>
+              <Button
+                size="sm"
+                className={`bg-${color}-500 hover:bg-${color}-600 text-white gap-1.5`}
+              >
+                {TIER_UPGRADE_LABELS[requiredTier]}
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </CardContent>
@@ -221,7 +138,6 @@ function ArrayComponent({ tag, token, appKey, onEnroll, onTokenExpired, scriptRe
     const handleArrayEvent = (e: Event) => {
       const detail = (e as CustomEvent<{ tagName?: string; type?: string; status?: number; code?: string }>).detail;
       if (detail?.tagName === "account-enroll" && onEnroll) onEnroll();
-      // Detect auth/token failures from Array components
       if (onTokenExpired) {
         const isAuthError =
           detail?.status === 401 ||
@@ -252,7 +168,6 @@ function ArrayComponent({ tag, token, appKey, onEnroll, onTokenExpired, scriptRe
   return <div ref={containerRef} className="w-full min-h-[200px]" />;
 }
 
-// How often to proactively refresh the token (4 min, just under the 5-min expiry)
 const TOKEN_REFRESH_INTERVAL = 4 * 60 * 1000;
 
 export default function CreditMonitoring() {
@@ -260,10 +175,9 @@ export default function CreditMonitoring() {
   const queryClient = useQueryClient();
   const [activeSection, setActiveSection] = useState<string>("overview");
   const [tokenExpired, setTokenExpired] = useState(false);
-  // Guard against refresh storms: track whether an auto-retry is already in flight
   const refreshInFlight = useRef(false);
+  const access = useFeatureAccess();
 
-  // Fetch Array token — auto-refreshes every 4 minutes to stay ahead of expiry
   const { data: tokenData, isLoading: tokenLoading, error: tokenError, isFetching: tokenFetching } = useQuery<ArrayTokenData>({
     queryKey: ["/api/array/token"],
     enabled: !!user,
@@ -272,53 +186,41 @@ export default function CreditMonitoring() {
     retry: 2,
   });
 
-  // Called when an Array component reports an auth/token failure.
-  // Uses fetchQuery (staleTime: 0) so we get a deterministic promise that
-  // resolves with fresh data or rejects — no state-snapshot timing issues.
   const handleTokenExpired = useCallback(async () => {
-    if (refreshInFlight.current) return; // debounce concurrent events
+    if (refreshInFlight.current) return;
     refreshInFlight.current = true;
     try {
-      // staleTime: 0 forces a real network request regardless of cache age
       await queryClient.fetchQuery<ArrayTokenData>({
         queryKey: ["/api/array/token"],
         staleTime: 0,
       });
-      // On success tokenData updates via useQuery → useEffect clears tokenExpired
     } catch {
-      // Refetch also failed — show the manual reconnect banner
       setTokenExpired(true);
     } finally {
       refreshInFlight.current = false;
     }
   }, [queryClient]);
 
-  // Manual reconnect: force a fresh token fetch. Only clears the banner on success;
-  // if the refetch also fails, the banner stays visible so the user can try again.
   const handleReconnect = useCallback(async () => {
     try {
       await queryClient.fetchQuery<ArrayTokenData>({
         queryKey: ["/api/array/token"],
         staleTime: 0,
       });
-      setTokenExpired(false); // success — dismiss banner
+      setTokenExpired(false);
     } catch {
-      // leave banner visible so user can retry
     }
   }, [queryClient]);
 
-  // Clear the expired flag whenever we successfully get a fresh token
   useEffect(() => {
     if (tokenData) setTokenExpired(false);
   }, [tokenData]);
 
-  // Fetch enrollment status
   const { data: enrollment, isLoading: enrollLoading } = useQuery<EnrollmentData>({
     queryKey: ["/api/array/enrollment"],
     enabled: !!user,
   });
 
-  // Enroll mutation
   const enrollMutation = useMutation({
     mutationFn: (productCode?: string) =>
       apiRequest("POST", "/api/array/enroll", { productCode }),
@@ -332,7 +234,6 @@ export default function CreditMonitoring() {
   const token = tokenData?.token ?? "";
   const appKey = tokenData?.appKey ?? "";
 
-  // Load Array script dynamically once we have the appKey
   const { loaded: scriptReady } = useArrayScript(appKey || undefined);
 
   const isLoading = tokenLoading || enrollLoading;
@@ -358,7 +259,6 @@ export default function CreditMonitoring() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Page Header */}
       <div className="bg-gradient-to-r from-blue-900 to-indigo-900 px-6 py-8">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-3 mb-2">
@@ -370,6 +270,11 @@ export default function CreditMonitoring() {
                 Active
               </Badge>
             )}
+            {access.hasAnyPlan && (
+              <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 ml-auto">
+                {access.tierLabel} Plan
+              </Badge>
+            )}
           </div>
           <p className="text-blue-300 text-sm">
             Live bureau data, real-time alerts, and premium credit tools — all in one place
@@ -377,7 +282,6 @@ export default function CreditMonitoring() {
         </div>
       </div>
 
-      {/* Section tabs */}
       <div className="bg-white border-b border-slate-200 px-6">
         <div className="max-w-6xl mx-auto flex gap-1 overflow-x-auto">
           {sections.map((s) => (
@@ -398,7 +302,6 @@ export default function CreditMonitoring() {
 
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
 
-        {/* Token-expired reconnect banner */}
         {tokenExpired && (
           <Card className="border-amber-300 bg-amber-50">
             <CardContent className="p-4">
@@ -435,7 +338,6 @@ export default function CreditMonitoring() {
           </Card>
         )}
 
-        {/* Enrollment Gate — shown if not yet enrolled */}
         {!isEnrolled && (
           <Card className="border-blue-200 bg-blue-50">
             <CardContent className="p-6">
@@ -451,7 +353,16 @@ export default function CreditMonitoring() {
                     Connect your credit file to get real-time bureau data, score tracking, and alerts.
                     This is a one-time setup that takes about 2 minutes.
                   </p>
-                  {token && appKey ? (
+                  {!access.hasAnyPlan ? (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <p className="text-amber-800 text-sm font-medium mb-2">A subscription is required to access credit monitoring.</p>
+                      <Link href="/pricing">
+                        <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-black font-bold gap-1.5">
+                          View Plans <ArrowRight className="h-3.5 w-3.5" />
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : token && appKey ? (
                     <div className="bg-white rounded-xl border border-blue-200 p-4">
                       <ArrayComponent
                         tag="array-account-enroll"
@@ -477,10 +388,8 @@ export default function CreditMonitoring() {
           </Card>
         )}
 
-        {/* Main content — only show if enrolled and token available */}
         {isEnrolled && token && appKey ? (
           <>
-            {/* Overview Section */}
             {activeSection === "overview" && (
               <div className="space-y-6">
                 <Card>
@@ -508,22 +417,30 @@ export default function CreditMonitoring() {
                     </CardContent>
                   </Card>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-slate-800 text-base">
-                        <CreditCard className="h-4 w-4 text-amber-600" />
-                        Debt Analysis
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ArrayComponent tag="array-debt-analysis" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
-                    </CardContent>
-                  </Card>
+                  {access.canAccess(FEATURES.DEBT_ANALYSIS) ? (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-slate-800 text-base">
+                          <CreditCard className="h-4 w-4 text-amber-600" />
+                          Debt Analysis
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ArrayComponent tag="array-debt-analysis" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <TierUpgradeCard
+                      label="Debt Analysis"
+                      icon={CreditCard}
+                      description="Breakdown of your debts and utilization"
+                      requiredTier="pro"
+                    />
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Full Report */}
             {activeSection === "report" && (
               <Card>
                 <CardHeader>
@@ -538,11 +455,9 @@ export default function CreditMonitoring() {
               </Card>
             )}
 
-            {/* Alerts & Protection */}
             {activeSection === "alerts" && (
               <div className="space-y-6">
-                {/* Credit Alerts — requires creditScoreChangeAlertExp or exp3bStandardMonitoring */}
-                {enrollment?.productCodes?.some((c) =>
+                {access.canAccess(FEATURES.CREDIT_ALERTS) && enrollment?.productCodes?.some((c) =>
                   ["exp3bStandardMonitoring", "creditScoreChangeAlertExp"].includes(c)
                 ) ? (
                   <Card>
@@ -557,18 +472,15 @@ export default function CreditMonitoring() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <PremiumUpsell
+                  <TierUpgradeCard
                     label="Credit Alerts"
                     icon={AlertTriangle}
                     description="Real-time alerts for changes to your credit file"
-                    productCodes={["creditScoreChangeAlertExp"]}
-                    onActivate={(codes) => enrollMutation.mutate(codes[0])}
-                    isPending={enrollMutation.isPending}
+                    requiredTier="pro"
                   />
                 )}
 
-                {/* Identity Protect — requires idpBundle1Insurance1mmRestoreBundleMonitoring */}
-                {enrollment?.productCodes?.includes("idpBundle1Insurance1mmRestoreBundleMonitoring") ? (
+                {access.canAccess(FEATURES.IDENTITY_PROTECT) && enrollment?.productCodes?.includes("idpBundle1Insurance1mmRestoreBundleMonitoring") ? (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-slate-800">
@@ -581,18 +493,15 @@ export default function CreditMonitoring() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <PremiumUpsell
+                  <TierUpgradeCard
                     label="Identity Protect"
                     icon={Shield}
                     description="Identity theft monitoring and protection"
-                    productCodes={["idpBundle1Insurance1mmRestoreBundleMonitoring"]}
-                    onActivate={(codes) => enrollMutation.mutate(codes[0])}
-                    isPending={enrollMutation.isPending}
+                    requiredTier="elite"
                   />
                 )}
 
-                {/* Privacy Protect — requires ppPIPApiMonitoringAndRemoval */}
-                {enrollment?.productCodes?.includes("ppPIPApiMonitoringAndRemoval") ? (
+                {access.canAccess(FEATURES.PRIVACY_PROTECT) && enrollment?.productCodes?.includes("ppPIPApiMonitoringAndRemoval") ? (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-slate-800">
@@ -605,35 +514,40 @@ export default function CreditMonitoring() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <PremiumUpsell
+                  <TierUpgradeCard
                     label="Privacy Protect"
                     icon={Eye}
                     description="Remove your personal info from data broker sites"
-                    productCodes={["ppPIPApiMonitoringAndRemoval"]}
-                    onActivate={(codes) => enrollMutation.mutate(codes[0])}
-                    isPending={enrollMutation.isPending}
+                    requiredTier="elite"
                   />
                 )}
               </div>
             )}
 
-            {/* Tools */}
             {activeSection === "tools" && (
               <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-slate-800">
-                      <Navigation className="h-5 w-5 text-purple-600" />
-                      Score Simulator
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ArrayComponent tag="array-score-simulator" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
-                  </CardContent>
-                </Card>
+                {access.canAccess(FEATURES.SCORE_SIMULATOR) ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-slate-800">
+                        <Navigation className="h-5 w-5 text-purple-600" />
+                        Score Simulator
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ArrayComponent tag="array-score-simulator" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <TierUpgradeCard
+                    label="Score Simulator"
+                    icon={Navigation}
+                    description="See how financial decisions would affect your score"
+                    requiredTier="pro"
+                  />
+                )}
 
-                {/* Debt Navigator — requires debtNavPremium */}
-                {enrollment?.productCodes?.includes("debtNavPremium") ? (
+                {access.canAccess(FEATURES.DEBT_NAVIGATOR) && enrollment?.productCodes?.includes("debtNavPremium") ? (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-slate-800">
@@ -646,23 +560,19 @@ export default function CreditMonitoring() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <PremiumUpsell
+                  <TierUpgradeCard
                     label="Debt Navigator"
                     icon={Navigation}
                     description="Premium debt payoff planning and navigation"
-                    productCodes={["debtNavPremium"]}
-                    onActivate={(codes) => enrollMutation.mutate(codes[0])}
-                    isPending={enrollMutation.isPending}
+                    requiredTier="pro"
                   />
                 )}
               </div>
             )}
 
-            {/* Premium / Subscriptions */}
             {activeSection === "premium" && (
               <div className="space-y-6">
-                {/* Student Loan Aid — requires pioStudentLoanAidSubmission */}
-                {enrollment?.productCodes?.includes("pioStudentLoanAidSubmission") ? (
+                {access.canAccess(FEATURES.STUDENT_LOAN_AID) && enrollment?.productCodes?.includes("pioStudentLoanAidSubmission") ? (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-slate-800">
@@ -678,18 +588,15 @@ export default function CreditMonitoring() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <PremiumUpsell
+                  <TierUpgradeCard
                     label="Student Loan Aid"
                     icon={GraduationCap}
                     description="Student loan aid enrollment and dashboard"
-                    productCodes={["pioStudentLoanAidSubmission"]}
-                    onActivate={(codes) => enrollMutation.mutate(codes[0])}
-                    isPending={enrollMutation.isPending}
+                    requiredTier="elite"
                   />
                 )}
 
-                {/* Subscription Manager — requires subscriptionManagerEnrichmentAndCancellation */}
-                {enrollment?.productCodes?.some((c) =>
+                {access.canAccess(FEATURES.SUBSCRIPTION_MANAGER) && enrollment?.productCodes?.some((c) =>
                   ["subscriptionManagerEnrichmentAndCancellation", "smTxnSrcFinLnk"].includes(c)
                 ) ? (
                   <Card>
@@ -704,13 +611,11 @@ export default function CreditMonitoring() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <PremiumUpsell
+                  <TierUpgradeCard
                     label="Subscription Manager"
                     icon={CreditCard}
                     description="Manage your Array product subscriptions"
-                    productCodes={["subscriptionManagerEnrichmentAndCancellation"]}
-                    onActivate={(codes) => enrollMutation.mutate(codes[0])}
-                    isPending={enrollMutation.isPending}
+                    requiredTier="elite"
                   />
                 )}
               </div>
@@ -725,14 +630,25 @@ export default function CreditMonitoring() {
           </Card>
         ) : null}
 
-        {/* Not enrolled but has token — show locked premium previews */}
         {!isEnrolled && token && (
           <div className="mt-4">
             <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">
               Available after enrollment
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[...BASIC_COMPONENTS, ...PREMIUM_COMPONENTS].map((comp) => (
+              {[
+                { id: "credit-overview", label: "Credit Overview", icon: TrendingUp, description: "Live 3-bureau credit scores and account summary" },
+                { id: "credit-report", label: "Full Credit Report (3B)", icon: BookOpen, description: "Complete tri-bureau credit report with all tradelines" },
+                { id: "score-tracker", label: "Score Tracker", icon: TrendingUp, description: "Track score changes over time across all bureaus" },
+                { id: "debt-analysis", label: "Debt Analysis", icon: CreditCard, description: "Breakdown of your debts and utilization" },
+                { id: "score-simulator", label: "Score Simulator", icon: Navigation, description: "See how financial decisions would affect your score" },
+                { id: "credit-alerts", label: "Credit Alerts", icon: AlertTriangle, description: "Real-time alerts for changes to your credit file" },
+                { id: "identity-protect", label: "Identity Protect", icon: Shield, description: "Identity theft monitoring and protection" },
+                { id: "privacy-protect", label: "Privacy Protect", icon: Eye, description: "Remove your personal info from data broker sites" },
+                { id: "subscription-manager", label: "Subscription Manager", icon: CreditCard, description: "Manage your Array product subscriptions" },
+                { id: "student-loans", label: "Student Loan Aid", icon: GraduationCap, description: "Student loan aid enrollment and dashboard" },
+                { id: "debt-navigator", label: "Debt Navigator", icon: Navigation, description: "Premium debt payoff planning and navigation" },
+              ].map((comp) => (
                 <div
                   key={comp.id}
                   className="rounded-xl border border-slate-200 bg-white p-4 opacity-60"
