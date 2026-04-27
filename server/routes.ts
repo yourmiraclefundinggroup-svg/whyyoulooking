@@ -1524,14 +1524,10 @@ Format the response as a complete business letter ready to send.`;
       // Generate simple token (in production, use JWT)
       const token = `token_${user.id}_${Date.now()}`;
       
-      // Check if user needs password reset
-      const requiresPasswordReset = user.passwordResetRequired || false;
-      
       res.json({
         user,
         token,
-        message: "Login successful",
-        requiresPasswordReset
+        message: "Login successful"
       });
     } catch (error) {
       res.status(500).json({ message: "Login failed" });
