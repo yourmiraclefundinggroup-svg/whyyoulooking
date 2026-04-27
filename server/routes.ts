@@ -8404,6 +8404,65 @@ ${denialLetterText}`
     }
   });
 
+  // POST /api/admin/users/:id/array-enroll — admin: enroll a client in Array product codes
+  app.post("/api/admin/users/:id/array-enroll", authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      if (isNaN(clientId)) return res.status(400).json({ error: "Invalid client ID" });
+
+      const client = await storage.getUser(clientId);
+      if (!client) return res.status(404).json({ error: "Client not found" });
+
+      const { productCodes: rawCodes } = req.body;
+      if (!Array.isArray(rawCodes) || rawCodes.length === 0) {
+        return res.status(400).json({ error: "productCodes must be a non-empty array" });
+      }
+      // Deduplicate product codes before processing
+      const productCodes: string[] = [...new Set<string>(rawCodes)];
+
+      // Validate that each requested code is allowed for the client's subscription tier
+      const clientTier = (client.subscriptionTier || "none") as SubscriptionTier;
+      const allowedCodes = TIER_FEATURES[clientTier]?.arrayProductCodes ?? [];
+      const disallowedCodes = productCodes.filter((c: string) => !allowedCodes.includes(c));
+      if (disallowedCodes.length > 0) {
+        return res.status(403).json({
+          error: `The following product codes are not available on the client's ${clientTier} plan: ${disallowedCodes.join(", ")}`,
+          disallowedCodes,
+          clientTier,
+          allowedCodes,
+        });
+      }
+
+      const { enrollUserInArrayProducts } = await import("./array-service");
+      const enrollResult = await enrollUserInArrayProducts(clientId, productCodes);
+
+      // Return 502 if nothing was newly enrolled (all failed or all already enrolled)
+      if (enrollResult.enrolled.length === 0 && enrollResult.failed.length > 0) {
+        return res.status(502).json({
+          error: "Array enrollment failed for all requested product codes. Check server logs for details.",
+          failed: enrollResult.failed,
+          alreadyEnrolled: enrollResult.alreadyEnrolled,
+        });
+      }
+
+      // Return updated enrollment state
+      const { arrayEnrollments } = await import("@shared/schema");
+      const [enrollment] = await db.select().from(arrayEnrollments).where(eq(arrayEnrollments.userId, clientId));
+      res.json({
+        success: true,
+        newlyEnrolled: enrollResult.enrolled,
+        failed: enrollResult.failed,
+        alreadyEnrolled: enrollResult.alreadyEnrolled,
+        enrolled: !!enrollment,
+        productCodes: enrollment?.productCodes || [],
+        enrolledAt: enrollment?.enrolledAt || null,
+      });
+    } catch (error: any) {
+      console.error("[Array] Admin enroll error:", error);
+      res.status(500).json({ error: error.message || "Failed to enroll client" });
+    }
+  });
+
   // Typed interfaces for Array API responses (external API, shapes are approximate)
   interface ArrayTokenResponse { token?: string; userToken?: string; access_token?: string }
   interface ArrayAccountRecord {

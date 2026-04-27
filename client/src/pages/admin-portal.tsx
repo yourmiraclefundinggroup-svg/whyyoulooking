@@ -423,9 +423,285 @@ function DashboardPage({ clientUsers }: { clientUsers: User[] }) {
   );
 }
 
+// ─── Array product code metadata ─────────────────────────────────────────────
+const ARRAY_PRODUCT_META: Record<string, { label: string; description: string; tiers: string[] }> = {
+  exp3bStandardMonitoring: {
+    label: "3-Bureau Standard Monitoring",
+    description: "Monitor Experian, Equifax, and TransUnion for changes to your credit file.",
+    tiers: ["pro", "elite"],
+  },
+  creditScoreChangeAlertExp: {
+    label: "Credit Score Change Alerts",
+    description: "Receive real-time alerts when your Experian credit score changes.",
+    tiers: ["pro", "elite"],
+  },
+  debtNavPremium: {
+    label: "Debt Navigator Premium",
+    description: "Advanced debt payoff tools and analysis to optimize repayment.",
+    tiers: ["pro", "elite"],
+  },
+  idpBundle1Insurance1mmRestoreBundleMonitoring: {
+    label: "Identity Protection Bundle",
+    description: "$1M identity theft insurance, monitoring, and full-service restore.",
+    tiers: ["elite"],
+  },
+  ppPIPApiMonitoringAndRemoval: {
+    label: "Privacy Protection & PII Removal",
+    description: "Scan data brokers and request removal of personal information.",
+    tiers: ["elite"],
+  },
+  subscriptionManagerEnrichmentAndCancellation: {
+    label: "Subscription Manager",
+    description: "Track, manage, and cancel recurring subscriptions automatically.",
+    tiers: ["elite"],
+  },
+  smTxnSrcFinLnk: {
+    label: "Financial Account Link",
+    description: "Link financial accounts for enriched transaction monitoring.",
+    tiers: ["elite"],
+  },
+  pioStudentLoanAidSubmission: {
+    label: "Student Loan Aid Submission",
+    description: "Submit and manage student loan forgiveness applications via Array.",
+    tiers: ["elite"],
+  },
+};
+
+// ─── Array Enrollment Dialog ──────────────────────────────────────────────────
+function ArrayEnrollmentDialog({ client, enrollmentData, onSuccess }: {
+  client: User;
+  enrollmentData: { enrolled: boolean; productCodes: string[]; enrolledAt: string | null; lastTokenIssuedAt: string | null } | undefined;
+  onSuccess: () => void;
+}) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
+
+  const clientTier = client.subscriptionTier || "none";
+  const allowedCodes = clientTier === "pro"
+    ? ["exp3bStandardMonitoring", "creditScoreChangeAlertExp", "debtNavPremium"]
+    : clientTier === "elite"
+    ? Object.keys(ARRAY_PRODUCT_META)
+    : [];
+
+  const enrolledCodes = enrollmentData?.productCodes || [];
+  const unenrolledCodes = allowedCodes.filter((c) => !enrolledCodes.includes(c));
+  const isEnrolled = enrollmentData?.enrolled ?? false;
+
+  const enrollMutation = useMutation({
+    mutationFn: async (productCodes: string[]) => {
+      const token = localStorage.getItem("auth_token") || "";
+      const res = await fetch(`/api/admin/users/${client.id}/array-enroll`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ productCodes }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Enrollment failed");
+      return data as { newlyEnrolled: string[]; failed: string[]; alreadyEnrolled: string[] };
+    },
+    onSuccess: (data) => {
+      const enrolled = data.newlyEnrolled?.length ?? 0;
+      const failed = data.failed?.length ?? 0;
+      const alreadyEnrolled = data.alreadyEnrolled?.length ?? 0;
+      if (failed > 0 && enrolled > 0) {
+        toast({
+          title: "Partially enrolled",
+          description: `${enrolled} product${enrolled !== 1 ? "s" : ""} activated. ${failed} failed — check server logs.`,
+          variant: "destructive",
+        });
+      } else if (enrolled === 0 && alreadyEnrolled > 0) {
+        toast({
+          title: "Already up to date",
+          description: "All selected products were already active for this client.",
+        });
+      } else {
+        toast({
+          title: "Enrollment successful",
+          description: `${enrolled} product${enrolled !== 1 ? "s" : ""} activated for this client.`,
+        });
+      }
+      setOpen(false);
+      setSelectedCodes([]);
+      onSuccess();
+    },
+    onError: (err: any) => {
+      toast({ title: "Enrollment failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const toggleCode = (code: string) => {
+    setSelectedCodes((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+    );
+  };
+
+  const handleConfirm = () => {
+    if (selectedCodes.length === 0) return;
+    enrollMutation.mutate(selectedCodes);
+  };
+
+  const buttonLabel = isEnrolled ? "Manage Credit Monitoring" : "Set Up Credit Monitoring";
+
+  // Always show dialog for enrolled clients (e.g., tier downgraded but enrollment exists)
+  // Only hide the button for non-enrolled clients on tiers with no Array products
+  if (allowedCodes.length === 0 && !isEnrolled) {
+    return (
+      <span className="text-xs text-[hsl(var(--admin-text-muted))] italic">
+        No Array products available for {clientTier} tier
+      </span>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          size="sm"
+          variant={isEnrolled ? "outline" : "default"}
+          className={isEnrolled
+            ? "border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] hover:bg-[hsl(var(--admin-accent))]/10 text-xs h-7"
+            : "bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white text-xs h-7"
+          }
+        >
+          <Shield className="h-3 w-3 mr-1.5" />
+          {buttonLabel}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="bg-[hsl(var(--admin-card))] border-[hsl(var(--admin-border))] text-white max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="text-white text-lg">
+            {isEnrolled ? "Manage Credit Monitoring" : "Set Up Credit Monitoring"}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-5 pt-1">
+          {/* Current status */}
+          <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))]/60 border border-[hsl(var(--admin-border))]">
+            <p className="text-xs font-medium text-[hsl(var(--admin-text-muted))] mb-2 uppercase tracking-wide">Current Status</p>
+            <div className="flex items-center gap-3 flex-wrap">
+              {isEnrolled ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/15 text-green-400 text-xs font-medium border border-green-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+                  Array Enrolled · {enrolledCodes.length} product{enrolledCodes.length !== 1 ? "s" : ""}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-500/15 text-zinc-400 text-xs font-medium border border-zinc-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 inline-block" />
+                  Not yet enrolled
+                </span>
+              )}
+              <span className="text-xs text-[hsl(var(--admin-text-muted))]">
+                Tier: <span className="capitalize font-medium text-[hsl(var(--admin-text))]">{clientTier}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Already enrolled products */}
+          {enrolledCodes.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-[hsl(var(--admin-text-muted))] mb-2 uppercase tracking-wide">Active Products</p>
+              <div className="space-y-1.5">
+                {enrolledCodes.map((code) => {
+                  const meta = ARRAY_PRODUCT_META[code];
+                  return (
+                    <div key={code} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-green-500/5 border border-green-500/20">
+                      <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-white">{meta?.label || code}</p>
+                        {meta?.description && (
+                          <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-0.5">{meta.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Available products to add */}
+          {unenrolledCodes.length > 0 ? (
+            <div>
+              <p className="text-xs font-medium text-[hsl(var(--admin-text-muted))] mb-2 uppercase tracking-wide">
+                {enrolledCodes.length > 0 ? "Available to Add" : "Select Products to Enroll"}
+              </p>
+              <div className="space-y-2">
+                {unenrolledCodes.map((code) => {
+                  const meta = ARRAY_PRODUCT_META[code];
+                  const checked = selectedCodes.includes(code);
+                  return (
+                    <label
+                      key={code}
+                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        checked
+                          ? "bg-[hsl(var(--admin-accent))]/10 border-[hsl(var(--admin-accent))]/50"
+                          : "bg-[hsl(var(--admin-bg))]/40 border-[hsl(var(--admin-border))] hover:border-[hsl(var(--admin-accent))]/30"
+                      }`}
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={() => toggleCode(code)}
+                        className="mt-0.5 border-[hsl(var(--admin-border))] data-[state=checked]:bg-[hsl(var(--admin-accent))] data-[state=checked]:border-[hsl(var(--admin-accent))]"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-white">{meta?.label || code}</p>
+                        {meta?.description && (
+                          <p className="text-xs text-[hsl(var(--admin-text-muted))] mt-0.5">{meta.description}</p>
+                        )}
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/20 text-center">
+              <CheckCircle className="h-5 w-5 text-green-400 mx-auto mb-1" />
+              <p className="text-sm text-green-400 font-medium">All available products are already active</p>
+            </div>
+          )}
+
+          {/* Confirm button */}
+          {unenrolledCodes.length > 0 && (
+            <div className="flex justify-end gap-2 pt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setOpen(false)}
+                className="border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))]"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleConfirm}
+                disabled={selectedCodes.length === 0 || enrollMutation.isPending}
+                className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent))]/90 text-white disabled:opacity-50"
+              >
+                {enrollMutation.isPending ? (
+                  <><RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />Enrolling...</>
+                ) : (
+                  <><Shield className="h-3.5 w-3.5 mr-1.5" />Enroll in {selectedCodes.length} product{selectedCodes.length !== 1 ? "s" : ""}</>
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Array Enrollment Badge ──────────────────────────────────────────────────
-function ArrayEnrollmentBadge({ clientId }: { clientId: number }) {
-  const { data } = useQuery<{ enrolled: boolean; productCodes: string[]; enrolledAt: string | null; lastTokenIssuedAt: string | null }>({
+function ArrayEnrollmentBadge({ client }: { client: User }) {
+  const queryClient = useQueryClient();
+  const clientId = client.id;
+
+  const { data, isLoading } = useQuery<{ enrolled: boolean; productCodes: string[]; enrolledAt: string | null; lastTokenIssuedAt: string | null }>({
     queryKey: ["/api/admin/array/enrollments", clientId],
     queryFn: async () => {
       const token = localStorage.getItem("auth_token") || "";
@@ -442,9 +718,12 @@ function ArrayEnrollmentBadge({ clientId }: { clientId: number }) {
     staleTime: 60000,
   });
 
-  if (!data) return null;
+  const handleEnrollSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/array/enrollments", clientId] });
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/array/enrollments"] });
+  };
 
-  const lastSeenLabel = data.lastTokenIssuedAt
+  const lastSeenLabel = data?.lastTokenIssuedAt
     ? new Date(data.lastTokenIssuedAt).toLocaleString(undefined, {
         month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
       })
@@ -454,11 +733,16 @@ function ArrayEnrollmentBadge({ clientId }: { clientId: number }) {
     <div className="mt-4 pt-4 border-t border-[hsl(var(--admin-border))]">
       <div className="flex items-center gap-3 flex-wrap">
         <span className="text-xs text-[hsl(var(--admin-text-muted))]">Credit Monitoring:</span>
-        {data.enrolled ? (
+        {isLoading ? (
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-zinc-500/10 text-zinc-500 text-xs font-medium border border-zinc-500/20 animate-pulse">
+            <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 inline-block" />
+            Loading...
+          </span>
+        ) : data?.enrolled ? (
           <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-500/15 text-green-400 text-xs font-medium border border-green-500/30">
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
             Array Enrolled
-            {data.productCodes.length > 0 && (
+            {(data.productCodes?.length ?? 0) > 0 && (
               <span className="ml-1 text-green-400/70">· {data.productCodes.length} product{data.productCodes.length !== 1 ? "s" : ""}</span>
             )}
           </span>
@@ -472,6 +756,13 @@ function ArrayEnrollmentBadge({ clientId }: { clientId: number }) {
           <span className="text-xs text-[hsl(var(--admin-text-muted))]">
             Last token: {lastSeenLabel}
           </span>
+        )}
+        {!isLoading && (
+          <ArrayEnrollmentDialog
+            client={client}
+            enrollmentData={data}
+            onSuccess={handleEnrollSuccess}
+          />
         )}
       </div>
     </div>
@@ -992,7 +1283,7 @@ function ClientManagementPage({
               </div>
 
               {/* Array enrollment status */}
-              <ArrayEnrollmentBadge clientId={selectedClient.id} />
+              <ArrayEnrollmentBadge client={selectedClient} />
             </AdminCardContent>
           </AdminCard>
 

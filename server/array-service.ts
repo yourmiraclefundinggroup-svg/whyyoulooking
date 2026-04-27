@@ -4,15 +4,23 @@
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
-export async function enrollUserInArrayProducts(userId: number, productCodes: string[]): Promise<void> {
-  if (!productCodes.length) return;
+export interface EnrollResult {
+  enrolled: string[];  // product codes successfully enrolled
+  failed: string[];    // product codes that failed (API error or credentials missing)
+  alreadyEnrolled: string[]; // product codes that were already active (skipped)
+}
+
+export async function enrollUserInArrayProducts(userId: number, productCodes: string[]): Promise<EnrollResult> {
+  const result: EnrollResult = { enrolled: [], failed: [], alreadyEnrolled: [] };
+  if (!productCodes.length) return result;
 
   const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
   const ARRAY_API_SECRET = process.env.ARRAY_API_SECRET;
 
   if (!ARRAY_API_KEY || !ARRAY_API_SECRET) {
     console.warn("[Array] API credentials not configured — skipping enrollment");
-    return;
+    result.failed.push(...productCodes);
+    return result;
   }
 
   const { arrayEnrollments } = await import("@shared/schema");
@@ -22,8 +30,8 @@ export async function enrollUserInArrayProducts(userId: number, productCodes: st
   const existing = await db.select().from(arrayEnrollments).where(eq(arrayEnrollments.userId, userId));
   const existingCodes: string[] = existing[0]?.productCodes || [];
   const newCodes = productCodes.filter((c) => !existingCodes.includes(c));
-
-  const successfullyCodes: string[] = [];
+  const alreadyCodes = productCodes.filter((c) => existingCodes.includes(c));
+  result.alreadyEnrolled.push(...alreadyCodes);
 
   for (const productCode of newCodes) {
     try {
@@ -38,18 +46,20 @@ export async function enrollUserInArrayProducts(userId: number, productCodes: st
       if (!resp.ok) {
         const body = await resp.json().catch(() => ({}));
         console.error(`[Array] Failed to enroll user ${userId} in ${productCode}:`, body);
+        result.failed.push(productCode);
       } else {
         console.log(`[Array] Enrolled user ${userId} in ${productCode}`);
-        successfullyCodes.push(productCode);
+        result.enrolled.push(productCode);
       }
     } catch (err) {
       console.error(`[Array] Enroll error for user ${userId} / ${productCode}:`, err);
+      result.failed.push(productCode);
     }
   }
 
-  if (successfullyCodes.length === 0) return;
+  if (result.enrolled.length === 0) return result;
 
-  const allCodes = [...existingCodes, ...successfullyCodes];
+  const allCodes = [...existingCodes, ...result.enrolled];
 
   if (existing.length === 0) {
     await db.insert(arrayEnrollments).values({ userId, arrayUserId, productCodes: allCodes });
@@ -58,4 +68,6 @@ export async function enrollUserInArrayProducts(userId: number, productCodes: st
       .set({ productCodes: allCodes })
       .where(eq(arrayEnrollments.userId, userId));
   }
+
+  return result;
 }
