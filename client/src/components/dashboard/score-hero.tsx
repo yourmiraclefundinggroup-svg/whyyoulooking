@@ -3,9 +3,10 @@
  * Shows Array live components when enrolled, or static placeholder data otherwise.
  */
 import { useEffect, useRef } from "react";
+import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Minus, Sparkles, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Sparkles, Loader2, ShieldCheck } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -298,6 +299,25 @@ export function ScoreHero({ data, arrayToken, isEnrolled, scriptReady }: ScoreHe
           <BureauCard bureau="Equifax" score={scores.equifax} change={scoreChange.equifax} />
           <BureauCard bureau="TransUnion" score={scores.transunion} change={scoreChange.transunion} />
         </div>
+
+        {/* Credit monitoring CTA — shown only when not enrolled */}
+        {!isEnrolled && (
+          <div className="mt-5 flex items-center justify-between gap-4 rounded-xl bg-white/10 border border-white/20 px-4 py-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
+              <p className="text-sm text-white/80">
+                <span className="font-semibold text-white">Get live credit monitoring</span>
+                {" "}— connect now to see real-time bureau data and alerts.
+              </p>
+            </div>
+            <Link
+              href="/credit-monitoring"
+              className="shrink-0 rounded-lg bg-emerald-500 hover:bg-emerald-400 px-4 py-1.5 text-sm font-semibold text-white transition-colors whitespace-nowrap"
+            >
+              Connect →
+            </Link>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
