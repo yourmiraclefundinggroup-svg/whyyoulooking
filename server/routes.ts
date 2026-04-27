@@ -4365,6 +4365,36 @@ Please contact this lead within 24 hours.
     }
   });
 
+  // Admin: Get recent activity feed from audit log
+  app.get("/api/admin/activity", authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { auditLog } = await import("@shared/schema");
+      const { desc: descOrd, eq: eqOp } = await import("drizzle-orm");
+
+      const entries = await db
+        .select({
+          id: auditLog.id,
+          action: auditLog.action,
+          entity: auditLog.entity,
+          status: auditLog.status,
+          createdAt: auditLog.createdAt,
+          userId: auditLog.userId,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+        })
+        .from(auditLog)
+        .leftJoin(users, eqOp(auditLog.userId, users.id))
+        .orderBy(descOrd(auditLog.createdAt))
+        .limit(10);
+
+      res.json(entries);
+    } catch (error: any) {
+      console.error("Error fetching activity feed:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Admin: Get full analytics dashboard data
   app.get("/api/admin/analytics", authenticateToken, requireAdmin, async (req, res) => {
     try {

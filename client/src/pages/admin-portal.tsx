@@ -267,9 +267,43 @@ export default function AdminPortal() {
   );
 }
 
+type ActivityEntry = {
+  id: number;
+  action: string;
+  entity: string | null;
+  status: string | null;
+  createdAt: string;
+  userId: number | null;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+};
+
+function relativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days > 1 ? "s" : ""} ago`;
+}
+
+function activityIcon(entity: string | null, action: string) {
+  if (entity === "dispute_letter" || action.toLowerCase().includes("letter")) return "mail";
+  if (entity === "dispute" || action.toLowerCase().includes("dispute")) return "dispute";
+  if (entity === "user" || action.toLowerCase().includes("client") || action.toLowerCase().includes("user")) return "client";
+  return "other";
+}
+
 function DashboardPage({ clientUsers }: { clientUsers: User[] }) {
   const { data: stats } = useQuery<{ totalClients: number; totalLetters: number; lettersSentThisMonth: number; activeDisputes: number }>({
     queryKey: ['/api/admin/stats'],
+  });
+
+  const { data: activityFeed, isLoading: activityLoading, isError: activityError } = useQuery<ActivityEntry[]>({
+    queryKey: ['/api/admin/activity'],
   });
 
   return (
@@ -319,26 +353,46 @@ function DashboardPage({ clientUsers }: { clientUsers: User[] }) {
           </AdminCardHeader>
           <AdminCardContent>
             <div className="space-y-4">
-              {[
-                { action: "New dispute filed", client: "Sarah M.", time: "2 min ago", type: "dispute" },
-                { action: "Letter sent via USPS", client: "Michael R.", time: "15 min ago", type: "mail" },
-                { action: "Client onboarded", client: "Jennifer L.", time: "1 hour ago", type: "client" },
-                { action: "Bureau response received", client: "David K.", time: "3 hours ago", type: "response" },
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center gap-4 p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
-                  <div className="w-10 h-10 rounded-lg bg-[hsl(var(--admin-accent))]/20 flex items-center justify-center">
-                    {item.type === "dispute" && <FileText className="h-5 w-5 text-[hsl(var(--admin-accent))]" />}
-                    {item.type === "mail" && <Package className="h-5 w-5 text-[hsl(var(--admin-info))]" />}
-                    {item.type === "client" && <Users className="h-5 w-5 text-green-400" />}
-                    {item.type === "response" && <MessageCircle className="h-5 w-5 text-[hsl(var(--admin-text-muted))]" />}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-white">{item.action}</p>
-                    <p className="text-xs text-[hsl(var(--admin-text-muted))]">{item.client}</p>
-                  </div>
-                  <span className="text-xs text-[hsl(var(--admin-text-subtle))]">{item.time}</span>
+              {activityLoading && (
+                <div className="space-y-3">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))] animate-pulse">
+                      <div className="w-10 h-10 rounded-lg bg-[hsl(var(--admin-accent))]/10" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 w-40 rounded bg-[hsl(var(--admin-border))]" />
+                        <div className="h-2 w-28 rounded bg-[hsl(var(--admin-border))]" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+              {!activityLoading && activityError && (
+                <p className="text-sm text-red-400 text-center py-4">Failed to load activity. Please refresh.</p>
+              )}
+              {!activityLoading && !activityError && (!activityFeed || activityFeed.length === 0) && (
+                <p className="text-sm text-[hsl(var(--admin-text-muted))] text-center py-4">No activity recorded yet.</p>
+              )}
+              {!activityLoading && activityFeed && activityFeed.map((item) => {
+                const iconType = activityIcon(item.entity, item.action);
+                const clientLabel = item.firstName
+                  ? `${item.firstName}${item.lastName ? " " + item.lastName : ""}`
+                  : item.email ?? "System";
+                return (
+                  <div key={item.id} className="flex items-center gap-4 p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                    <div className="w-10 h-10 rounded-lg bg-[hsl(var(--admin-accent))]/20 flex items-center justify-center">
+                      {iconType === "dispute" && <FileText className="h-5 w-5 text-[hsl(var(--admin-accent))]" />}
+                      {iconType === "mail" && <Package className="h-5 w-5 text-[hsl(var(--admin-info))]" />}
+                      {iconType === "client" && <Users className="h-5 w-5 text-green-400" />}
+                      {iconType === "other" && <Activity className="h-5 w-5 text-[hsl(var(--admin-text-muted))]" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white truncate">{item.action}</p>
+                      <p className="text-xs text-[hsl(var(--admin-text-muted))] truncate">{clientLabel}</p>
+                    </div>
+                    <span className="text-xs text-[hsl(var(--admin-text-subtle))] whitespace-nowrap">{relativeTime(item.createdAt)}</span>
+                  </div>
+                );
+              })}
             </div>
           </AdminCardContent>
         </AdminCard>
