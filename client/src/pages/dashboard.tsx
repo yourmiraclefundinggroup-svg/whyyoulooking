@@ -14,9 +14,10 @@
  * 10. Support Card        — SupportCard
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { useUserContext } from "@/hooks/use-user-context";
+import { useQuery } from "@tanstack/react-query";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { ScoreHero } from "@/components/dashboard/score-hero";
 import { DisputeTracker } from "@/components/dashboard/dispute-tracker";
@@ -226,6 +227,39 @@ const mockLoanData: LoanReadinessData = {
   targetScore: mockClient.targetScore,
 };
 
+// ─── Array component helper for dashboard ──────────────────────────────────
+
+interface ArrayTokenData {
+  token: string;
+  appKey: string;
+  arrayUserId: string;
+}
+
+interface ArrayEnrollmentData {
+  enrolled: boolean;
+  arrayUserId: string | null;
+  productCodes: string[];
+  enrolledAt: string | null;
+}
+
+function ArrayDashboardComponent({ tag, token, appKey }: { tag: string; token: string; appKey: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || !token || !appKey) return;
+    containerRef.current.innerHTML = "";
+    const el = document.createElement(tag);
+    el.setAttribute("token", token);
+    el.setAttribute("appKey", appKey);
+    containerRef.current.appendChild(el);
+    return () => {
+      if (containerRef.current) containerRef.current.innerHTML = "";
+    };
+  }, [tag, token, appKey]);
+
+  return <div ref={containerRef} className="w-full min-h-[200px]" />;
+}
+
 // ─── Dashboard Component ────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -235,6 +269,20 @@ export default function Dashboard() {
   const [realIssues, setRealIssues] = useState<any[]>([]);
   const [realDisputes, setRealDisputes] = useState<any[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
+
+  // Array enrollment + token for live bureau data
+  const { data: arrayToken } = useQuery<ArrayTokenData>({
+    queryKey: ["/api/array/token"],
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const { data: arrayEnrollment } = useQuery<ArrayEnrollmentData>({
+    queryKey: ["/api/array/enrollment"],
+    enabled: !!user,
+    retry: false,
+  });
 
   // isDemoMode: URL param ?demo=true OR user is a test account
   const isDemoMode =
@@ -350,8 +398,27 @@ export default function Dashboard() {
         )}
 
 
-        {/* ── 2. Credit Score Hero ── */}
-        {(hasRealData || showMockData) && <ScoreHero data={scoreData} />}
+        {/* ── 2. Credit Score Hero — live Array data if enrolled, else mock ── */}
+        {arrayEnrollment?.enrolled && arrayToken?.token && arrayToken?.appKey ? (
+          <div className="space-y-4">
+            <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
+              <ArrayDashboardComponent
+                tag="array-credit-overview"
+                token={arrayToken.token}
+                appKey={arrayToken.appKey}
+              />
+            </div>
+            <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
+              <ArrayDashboardComponent
+                tag="array-score-tracker"
+                token={arrayToken.token}
+                appKey={arrayToken.appKey}
+              />
+            </div>
+          </div>
+        ) : (
+          (hasRealData || showMockData) && <ScoreHero data={scoreData} />
+        )}
 
         {/* ── 9. Loan Readiness (prominent — above the fold on desktop) ── */}
         {(hasRealData || showMockData) && <LoanReadiness data={loanData} />}

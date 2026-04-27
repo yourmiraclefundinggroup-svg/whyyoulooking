@@ -1,11 +1,13 @@
 import { Switch, Route, useLocation } from "wouter";
+import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navigation } from "@/components/navigation";
 import { UserProvider, useUserContext } from "@/hooks/use-user-context";
 import { ThemeProvider } from "@/components/theme-provider";
+import { useArrayScript } from "@/hooks/use-array-script";
 import LandingPage from "@/pages/landing";
 import LeadForm from "@/pages/lead-form";
 import Dashboard from "@/pages/dashboard";
@@ -31,6 +33,19 @@ import WhiteLabelOnboarding from "@/pages/white-label-onboarding";
 import CreditMonitoring from "@/pages/credit-monitoring";
 import NotFound from "@/pages/not-found";
 import { TrialUpgradeWall } from "@/components/trial-upgrade-wall";
+
+// Loads Array SDK script globally once user is authenticated and token/appKey is available
+function ArrayScriptLoader() {
+  const { user } = useUserContext();
+  const { data } = useQuery<{ token: string; appKey: string; arrayUserId: string }>({
+    queryKey: ["/api/array/token"],
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+  useArrayScript(data?.appKey);
+  return null;
+}
 
 function Router() {
   const { user } = useUserContext();
@@ -172,6 +187,7 @@ function App() {
         <UserProvider>
           <TooltipProvider>
             <Toaster />
+            <ArrayScriptLoader />
             <Router />
           </TooltipProvider>
         </UserProvider>

@@ -2,7 +2,7 @@
  * Credit Monitoring — Array.com embedded components page.
  * Handles token generation, account enrollment, and rendering all Array web components.
  */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, ComponentType } from "react";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -149,6 +149,50 @@ const PREMIUM_COMPONENTS = [
     color: "violet",
   },
 ];
+
+function PremiumUpsell({ label, icon: Icon, description, productCodes, onActivate, isPending }: {
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  description: string;
+  productCodes: string[];
+  onActivate: (codes: string[]) => void;
+  isPending: boolean;
+}) {
+  return (
+    <Card className="border-slate-200 bg-slate-50">
+      <CardContent className="p-6">
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+            <Icon className="h-5 w-5 text-slate-500" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-slate-700">{label}</h3>
+              <Lock className="h-3.5 w-3.5 text-slate-400" />
+            </div>
+            <p className="text-sm text-slate-500 mb-3">{description}</p>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={isPending}
+              onClick={() => onActivate(productCodes)}
+              className="text-blue-600 border-blue-300 hover:bg-blue-50"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  Activating...
+                </>
+              ) : (
+                "Activate Feature"
+              )}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 function ArrayComponent({ tag, token, appKey, onEnroll, scriptReady }: {
   tag: string;
@@ -393,41 +437,79 @@ export default function CreditMonitoring() {
             {/* Alerts & Protection */}
             {activeSection === "alerts" && (
               <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-slate-800">
-                      <AlertTriangle className="h-5 w-5 text-red-500" />
-                      Credit Alerts
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ArrayComponent tag="array-credit-alerts" token={token} appKey={appKey} scriptReady={scriptReady} />
-                  </CardContent>
-                </Card>
+                {/* Credit Alerts — requires creditScoreChangeAlertExp or exp3bStandardMonitoring */}
+                {enrollment?.productCodes?.some((c) =>
+                  ["exp3bStandardMonitoring", "creditScoreChangeAlertExp"].includes(c)
+                ) ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-slate-800">
+                        <AlertTriangle className="h-5 w-5 text-red-500" />
+                        Credit Alerts
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ArrayComponent tag="array-credit-alerts" token={token} appKey={appKey} scriptReady={scriptReady} />
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <PremiumUpsell
+                    label="Credit Alerts"
+                    icon={AlertTriangle}
+                    description="Real-time alerts for changes to your credit file"
+                    productCodes={["creditScoreChangeAlertExp"]}
+                    onActivate={(codes) => enrollMutation.mutate(codes[0])}
+                    isPending={enrollMutation.isPending}
+                  />
+                )}
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-slate-800">
-                      <Shield className="h-5 w-5 text-slate-600" />
-                      Identity Protect
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ArrayComponent tag="array-identity-protect" token={token} appKey={appKey} scriptReady={scriptReady} />
-                  </CardContent>
-                </Card>
+                {/* Identity Protect — requires idpBundle1Insurance1mmRestoreBundleMonitoring */}
+                {enrollment?.productCodes?.includes("idpBundle1Insurance1mmRestoreBundleMonitoring") ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-slate-800">
+                        <Shield className="h-5 w-5 text-slate-600" />
+                        Identity Protect
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ArrayComponent tag="array-identity-protect" token={token} appKey={appKey} scriptReady={scriptReady} />
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <PremiumUpsell
+                    label="Identity Protect"
+                    icon={Shield}
+                    description="Identity theft monitoring and protection"
+                    productCodes={["idpBundle1Insurance1mmRestoreBundleMonitoring"]}
+                    onActivate={(codes) => enrollMutation.mutate(codes[0])}
+                    isPending={enrollMutation.isPending}
+                  />
+                )}
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-slate-800">
-                      <Eye className="h-5 w-5 text-teal-600" />
-                      Privacy Protect
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ArrayComponent tag="array-privacy-protect" token={token} appKey={appKey} scriptReady={scriptReady} />
-                  </CardContent>
-                </Card>
+                {/* Privacy Protect — requires ppPIPApiMonitoringAndRemoval */}
+                {enrollment?.productCodes?.includes("ppPIPApiMonitoringAndRemoval") ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-slate-800">
+                        <Eye className="h-5 w-5 text-teal-600" />
+                        Privacy Protect
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ArrayComponent tag="array-privacy-protect" token={token} appKey={appKey} scriptReady={scriptReady} />
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <PremiumUpsell
+                    label="Privacy Protect"
+                    icon={Eye}
+                    description="Remove your personal info from data broker sites"
+                    productCodes={["ppPIPApiMonitoringAndRemoval"]}
+                    onActivate={(codes) => enrollMutation.mutate(codes[0])}
+                    isPending={enrollMutation.isPending}
+                  />
+                )}
               </div>
             )}
 
@@ -446,49 +528,87 @@ export default function CreditMonitoring() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-slate-800">
-                      <Navigation className="h-5 w-5 text-violet-600" />
-                      Debt Navigator
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ArrayComponent tag="array-debt-navigator" token={token} appKey={appKey} scriptReady={scriptReady} />
-                  </CardContent>
-                </Card>
+                {/* Debt Navigator — requires debtNavPremium */}
+                {enrollment?.productCodes?.includes("debtNavPremium") ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-slate-800">
+                        <Navigation className="h-5 w-5 text-violet-600" />
+                        Debt Navigator
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ArrayComponent tag="array-debt-navigator" token={token} appKey={appKey} scriptReady={scriptReady} />
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <PremiumUpsell
+                    label="Debt Navigator"
+                    icon={Navigation}
+                    description="Premium debt payoff planning and navigation"
+                    productCodes={["debtNavPremium"]}
+                    onActivate={(codes) => enrollMutation.mutate(codes[0])}
+                    isPending={enrollMutation.isPending}
+                  />
+                )}
               </div>
             )}
 
             {/* Premium / Subscriptions */}
             {activeSection === "premium" && (
               <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-slate-800">
-                      <GraduationCap className="h-5 w-5 text-cyan-600" />
-                      Student Loan Aid
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ArrayComponent tag="array-sla-enroll" token={token} appKey={appKey} scriptReady={scriptReady} />
-                    <div className="mt-4">
-                      <ArrayComponent tag="array-sla-dashboard" token={token} appKey={appKey} scriptReady={scriptReady} />
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* Student Loan Aid — requires pioStudentLoanAidSubmission */}
+                {enrollment?.productCodes?.includes("pioStudentLoanAidSubmission") ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-slate-800">
+                        <GraduationCap className="h-5 w-5 text-cyan-600" />
+                        Student Loan Aid
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ArrayComponent tag="array-sla-enroll" token={token} appKey={appKey} scriptReady={scriptReady} />
+                      <div className="mt-4">
+                        <ArrayComponent tag="array-sla-dashboard" token={token} appKey={appKey} scriptReady={scriptReady} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <PremiumUpsell
+                    label="Student Loan Aid"
+                    icon={GraduationCap}
+                    description="Student loan aid enrollment and dashboard"
+                    productCodes={["pioStudentLoanAidSubmission"]}
+                    onActivate={(codes) => enrollMutation.mutate(codes[0])}
+                    isPending={enrollMutation.isPending}
+                  />
+                )}
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-slate-800">
-                      <CreditCard className="h-5 w-5 text-zinc-600" />
-                      Subscription Manager
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ArrayComponent tag="array-subscription-manager" token={token} appKey={appKey} scriptReady={scriptReady} />
-                  </CardContent>
-                </Card>
+                {/* Subscription Manager — requires subscriptionManagerEnrichmentAndCancellation */}
+                {enrollment?.productCodes?.some((c) =>
+                  ["subscriptionManagerEnrichmentAndCancellation", "smTxnSrcFinLnk"].includes(c)
+                ) ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-slate-800">
+                        <CreditCard className="h-5 w-5 text-zinc-600" />
+                        Subscription Manager
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ArrayComponent tag="array-subscription-manager" token={token} appKey={appKey} scriptReady={scriptReady} />
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <PremiumUpsell
+                    label="Subscription Manager"
+                    icon={CreditCard}
+                    description="Manage your Array product subscriptions"
+                    productCodes={["subscriptionManagerEnrichmentAndCancellation"]}
+                    onActivate={(codes) => enrollMutation.mutate(codes[0])}
+                    isPending={enrollMutation.isPending}
+                  />
+                )}
               </div>
             )}
           </>
