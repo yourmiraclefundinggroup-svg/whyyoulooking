@@ -1,12 +1,12 @@
 import { Switch, Route, useLocation } from "wouter";
-import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navigation } from "@/components/navigation";
 import { UserProvider, useUserContext } from "@/hooks/use-user-context";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ArrayTokenProvider, useArrayToken } from "@/hooks/use-array-token";
 import { useArrayScript } from "@/hooks/use-array-script";
 import LandingPage from "@/pages/landing";
 import LeadForm from "@/pages/lead-form";
@@ -34,17 +34,24 @@ import CreditMonitoring from "@/pages/credit-monitoring";
 import NotFound from "@/pages/not-found";
 import { TrialUpgradeWall } from "@/components/trial-upgrade-wall";
 
-// Loads Array SDK script globally once user is authenticated and token/appKey is available
+// Loads the Array SDK script globally once the shared token context has an appKey.
 function ArrayScriptLoader() {
-  const { user } = useUserContext();
-  const { data } = useQuery<{ token: string; appKey: string; arrayUserId: string }>({
-    queryKey: ["/api/array/token"],
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
-  useArrayScript(data?.appKey);
+  const { appKey } = useArrayToken();
+  useArrayScript(appKey || undefined);
   return null;
+}
+
+// Wraps children with ArrayTokenProvider only when the user is authenticated,
+// so we avoid making unauthenticated token requests.
+function AuthenticatedArrayProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useUserContext();
+  if (!user) return <>{children}</>;
+  return (
+    <ArrayTokenProvider>
+      <ArrayScriptLoader />
+      {children}
+    </ArrayTokenProvider>
+  );
 }
 
 function Router() {
@@ -185,11 +192,12 @@ function App() {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <UserProvider>
-          <TooltipProvider>
-            <Toaster />
-            <ArrayScriptLoader />
-            <Router />
-          </TooltipProvider>
+          <AuthenticatedArrayProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Router />
+            </TooltipProvider>
+          </AuthenticatedArrayProvider>
         </UserProvider>
       </QueryClientProvider>
     </ThemeProvider>

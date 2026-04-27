@@ -1,13 +1,13 @@
 /**
- * Credit Monitoring — Array.com embedded components page.
- * Handles token generation, account enrollment, and rendering all Array web components.
+ * Credit Monitoring — ScoreShift embedded credit components page.
+ * Handles account enrollment and rendering all credit web components.
  * Features are gated by subscription tier (starter | pro | elite).
  */
 import { useState, useEffect, useRef, useCallback, ComponentType, type Ref } from "react";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { useArrayScript } from "@/hooks/use-array-script";
+import { useArrayToken } from "@/hooks/use-array-token";
 import { useFeatureAccess, FEATURES, type SubscriptionTier } from "@/hooks/use-feature-access";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 
-interface ArrayWebComponentProps {
+interface CreditWebComponentProps {
   token: string;
   appKey: string;
 }
@@ -26,27 +26,21 @@ interface ArrayWebComponentProps {
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      "array-account-enroll": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
-      "array-credit-overview": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
-      "array-credit-report": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
-      "array-score-tracker": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
-      "array-debt-analysis": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
-      "array-score-simulator": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
-      "array-credit-alerts": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
-      "array-identity-protect": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
-      "array-privacy-protect": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
-      "array-subscription-manager": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
-      "array-sla-enroll": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
-      "array-sla-dashboard": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
-      "array-debt-navigator": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-account-enroll": CreditWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-credit-overview": CreditWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-credit-report": CreditWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-score-tracker": CreditWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-debt-analysis": CreditWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-score-simulator": CreditWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-credit-alerts": CreditWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-identity-protect": CreditWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-privacy-protect": CreditWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-subscription-manager": CreditWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-sla-enroll": CreditWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-sla-dashboard": CreditWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-debt-navigator": CreditWebComponentProps & { ref?: Ref<HTMLElement> };
     }
   }
-}
-
-interface ArrayTokenData {
-  token: string;
-  appKey: string;
-  arrayUserId: string;
 }
 
 interface EnrollmentData {
@@ -117,7 +111,7 @@ function TierUpgradeCard({
   );
 }
 
-function ArrayComponent({ tag, token, appKey, onEnroll, onTokenExpired, scriptReady }: {
+function CreditComponent({ tag, token, appKey, onEnroll, onTokenExpired, scriptReady }: {
   tag: string;
   token: string;
   appKey: string;
@@ -135,7 +129,7 @@ function ArrayComponent({ tag, token, appKey, onEnroll, onTokenExpired, scriptRe
     el.setAttribute("token", token);
     el.setAttribute("appKey", appKey);
 
-    const handleArrayEvent = (e: Event) => {
+    const handleEvent = (e: Event) => {
       const detail = (e as CustomEvent<{ tagName?: string; type?: string; status?: number; code?: string }>).detail;
       if (detail?.tagName === "account-enroll" && onEnroll) onEnroll();
       if (onTokenExpired) {
@@ -148,8 +142,8 @@ function ArrayComponent({ tag, token, appKey, onEnroll, onTokenExpired, scriptRe
       }
     };
 
-    el.addEventListener("array-event", handleArrayEvent);
-    el.addEventListener("array-error", handleArrayEvent);
+    el.addEventListener("array-event", handleEvent);
+    el.addEventListener("array-error", handleEvent);
     containerRef.current.appendChild(el);
 
     return () => {
@@ -168,53 +162,57 @@ function ArrayComponent({ tag, token, appKey, onEnroll, onTokenExpired, scriptRe
   return <div ref={containerRef} className="w-full min-h-[200px]" />;
 }
 
-const TOKEN_REFRESH_INTERVAL = 4 * 60 * 1000;
-
 export default function CreditMonitoring() {
   const { user } = useUserContext();
   const queryClient = useQueryClient();
   const [activeSection, setActiveSection] = useState<string>("overview");
-  const [tokenExpired, setTokenExpired] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const refreshInFlight = useRef(false);
   const access = useFeatureAccess();
 
-  const { data: tokenData, isLoading: tokenLoading, error: tokenError, isFetching: tokenFetching } = useQuery<ArrayTokenData>({
-    queryKey: ["/api/array/token"],
-    enabled: !!user,
-    staleTime: TOKEN_REFRESH_INTERVAL,
-    refetchInterval: TOKEN_REFRESH_INTERVAL,
-    retry: 2,
-  });
+  // Token comes from the shared context — no per-page fetch needed.
+  // `attempted` is true once the first fetch completes (success or failure),
+  // so we can unblock the loading gate even when the token is unavailable.
+  const { token, appKey, attempted, error: tokenError, refresh: refreshToken } = useArrayToken();
+
+  const [scriptReady, setScriptReady] = useState(false);
+  useEffect(() => {
+    // Poll until the Array custom elements are registered
+    if (scriptReady) return;
+    const check = () => {
+      if (customElements.get("array-credit-overview")) {
+        setScriptReady(true);
+      }
+    };
+    check();
+    const interval = setInterval(check, 200);
+    return () => clearInterval(interval);
+  }, [scriptReady]);
 
   const handleTokenExpired = useCallback(async () => {
     if (refreshInFlight.current) return;
     refreshInFlight.current = true;
     try {
-      await queryClient.fetchQuery<ArrayTokenData>({
-        queryKey: ["/api/array/token"],
-        staleTime: 0,
-      });
+      await refreshToken();
+      setSessionExpired(false);
     } catch {
-      setTokenExpired(true);
+      setSessionExpired(true);
     } finally {
       refreshInFlight.current = false;
     }
-  }, [queryClient]);
+  }, [refreshToken]);
 
   const handleReconnect = useCallback(async () => {
     try {
-      await queryClient.fetchQuery<ArrayTokenData>({
-        queryKey: ["/api/array/token"],
-        staleTime: 0,
-      });
-      setTokenExpired(false);
+      await refreshToken();
+      setSessionExpired(false);
     } catch {
     }
-  }, [queryClient]);
+  }, [refreshToken]);
 
   useEffect(() => {
-    if (tokenData) setTokenExpired(false);
-  }, [tokenData]);
+    if (token) setSessionExpired(false);
+  }, [token]);
 
   const { data: enrollment, isLoading: enrollLoading } = useQuery<EnrollmentData>({
     queryKey: ["/api/array/enrollment"],
@@ -226,17 +224,15 @@ export default function CreditMonitoring() {
       apiRequest("POST", "/api/array/enroll", { productCode }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/array/enrollment"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/array/token"] });
     },
   });
 
   const isEnrolled = enrollment?.enrolled ?? false;
-  const token = tokenData?.token ?? "";
-  const appKey = tokenData?.appKey ?? "";
 
-  const { loaded: scriptReady } = useArrayScript(appKey || undefined);
-
-  const isLoading = tokenLoading || enrollLoading;
+  // Block the page only until the first fetch attempt AND enrollment are both settled.
+  // Using `attempted` (not `isReady`) ensures a token failure shows the error UI
+  // instead of leaving the user on an infinite loading spinner.
+  const isLoading = !attempted || enrollLoading;
 
   if (isLoading) {
     return (
@@ -302,7 +298,7 @@ export default function CreditMonitoring() {
 
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
 
-        {tokenExpired && (
+        {sessionExpired && (
           <Card className="border-amber-300 bg-amber-50">
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-4">
@@ -318,20 +314,10 @@ export default function CreditMonitoring() {
                 <Button
                   size="sm"
                   onClick={handleReconnect}
-                  disabled={tokenFetching}
                   className="bg-amber-600 hover:bg-amber-700 text-white shrink-0"
                 >
-                  {tokenFetching ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                      Reconnecting...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                      Reconnect
-                    </>
-                  )}
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                  Reconnect
                 </Button>
               </div>
             </CardContent>
@@ -364,7 +350,7 @@ export default function CreditMonitoring() {
                     </div>
                   ) : token && appKey ? (
                     <div className="bg-white rounded-xl border border-blue-200 p-4">
-                      <ArrayComponent
+                      <CreditComponent
                         tag="array-account-enroll"
                         token={token}
                         appKey={appKey}
@@ -374,7 +360,7 @@ export default function CreditMonitoring() {
                     </div>
                   ) : tokenError ? (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
-                      Could not connect to credit monitoring service. Please try refreshing the page or contact support.
+                      Could not connect to credit monitoring. Please try refreshing the page or contact support.
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 text-blue-600 text-sm">
@@ -400,7 +386,7 @@ export default function CreditMonitoring() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ArrayComponent tag="array-credit-overview" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
+                    <CreditComponent tag="array-credit-overview" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                   </CardContent>
                 </Card>
 
@@ -413,7 +399,7 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-score-tracker" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
+                      <CreditComponent tag="array-score-tracker" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                     </CardContent>
                   </Card>
 
@@ -426,7 +412,7 @@ export default function CreditMonitoring() {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <ArrayComponent tag="array-debt-analysis" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
+                        <CreditComponent tag="array-debt-analysis" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                       </CardContent>
                     </Card>
                   ) : (
@@ -450,7 +436,7 @@ export default function CreditMonitoring() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ArrayComponent tag="array-credit-report" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
+                  <CreditComponent tag="array-credit-report" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                 </CardContent>
               </Card>
             )}
@@ -468,7 +454,7 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-credit-alerts" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
+                      <CreditComponent tag="array-credit-alerts" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                     </CardContent>
                   </Card>
                 ) : (
@@ -489,7 +475,7 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-identity-protect" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
+                      <CreditComponent tag="array-identity-protect" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                     </CardContent>
                   </Card>
                 ) : (
@@ -510,7 +496,7 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-privacy-protect" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
+                      <CreditComponent tag="array-privacy-protect" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                     </CardContent>
                   </Card>
                 ) : (
@@ -535,7 +521,7 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-score-simulator" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
+                      <CreditComponent tag="array-score-simulator" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                     </CardContent>
                   </Card>
                 ) : (
@@ -556,7 +542,7 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-debt-navigator" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
+                      <CreditComponent tag="array-debt-navigator" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                     </CardContent>
                   </Card>
                 ) : (
@@ -581,9 +567,9 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-sla-enroll" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
+                      <CreditComponent tag="array-sla-enroll" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                       <div className="mt-4">
-                        <ArrayComponent tag="array-sla-dashboard" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
+                        <CreditComponent tag="array-sla-dashboard" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                       </div>
                     </CardContent>
                   </Card>
@@ -607,14 +593,14 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-subscription-manager" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
+                      <CreditComponent tag="array-subscription-manager" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                     </CardContent>
                   </Card>
                 ) : (
                   <TierUpgradeCard
                     label="Subscription Manager"
                     icon={CreditCard}
-                    description="Manage your Array product subscriptions"
+                    description="Manage your credit product subscriptions"
                     requiredTier="elite"
                   />
                 )}
@@ -645,7 +631,7 @@ export default function CreditMonitoring() {
                 { id: "credit-alerts", label: "Credit Alerts", icon: AlertTriangle, description: "Real-time alerts for changes to your credit file" },
                 { id: "identity-protect", label: "Identity Protect", icon: Shield, description: "Identity theft monitoring and protection" },
                 { id: "privacy-protect", label: "Privacy Protect", icon: Eye, description: "Remove your personal info from data broker sites" },
-                { id: "subscription-manager", label: "Subscription Manager", icon: CreditCard, description: "Manage your Array product subscriptions" },
+                { id: "subscription-manager", label: "Subscription Manager", icon: CreditCard, description: "Manage your credit product subscriptions" },
                 { id: "student-loans", label: "Student Loan Aid", icon: GraduationCap, description: "Student loan aid enrollment and dashboard" },
                 { id: "debt-navigator", label: "Debt Navigator", icon: Navigation, description: "Premium debt payoff planning and navigation" },
               ].map((comp) => (

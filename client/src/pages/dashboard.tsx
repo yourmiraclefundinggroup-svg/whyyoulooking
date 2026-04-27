@@ -18,7 +18,7 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useQuery } from "@tanstack/react-query";
-import { useArrayScript } from "@/hooks/use-array-script";
+import { useArrayToken } from "@/hooks/use-array-token";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { ScoreHero } from "@/components/dashboard/score-hero";
 import { DisputeTracker } from "@/components/dashboard/dispute-tracker";
@@ -199,13 +199,7 @@ const mockLoanData: LoanReadinessData = {
   targetScore: mockClient.targetScore,
 };
 
-// ─── Array types ────────────────────────────────────────────────────────────
-
-interface ArrayTokenData {
-  token: string;
-  appKey: string;
-  arrayUserId: string;
-}
+// ─── Enrollment types ────────────────────────────────────────────────────────
 
 interface ArrayEnrollmentData {
   enrolled: boolean;
@@ -224,13 +218,8 @@ export default function Dashboard() {
   const [realDisputes, setRealDisputes] = useState<any[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
 
-  // Array enrollment + token for live bureau data
-  const { data: arrayToken } = useQuery<ArrayTokenData>({
-    queryKey: ["/api/array/token"],
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
+  // Token comes from shared context — no per-page fetch
+  const { token: arrayTokenValue, appKey: arrayAppKey, isReady: arrayTokenReady } = useArrayToken();
 
   const { data: arrayEnrollment } = useQuery<ArrayEnrollmentData>({
     queryKey: ["/api/array/enrollment"],
@@ -245,8 +234,15 @@ export default function Dashboard() {
     retry: false,
   });
 
-  // Load Array web component script once we have the appKey
-  const { loaded: arrayScriptReady } = useArrayScript(arrayToken?.appKey ?? undefined);
+  // Script is loaded at app level; track readiness by polling custom elements registry
+  const [arrayScriptReady, setArrayScriptReady] = useState(false);
+  useEffect(() => {
+    if (arrayScriptReady) return;
+    const check = () => { if (customElements.get("array-credit-overview")) setArrayScriptReady(true); };
+    check();
+    const id = setInterval(check, 200);
+    return () => clearInterval(id);
+  }, [arrayScriptReady]);
 
   // isDemoMode: URL param ?demo=true OR user is a test account
   const isDemoMode =
@@ -362,11 +358,11 @@ export default function Dashboard() {
         )}
 
 
-        {/* ── 2. Credit Score Hero — live Array data if enrolled, else static ── */}
+        {/* ── 2. Credit Score Hero — live credit data if enrolled, else static ── */}
         {(hasRealData || showMockData || arrayEnrollment?.enrolled) && (
           <ScoreHero
             data={scoreData}
-            arrayToken={arrayToken ? { token: arrayToken.token, appKey: arrayToken.appKey } : undefined}
+            arrayToken={arrayTokenReady && arrayTokenValue && arrayAppKey ? { token: arrayTokenValue, appKey: arrayAppKey } : undefined}
             isEnrolled={arrayEnrollment?.enrolled ?? false}
             scriptReady={arrayScriptReady}
           />

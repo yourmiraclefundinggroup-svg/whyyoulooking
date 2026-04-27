@@ -380,7 +380,7 @@ export default function PricingPage() {
                 },
                 {
                   q: "Do features unlock automatically after upgrading?",
-                  a: "Yes. When your payment processes, your tier updates immediately and all included features — including Array credit monitoring products — are activated automatically without any manual steps.",
+                  a: "Yes. When your payment processes, your tier updates immediately and all included features — including ScoreShift credit monitoring — are activated automatically without any manual steps.",
                 },
               ].map((faq) => (
                 <div
