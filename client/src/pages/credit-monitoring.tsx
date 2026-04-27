@@ -173,24 +173,7 @@ export default function CreditMonitoring() {
   const [activeSection, setActiveSection] = useState<string>("overview");
   const access = useFeatureAccess();
 
-  useArrayScript();
-
-  const [scriptReady, setScriptReady] = useState(false);
-  useEffect(() => {
-    if (scriptReady) return;
-    const check = () => {
-      if (
-        customElements.get("array-account-enroll") ||
-        customElements.get("array-credit-overview") ||
-        customElements.get("array-credit-score")
-      ) {
-        setScriptReady(true);
-      }
-    };
-    check();
-    const interval = setInterval(check, 200);
-    return () => clearInterval(interval);
-  }, [scriptReady]);
+  const { loaded: scriptReady } = useArrayScript();
 
   const { data: enrollment, isLoading: enrollLoading } = useQuery<EnrollmentData>({
     queryKey: ["/api/array/enrollment"],

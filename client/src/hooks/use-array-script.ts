@@ -10,6 +10,7 @@ export const ARRAY_SANDBOX_TOKENS = {
   studentLoanAid: "DFD90F1A-BB8F-4310-B921-8EC7A4BF7649",
 };
 
+// One script per Array component — all confirmed from Array docs/user-provided examples
 const ARRAY_COMPONENT_SCRIPTS = [
   "array-account-enroll",
   "array-credit-overview",
@@ -27,33 +28,61 @@ const ARRAY_COMPONENT_SCRIPTS = [
   "array-debt-navigator",
 ];
 
+// Module-level state so scripts are injected and tracked once per page load
+let resolvedCount = 0;
 let scriptsInjected = false;
+const TOTAL = ARRAY_COMPONENT_SCRIPTS.length;
+const listeners: Array<() => void> = [];
+
+function notifyListeners() {
+  listeners.forEach((fn) => fn());
+}
+
+function isAllResolved() {
+  return resolvedCount >= TOTAL;
+}
 
 export function useArrayScript() {
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(isAllResolved);
 
   useEffect(() => {
+    if (isAllResolved()) {
+      setLoaded(true);
+      return;
+    }
+
+    const listener = () => {
+      if (isAllResolved()) setLoaded(true);
+    };
+    listeners.push(listener);
+
     if (!scriptsInjected) {
       scriptsInjected = true;
       ARRAY_COMPONENT_SCRIPTS.forEach((name) => {
-        if (!document.querySelector(`script[data-array-component="${name}"]`)) {
-          const script = document.createElement("script");
-          script.src = `https://embed.array.io/cms/${name}.js?appKey=${ARRAY_SANDBOX_APP_KEY}`;
-          script.type = "text/javascript";
-          script.dataset.arrayComponent = name;
-          document.head.appendChild(script);
+        if (document.querySelector(`script[data-array-component="${name}"]`)) {
+          resolvedCount++;
+          return;
         }
+        const script = document.createElement("script");
+        script.src = `https://embed.array.io/cms/${name}.js?appKey=${ARRAY_SANDBOX_APP_KEY}`;
+        script.type = "text/javascript";
+        script.dataset.arrayComponent = name;
+        const settle = () => {
+          resolvedCount++;
+          notifyListeners();
+        };
+        script.onload = settle;
+        script.onerror = settle;
+        document.head.appendChild(script);
       });
+      // If all were already in DOM, trigger now
+      if (isAllResolved()) notifyListeners();
     }
 
-    const check = () => {
-      if (customElements.get("array-account-enroll")) {
-        setLoaded(true);
-      }
+    return () => {
+      const idx = listeners.indexOf(listener);
+      if (idx !== -1) listeners.splice(idx, 1);
     };
-    check();
-    const interval = setInterval(check, 200);
-    return () => clearInterval(interval);
   }, []);
 
   return { loaded };
