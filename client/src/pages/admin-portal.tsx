@@ -1713,6 +1713,11 @@ type AnalyticsData = {
     letters: TrendPoint[];
     disputes: TrendPoint[];
   };
+  scoreProgress: {
+    avgImprovement: number | null;
+    clientsTracked: number;
+    clientsImproved: number;
+  };
 };
 
 function MoMBadge({ value }: { value: number | null }) {
@@ -2047,6 +2052,45 @@ function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
             <div className="mt-4 flex items-center gap-4 text-sm text-[hsl(var(--admin-text-muted))]">
               <span>Pending delivery: <span className="font-medium text-white">{analytics.lob.totalPending}</span></span>
               <span>Last month mailed: <span className="font-medium text-white">{analytics.lob.mailedLastMonth}</span></span>
+            </div>
+          )}
+        </AdminCardContent>
+      </AdminCard>
+
+      {/* ── Credit Score Progress ── */}
+      <AdminCard>
+        <AdminCardHeader>
+          <AdminCardTitle icon={<TrendingUp className="h-5 w-5" />}>Client Credit Score Progress</AdminCardTitle>
+        </AdminCardHeader>
+        <AdminCardContent>
+          {isLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[1,2,3].map(i => <SkeletonLine key={i} />)}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50">
+                  <div className={`text-3xl font-bold ${analytics?.scoreProgress?.avgImprovement == null ? "text-[hsl(var(--admin-text-muted))]" : analytics.scoreProgress.avgImprovement >= 0 ? "text-[hsl(var(--admin-success))]" : "text-[hsl(var(--admin-error))]"}`}>
+                    {analytics?.scoreProgress?.avgImprovement == null ? "—" : `${analytics.scoreProgress.avgImprovement > 0 ? "+" : ""}${analytics.scoreProgress.avgImprovement}`}
+                  </div>
+                  <p className="text-sm text-[hsl(var(--admin-text-muted))] mt-1">Avg Score Change (pts)</p>
+                  <p className="text-xs text-[hsl(var(--admin-text-subtle))] mt-0.5">first → latest upload per client</p>
+                </div>
+                <div className="text-center p-4 rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50">
+                  <div className="text-3xl font-bold text-white">{analytics?.scoreProgress?.clientsTracked ?? 0}</div>
+                  <p className="text-sm text-[hsl(var(--admin-text-muted))] mt-1">Clients Tracked</p>
+                  <p className="text-xs text-[hsl(var(--admin-text-subtle))] mt-0.5">with ≥ 2 score records</p>
+                </div>
+                <div className="text-center p-4 rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50">
+                  <div className="text-3xl font-bold text-[hsl(var(--admin-success))]">{analytics?.scoreProgress?.clientsImproved ?? 0}</div>
+                  <p className="text-sm text-[hsl(var(--admin-text-muted))] mt-1">Clients Improved</p>
+                  <p className="text-xs text-[hsl(var(--admin-text-subtle))] mt-0.5">net positive score change</p>
+                </div>
+              </div>
+              {(analytics?.scoreProgress?.clientsTracked ?? 0) === 0 && (
+                <p className="text-sm text-[hsl(var(--admin-text-subtle))] text-center py-2">Score history builds automatically as credit reports are parsed. Data will appear once clients have at least 2 uploads.</p>
+              )}
             </div>
           )}
         </AdminCardContent>

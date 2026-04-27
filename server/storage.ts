@@ -9,7 +9,8 @@ import {
   studentLoans, loanNegotiations, loanDocuments,
   creditReportUploads, creditReportAccounts, creditReportInquiries, creditReportCollections,
   creditReportPublicRecords, disputeItems, disputeLettersNew, disputeCalendarEvents,
-  leads, affiliates, affiliateSignups, deletionEvents,
+  leads, affiliates, affiliateSignups, deletionEvents, creditScoreHistory,
+  type CreditScoreHistory, type InsertCreditScoreHistory,
   type User,
   type InsertUser,
   type CreditReport, type InsertCreditReport,
@@ -325,6 +326,10 @@ export interface IStorage {
   getAllDeletionEvents(): Promise<DeletionEvent[]>;
   createDeletionEvent(event: InsertDeletionEvent): Promise<DeletionEvent>;
   updateDeletionEvent(id: number, updates: Partial<DeletionEvent>): Promise<DeletionEvent | undefined>;
+
+  // Credit Score History
+  createCreditScoreHistory(entry: InsertCreditScoreHistory): Promise<CreditScoreHistory>;
+  getCreditScoreHistory(userId: number): Promise<CreditScoreHistory[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1036,6 +1041,16 @@ export class DatabaseStorage implements IStorage {
   async updateDeletionEvent(id: number, updates: Partial<DeletionEvent>): Promise<DeletionEvent | undefined> {
     const [result] = await db.update(deletionEvents).set(updates).where(eq(deletionEvents.id, id)).returning();
     return result || undefined;
+  }
+
+  // Credit Score History
+  async createCreditScoreHistory(entry: InsertCreditScoreHistory): Promise<CreditScoreHistory> {
+    const [result] = await db.insert(creditScoreHistory).values(entry).returning();
+    return result;
+  }
+
+  async getCreditScoreHistory(userId: number): Promise<CreditScoreHistory[]> {
+    return await db.select().from(creditScoreHistory).where(eq(creditScoreHistory.userId, userId)).orderBy(creditScoreHistory.recordedAt);
   }
 }
 
@@ -2509,6 +2524,16 @@ export class MemStorage implements IStorage {
   async updateDeletionEvent(id: number, updates: Partial<DeletionEvent>): Promise<DeletionEvent | undefined> {
     const [result] = await db.update(deletionEvents).set(updates).where(eq(deletionEvents.id, id)).returning();
     return result || undefined;
+  }
+
+  // Credit Score History
+  async createCreditScoreHistory(entry: InsertCreditScoreHistory): Promise<CreditScoreHistory> {
+    const [result] = await db.insert(creditScoreHistory).values(entry).returning();
+    return result;
+  }
+
+  async getCreditScoreHistory(userId: number): Promise<CreditScoreHistory[]> {
+    return await db.select().from(creditScoreHistory).where(eq(creditScoreHistory.userId, userId)).orderBy(creditScoreHistory.recordedAt);
   }
 }
 

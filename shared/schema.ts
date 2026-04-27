@@ -1274,6 +1274,20 @@ export const insertArrayEnrollmentSchema = createInsertSchema(arrayEnrollments).
 export type ArrayEnrollment = typeof arrayEnrollments.$inferSelect;
 export type InsertArrayEnrollment = z.infer<typeof insertArrayEnrollmentSchema>;
 
+// Credit Score History — tracks score snapshots over time for analytics
+export const creditScoreHistory = pgTable("credit_score_history", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  score: integer("score").notNull(),
+  source: text("source").notNull().default("credit_report_upload"), // 'credit_report_upload', 'manual', etc.
+  uploadId: integer("upload_id").references(() => creditReportUploads.id).unique(), // nullable; unique prevents duplicate snapshots per upload
+  recordedAt: timestamp("recorded_at").defaultNow().notNull(),
+});
+
+export const insertCreditScoreHistorySchema = createInsertSchema(creditScoreHistory).omit({ id: true, recordedAt: true });
+export type CreditScoreHistory = typeof creditScoreHistory.$inferSelect;
+export type InsertCreditScoreHistory = z.infer<typeof insertCreditScoreHistorySchema>;
+
 // Pay-Per-Delete Billing Events
 export const deletionEvents = pgTable("deletion_events", {
   id: serial("id").primaryKey(),

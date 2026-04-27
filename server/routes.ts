@@ -19,7 +19,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
 import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
-import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users, disputeLettersNew, disputes } from "@shared/schema";
+import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users, disputeLettersNew, disputes, creditScoreHistory } from "@shared/schema";
 import { TIER_FEATURES, tierHasFeature, getDisputeLimit, type SubscriptionTier } from "./tier-features";
 import { z } from "zod";
 import { createRequire } from "module";
@@ -4584,6 +4584,30 @@ Please contact this lead within 24 hours.
       const totalPending = Number(pendingLobRow?.count ?? 0);
       const deliveredRate = totalMailed > 0 ? Math.round((totalDelivered / totalMailed) * 100) : 0;
 
+      // ── Credit score improvement metrics ──────────────────────────────────
+      // Per-user: compute (latest score - earliest score) for users with ≥ 2 records
+      const scoreImprovementRows = await db
+        .select({
+          userId: creditScoreHistory.userId,
+          firstScore: sql<number>`cast((array_agg(score order by recorded_at asc))[1] as int)`.as("firstScore"),
+          lastScore: sql<number>`cast((array_agg(score order by recorded_at desc))[1] as int)`.as("lastScore"),
+        })
+        .from(creditScoreHistory)
+        .groupBy(creditScoreHistory.userId)
+        .having(sql`count(*) >= 2`);
+
+      let avgScoreImprovement: number | null = null;
+      let clientsWithScoreHistory = 0;
+      let clientsWithImprovement = 0;
+
+      if (scoreImprovementRows.length > 0) {
+        clientsWithScoreHistory = scoreImprovementRows.length;
+        const improvements = scoreImprovementRows.map(r => r.lastScore - r.firstScore);
+        clientsWithImprovement = improvements.filter(d => d > 0).length;
+        const totalImprovement = improvements.reduce((sum, d) => sum + d, 0);
+        avgScoreImprovement = Math.round(totalImprovement / improvements.length);
+      }
+
       // ── 6-month time-series (for trend charts) ─────────────────────────────
       const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
@@ -4683,6 +4707,11 @@ Please contact this lead within 24 hours.
           clients: clientTrend,
           letters: letterTrend,
           disputes: disputeTrend,
+        },
+        scoreProgress: {
+          avgImprovement: avgScoreImprovement,
+          clientsTracked: clientsWithScoreHistory,
+          clientsImproved: clientsWithImprovement,
         },
       });
     } catch (error: any) {
@@ -5920,6 +5949,22 @@ Return ONLY the JSON object. No markdown, no explanations, no code blocks. If a 
               creditScore: parsedData.creditScore || null,
               rawExtractionJson: parsedData
             });
+
+            // Record score snapshot in history for progress tracking (uploadId unique constraint prevents duplicates on re-parse)
+            if (parsedData.creditScore) {
+              try {
+                await storage.createCreditScoreHistory({
+                  userId: upload.userId,
+                  score: parsedData.creditScore,
+                  source: "credit_report_upload",
+                  uploadId: upload.id
+                });
+              } catch (histErr: any) {
+                if (!histErr?.message?.includes("unique")) {
+                  console.error("Error saving credit score history (non-fatal):", histErr);
+                }
+              }
+            }
 
             console.log("Scoreshifting completed successfully for upload:", upload.id, "- found", totalItems, "items, score:", parsedData.creditScore);
 
