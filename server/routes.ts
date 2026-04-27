@@ -8032,6 +8032,18 @@ ${denialLetterText}`
       const tokenData = await tokenResponse.json() as any;
       console.log(`[Array] Token generated for user ${user.id} (arrayUserId: ${arrayUserId})`);
 
+      // Record the time this token was issued (best-effort, non-blocking).
+      // We update only if the enrollment row exists; no row means no-op from WHERE clause.
+      try {
+        const { arrayEnrollments } = await import("@shared/schema");
+        await db.update(arrayEnrollments)
+          .set({ lastTokenIssuedAt: new Date() })
+          .where(eq(arrayEnrollments.userId, user.id));
+      } catch (dbErr: any) {
+        // Log so the issue is diagnosable without breaking token issuance
+        console.warn(`[Array] Could not update lastTokenIssuedAt for user ${user.id}:`, dbErr?.message ?? dbErr);
+      }
+
       res.json({
         token: tokenData.token || tokenData.userToken || tokenData.access_token,
         appKey: ARRAY_APP_KEY,
@@ -8122,7 +8134,16 @@ ${denialLetterText}`
   app.get("/api/admin/array/enrollments", authenticateToken, requireAdmin, async (req, res) => {
     try {
       const { arrayEnrollments } = await import("@shared/schema");
-      const enrollments = await db.select().from(arrayEnrollments);
+      const enrollments = await db
+        .select({
+          id: arrayEnrollments.id,
+          userId: arrayEnrollments.userId,
+          arrayUserId: arrayEnrollments.arrayUserId,
+          enrolledAt: arrayEnrollments.enrolledAt,
+          productCodes: arrayEnrollments.productCodes,
+          lastTokenIssuedAt: arrayEnrollments.lastTokenIssuedAt,
+        })
+        .from(arrayEnrollments);
       res.json(enrollments);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

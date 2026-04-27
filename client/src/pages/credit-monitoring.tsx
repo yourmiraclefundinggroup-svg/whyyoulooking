@@ -2,7 +2,7 @@
  * Credit Monitoring — Array.com embedded components page.
  * Handles token generation, account enrollment, and rendering all Array web components.
  */
-import { useState, useEffect, useRef, ComponentType, type Ref } from "react";
+import { useState, useEffect, useRef, useCallback, ComponentType, type Ref } from "react";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Shield, CreditCard, TrendingUp, AlertTriangle, Eye, BookOpen,
-  GraduationCap, Navigation, Loader2, CheckCircle, Lock
+  GraduationCap, Navigation, Loader2, CheckCircle, Lock, RefreshCw
 } from "lucide-react";
 
 // Typed attribute shape for all Array web components
@@ -200,33 +200,46 @@ function PremiumUpsell({ label, icon: Icon, description, productCodes, onActivat
   );
 }
 
-function ArrayComponent({ tag, token, appKey, onEnroll, scriptReady }: {
+function ArrayComponent({ tag, token, appKey, onEnroll, onTokenExpired, scriptReady }: {
   tag: string;
   token: string;
   appKey: string;
   onEnroll?: () => void;
+  onTokenExpired?: () => void;
   scriptReady?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!containerRef.current || !token || !appKey) return;
-    if (scriptReady === false) return; // wait for script
+    if (scriptReady === false) return;
     containerRef.current.innerHTML = "";
     const el = document.createElement(tag);
     el.setAttribute("token", token);
     el.setAttribute("appKey", appKey);
-    if (onEnroll) {
-      el.addEventListener("array-event", (e: Event) => {
-        const detail = (e as CustomEvent<{ tagName?: string }>).detail;
-        if (detail?.tagName === "account-enroll") onEnroll();
-      });
-    }
+
+    const handleArrayEvent = (e: Event) => {
+      const detail = (e as CustomEvent<{ tagName?: string; type?: string; status?: number; code?: string }>).detail;
+      if (detail?.tagName === "account-enroll" && onEnroll) onEnroll();
+      // Detect auth/token failures from Array components
+      if (onTokenExpired) {
+        const isAuthError =
+          detail?.status === 401 ||
+          detail?.code === "UNAUTHORIZED" ||
+          detail?.type === "auth-error" ||
+          detail?.type === "token-expired";
+        if (isAuthError) onTokenExpired();
+      }
+    };
+
+    el.addEventListener("array-event", handleArrayEvent);
+    el.addEventListener("array-error", handleArrayEvent);
     containerRef.current.appendChild(el);
+
     return () => {
       if (containerRef.current) containerRef.current.innerHTML = "";
     };
-  }, [tag, token, appKey, scriptReady]);
+  }, [tag, token, appKey, scriptReady, onEnroll, onTokenExpired]);
 
   if (scriptReady === false) {
     return (
@@ -239,18 +252,65 @@ function ArrayComponent({ tag, token, appKey, onEnroll, scriptReady }: {
   return <div ref={containerRef} className="w-full min-h-[200px]" />;
 }
 
+// How often to proactively refresh the token (4 min, just under the 5-min expiry)
+const TOKEN_REFRESH_INTERVAL = 4 * 60 * 1000;
+
 export default function CreditMonitoring() {
   const { user } = useUserContext();
   const queryClient = useQueryClient();
   const [activeSection, setActiveSection] = useState<string>("overview");
+  const [tokenExpired, setTokenExpired] = useState(false);
+  // Guard against refresh storms: track whether an auto-retry is already in flight
+  const refreshInFlight = useRef(false);
 
-  // Fetch Array token
-  const { data: tokenData, isLoading: tokenLoading, error: tokenError } = useQuery<ArrayTokenData>({
+  // Fetch Array token — auto-refreshes every 4 minutes to stay ahead of expiry
+  const { data: tokenData, isLoading: tokenLoading, error: tokenError, isFetching: tokenFetching } = useQuery<ArrayTokenData>({
     queryKey: ["/api/array/token"],
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // tokens valid 5min
-    retry: 1,
+    staleTime: TOKEN_REFRESH_INTERVAL,
+    refetchInterval: TOKEN_REFRESH_INTERVAL,
+    retry: 2,
   });
+
+  // Called when an Array component reports an auth/token failure.
+  // Uses fetchQuery (staleTime: 0) so we get a deterministic promise that
+  // resolves with fresh data or rejects — no state-snapshot timing issues.
+  const handleTokenExpired = useCallback(async () => {
+    if (refreshInFlight.current) return; // debounce concurrent events
+    refreshInFlight.current = true;
+    try {
+      // staleTime: 0 forces a real network request regardless of cache age
+      await queryClient.fetchQuery<ArrayTokenData>({
+        queryKey: ["/api/array/token"],
+        staleTime: 0,
+      });
+      // On success tokenData updates via useQuery → useEffect clears tokenExpired
+    } catch {
+      // Refetch also failed — show the manual reconnect banner
+      setTokenExpired(true);
+    } finally {
+      refreshInFlight.current = false;
+    }
+  }, [queryClient]);
+
+  // Manual reconnect: force a fresh token fetch. Only clears the banner on success;
+  // if the refetch also fails, the banner stays visible so the user can try again.
+  const handleReconnect = useCallback(async () => {
+    try {
+      await queryClient.fetchQuery<ArrayTokenData>({
+        queryKey: ["/api/array/token"],
+        staleTime: 0,
+      });
+      setTokenExpired(false); // success — dismiss banner
+    } catch {
+      // leave banner visible so user can retry
+    }
+  }, [queryClient]);
+
+  // Clear the expired flag whenever we successfully get a fresh token
+  useEffect(() => {
+    if (tokenData) setTokenExpired(false);
+  }, [tokenData]);
 
   // Fetch enrollment status
   const { data: enrollment, isLoading: enrollLoading } = useQuery<EnrollmentData>({
@@ -338,6 +398,43 @@ export default function CreditMonitoring() {
 
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
 
+        {/* Token-expired reconnect banner */}
+        {tokenExpired && (
+          <Card className="border-amber-300 bg-amber-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+                  <div>
+                    <p className="font-medium text-amber-900 text-sm">Session expired</p>
+                    <p className="text-amber-700 text-xs mt-0.5">
+                      Your credit monitoring session has expired. Reconnect to continue viewing your data.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleReconnect}
+                  disabled={tokenFetching}
+                  className="bg-amber-600 hover:bg-amber-700 text-white shrink-0"
+                >
+                  {tokenFetching ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      Reconnecting...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                      Reconnect
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Enrollment Gate — shown if not yet enrolled */}
         {!isEnrolled && (
           <Card className="border-blue-200 bg-blue-50">
@@ -394,7 +491,7 @@ export default function CreditMonitoring() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ArrayComponent tag="array-credit-overview" token={token} appKey={appKey} scriptReady={scriptReady} />
+                    <ArrayComponent tag="array-credit-overview" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                   </CardContent>
                 </Card>
 
@@ -407,7 +504,7 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-score-tracker" token={token} appKey={appKey} scriptReady={scriptReady} />
+                      <ArrayComponent tag="array-score-tracker" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                     </CardContent>
                   </Card>
 
@@ -419,7 +516,7 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-debt-analysis" token={token} appKey={appKey} scriptReady={scriptReady} />
+                      <ArrayComponent tag="array-debt-analysis" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                     </CardContent>
                   </Card>
                 </div>
@@ -436,7 +533,7 @@ export default function CreditMonitoring() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ArrayComponent tag="array-credit-report" token={token} appKey={appKey} scriptReady={scriptReady} />
+                  <ArrayComponent tag="array-credit-report" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                 </CardContent>
               </Card>
             )}
@@ -456,7 +553,7 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-credit-alerts" token={token} appKey={appKey} scriptReady={scriptReady} />
+                      <ArrayComponent tag="array-credit-alerts" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                     </CardContent>
                   </Card>
                 ) : (
@@ -480,7 +577,7 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-identity-protect" token={token} appKey={appKey} scriptReady={scriptReady} />
+                      <ArrayComponent tag="array-identity-protect" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                     </CardContent>
                   </Card>
                 ) : (
@@ -504,7 +601,7 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-privacy-protect" token={token} appKey={appKey} scriptReady={scriptReady} />
+                      <ArrayComponent tag="array-privacy-protect" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                     </CardContent>
                   </Card>
                 ) : (
@@ -531,7 +628,7 @@ export default function CreditMonitoring() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ArrayComponent tag="array-score-simulator" token={token} appKey={appKey} scriptReady={scriptReady} />
+                    <ArrayComponent tag="array-score-simulator" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                   </CardContent>
                 </Card>
 
@@ -545,7 +642,7 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-debt-navigator" token={token} appKey={appKey} scriptReady={scriptReady} />
+                      <ArrayComponent tag="array-debt-navigator" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                     </CardContent>
                   </Card>
                 ) : (
@@ -574,9 +671,9 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-sla-enroll" token={token} appKey={appKey} scriptReady={scriptReady} />
+                      <ArrayComponent tag="array-sla-enroll" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                       <div className="mt-4">
-                        <ArrayComponent tag="array-sla-dashboard" token={token} appKey={appKey} scriptReady={scriptReady} />
+                        <ArrayComponent tag="array-sla-dashboard" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                       </div>
                     </CardContent>
                   </Card>
@@ -603,7 +700,7 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ArrayComponent tag="array-subscription-manager" token={token} appKey={appKey} scriptReady={scriptReady} />
+                      <ArrayComponent tag="array-subscription-manager" token={token} appKey={appKey} scriptReady={scriptReady} onTokenExpired={handleTokenExpired} />
                     </CardContent>
                   </Card>
                 ) : (

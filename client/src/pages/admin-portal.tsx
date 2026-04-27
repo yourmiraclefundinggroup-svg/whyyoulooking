@@ -425,42 +425,55 @@ function DashboardPage({ clientUsers }: { clientUsers: User[] }) {
 
 // ─── Array Enrollment Badge ──────────────────────────────────────────────────
 function ArrayEnrollmentBadge({ clientId }: { clientId: number }) {
-  const { data } = useQuery<{ enrolled: boolean; productCodes: string[]; enrolledAt: string | null }>({
+  const { data } = useQuery<{ enrolled: boolean; productCodes: string[]; enrolledAt: string | null; lastTokenIssuedAt: string | null }>({
     queryKey: ["/api/admin/array/enrollments", clientId],
     queryFn: async () => {
       const token = localStorage.getItem("auth_token") || "";
       const res = await fetch("/api/admin/array/enrollments", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) return { enrolled: false, productCodes: [], enrolledAt: null };
-      const all = await res.json() as Array<{ userId: number; productCodes: string[]; enrolledAt: string }>;
+      if (!res.ok) return { enrolled: false, productCodes: [], enrolledAt: null, lastTokenIssuedAt: null };
+      const all = await res.json() as Array<{ userId: number; productCodes: string[]; enrolledAt: string; lastTokenIssuedAt: string | null }>;
       const found = all.find((e) => e.userId === clientId);
       return found
-        ? { enrolled: true, productCodes: found.productCodes, enrolledAt: found.enrolledAt }
-        : { enrolled: false, productCodes: [], enrolledAt: null };
+        ? { enrolled: true, productCodes: found.productCodes, enrolledAt: found.enrolledAt, lastTokenIssuedAt: found.lastTokenIssuedAt }
+        : { enrolled: false, productCodes: [], enrolledAt: null, lastTokenIssuedAt: null };
     },
     staleTime: 60000,
   });
 
   if (!data) return null;
 
+  const lastSeenLabel = data.lastTokenIssuedAt
+    ? new Date(data.lastTokenIssuedAt).toLocaleString(undefined, {
+        month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+      })
+    : null;
+
   return (
-    <div className="mt-4 pt-4 border-t border-[hsl(var(--admin-border))] flex items-center gap-3">
-      <span className="text-xs text-[hsl(var(--admin-text-muted))]">Credit Monitoring:</span>
-      {data.enrolled ? (
-        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-500/15 text-green-400 text-xs font-medium border border-green-500/30">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
-          Array Enrolled
-          {data.productCodes.length > 0 && (
-            <span className="ml-1 text-green-400/70">· {data.productCodes.length} product{data.productCodes.length !== 1 ? "s" : ""}</span>
-          )}
-        </span>
-      ) : (
-        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-zinc-500/15 text-zinc-400 text-xs font-medium border border-zinc-500/30">
-          <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 inline-block" />
-          Not enrolled
-        </span>
-      )}
+    <div className="mt-4 pt-4 border-t border-[hsl(var(--admin-border))]">
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-xs text-[hsl(var(--admin-text-muted))]">Credit Monitoring:</span>
+        {data.enrolled ? (
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-500/15 text-green-400 text-xs font-medium border border-green-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+            Array Enrolled
+            {data.productCodes.length > 0 && (
+              <span className="ml-1 text-green-400/70">· {data.productCodes.length} product{data.productCodes.length !== 1 ? "s" : ""}</span>
+            )}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-zinc-500/15 text-zinc-400 text-xs font-medium border border-zinc-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 inline-block" />
+            Not enrolled
+          </span>
+        )}
+        {lastSeenLabel && (
+          <span className="text-xs text-[hsl(var(--admin-text-muted))]">
+            Last token: {lastSeenLabel}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
