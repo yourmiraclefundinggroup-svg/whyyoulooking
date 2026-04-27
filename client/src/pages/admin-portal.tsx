@@ -3062,6 +3062,17 @@ function CreditReportsPage({ clientUsers }: { clientUsers: User[] }) {
   );
 }
 
+type RawArrayTradeline = {
+  creditor?: string;
+  accountNumber?: string;
+  accountType?: string;
+  balance?: string | number;
+  status?: string;
+  dateOpened?: string;
+  dateOfFirstDelinquency?: string;
+  suggestedDisputeReason?: string;
+};
+
 type SelectedItem = {
   id: number;
   type: 'account' | 'inquiry' | 'collection' | 'public_record';
@@ -3069,6 +3080,13 @@ type SelectedItem = {
   severity: number;
   strategy: string;
   reason: string;
+  meta?: {
+    accountNumber?: string;
+    balance?: string;
+    status?: string;
+    dateOpened?: string;
+    dateOfFirstDelinquency?: string;
+  };
 };
 
 function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUsers: User[] }) {
@@ -3135,6 +3153,10 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
   const [bureauCount, setBureauCount] = useState<'single' | 'all'>('single');
   const [progressReportOpen, setProgressReportOpen] = useState(false);
   const [activeDisputeTab, setActiveDisputeTab] = useState('overview');
+  const [arrayTradelinesOpen, setArrayTradelinesOpen] = useState(false);
+  const [arrayTradelines, setArrayTradelines] = useState<Array<{ key: string; name: string; accountType: string; balance: string; status: string; reason: string; accountNumber?: string; dateOfFirstDelinquency?: string; dateOpened?: string }>>([]);
+  const [fetchingArrayTradelines, setFetchingArrayTradelines] = useState(false);
+  const [selectedArrayTradelines, setSelectedArrayTradelines] = useState<Set<string>>(new Set());
   const [markRemovedOpen, setMarkRemovedOpen] = useState(false);
   const [markRemovedAccountName, setMarkRemovedAccountName] = useState('');
   const [markRemovedRate, setMarkRemovedRate] = useState(() => {
@@ -5977,6 +5999,136 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
               </div>
             )}
 
+            {/* Pull from Array Credit Monitoring */}
+            <div className="border border-[hsl(var(--admin-border))] rounded-lg p-3 bg-[hsl(var(--admin-bg))]/30">
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-xs font-medium text-[hsl(var(--admin-text-muted))]">Credit Monitoring Tradelines</Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={fetchingArrayTradelines || !report?.userId}
+                  className="h-7 text-xs border-[hsl(var(--admin-border))] text-[hsl(var(--admin-accent))] hover:text-[hsl(var(--admin-accent))]"
+                  onClick={async () => {
+                    if (!report?.userId) return;
+                    setFetchingArrayTradelines(true);
+                    setArrayTradelinesOpen(true);
+                    try {
+                      const token = localStorage.getItem('auth_token');
+                      const res = await fetch(`/api/admin/array/tradelines/${report.userId}`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                      });
+                      if (res.ok) {
+                        const data = await res.json();
+                        const normalized = (data.tradelines as RawArrayTradeline[] || []).map((tl) => ({
+                          key: `${tl.creditor ?? 'unknown'}:${tl.accountNumber ?? 'unknown'}`,
+                          name: tl.creditor || tl.accountNumber || 'Unknown Creditor',
+                          accountType: tl.accountType || 'other',
+                          balance: (tl.balance !== undefined && tl.balance !== null && tl.balance !== '') ? `$${tl.balance}` : 'N/A',
+                          status: tl.status || '',
+                          reason: tl.suggestedDisputeReason || 'General inaccuracy',
+                          accountNumber: tl.accountNumber || undefined,
+                          dateOfFirstDelinquency: tl.dateOfFirstDelinquency || undefined,
+                          dateOpened: tl.dateOpened || undefined,
+                        }));
+                        setArrayTradelines(normalized);
+                      } else {
+                        setArrayTradelines([]);
+                      }
+                    } catch {
+                      setArrayTradelines([]);
+                    } finally {
+                      setFetchingArrayTradelines(false);
+                    }
+                  }}
+                >
+                  {fetchingArrayTradelines ? 'Pulling…' : 'Pull from Credit Monitoring'}
+                </Button>
+              </div>
+              {arrayTradelinesOpen && (
+                <div className="space-y-1 max-h-[200px] overflow-y-auto pr-1">
+                  {fetchingArrayTradelines ? (
+                    <p className="text-xs text-[hsl(var(--admin-text-muted))] italic">Fetching tradelines…</p>
+                  ) : arrayTradelines.length === 0 ? (
+                    <p className="text-xs text-amber-400 italic">No tradelines found in credit monitoring data.</p>
+                  ) : (
+                    arrayTradelines.map(tl => {
+                      const checked = selectedArrayTradelines.has(tl.key);
+                      return (
+                        <div
+                          key={tl.key}
+                          onClick={() => {
+                            setSelectedArrayTradelines(prev => {
+                              const next = new Set(prev);
+                              if (next.has(tl.key)) {
+                                next.delete(tl.key);
+                              } else {
+                                next.add(tl.key);
+                              }
+                              return next;
+                            });
+                          }}
+                          className={`flex items-start gap-2 p-2 rounded cursor-pointer border transition-colors ${
+                            checked
+                              ? 'border-[hsl(var(--admin-accent))] bg-[hsl(var(--admin-accent))]/10'
+                              : 'border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50'
+                          }`}
+                        >
+                          <div className={`mt-0.5 w-4 h-4 flex-shrink-0 rounded border flex items-center justify-center ${
+                            checked ? 'bg-[hsl(var(--admin-accent))] border-[hsl(var(--admin-accent))]' : 'border-[hsl(var(--admin-border))]'
+                          }`}>
+                            {checked && <span className="text-white text-[10px] leading-none">✓</span>}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-[hsl(var(--admin-text))] truncate">{tl.name}</p>
+                            <p className="text-[11px] text-[hsl(var(--admin-text-muted))]">{tl.accountType} · {tl.balance} · {tl.status}</p>
+                            <p className="text-[11px] text-amber-400 italic">{tl.reason}</p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+              {selectedArrayTradelines.size > 0 && (
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-xs text-[hsl(var(--admin-text-muted))]">{selectedArrayTradelines.size} tradeline(s) selected</span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-7 text-xs bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white"
+                    onClick={() => {
+                      const toAdd = arrayTradelines
+                        .filter(tl => selectedArrayTradelines.has(tl.key))
+                        .map(tl => ({
+                          id: -(Math.abs(tl.key.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)) + Date.now() % 100000),
+                          type: 'account' as const,
+                          name: tl.name,
+                          severity: 50,
+                          strategy: `Dispute: ${tl.reason}`,
+                          reason: tl.reason,
+                          meta: {
+                            accountNumber: tl.accountNumber,
+                            balance: tl.balance,
+                            status: tl.status,
+                            dateOpened: tl.dateOpened,
+                            dateOfFirstDelinquency: tl.dateOfFirstDelinquency,
+                          },
+                        }));
+                      setSelectedItems(prev => {
+                        const existingKeys = new Set(prev.map(i => `${i.type}:${i.id}`));
+                        return [...prev, ...toAdd.filter(a => !existingKeys.has(`${a.type}:${a.id}`))];
+                      });
+                      setSelectedArrayTradelines(new Set());
+                      setArrayTradelinesOpen(false);
+                    }}
+                  >
+                    Add to Dispute Items
+                  </Button>
+                </div>
+              )}
+            </div>
+
             {/* Items being disputed */}
             <div>
               <Label className="text-[hsl(var(--admin-text-muted))] text-sm mb-2 block">
@@ -6018,15 +6170,16 @@ function DisputeHubPage({ reportId, clientUsers }: { reportId: number; clientUse
                         return {
                           type: 'account' as const,
                           creditorName: item.name,
-                          accountNumber: acc?.accountNumberMasked,
-                          balance: acc?.balance,
-                          status: acc?.status,
-                          dateOpened: acc?.dateOpened,
+                          accountNumber: acc?.accountNumberMasked ?? item.meta?.accountNumber,
+                          balance: acc?.balance ?? item.meta?.balance,
+                          status: acc?.status ?? item.meta?.status,
+                          dateOpened: acc?.dateOpened ?? item.meta?.dateOpened,
                           dateReported: acc?.dateReported,
                           paymentStatus: acc?.paymentStatus,
                           latePayments: acc?.latePayments,
                           derogatoryFlags: acc?.derogatoryFlags,
                           remarks: acc?.remarks,
+                          dateOfFirstDelinquency: item.meta?.dateOfFirstDelinquency,
                         };
                       } else if (item.type === 'inquiry') {
                         const inq = inquiries.find(i => i.id === item.id);

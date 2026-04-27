@@ -8150,6 +8150,171 @@ ${denialLetterText}`
     }
   });
 
+  // Typed interfaces for Array API responses (external API, shapes are approximate)
+  interface ArrayTokenResponse { token?: string; userToken?: string; access_token?: string }
+  interface ArrayAccountRecord {
+    creditorName?: string; name?: string; furnisherName?: string;
+    accountNumber?: string; number?: string; accountId?: string;
+    accountType?: string; type?: string;
+    balance?: number; currentBalance?: number;
+    status?: string; accountStatus?: string; paymentStatus?: string;
+    dateOpened?: string; openDate?: string;
+    dateOfFirstDelinquency?: string; firstDelinquencyDate?: string;
+    latePayments30?: number; monthsLate30?: number;
+    latePayments60?: number; monthsLate60?: number;
+    latePayments90?: number; monthsLate90?: number;
+  }
+  interface ArrayInquiryRecord {
+    creditorName?: string; subscriberName?: string; name?: string;
+    inquiryDate?: string; date?: string;
+    inquiryType?: string;
+  }
+  interface ArrayCreditReport {
+    accounts?: ArrayAccountRecord[]; tradelines?: ArrayAccountRecord[];
+    inquiries?: ArrayInquiryRecord[];
+    data?: { accounts?: ArrayAccountRecord[]; inquiries?: ArrayInquiryRecord[] };
+  }
+
+  // GET /api/admin/array/tradelines/:clientId — pull live tradeline data from Array for a client
+  // Returns formatted dispute letter inputs pre-filled from the client's Array credit report
+  app.get("/api/admin/array/tradelines/:clientId", authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      if (isNaN(clientId)) return res.status(400).json({ error: "Invalid clientId" });
+
+      const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
+      const ARRAY_API_SECRET = process.env.ARRAY_API_SECRET;
+      if (!ARRAY_API_KEY || !ARRAY_API_SECRET) {
+        return res.status(500).json({ error: "Array credentials not configured" });
+      }
+
+      const { arrayEnrollments } = await import("@shared/schema");
+      const [enrollment] = await db
+        .select()
+        .from(arrayEnrollments)
+        .where(eq(arrayEnrollments.userId, clientId));
+
+      if (!enrollment) {
+        return res.status(404).json({ error: "Client is not enrolled in Array credit monitoring", enrolled: false });
+      }
+
+      const credentials = Buffer.from(`${ARRAY_API_KEY}:${ARRAY_API_SECRET}`).toString("base64");
+      const arrayUserId = enrollment.arrayUserId;
+
+      // Step 1: Generate a server-side user token for this client
+      const tokenResponse = await fetch("https://api.array.io/v2/user/token", {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${credentials}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: arrayUserId }),
+      });
+
+      if (!tokenResponse.ok) {
+        const errData = await tokenResponse.json().catch(() => ({})) as Record<string, unknown>;
+        console.error(`[Array] Admin tradeline token fetch failed for user ${clientId}:`, errData);
+        return res.status(502).json({ error: "Failed to generate Array token for client" });
+      }
+
+      const tokenData = await tokenResponse.json() as ArrayTokenResponse;
+      const userToken = tokenData.token || tokenData.userToken || tokenData.access_token;
+
+      // Step 2: Fetch the credit report using the user token
+      const reportResponse = await fetch("https://api.array.io/v2/user/credit-report", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${userToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!reportResponse.ok) {
+        const errData = await reportResponse.json().catch(() => ({})) as Record<string, unknown>;
+        console.error(`[Array] Credit report fetch failed for user ${clientId}:`, errData);
+        return res.status(502).json({ error: "Failed to fetch credit report from Array" });
+      }
+
+      const reportData = await reportResponse.json() as ArrayCreditReport;
+
+      // Step 3: Format tradelines as pre-filled dispute letter inputs
+      const tradelines: Array<{
+        creditor: string;
+        accountNumber: string;
+        accountType: string;
+        balance: string;
+        status: string;
+        dateOpened: string;
+        dateOfFirstDelinquency?: string;
+        paymentStatus?: string;
+        latePayments?: { days30?: number; days60?: number; days90?: number };
+        suggestedDisputeReason?: string;
+      }> = [];
+
+      const accounts = reportData?.accounts || reportData?.tradelines || reportData?.data?.accounts || [];
+      for (const acct of accounts) {
+        const creditorName = acct.creditorName || acct.name || acct.furnisherName || "Unknown Creditor";
+        const accountNumber = acct.accountNumber || acct.number || acct.accountId || "Unknown";
+        const accountType = acct.accountType || acct.type || "other";
+        const balance = acct.balance !== undefined ? String(acct.balance) : (acct.currentBalance !== undefined ? String(acct.currentBalance) : "");
+        const status = acct.status || acct.accountStatus || acct.paymentStatus || "";
+        const dateOpened = acct.dateOpened || acct.openDate || "";
+        const dofd = acct.dateOfFirstDelinquency || acct.firstDelinquencyDate || "";
+
+        const latePayments = {
+          days30: acct.latePayments30 || acct.monthsLate30 || 0,
+          days60: acct.latePayments60 || acct.monthsLate60 || 0,
+          days90: acct.latePayments90 || acct.monthsLate90 || 0,
+        };
+
+        let suggestedReason = "General inaccuracy";
+        const statusLower = status.toLowerCase();
+        if (statusLower.includes("collection") || statusLower.includes("charged off") || statusLower.includes("charge-off")) {
+          suggestedReason = "Collection or charge-off dispute — verify accuracy of reported status and DOFD";
+        } else if (latePayments.days30 > 0 || latePayments.days60 > 0 || latePayments.days90 > 0) {
+          suggestedReason = `Late payment inaccuracy — ${latePayments.days30} × 30-day, ${latePayments.days60} × 60-day, ${latePayments.days90} × 90-day lates reported`;
+        } else if (dofd) {
+          const dofdDate = new Date(dofd);
+          const yearsOld = (Date.now() - dofdDate.getTime()) / (86_400_000 * 365.25);
+          if (yearsOld >= 7) {
+            suggestedReason = `DOFD re-aging — account is ${yearsOld.toFixed(1)} years old and exceeds the 7-year FCRA reporting limit`;
+          }
+        }
+
+        tradelines.push({
+          creditor: creditorName,
+          accountNumber,
+          accountType,
+          balance,
+          status,
+          dateOpened,
+          dateOfFirstDelinquency: dofd || undefined,
+          latePayments,
+          suggestedDisputeReason: suggestedReason,
+        });
+      }
+
+      const inquiries = (reportData?.inquiries || reportData?.data?.inquiries || []).map((inq: ArrayInquiryRecord) => ({
+        creditor: inq.creditorName || inq.subscriberName || inq.name || "Unknown",
+        inquiryDate: inq.inquiryDate || inq.date || "",
+        inquiryType: inq.inquiryType || "hard",
+        suggestedDisputeReason: "Unauthorized hard inquiry — no permissible purpose established (FCRA § 1681b)",
+      }));
+
+      console.log(`[Array] Fetched ${tradelines.length} tradelines and ${inquiries.length} inquiries for client ${clientId}`);
+      res.json({
+        enrolled: true,
+        arrayUserId,
+        tradelines,
+        inquiries,
+        reportFetchedAt: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      console.error("[Array] Tradeline fetch error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

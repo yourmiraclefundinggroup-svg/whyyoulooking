@@ -2,6 +2,354 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// ─── Metro 2 Violation Detection ──────────────────────────────────────────────
+
+export interface Metro2Violation {
+  field: string;
+  code: string;
+  description: string;
+  crrgSection: string;
+  severity: "HIGH" | "MEDIUM" | "LOW";
+}
+
+export interface Metro2Account {
+  accountNumber?: string;
+  accountStatus?: string;
+  paymentRating?: string;
+  paymentHistoryProfile?: string;
+  dateOfFirstDelinquency?: string;
+  complianceConditionCode?: string;
+  dateAccountInfoChanged?: string;
+  k4Segment?: string;
+  originalBalance?: number;
+  currentBalance?: number;
+  dateOpened?: string;
+  dateClosed?: string;
+  reportedStatus?: string;
+}
+
+export function detectMetro2Violations(account: Metro2Account): Metro2Violation[] {
+  const violations: Metro2Violation[] = [];
+
+  if (account.dateAccountInfoChanged) {
+    const daDate = new Date(account.dateAccountInfoChanged);
+    const daysSinceUpdate = (Date.now() - daDate.getTime()) / 86_400_000;
+    if (daysSinceUpdate > 90) {
+      violations.push({
+        field: "DA (Date Account Info Changed)",
+        code: "DA-STALE",
+        description: `The DA field (Date Account Information Changed) reflects a date more than 90 days old (${account.dateAccountInfoChanged}), indicating the furnisher has not submitted a monthly update as required by Metro 2 reporting standards.`,
+        crrgSection: "CRRG Section 2.1 — Reporting Cycle Requirements",
+        severity: "MEDIUM",
+      });
+    }
+  }
+
+  if (account.k4Segment) {
+    const validK4 = /^[0-9BCDEGHIJKLMNOPRSTUZ ]+$/;
+    if (!validK4.test(account.k4Segment)) {
+      violations.push({
+        field: "K4 Segment (Historical Payment Data)",
+        code: "K4-INVALID",
+        description: `The K4 Segment contains invalid payment pattern codes ("${account.k4Segment}"). CRRG Appendix B specifies only valid status codes (0–9, B, C, D, E, G, H, etc.) may appear in the K4 historical payment field.`,
+        crrgSection: "CRRG Appendix B — Special Comment / K4 Segment Codes",
+        severity: "HIGH",
+      });
+    }
+  }
+
+  if (account.paymentHistoryProfile) {
+    const phf = account.paymentHistoryProfile.replace(/\s/g, "");
+    const validPHF = /^[0-9BCDEGHIJKLMNOPRSTUZ]*$/;
+    if (!validPHF.test(phf)) {
+      violations.push({
+        field: "PHF (Payment History Profile)",
+        code: "PHF-INVALID-CODES",
+        description: `The Payment History Profile field contains invalid status codes. Each monthly position must reflect a valid Metro 2 payment status code per CRRG Section 4.5.`,
+        crrgSection: "CRRG Section 4.5 — Payment History Profile Field",
+        severity: "HIGH",
+      });
+    }
+    if (phf.length > 24) {
+      violations.push({
+        field: "PHF (Payment History Profile)",
+        code: "PHF-OVERFLOW",
+        description: `The Payment History Profile contains ${phf.length} monthly positions — exceeding the Metro 2 maximum of 24 months. This over-reporting can artificially extend a derogatory history.`,
+        crrgSection: "CRRG Section 4.5 — Payment History Profile Field",
+        severity: "MEDIUM",
+      });
+    }
+  }
+
+  if (account.paymentRating !== undefined) {
+    const rating = parseInt(account.paymentRating, 10);
+    if (isNaN(rating) || rating < 0 || rating > 6) {
+      violations.push({
+        field: "Field 17A (Payment Rating)",
+        code: "PR-INVALID",
+        description: `Payment Rating code "${account.paymentRating}" is outside the valid Metro 2 range (0=Current, 1=30 days late, 2=60 days, 3=90 days, 4=120 days, 5=150 days, 6=180+ days). This is a direct Field 17A coding error.`,
+        crrgSection: "CRRG Section 4.2 — Field 17A Payment Rating",
+        severity: "HIGH",
+      });
+    } else if (rating >= 1 && (account.reportedStatus || "").toLowerCase().includes("current")) {
+      violations.push({
+        field: "Field 17A / ACCT_STATUS Mismatch",
+        code: "PR-STATUS-MISMATCH",
+        description: `Payment Rating code "${account.paymentRating}" (indicating late/delinquent payment) directly conflicts with the account status reported as "current." This Field 17A and ACCT_STATUS discrepancy is a Metro 2 reporting error.`,
+        crrgSection: "CRRG Section 4.2 — Field 17A; Section 4.1 — Account Status",
+        severity: "HIGH",
+      });
+    }
+  }
+
+  if (account.dateOfFirstDelinquency) {
+    const dofd = new Date(account.dateOfFirstDelinquency);
+    const yearsOld = (Date.now() - dofd.getTime()) / (86_400_000 * 365.25);
+    if (yearsOld >= 7) {
+      violations.push({
+        field: "DOFD (Date of First Delinquency)",
+        code: "DOFD-REAGING",
+        description: `The Date of First Delinquency (${account.dateOfFirstDelinquency}) shows this account is ${yearsOld.toFixed(1)} years old — past the 7-year maximum reporting period under FCRA § 1681c(a)(4). Continued reporting constitutes illegal DOFD re-aging.`,
+        crrgSection: "CRRG Section 4.8 — Date of First Delinquency; FCRA § 1681c(a)(4)",
+        severity: "HIGH",
+      });
+    }
+  }
+
+  if (account.complianceConditionCode && account.complianceConditionCode !== "XB") {
+    violations.push({
+      field: "CCC XB (Compliance Condition Code)",
+      code: "CCC-XB-WRONG",
+      description: `Compliance Condition Code "${account.complianceConditionCode}" was reported instead of "XB" (Account information disputed by consumer). While a dispute is under investigation, furnishers must report CCC=XB to indicate the pending dispute.`,
+      crrgSection: "CRRG Section 4.9 — Compliance Condition Codes; FCRA § 1681s-2(a)(3)",
+      severity: "MEDIUM",
+    });
+  }
+
+  if (account.accountStatus && account.reportedStatus) {
+    const statusMap: Record<string, string[]> = {
+      "11": ["current", "open", "ok"],
+      "64": ["collection", "collections"],
+      "78": ["closed"],
+      "80": ["charge off", "charged off", "charge-off"],
+      "13": ["paid", "paid in full"],
+    };
+    const expectedKeywords = statusMap[account.accountStatus] || [];
+    const reportedLower = account.reportedStatus.toLowerCase();
+    if (expectedKeywords.length > 0 && !expectedKeywords.some((kw) => reportedLower.includes(kw))) {
+      violations.push({
+        field: "ACCT_STATUS (Account Status Code)",
+        code: "ACCT-STATUS-MISMATCH",
+        description: `ACCT_STATUS code "${account.accountStatus}" does not align with the reported account status "${account.reportedStatus}." Metro 2 requires account status codes to accurately reflect the true state of the account at the time of reporting.`,
+        crrgSection: "CRRG Section 4.1 — Account Status Codes",
+        severity: "HIGH",
+      });
+    }
+  }
+
+  return violations;
+}
+
+function formatMetro2ViolationsBlock(violations: Metro2Violation[]): string {
+  if (violations.length === 0) return "";
+  const lines = violations.map(
+    (v, i) =>
+      `${i + 1}. [${v.severity}] ${v.field} — Code: ${v.code}\n   ${v.description}\n   Citation: ${v.crrgSection}`
+  );
+  return `METRO 2® FIELD VIOLATIONS DETECTED (${violations.length} total):\n${lines.join("\n\n")}`;
+}
+
+// ─── FCRA Section Mapping ──────────────────────────────────────────────────────
+
+const FCRA_SECTION_DEFINITIONS: Record<string, string> = {
+  "§1681e(b)": "Maximum possible accuracy — CRA must follow reasonable procedures to ensure accuracy of consumer information",
+  "§1681i": "Reinvestigation of disputed information — CRA must investigate within 30 days and provide written results",
+  "§1681i(a)(5)(A)": "Prompt deletion — unverifiable information must be promptly deleted",
+  "§1681i(a)(7)": "Method of verification — consumer may request the method used to verify disputed information",
+  "§1681s-2(b)": "Furnisher duty after dispute notice — furnisher must investigate and correct or delete inaccurate data",
+  "§1681s-2(a)(3)": "Furnisher duty during dispute — must flag account with CCC XB while dispute is pending",
+  "§1681s-2(a)(6)": "Furnisher duty to fraud victims — must cease reporting information identified as identity theft",
+  "§1681b": "Permissible purpose — inquiries require a legally permissible purpose; unauthorized inquiries must be removed",
+  "§1681c(a)(4)": "7-year reporting limit — most derogatory information cannot be reported after 7 years from DOFD",
+  "§1681c-2": "Block of identity theft information — CRA must block fraudulent tradelines within 4 business days",
+  "§1681n/§1681o": "Civil liability — willful or negligent noncompliance exposes violating party to statutory damages of $100–$1,000 per violation, actual damages, punitive damages, and attorney's fees",
+};
+
+const FCRA_TYPE_REASON_MAP: Record<string, Record<string, string[]>> = {
+  collection: {
+    any: ["§1681c-2", "§1681e(b)", "§1681i", "§1681i(a)(5)(A)", "§1681s-2(b)", "§1681n/§1681o"],
+    fraud: ["§1681c-2", "§1681e(b)", "§1681i", "§1681s-2(a)(6)", "§1681n/§1681o"],
+    reaging: ["§1681c(a)(4)", "§1681c-2", "§1681e(b)", "§1681i", "§1681s-2(b)"],
+    notmine: ["§1681e(b)", "§1681i", "§1681s-2(b)", "§1681c-2", "§1681n/§1681o"],
+  },
+  late_payment: {
+    any: ["§1681e(b)", "§1681i", "§1681i(a)(5)(A)", "§1681s-2(b)", "§1681i(a)(7)"],
+    fraud: ["§1681c-2", "§1681e(b)", "§1681i", "§1681s-2(b)"],
+    reaging: ["§1681c(a)(4)", "§1681e(b)", "§1681i", "§1681s-2(b)"],
+  },
+  charge_off: {
+    any: ["§1681e(b)", "§1681i", "§1681i(a)(5)(A)", "§1681s-2(b)", "§1681n/§1681o"],
+    fraud: ["§1681c-2", "§1681e(b)", "§1681i", "§1681s-2(a)(6)", "§1681n/§1681o"],
+    reaging: ["§1681c(a)(4)", "§1681e(b)", "§1681i", "§1681s-2(b)"],
+  },
+  inquiry: {
+    any: ["§1681b", "§1681e(b)", "§1681i", "§1681n/§1681o"],
+    fraud: ["§1681b", "§1681c-2", "§1681e(b)", "§1681n/§1681o"],
+  },
+  public_record: {
+    any: ["§1681e(b)", "§1681i", "§1681c(a)(4)", "§1681s-2(b)", "§1681n/§1681o"],
+    fraud: ["§1681c-2", "§1681e(b)", "§1681i", "§1681n/§1681o"],
+  },
+  other: {
+    any: ["§1681e(b)", "§1681i", "§1681i(a)(5)(A)", "§1681s-2(b)", "§1681n/§1681o"],
+  },
+};
+
+export function getFCRASections(accountType: string, disputeReason: string): string[] {
+  const typeKey = accountType.toLowerCase().replace(/[^a-z_]/g, "_");
+  const typeMap = FCRA_TYPE_REASON_MAP[typeKey] || FCRA_TYPE_REASON_MAP.other;
+  const reasonLower = disputeReason.toLowerCase();
+
+  let reasonKey = "any";
+  if (reasonLower.includes("fraud") || reasonLower.includes("identity") || reasonLower.includes("theft")) {
+    reasonKey = "fraud";
+  } else if (reasonLower.includes("reag") || reasonLower.includes("7 year") || reasonLower.includes("seven year") || reasonLower.includes("dofd")) {
+    reasonKey = "reaging";
+  } else if (reasonLower.includes("not mine") || reasonLower.includes("unknown") || reasonLower.includes("never opened")) {
+    reasonKey = "notmine";
+  }
+
+  const base = typeMap.any || [];
+  const specific = typeMap[reasonKey] || [];
+  return [...new Set([...base, ...specific])];
+}
+
+function buildFCRASectionBlock(sections: string[]): string {
+  return sections
+    .map((s) => {
+      const def = FCRA_SECTION_DEFINITIONS[s] || "Applicable consumer protection statute";
+      return `▶ FCRA ${s} — ${def}`;
+    })
+    .join("\n");
+}
+
+// ─── Letter Uniqueness System ──────────────────────────────────────────────────
+
+type OpeningFn = (name: string, creditor: string, round: number, bureau: string) => string;
+
+const OPENING_PARAGRAPHS: OpeningFn[] = [
+  (name, creditor, round, bureau) =>
+    `I, ${name}, submit this Round ${round} formal credit dispute to ${bureau} pursuant to the Fair Credit Reporting Act, 15 U.S.C. § 1681 et seq. I have identified material inaccuracies in information furnished by ${creditor} that are currently reflected on my credit file and that I am entitled to have investigated and corrected under federal law.`,
+  (name, creditor, round, bureau) =>
+    `This letter constitutes a Round ${round} formal dispute under FCRA § 1681i submitted by ${name} to ${bureau}. After a careful review of my credit file, I have identified reporting by ${creditor} that contains inaccuracies which, if not corrected, continue to cause unwarranted damage to my credit standing and financial opportunities.`,
+  (name, creditor, round, bureau) =>
+    `Pursuant to my rights under the Fair Credit Reporting Act (15 U.S.C. §§ 1681–1681x), I, ${name}, hereby formally dispute the accuracy of information reported by ${creditor} and currently appearing in my credit file maintained by ${bureau}. This is my Round ${round} dispute and demands immediate reinvestigation.`,
+  (name, creditor, round, bureau) =>
+    `I am ${name}, and I write to ${bureau} to exercise my statutory right to dispute inaccurate information on my credit report under the Fair Credit Reporting Act. The account(s) attributed to ${creditor} in my credit file contain errors that require immediate reinvestigation — this is my Round ${round} formal challenge pursuant to FCRA § 1681i(a).`,
+  (name, creditor, round, bureau) =>
+    `${name} hereby submits this Round ${round} written dispute to ${bureau} under the authority of the Fair Credit Reporting Act, 15 U.S.C. § 1681i. My review of my credit file reveals that ${creditor} has furnished information that does not accurately reflect the true status of my account(s), and I am formally demanding a thorough and reasonable reinvestigation.`,
+  (name, creditor, round, bureau) =>
+    `To the Consumer Dispute Department at ${bureau}: I, ${name}, am formally disputing account information furnished by ${creditor} that appears on my credit report. This Round ${round} dispute is submitted pursuant to FCRA § 1681i and demands that ${bureau} conduct a complete reinvestigation of the identified inaccuracies and provide written results within the statutory timeframe.`,
+  (name, creditor, round, bureau) =>
+    `Under the consumer protections afforded by the Fair Credit Reporting Act (FCRA), 15 U.S.C. § 1681 et seq., I, ${name}, am filing this Round ${round} formal dispute with ${bureau} regarding inaccurate credit information attributed to ${creditor}. The items identified herein contain factual errors that have materially harmed my creditworthiness and must be corrected or deleted immediately.`,
+  (name, creditor, round, bureau) =>
+    `I write as ${name} to formally dispute — for the ${round === 1 ? "first" : round === 2 ? "second" : round === 3 ? "third" : round + "th"} time — inaccurate tradeline information reported by ${creditor} in my credit file held at ${bureau}. The FCRA, 15 U.S.C. § 1681i, mandates that ${bureau} investigate this dispute, and I demand full compliance within the 30-day statutory window.`,
+  (name, creditor, _round, bureau) =>
+    `This Round ${_round} dispute letter is submitted by ${name} to ${bureau} pursuant to rights established under the Fair Credit Reporting Act. ${creditor} has reported information to ${bureau} that is materially inaccurate, and this correspondence formally invokes my § 1681i reinvestigation rights and requests immediate corrective action.`,
+];
+
+type ClosingFn = (name: string, bureau: string) => string;
+
+const CLOSING_PARAGRAPHS: ClosingFn[] = [
+  (name, bureau) =>
+    `Please send your written response and updated credit report to the address listed above. Do not telephone — all correspondence must be in writing. I expect ${bureau} to comply fully with all FCRA obligations within the 30-day reinvestigation period.\n\nRespectfully,\n\n\n${name}`,
+  (name, bureau) =>
+    `I expect a written response from ${bureau} within the statutory 30-day period confirming the results of your reinvestigation. If the disputed item(s) cannot be verified, they must be deleted promptly. All correspondence must be in writing.\n\nSincerely,\n\n\n${name}`,
+  (name, bureau) =>
+    `Kindly forward your investigation results in writing to the address above within 30 days as required by FCRA § 1681i. Telephonic responses will not be accepted. I look forward to ${bureau}'s prompt and lawful resolution of this matter.\n\nVery truly yours,\n\n\n${name}`,
+  (name, bureau) =>
+    `I anticipate ${bureau}'s full compliance with the Fair Credit Reporting Act. Please respond in writing to the address above within 30 days. Any information that cannot be verified must be deleted, and I request a free copy of my updated credit report reflecting any changes.\n\nThank you,\n\n\n${name}`,
+  (name, bureau) =>
+    `This dispute is submitted in good faith to ensure the accuracy of my credit file. I request ${bureau} to take all required actions within the statutory timeframe and to provide written confirmation of the investigation results. All communication must be in writing only.\n\nWith respect,\n\n\n${name}`,
+];
+
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed + 1) * 10000;
+  return x - Math.floor(x);
+}
+
+function selectOpening(params: { clientName: string; creditor: string; roundNumber: number; bureau: string }, seed: number): string {
+  const idx = Math.floor(seededRandom(seed) * OPENING_PARAGRAPHS.length);
+  return OPENING_PARAGRAPHS[idx](params.clientName, params.creditor, params.roundNumber, params.bureau);
+}
+
+function selectClosing(params: { clientName: string; bureau: string }, seed: number): string {
+  const idx = Math.floor(seededRandom(seed + 999) * CLOSING_PARAGRAPHS.length);
+  return CLOSING_PARAGRAPHS[idx](params.clientName, params.bureau);
+}
+
+const DEMAND_VARIANTS: Record<string, string[]> = {
+  reinvestigate: [
+    "Conduct a thorough and reasonable reinvestigation of the disputed account(s) identified herein, as required by FCRA § 1681i(a).",
+    "Immediately initiate a complete reinvestigation of the disputed tradeline(s) listed in this letter pursuant to your obligations under FCRA § 1681i.",
+    "Perform a full reinvestigation of the inaccurate information identified in this dispute, contacting the furnisher and verifying all disputed fields.",
+  ],
+  delete_unverified: [
+    "Delete any disputed information that cannot be verified within the statutory 30-day reinvestigation period, as required by FCRA § 1681i(a)(5)(A).",
+    "Promptly remove all information that the furnisher is unable to verify as accurate — per FCRA § 1681i(a)(5)(A), unverifiable data must be deleted without delay.",
+    "If any disputed item cannot be substantiated by the furnisher within 30 days, delete it from my credit file and notify all affected parties immediately.",
+  ],
+  notify_furnisher: [
+    "Forward all dispute documentation to the furnisher, including this letter, for their own investigation pursuant to FCRA § 1681i(a)(2).",
+    "Provide the furnisher with all relevant dispute information and require them to investigate under FCRA § 1681s-2(b).",
+    "Transmit this dispute, along with all supporting documentation, to the furnisher for reinvestigation as required by 15 U.S.C. § 1681i(a)(2).",
+  ],
+  written_results: [
+    "Provide written notice of the results of your reinvestigation within 5 business days of its completion, including a free copy of my updated credit report.",
+    "Send written confirmation of all actions taken and the results of the investigation to the address above within 5 business days of completion.",
+    "Deliver a written summary of your reinvestigation results, including any changes made to my credit file, within 5 business days of completing your review.",
+  ],
+  method_of_verification: [
+    "Provide the name, address, and telephone number of each person contacted during your investigation and the method of verification used, per FCRA § 1681i(a)(7).",
+    "Disclose the specific method of verification employed and identify each source contacted, as required by FCRA § 1681i(a)(7).",
+  ],
+};
+
+function buildRandomizedDemandBullets(creditor: string, letterType: LetterType, seed: number): string {
+  const rng = (offset: number) => seededRandom(seed + offset);
+
+  const pick = (arr: string[], offset: number) => arr[Math.floor(rng(offset) * arr.length)];
+
+  const baseDemands = [
+    pick(DEMAND_VARIANTS.reinvestigate, 0),
+    pick(DEMAND_VARIANTS.notify_furnisher, 1),
+    pick(DEMAND_VARIANTS.delete_unverified, 2),
+    pick(DEMAND_VARIANTS.method_of_verification, 3),
+    pick(DEMAND_VARIANTS.written_results, 4),
+  ];
+
+  if (letterType === "identity_theft") {
+    baseDemands.unshift(
+      `IMMEDIATELY BLOCK this account pursuant to FCRA § 605B within 4 business days of receipt of this letter. Notify ${creditor} that this account is flagged as identity theft and all collection activity must cease.`
+    );
+  } else if (letterType === "late_payment_metro2") {
+    baseDemands.splice(
+      1,
+      0,
+      `Request from ${creditor} the complete Metro 2® Payment History Profile (PHF) and verify each monthly Payment Rating code (Field 17A) against actual payment records. Apply Compliance Condition Code "XB" immediately.`
+    );
+  } else if (letterType === "closed_school") {
+    baseDemands.unshift(
+      `Flag this account for investigation under the Closed School Discharge provisions of 34 CFR § 685.214 and contact ${creditor} to confirm discharge status.`
+    );
+  }
+
+  const shuffledIndices = baseDemands.map((_, i) => i).sort((a, b) => rng(a + 50) - rng(b + 50));
+  const shuffled = shuffledIndices.map((i) => baseDemands[i]);
+
+  return shuffled.map((d, i) => `${i + 1}. ${d}`).join("\n");
+}
+
 export type LetterType = "closed_school" | "late_payment_metro2" | "identity_theft" | "general";
 export type DisputeAccountType = "collection" | "late_payment" | "charge_off" | "inquiry" | "public_record" | "other";
 export type DisputeBureau = "EXPERIAN" | "EQUIFAX" | "TRANSUNION";
@@ -69,10 +417,18 @@ export function resolveAccountType(input: string | undefined): DisputeAccountTyp
 
 export interface DisputeIQAccount {
   accountNumber: string;
+  accountType?: string;
   dateOpened?: string;
   originalBalance?: string;
   currentBalance?: string;
   reportedStatus?: string;
+  accountStatus?: string;
+  paymentRating?: string;
+  paymentHistoryProfile?: string;
+  dateOfFirstDelinquency?: string;
+  complianceConditionCode?: string;
+  dateAccountInfoChanged?: string;
+  k4Segment?: string;
 }
 
 export interface DisputeIQParams {
@@ -385,24 +741,42 @@ export async function generateDisputeIQLetter(params: DisputeIQParams): Promise<
     year: "numeric",
   });
 
-  const clientNameAllCaps = params.clientName.toUpperCase();
-  const addressLine = `${params.clientAddress.line1}, ${params.clientAddress.city}, ${params.clientAddress.state} ${params.clientAddress.zip}`;
-
-  const headerLines = [
-    clientNameAllCaps,
-    params.clientAddress.line1,
-    `${params.clientAddress.city}, ${params.clientAddress.state} ${params.clientAddress.zip}`,
-    ...(params.clientDob ? [`Date of Birth: ${params.clientDob}`] : []),
-    ...(params.clientSsnLast4 ? [`SSN (Last 4): XXX-XX-${params.clientSsnLast4}`] : []),
-    ...(params.clientPhone ? [`Phone: ${params.clientPhone}`] : []),
-    ...(params.clientEmail ? [`Email: ${params.clientEmail}`] : []),
-  ];
-
   const accounts: DisputeIQAccount[] = params.accounts && params.accounts.length > 0
     ? params.accounts
     : [{ accountNumber: params.accountNumber }];
 
-  const accountTable = accounts.length > 1 ? buildAccountTable(accounts) : "";
+  // ── Uniqueness seed: client + creditor + round + full ms timestamp for per-generation uniqueness ──
+  const generationNonce = Date.now();
+  const seed = Array.from(
+    `${params.clientName}${params.creditor}${params.roundNumber}${generationNonce}`
+  ).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+
+  // ── Metro 2 violation detection across all accounts ──
+  const allMetro2Violations: Metro2Violation[] = accounts.flatMap((a) =>
+    detectMetro2Violations({
+      accountNumber: a.accountNumber,
+      reportedStatus: a.reportedStatus,
+      accountStatus: a.accountStatus,
+      paymentRating: a.paymentRating,
+      paymentHistoryProfile: a.paymentHistoryProfile,
+      dateOfFirstDelinquency: a.dateOfFirstDelinquency,
+      complianceConditionCode: a.complianceConditionCode,
+      dateAccountInfoChanged: a.dateAccountInfoChanged,
+      k4Segment: a.k4Segment,
+    })
+  );
+  const metro2Block = formatMetro2ViolationsBlock(allMetro2Violations);
+
+  // ── Unique opening + closing paragraphs ──
+  const openingParagraph = selectOpening(
+    { clientName: params.clientName, creditor: params.creditor, roundNumber: params.roundNumber, bureau: bureauInfo.name },
+    seed
+  );
+  const closingParagraph = selectClosing({ clientName: params.clientName, bureau: bureauInfo.name }, seed);
+
+  // ── Randomized demand bullets ──
+  const randomizedDemands = buildRandomizedDemandBullets(params.creditor, effectiveLetterType, seed);
+
   const letterTypeSections = buildLetterTypeSection(effectiveLetterType, params.creditor, accounts);
   const escalationContext = buildRoundEscalationContext(params.roundNumber, effectiveLetterType);
 
@@ -426,10 +800,6 @@ export async function generateDisputeIQLetter(params: DisputeIQParams): Promise<
   };
   const stateLawNote = stateSpecific[params.clientState?.toUpperCase() || ""] || "";
 
-  // Build statute bullet blocks for legal basis section
-  const legalBasisBullets = buildStatuteBullets(effectiveLetterType);
-  const demandsBullets = buildDemandBullets(effectiveLetterType, params.creditor);
-
   const prompt = `You are an expert consumer rights attorney and professional credit dispute specialist. Generate a complete, professional dispute packet letter in EXACT packet format below. Every section marker, bullet symbol, and line must appear exactly as shown. No bracketed placeholders may appear in the output — replace all with the real data provided.
 
 DATA FOR THIS PACKET:
@@ -447,6 +817,7 @@ ${params.ftcReportNumber ? `FTC IDENTITY THEFT REPORT #: ${params.ftcReportNumbe
 ${params.priorResponse ? `PRIOR RESPONSE: ${params.priorResponse}` : ""}
 ${escalationContext ? `ESCALATION NOTE: ${escalationContext}` : ""}
 ${stateLawNote ? `STATE LAW: ${stateLawNote}` : ""}
+${metro2Block ? `\nMETRO 2 VIOLATIONS:\n${metro2Block}` : ""}
 ═══════════════════════════════════════════════════════════════════════
 
 EXACT OUTPUT FORMAT — reproduce character-for-character including ═, ─, ▶ symbols:
@@ -480,36 +851,47 @@ PACKAGE CONTENTS:
 
 To Whom It May Concern:
 
-[Write 2–3 sentences of personalized introduction. State who the consumer is, that they are writing to dispute inaccurate information under FCRA § 1681i, reference the letter round, and the creditor/account at issue. Do NOT use placeholder language.]
+${openingParagraph}
 
 DISPUTED ITEMS (${accounts.length} total):
 ═══════════════════════════════════════════════════════════════════════
-${accounts.map((a, i) => `
+${accounts.map((a, i) => {
+  const acctViolations = detectMetro2Violations({
+    accountNumber: a.accountNumber,
+    reportedStatus: a.reportedStatus,
+    accountStatus: a.accountStatus,
+    paymentRating: a.paymentRating,
+    paymentHistoryProfile: a.paymentHistoryProfile,
+    dateOfFirstDelinquency: a.dateOfFirstDelinquency,
+    complianceConditionCode: a.complianceConditionCode,
+    dateAccountInfoChanged: a.dateAccountInfoChanged,
+    k4Segment: a.k4Segment,
+  });
+  const acctAccountType = resolveAccountType(a.accountType || params.accountType);
+  const acctFcraSections = getFCRASections(acctAccountType, params.disputeReason);
+  const acctFcraBullets = buildFCRASectionBlock(acctFcraSections);
+  return `
 ITEM ${i + 1}: ${params.creditor}
 Account #: ${a.accountNumber || "See enclosed documentation"}
 ${a.reportedStatus ? `Status: ${a.reportedStatus}` : ""}${a.currentBalance ? `\nBalance: ${a.currentBalance}` : ""}${a.dateOpened ? `\nOpened: ${a.dateOpened}` : ""}
 
 INACCURACY: [Write 1–2 sentences describing the specific inaccuracy for this account based on the dispute reason: "${params.disputeReason}". Be concrete — name what field is wrong and why.]
+${acctViolations.length > 0 ? `\nMETRO 2® FIELD VIOLATIONS:\n${formatMetro2ViolationsBlock(acctViolations)}` : ""}
 
-LEGAL BASIS:
-${legalBasisBullets}
+APPLICABLE FCRA SECTIONS:
+${acctFcraBullets}
 
 DEMANDS:
-${demandsBullets}
+${randomizedDemands}
 
-═══════════════════════════════════════════════════════════════════════`).join("\n")}
+═══════════════════════════════════════════════════════════════════════`;
+}).join("\n")}
 
 LEGAL NOTICE:
 ─────────────────────────────────────────────────────────────────────
 Pursuant to the FCRA, 15 U.S.C. § 1681i, you must complete your reinvestigation and provide written results within 30 days of receipt of this letter (or 45 days if the consumer furnishes additional information during the 30-day period). Any information that cannot be verified must be deleted. Failure to comply exposes your organization to civil liability under 15 U.S.C. §§ 1681n and 1681o, including actual damages, statutory damages of $100–$1,000 per violation, punitive damages, and attorney's fees.${escalationContext ? `\n\n${escalationContext}` : ""}${stateLawNote ? `\n\n${stateLawNote}` : ""}
 
-Please send your written response and updated credit report to the address listed above. Do not telephone. All correspondence must be in writing.
-
-Sincerely,
-
-
-
-${params.clientName}
+${closingParagraph}
 ${params.clientPhone || ""}
 ${formattedDate}
 
@@ -518,11 +900,11 @@ Enclosures:
   2. Copy of Government-Issued Photo ID
   3. Proof of Address${effectiveLetterType === "identity_theft" ? "\n  4. FTC Identity Theft Report\n  5. Signed Identity Theft Affidavit" : effectiveLetterType === "closed_school" ? "\n  4. Documentation of School Closure Date" : ""}
 
-Generate the complete packet now. Reproduce ALL section markers (═, ─, ▶) exactly. Replace ONLY the bracketed instruction lines with real personalized prose. Do not add commentary or instructions.`;
+INSTRUCTIONS: Generate the complete packet now. Reproduce ALL section markers (═, ─, ▶) exactly. The opening paragraph has already been written above — use it verbatim. The demands section has already been pre-generated — use it verbatim. Replace ONLY the [bracketed instruction lines] with real personalized prose. Do not add commentary or instructions outside the letter.`;
 
   const response = await anthropic.messages.create({
     model: "claude-opus-4-5",
-    max_tokens: 3000,
+    max_tokens: 3500,
     messages: [{ role: "user", content: prompt }],
   });
 
