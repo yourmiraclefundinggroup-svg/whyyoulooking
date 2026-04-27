@@ -2,7 +2,7 @@
  * Credit Monitoring — Array.com embedded components page.
  * Handles token generation, account enrollment, and rendering all Array web components.
  */
-import { useState, useEffect, useRef, ComponentType } from "react";
+import { useState, useEffect, useRef, ComponentType, type Ref } from "react";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -15,23 +15,29 @@ import {
   GraduationCap, Navigation, Loader2, CheckCircle, Lock
 } from "lucide-react";
 
+// Typed attribute shape for all Array web components
+interface ArrayWebComponentProps {
+  token: string;
+  appKey: string;
+}
+
 // Declare Array web component custom elements for TypeScript
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      "array-account-enroll": any;
-      "array-credit-overview": any;
-      "array-credit-report": any;
-      "array-score-tracker": any;
-      "array-debt-analysis": any;
-      "array-score-simulator": any;
-      "array-credit-alerts": any;
-      "array-identity-protect": any;
-      "array-privacy-protect": any;
-      "array-subscription-manager": any;
-      "array-sla-enroll": any;
-      "array-sla-dashboard": any;
-      "array-debt-navigator": any;
+      "array-account-enroll": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-credit-overview": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-credit-report": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-score-tracker": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-debt-analysis": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-score-simulator": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-credit-alerts": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-identity-protect": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-privacy-protect": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-subscription-manager": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-sla-enroll": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-sla-dashboard": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
+      "array-debt-navigator": ArrayWebComponentProps & { ref?: Ref<HTMLElement> };
     }
   }
 }
@@ -211,8 +217,9 @@ function ArrayComponent({ tag, token, appKey, onEnroll, scriptReady }: {
     el.setAttribute("token", token);
     el.setAttribute("appKey", appKey);
     if (onEnroll) {
-      el.addEventListener("array-event", (e: any) => {
-        if (e?.detail?.tagName === "account-enroll") onEnroll();
+      el.addEventListener("array-event", (e: Event) => {
+        const detail = (e as CustomEvent<{ tagName?: string }>).detail;
+        if (detail?.tagName === "account-enroll") onEnroll();
       });
     }
     containerRef.current.appendChild(el);

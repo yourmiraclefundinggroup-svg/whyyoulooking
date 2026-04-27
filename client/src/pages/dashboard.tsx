@@ -408,9 +408,25 @@ export default function Dashboard() {
                 appKey={arrayToken.appKey}
               />
             </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
+                <ArrayDashboardComponent
+                  tag="array-score-tracker"
+                  token={arrayToken.token}
+                  appKey={arrayToken.appKey}
+                />
+              </div>
+              <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
+                <ArrayDashboardComponent
+                  tag="array-debt-analysis"
+                  token={arrayToken.token}
+                  appKey={arrayToken.appKey}
+                />
+              </div>
+            </div>
             <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
               <ArrayDashboardComponent
-                tag="array-score-tracker"
+                tag="array-score-simulator"
                 token={arrayToken.token}
                 appKey={arrayToken.appKey}
               />
