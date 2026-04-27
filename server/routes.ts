@@ -8665,51 +8665,13 @@ ${denialLetterText}`
     }
   });
 
-  // POST /api/array/enroll — enroll user in Array product codes
+  // POST /api/array/enroll — record enrollment locally (sandbox mode: Array web component handles auth)
   app.post("/api/array/enroll", authenticateToken, requireClientAccess, async (req, res) => {
     try {
       const user = (req as any).user;
       const { productCode } = req.body;
-      const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
-      const ARRAY_API_SECRET = process.env.ARRAY_API_SECRET;
-
-      if (!ARRAY_API_KEY || !ARRAY_API_SECRET) {
-        return res.status(500).json({ error: "Array credentials not configured" });
-      }
-
-      // Validate that the requested productCode is allowed for the user's subscription tier.
-      // Admins bypass this check.
-      if (user.accessLevel !== 'ADMIN' && productCode) {
-        const tier = (user.subscriptionTier || 'none') as SubscriptionTier;
-        const allowedCodes = TIER_FEATURES[tier]?.arrayProductCodes ?? [];
-        if (!allowedCodes.includes(productCode)) {
-          return res.status(403).json({
-            error: "This Array product code is not available on your current subscription plan.",
-            productCode,
-            currentTier: tier,
-            upgradeUrl: '/pricing',
-          });
-        }
-      }
 
       const arrayUserId = `scoreshift_user_${user.id}`;
-      const credentials = Buffer.from(`${ARRAY_API_KEY}:${ARRAY_API_SECRET}`).toString("base64");
-
-      const enrollResponse = await fetch("https://api.array.io/v2/user/enroll", {
-        method: "POST",
-        headers: {
-          "Authorization": `Basic ${credentials}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId: arrayUserId, productCode }),
-      });
-
-      const enrollData = await enrollResponse.json().catch(() => ({})) as any;
-
-      if (!enrollResponse.ok) {
-        console.error("[Array] Enrollment failed:", enrollData);
-        return res.status(502).json({ error: "Array enrollment failed", details: enrollData });
-      }
 
       // Persist enrollment in DB
       const { arrayEnrollments } = await import("@shared/schema");
@@ -8730,7 +8692,7 @@ ${denialLetterText}`
         }
       }
 
-      console.log(`[Array] Enrolled user ${user.id} in product code: ${productCode}`);
+      console.log(`[Array] Recorded enrollment for user ${user.id}${productCode ? ` (product: ${productCode})` : ''}`);
       res.json({ success: true, arrayUserId, productCode });
     } catch (error: any) {
       console.error("[Array] Enroll error:", error);

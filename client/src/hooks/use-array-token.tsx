@@ -1,16 +1,16 @@
 /**
- * ArrayTokenContext — single source of truth for the credit monitoring session token.
- * Fetches once on mount, then proactively refreshes every 4 minutes so web components
- * never encounter an expired token. Shared across all pages via context.
+ * ArrayTokenContext — provides the Array app key and sandbox config.
+ * In sandbox mode, no server-side token generation is needed.
+ * The Array web components use apiUrl="https://mock.array.io" + sandbox="true"
+ * and handle authentication internally through the mock API.
  */
-import { createContext, useContext, useState, useEffect, useRef, useCallback, type ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
+import { ARRAY_SANDBOX_APP_KEY } from "./use-array-script";
 
 interface ArrayTokenState {
   token: string;
   appKey: string;
-  /** true once the first fetch attempt has completed (success OR failure) */
   attempted: boolean;
-  /** true when a valid token has been obtained */
   isReady: boolean;
   error: boolean;
   refresh: () => Promise<void>;
@@ -18,68 +18,23 @@ interface ArrayTokenState {
 
 const ArrayTokenContext = createContext<ArrayTokenState>({
   token: "",
-  appKey: "",
-  attempted: false,
-  isReady: false,
+  appKey: ARRAY_SANDBOX_APP_KEY,
+  attempted: true,
+  isReady: true,
   error: false,
   refresh: async () => {},
 });
 
-const REFRESH_INTERVAL_MS = 4 * 60 * 1000; // 4 minutes (token expires in 5)
-
-async function fetchToken(): Promise<{ token: string; appKey: string; arrayUserId: string }> {
-  const authToken =
-    localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
-
-  const res = await fetch("/api/array/token", { headers });
-  if (!res.ok) throw new Error(`Token fetch failed: ${res.status}`);
-  return res.json();
-}
-
 export function ArrayTokenProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState("");
-  const [appKey, setAppKey] = useState("");
-  const [attempted, setAttempted] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-  const [error, setError] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const mountedRef = useRef(true);
-
-  const doFetch = useCallback(async () => {
-    try {
-      const data = await fetchToken();
-      if (!mountedRef.current) return;
-      setToken(data.token);
-      setAppKey(data.appKey);
-      setIsReady(true);
-      setError(false);
-    } catch {
-      if (!mountedRef.current) return;
-      setError(true);
-      setIsReady(false);
-    } finally {
-      if (mountedRef.current) setAttempted(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    doFetch();
-
-    intervalRef.current = setInterval(() => {
-      doFetch();
-    }, REFRESH_INTERVAL_MS);
-
-    return () => {
-      mountedRef.current = false;
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [doFetch]);
-
   return (
-    <ArrayTokenContext.Provider value={{ token, appKey, attempted, isReady, error, refresh: doFetch }}>
+    <ArrayTokenContext.Provider value={{
+      token: "",
+      appKey: ARRAY_SANDBOX_APP_KEY,
+      attempted: true,
+      isReady: true,
+      error: false,
+      refresh: async () => {},
+    }}>
       {children}
     </ArrayTokenContext.Provider>
   );
