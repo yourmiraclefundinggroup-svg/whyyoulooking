@@ -1,15 +1,13 @@
-/**
- * Credit Monitoring — ScoreShift embedded credit components page.
- * Handles account enrollment and rendering all credit web components.
- * Features are gated by subscription tier (starter | pro | elite).
- * Uses Array sandbox mode: apiUrl="https://mock.array.io" + sandbox="true".
- * No server-side token generation required — the mock API handles auth internally.
- */
-import { useState, useEffect, useRef, ComponentType, type Ref } from "react";
+import { useState, useEffect, useRef, ComponentType } from "react";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { useArrayScript, ARRAY_SANDBOX_APP_KEY, ARRAY_SANDBOX_API_URL } from "@/hooks/use-array-script";
+import {
+  useArrayScript,
+  ARRAY_SANDBOX_APP_KEY,
+  ARRAY_SANDBOX_API_URL,
+  ARRAY_SANDBOX_TOKENS,
+} from "@/hooks/use-array-script";
 import { useFeatureAccess, FEATURES, type SubscriptionTier } from "@/hooks/use-feature-access";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,31 +18,23 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 
-interface CreditWebComponentProps {
-  appKey: string;
-  apiUrl?: string;
-  sandbox?: string;
-  showQuickView?: string;
-  token?: string;
-  ref?: Ref<HTMLElement>;
-}
-
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      "array-account-enroll": CreditWebComponentProps;
-      "array-credit-overview": CreditWebComponentProps;
-      "array-credit-report": CreditWebComponentProps;
-      "array-score-tracker": CreditWebComponentProps;
-      "array-debt-analysis": CreditWebComponentProps;
-      "array-score-simulator": CreditWebComponentProps;
-      "array-credit-alerts": CreditWebComponentProps;
-      "array-identity-protect": CreditWebComponentProps;
-      "array-privacy-protect": CreditWebComponentProps;
-      "array-subscription-manager": CreditWebComponentProps;
-      "array-sla-enroll": CreditWebComponentProps;
-      "array-sla-dashboard": CreditWebComponentProps;
-      "array-debt-navigator": CreditWebComponentProps;
+      "array-account-enroll": Record<string, string | undefined>;
+      "array-credit-overview": Record<string, string | undefined>;
+      "array-credit-report": Record<string, string | undefined>;
+      "array-credit-score": Record<string, string | undefined>;
+      "array-credit-debt-analysis": Record<string, string | undefined>;
+      "array-credit-score-simulator": Record<string, string | undefined>;
+      "array-credit-alerts": Record<string, string | undefined>;
+      "array-identity-protect": Record<string, string | undefined>;
+      "array-pip-dashboard": Record<string, string | undefined>;
+      "array-pip-scan": Record<string, string | undefined>;
+      "array-subscription-manager": Record<string, string | undefined>;
+      "array-student-loan-navigator": Record<string, string | undefined>;
+      "array-student-loan-aid": Record<string, string | undefined>;
+      "array-debt-navigator": Record<string, string | undefined>;
     }
   }
 }
@@ -117,12 +107,22 @@ function TierUpgradeCard({
   );
 }
 
-function CreditComponent({ tag, appKey, onEnroll, scriptReady, isEnrollment }: {
+function CreditComponent({
+  tag,
+  appKey,
+  userToken,
+  onEnroll,
+  scriptReady,
+  isEnrollment,
+  attrs,
+}: {
   tag: string;
   appKey: string;
+  userToken?: string;
   onEnroll?: () => void;
   scriptReady?: boolean;
   isEnrollment?: boolean;
+  attrs?: Record<string, string>;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -130,16 +130,19 @@ function CreditComponent({ tag, appKey, onEnroll, scriptReady, isEnrollment }: {
     if (!containerRef.current || !appKey) return;
     if (scriptReady === false) return;
     containerRef.current.innerHTML = "";
+
     const el = document.createElement(tag);
     el.setAttribute("appKey", appKey);
     el.setAttribute("apiUrl", ARRAY_SANDBOX_API_URL);
     el.setAttribute("sandbox", "true");
-    if (isEnrollment) {
-      el.setAttribute("showQuickView", "true");
+    if (userToken) el.setAttribute("userToken", userToken);
+    if (isEnrollment) el.setAttribute("showQuickView", "true");
+    if (attrs) {
+      Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
     }
 
     const handleEvent = (e: Event) => {
-      const detail = (e as CustomEvent<{ tagName?: string; type?: string; status?: number; code?: string }>).detail;
+      const detail = (e as CustomEvent<{ tagName?: string; type?: string }>).detail;
       if ((detail?.tagName === "account-enroll" || detail?.type === "enroll-success") && onEnroll) {
         onEnroll();
       }
@@ -151,7 +154,7 @@ function CreditComponent({ tag, appKey, onEnroll, scriptReady, isEnrollment }: {
     return () => {
       if (containerRef.current) containerRef.current.innerHTML = "";
     };
-  }, [tag, appKey, scriptReady, onEnroll, isEnrollment]);
+  }, [tag, appKey, userToken, scriptReady, onEnroll, isEnrollment, attrs]);
 
   if (scriptReady === false) {
     return (
@@ -170,14 +173,17 @@ export default function CreditMonitoring() {
   const [activeSection, setActiveSection] = useState<string>("overview");
   const access = useFeatureAccess();
 
-  // Load the Array account-enroll script (sandbox mode — no server token needed)
   useArrayScript();
 
   const [scriptReady, setScriptReady] = useState(false);
   useEffect(() => {
     if (scriptReady) return;
     const check = () => {
-      if (customElements.get("array-account-enroll") || customElements.get("array-credit-overview")) {
+      if (
+        customElements.get("array-account-enroll") ||
+        customElements.get("array-credit-overview") ||
+        customElements.get("array-credit-score")
+      ) {
         setScriptReady(true);
       }
     };
@@ -294,6 +300,7 @@ export default function CreditMonitoring() {
                       <CreditComponent
                         tag="array-account-enroll"
                         appKey={ARRAY_SANDBOX_APP_KEY}
+                        userToken={ARRAY_SANDBOX_TOKENS.default}
                         scriptReady={scriptReady}
                         isEnrollment={true}
                         onEnroll={() => enrollMutation.mutate(undefined)}
@@ -318,7 +325,12 @@ export default function CreditMonitoring() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <CreditComponent tag="array-credit-overview" appKey={ARRAY_SANDBOX_APP_KEY} scriptReady={scriptReady} />
+                    <CreditComponent
+                      tag="array-credit-overview"
+                      appKey={ARRAY_SANDBOX_APP_KEY}
+                      userToken={ARRAY_SANDBOX_TOKENS.default}
+                      scriptReady={scriptReady}
+                    />
                   </CardContent>
                 </Card>
 
@@ -331,7 +343,13 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <CreditComponent tag="array-score-tracker" appKey={ARRAY_SANDBOX_APP_KEY} scriptReady={scriptReady} />
+                      <CreditComponent
+                        tag="array-credit-score"
+                        appKey={ARRAY_SANDBOX_APP_KEY}
+                        userToken={ARRAY_SANDBOX_TOKENS.default}
+                        scriptReady={scriptReady}
+                        attrs={{ bureau: "all", scoreTracker: "true" }}
+                      />
                     </CardContent>
                   </Card>
 
@@ -344,7 +362,12 @@ export default function CreditMonitoring() {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <CreditComponent tag="array-debt-analysis" appKey={ARRAY_SANDBOX_APP_KEY} scriptReady={scriptReady} />
+                        <CreditComponent
+                          tag="array-credit-debt-analysis"
+                          appKey={ARRAY_SANDBOX_APP_KEY}
+                          userToken={ARRAY_SANDBOX_TOKENS.default}
+                          scriptReady={scriptReady}
+                        />
                       </CardContent>
                     </Card>
                   ) : (
@@ -368,7 +391,13 @@ export default function CreditMonitoring() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CreditComponent tag="array-credit-report" appKey={ARRAY_SANDBOX_APP_KEY} scriptReady={scriptReady} />
+                  <CreditComponent
+                    tag="array-credit-report"
+                    appKey={ARRAY_SANDBOX_APP_KEY}
+                    userToken={ARRAY_SANDBOX_TOKENS.default}
+                    scriptReady={scriptReady}
+                    attrs={{ defaultBureau: "all" }}
+                  />
                 </CardContent>
               </Card>
             )}
@@ -386,7 +415,12 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <CreditComponent tag="array-credit-alerts" appKey={ARRAY_SANDBOX_APP_KEY} scriptReady={scriptReady} />
+                      <CreditComponent
+                        tag="array-credit-alerts"
+                        appKey={ARRAY_SANDBOX_APP_KEY}
+                        userToken={ARRAY_SANDBOX_TOKENS.creditAlerts}
+                        scriptReady={scriptReady}
+                      />
                     </CardContent>
                   </Card>
                 ) : (
@@ -407,7 +441,12 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <CreditComponent tag="array-identity-protect" appKey={ARRAY_SANDBOX_APP_KEY} scriptReady={scriptReady} />
+                      <CreditComponent
+                        tag="array-identity-protect"
+                        appKey={ARRAY_SANDBOX_APP_KEY}
+                        userToken={ARRAY_SANDBOX_TOKENS.default}
+                        scriptReady={scriptReady}
+                      />
                     </CardContent>
                   </Card>
                 ) : (
@@ -427,8 +466,19 @@ export default function CreditMonitoring() {
                         Privacy Protect
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <CreditComponent tag="array-privacy-protect" appKey={ARRAY_SANDBOX_APP_KEY} scriptReady={scriptReady} />
+                    <CardContent className="space-y-4">
+                      <CreditComponent
+                        tag="array-pip-dashboard"
+                        appKey={ARRAY_SANDBOX_APP_KEY}
+                        userToken={ARRAY_SANDBOX_TOKENS.default}
+                        scriptReady={scriptReady}
+                      />
+                      <CreditComponent
+                        tag="array-pip-scan"
+                        appKey={ARRAY_SANDBOX_APP_KEY}
+                        userToken={ARRAY_SANDBOX_TOKENS.default}
+                        scriptReady={scriptReady}
+                      />
                     </CardContent>
                   </Card>
                 ) : (
@@ -453,7 +503,12 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <CreditComponent tag="array-score-simulator" appKey={ARRAY_SANDBOX_APP_KEY} scriptReady={scriptReady} />
+                      <CreditComponent
+                        tag="array-credit-score-simulator"
+                        appKey={ARRAY_SANDBOX_APP_KEY}
+                        userToken={ARRAY_SANDBOX_TOKENS.default}
+                        scriptReady={scriptReady}
+                      />
                     </CardContent>
                   </Card>
                 ) : (
@@ -474,7 +529,12 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <CreditComponent tag="array-debt-navigator" appKey={ARRAY_SANDBOX_APP_KEY} scriptReady={scriptReady} />
+                      <CreditComponent
+                        tag="array-debt-navigator"
+                        appKey={ARRAY_SANDBOX_APP_KEY}
+                        userToken={ARRAY_SANDBOX_TOKENS.default}
+                        scriptReady={scriptReady}
+                      />
                     </CardContent>
                   </Card>
                 ) : (
@@ -498,11 +558,20 @@ export default function CreditMonitoring() {
                         Student Loan Aid
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <CreditComponent tag="array-sla-enroll" appKey={ARRAY_SANDBOX_APP_KEY} scriptReady={scriptReady} />
-                      <div className="mt-4">
-                        <CreditComponent tag="array-sla-dashboard" appKey={ARRAY_SANDBOX_APP_KEY} scriptReady={scriptReady} />
-                      </div>
+                    <CardContent className="space-y-4">
+                      <CreditComponent
+                        tag="array-student-loan-navigator"
+                        appKey={ARRAY_SANDBOX_APP_KEY}
+                        userToken={ARRAY_SANDBOX_TOKENS.default}
+                        scriptReady={scriptReady}
+                        attrs={{ autolaunch: "true" }}
+                      />
+                      <CreditComponent
+                        tag="array-student-loan-aid"
+                        appKey={ARRAY_SANDBOX_APP_KEY}
+                        userToken={ARRAY_SANDBOX_TOKENS.studentLoanAid}
+                        scriptReady={scriptReady}
+                      />
                     </CardContent>
                   </Card>
                 ) : (
@@ -525,7 +594,13 @@ export default function CreditMonitoring() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <CreditComponent tag="array-subscription-manager" appKey={ARRAY_SANDBOX_APP_KEY} scriptReady={scriptReady} />
+                      <CreditComponent
+                        tag="array-subscription-manager"
+                        appKey={ARRAY_SANDBOX_APP_KEY}
+                        userToken={ARRAY_SANDBOX_TOKENS.subscriptionManager}
+                        scriptReady={scriptReady}
+                        attrs={{ provider: "plaid", mode: "premium" }}
+                      />
                     </CardContent>
                   </Card>
                 ) : (
