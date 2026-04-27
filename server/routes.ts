@@ -497,6 +497,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/webhooks/lob — handle Lob delivery status webhooks
   // Lob events: letter.mailed, letter.in_transit, letter.out_for_delivery, letter.delivered
   app.post("/api/webhooks/lob", async (req: Request, res: Response) => {
+    // Verify Lob webhook signature when LOB_WEBHOOK_SECRET is configured
+    const lobWebhookSecret = process.env.LOB_WEBHOOK_SECRET;
+    if (lobWebhookSecret) {
+      const crypto = await import("crypto");
+      const rawBody = (req as any).rawBody as Buffer | undefined;
+      const sigHeader = req.headers["lob-signature"] as string | undefined;
+      if (!rawBody || !sigHeader) {
+        return res.status(401).json({ error: "Missing signature or body" });
+      }
+      // Lob signature format: "v1=<hex_hmac>"
+      const match = sigHeader.match(/v1=([a-f0-9]+)/i);
+      if (!match) {
+        return res.status(401).json({ error: "Invalid signature format" });
+      }
+      const expectedSig = crypto
+        .createHmac("sha256", lobWebhookSecret)
+        .update(rawBody)
+        .digest("hex");
+      const receivedHex = match[1].toLowerCase();
+      const verified = receivedHex.length === expectedSig.length &&
+        crypto.timingSafeEqual(Buffer.from(receivedHex), Buffer.from(expectedSig));
+      if (!verified) {
+        console.warn("[Lob Webhook] Signature mismatch — rejecting request");
+        return res.status(401).json({ error: "Signature verification failed" });
+      }
+    }
+
     try {
       const event = req.body as { event_type: string; body?: { id?: string; tracking_number?: string; tracking_events?: { name: string }[] } };
       const eventType: string = event?.event_type ?? "";
