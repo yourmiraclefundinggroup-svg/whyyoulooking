@@ -11,7 +11,7 @@ import {
   supportConversations, supportMessages, supportTickets, supportKnowledgeBase,
   subscriptionPlans, payments, invoices, usageTracking
 } from "@shared/schema";
-import { eq, desc, sql, or, and } from "drizzle-orm";
+import { eq, desc, sql, or, and, gte, lt, isNotNull } from "drizzle-orm";
 import { aiService } from "./ai-service";
 import { stripeService } from "./stripe-service";
 import OpenAI from "openai";
@@ -4361,6 +4361,332 @@ Please contact this lead within 24 hours.
       });
     } catch (error: any) {
       console.error("Error fetching admin stats:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Get full analytics dashboard data
+  app.get("/api/admin/analytics", authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { arrayEnrollments } = await import("@shared/schema");
+      const now = new Date();
+      const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthEnd = thisMonthStart;
+
+      function pctChange(current: number, prev: number): number | null {
+        if (prev === 0) return current > 0 ? 100 : null;
+        return Math.round(((current - prev) / prev) * 100);
+      }
+
+      // ── Client metrics ────────────────────────────────────────────────────
+      const [totalClientsRow] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(sql`access_level != 'ADMIN'`);
+
+      const [newThisMonthRow] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(sql`access_level != 'ADMIN' AND created_at >= ${thisMonthStart}`);
+
+      const [newLastMonthRow] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(sql`access_level != 'ADMIN' AND created_at >= ${lastMonthStart} AND created_at < ${lastMonthEnd}`);
+
+      const [activeSubsRow] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(sql`access_level != 'ADMIN' AND subscription_status = 'ACTIVE'`);
+
+      const totalClients = Number(totalClientsRow?.count ?? 0);
+      const newClientsThisMonth = Number(newThisMonthRow?.count ?? 0);
+      const newClientsLastMonth = Number(newLastMonthRow?.count ?? 0);
+      const activeClients = Number(activeSubsRow?.count ?? 0);
+      const retentionRate = totalClients > 0 ? Math.round((activeClients / totalClients) * 100) : 0;
+
+      // ── Dispute metrics ────────────────────────────────────────────────────
+      const [totalDisputesRow] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(disputes);
+
+      const [resolvedDisputesRow] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(disputes)
+        .where(sql`status = 'RESOLVED'`);
+
+      const [disputesThisMonthRow] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(disputes)
+        .where(sql`date_sent >= ${thisMonthStart}`);
+
+      const [disputesLastMonthRow] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(disputes)
+        .where(sql`date_sent >= ${lastMonthStart} AND date_sent < ${lastMonthEnd}`);
+
+      const [avgResolutionRow] = await db
+        .select({ avg: sql<number>`avg(extract(epoch from (actual_response - date_sent)) / 86400)` })
+        .from(disputes)
+        .where(sql`actual_response IS NOT NULL AND status = 'RESOLVED'`);
+
+      // Typed bureau breakdown using drizzle select with sql aliases (no any casts)
+      const bureauBreakdown = await db
+        .select({
+          bureau: sql<string>`upper(bureau)`.as("bureau"),
+          total: sql<number>`cast(count(*) as int)`.as("total"),
+          resolved: sql<number>`cast(count(*) filter (where status = 'RESOLVED') as int)`.as("resolved"),
+        })
+        .from(disputes)
+        .groupBy(sql`upper(bureau)`);
+
+      const totalDisputes = Number(totalDisputesRow?.count ?? 0);
+      const resolvedDisputes = Number(resolvedDisputesRow?.count ?? 0);
+      const disputesThisMonth = Number(disputesThisMonthRow?.count ?? 0);
+      const disputesLastMonth = Number(disputesLastMonthRow?.count ?? 0);
+      const avgResolutionDays = Math.max(0, Math.round(Number(avgResolutionRow?.avg ?? 0)));
+      const successRate = totalDisputes > 0 ? Math.round((resolvedDisputes / totalDisputes) * 100) : 0;
+
+      // ── Revenue metrics (collected via payments table) ─────────────────────
+      const [totalRevenueRow] = await db
+        .select({ total: sql<number>`coalesce(sum(amount), 0)` })
+        .from(payments)
+        .where(sql`status = 'SUCCEEDED'`);
+
+      const [revenueThisMonthRow] = await db
+        .select({ total: sql<number>`coalesce(sum(amount), 0)` })
+        .from(payments)
+        .where(sql`status = 'SUCCEEDED' AND created_at >= ${thisMonthStart}`);
+
+      const [revenueLastMonthRow] = await db
+        .select({ total: sql<number>`coalesce(sum(amount), 0)` })
+        .from(payments)
+        .where(sql`status = 'SUCCEEDED' AND created_at >= ${lastMonthStart} AND created_at < ${lastMonthEnd}`);
+
+      // Subscriber count by tier (for MRR estimate)
+      const tierCounts = await db
+        .select({
+          tier: users.subscriptionTier,
+          count: sql<number>`cast(count(*) as int)`.as("count"),
+        })
+        .from(users)
+        .where(sql`access_level != 'ADMIN' AND subscription_status = 'ACTIVE' AND subscription_tier IS NOT NULL AND subscription_tier != 'none'`)
+        .groupBy(users.subscriptionTier);
+
+      const totalRevenue = Number(totalRevenueRow?.total ?? 0);
+      const revenueThisMonth = Number(revenueThisMonthRow?.total ?? 0);
+      const revenueLastMonth = Number(revenueLastMonthRow?.total ?? 0);
+      const avgRevenuePerClient = totalClients > 0 ? totalRevenue / totalClients : 0;
+
+      // ── AI usage metrics ──────────────────────────────────────────────────
+      const [lettersThisMonthRow] = await db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(disputeLettersNew)
+        .where(sql`created_at >= ${thisMonthStart}`);
+
+      const [lettersLastMonthRow] = await db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(disputeLettersNew)
+        .where(sql`created_at >= ${lastMonthStart} AND created_at < ${lastMonthEnd}`);
+
+      // AI credits = token cost proxy; disputes_generated + documents_generated = AI analysis requests
+      const [aiThisMonthRow] = await db
+        .select({
+          credits: sql<number>`coalesce(sum(ai_credits_used), 0)`.as("credits"),
+          analysisRequests: sql<number>`coalesce(sum(disputes_generated + documents_generated), 0)`.as("analysisRequests"),
+        })
+        .from(usageTracking)
+        .where(sql`year = ${now.getFullYear()} AND month = ${now.getMonth() + 1}`);
+
+      const [aiLastMonthRow] = await db
+        .select({
+          credits: sql<number>`coalesce(sum(ai_credits_used), 0)`.as("credits"),
+          analysisRequests: sql<number>`coalesce(sum(disputes_generated + documents_generated), 0)`.as("analysisRequests"),
+        })
+        .from(usageTracking)
+        .where(sql`year = ${lastMonthStart.getFullYear()} AND month = ${lastMonthStart.getMonth() + 1}`);
+
+      const lettersThisMonth = Number(lettersThisMonthRow?.count ?? 0);
+      const lettersLastMonth = Number(lettersLastMonthRow?.count ?? 0);
+      const aiCreditsThisMonth = Number(aiThisMonthRow?.credits ?? 0);
+      const aiCreditsLastMonth = Number(aiLastMonthRow?.credits ?? 0);
+      const aiAnalysisThisMonth = Number(aiThisMonthRow?.analysisRequests ?? 0);
+      const aiAnalysisLastMonth = Number(aiLastMonthRow?.analysisRequests ?? 0);
+
+      // ── Array enrollment metrics (DB-side aggregation via unnest) ──────────
+      const [totalEnrolledRow] = await db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(arrayEnrollments);
+
+      const [enrolledThisMonthRow] = await db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(arrayEnrollments)
+        .where(sql`enrolled_at >= ${thisMonthStart}`);
+
+      const [enrolledLastMonthRow] = await db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(arrayEnrollments)
+        .where(sql`enrolled_at >= ${lastMonthStart} AND enrolled_at < ${lastMonthEnd}`);
+
+      // Use DB-side unnest to aggregate product code counts efficiently
+      const productCodeRows = await db
+        .select({
+          code: sql<string>`unnest(product_codes)`.as("code"),
+          count: sql<number>`cast(count(*) as int)`.as("count"),
+        })
+        .from(arrayEnrollments)
+        .groupBy(sql`unnest(product_codes)`);
+
+      const productCodeBreakdown: Record<string, number> = {};
+      for (const row of productCodeRows) {
+        productCodeBreakdown[row.code] = row.count;
+      }
+
+      const totalArrayEnrolled = Number(totalEnrolledRow?.count ?? 0);
+      const arrayEnrolledThisMonth = Number(enrolledThisMonthRow?.count ?? 0);
+      const arrayEnrolledLastMonth = Number(enrolledLastMonthRow?.count ?? 0);
+
+      // ── Lob / Mail metrics ────────────────────────────────────────────────
+      const thisMonthDateStr = thisMonthStart.toISOString().split("T")[0];
+      const lastMonthDateStr = lastMonthStart.toISOString().split("T")[0];
+      const lastMonthEndDateStr = lastMonthEnd.toISOString().split("T")[0];
+
+      const [mailedThisMonthRow] = await db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(disputeLettersNew)
+        .where(sql`lob_id IS NOT NULL AND sent_date >= ${thisMonthDateStr}`);
+
+      const [mailedLastMonthRow] = await db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(disputeLettersNew)
+        .where(sql`lob_id IS NOT NULL AND sent_date >= ${lastMonthDateStr} AND sent_date < ${lastMonthEndDateStr}`);
+
+      const [deliveredRow] = await db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(disputeLettersNew)
+        .where(sql`lob_id IS NOT NULL AND lob_status = 'delivered'`);
+
+      const [pendingLobRow] = await db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(disputeLettersNew)
+        .where(sql`lob_id IS NOT NULL AND (lob_status IS NULL OR lob_status NOT IN ('delivered', 'returned_to_sender'))`);
+
+      const [totalMailedRow] = await db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(disputeLettersNew)
+        .where(sql`lob_id IS NOT NULL`);
+
+      const mailedThisMonth = Number(mailedThisMonthRow?.count ?? 0);
+      const mailedLastMonth = Number(mailedLastMonthRow?.count ?? 0);
+      const totalMailed = Number(totalMailedRow?.count ?? 0);
+      const totalDelivered = Number(deliveredRow?.count ?? 0);
+      const totalPending = Number(pendingLobRow?.count ?? 0);
+      const deliveredRate = totalMailed > 0 ? Math.round((totalDelivered / totalMailed) * 100) : 0;
+
+      // ── 6-month time-series (for trend charts) ─────────────────────────────
+      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+      const clientTrend = await db
+        .select({
+          month: sql<number>`cast(extract(month from created_at) as int)`.as("month"),
+          year: sql<number>`cast(extract(year from created_at) as int)`.as("year"),
+          count: sql<number>`cast(count(*) as int)`.as("count"),
+        })
+        .from(users)
+        .where(sql`access_level != 'ADMIN' AND created_at >= ${sixMonthsAgo}`)
+        .groupBy(sql`extract(year from created_at), extract(month from created_at)`)
+        .orderBy(sql`extract(year from created_at), extract(month from created_at)`);
+
+      const letterTrend = await db
+        .select({
+          month: sql<number>`cast(extract(month from created_at) as int)`.as("month"),
+          year: sql<number>`cast(extract(year from created_at) as int)`.as("year"),
+          count: sql<number>`cast(count(*) as int)`.as("count"),
+        })
+        .from(disputeLettersNew)
+        .where(sql`created_at >= ${sixMonthsAgo}`)
+        .groupBy(sql`extract(year from created_at), extract(month from created_at)`)
+        .orderBy(sql`extract(year from created_at), extract(month from created_at)`);
+
+      const disputeTrend = await db
+        .select({
+          month: sql<number>`cast(extract(month from date_sent) as int)`.as("month"),
+          year: sql<number>`cast(extract(year from date_sent) as int)`.as("year"),
+          count: sql<number>`cast(count(*) as int)`.as("count"),
+        })
+        .from(disputes)
+        .where(sql`date_sent >= ${sixMonthsAgo}`)
+        .groupBy(sql`extract(year from date_sent), extract(month from date_sent)`)
+        .orderBy(sql`extract(year from date_sent), extract(month from date_sent)`);
+
+      res.json({
+        clients: {
+          total: totalClients,
+          newThisMonth: newClientsThisMonth,
+          newLastMonth: newClientsLastMonth,
+          newMoM: pctChange(newClientsThisMonth, newClientsLastMonth),
+          retentionRate,
+          activeSubscriptions: activeClients,
+          tierCounts: tierCounts.map((r) => ({ tier: r.tier, count: r.count })),
+        },
+        disputes: {
+          total: totalDisputes,
+          resolved: resolvedDisputes,
+          thisMonth: disputesThisMonth,
+          lastMonth: disputesLastMonth,
+          moM: pctChange(disputesThisMonth, disputesLastMonth),
+          avgResolutionDays,
+          successRate,
+          bureauBreakdown: bureauBreakdown.map((r) => ({
+            bureau: r.bureau,
+            total: r.total,
+            resolved: r.resolved,
+            rate: r.total > 0 ? Math.round((r.resolved / r.total) * 100) : 0,
+          })),
+        },
+        revenue: {
+          total: totalRevenue,
+          thisMonth: revenueThisMonth,
+          lastMonth: revenueLastMonth,
+          moM: pctChange(revenueThisMonth, revenueLastMonth),
+          avgPerClient: avgRevenuePerClient,
+        },
+        aiUsage: {
+          lettersThisMonth,
+          lettersLastMonth,
+          lettersMoM: pctChange(lettersThisMonth, lettersLastMonth),
+          aiCreditsThisMonth,
+          aiCreditsLastMonth,
+          creditsMoM: pctChange(aiCreditsThisMonth, aiCreditsLastMonth),
+          aiAnalysisThisMonth,
+          aiAnalysisLastMonth,
+          analysisMoM: pctChange(aiAnalysisThisMonth, aiAnalysisLastMonth),
+        },
+        array: {
+          totalEnrolled: totalArrayEnrolled,
+          enrolledThisMonth: arrayEnrolledThisMonth,
+          enrolledLastMonth: arrayEnrolledLastMonth,
+          enrolledMoM: pctChange(arrayEnrolledThisMonth, arrayEnrolledLastMonth),
+          productCodeBreakdown,
+        },
+        lob: {
+          mailedThisMonth,
+          mailedLastMonth,
+          mailedMoM: pctChange(mailedThisMonth, mailedLastMonth),
+          totalMailed,
+          totalDelivered,
+          totalPending,
+          deliveredRate,
+        },
+        timeSeries: {
+          clients: clientTrend,
+          letters: letterTrend,
+          disputes: disputeTrend,
+        },
+      });
+    } catch (error: any) {
+      console.error("Error fetching admin analytics:", error);
       res.status(500).json({ error: error.message });
     }
   });

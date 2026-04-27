@@ -1652,106 +1652,403 @@ function DisputeCenterPage({
   );
 }
 
+type TrendPoint = { month: number; year: number; count: number };
+
+type AnalyticsData = {
+  clients: {
+    total: number;
+    newThisMonth: number;
+    newLastMonth: number;
+    newMoM: number | null;
+    retentionRate: number;
+    activeSubscriptions: number;
+    tierCounts: { tier: string | null; count: number }[];
+  };
+  disputes: {
+    total: number;
+    resolved: number;
+    thisMonth: number;
+    lastMonth: number;
+    moM: number | null;
+    avgResolutionDays: number;
+    successRate: number;
+    bureauBreakdown: { bureau: string; total: number; resolved: number; rate: number }[];
+  };
+  revenue: {
+    total: number;
+    thisMonth: number;
+    lastMonth: number;
+    moM: number | null;
+    avgPerClient: number;
+  };
+  aiUsage: {
+    lettersThisMonth: number;
+    lettersLastMonth: number;
+    lettersMoM: number | null;
+    aiCreditsThisMonth: number;
+    aiCreditsLastMonth: number;
+    creditsMoM: number | null;
+    aiAnalysisThisMonth: number;
+    aiAnalysisLastMonth: number;
+    analysisMoM: number | null;
+  };
+  array: {
+    totalEnrolled: number;
+    enrolledThisMonth: number;
+    enrolledLastMonth: number;
+    enrolledMoM: number | null;
+    productCodeBreakdown: Record<string, number>;
+  };
+  lob: {
+    mailedThisMonth: number;
+    mailedLastMonth: number;
+    mailedMoM: number | null;
+    totalMailed: number;
+    totalDelivered: number;
+    totalPending: number;
+    deliveredRate: number;
+  };
+  timeSeries: {
+    clients: TrendPoint[];
+    letters: TrendPoint[];
+    disputes: TrendPoint[];
+  };
+};
+
+function MoMBadge({ value }: { value: number | null }) {
+  if (value === null) return <span className="text-xs text-[hsl(var(--admin-text-subtle))]">—</span>;
+  const positive = value >= 0;
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${positive ? "text-[hsl(var(--admin-success))]" : "text-[hsl(var(--admin-error))]"}`}>
+      {positive ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+      {Math.abs(value)}% vs last month
+    </span>
+  );
+}
+
+function SkeletonLine({ w = "full" }: { w?: string }) {
+  return <div className={`h-4 bg-[hsl(var(--admin-border))] rounded animate-pulse w-${w}`} />;
+}
+
 function AnalyticsPage({ clientUsers }: { clientUsers: User[] }) {
+  const { data: analytics, isLoading } = useQuery<AnalyticsData>({
+    queryKey: ["/api/admin/analytics"],
+  });
+
+  const fmt$ = (n: number) =>
+    n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toFixed(2)}`;
+
+  const PRODUCT_LABELS: Record<string, string> = {
+    exp3bStandardMonitoring: "3-Bureau Standard Monitoring",
+    creditScoreChangeAlertExp: "Credit Score Alerts",
+    debtNavPremium: "Debt Navigator Premium",
+    idpBundle1Insurance1mmRestoreBundleMonitoring: "Identity Protection Bundle",
+    ppPIPApiMonitoringAndRemoval: "Privacy Protection & PII Removal",
+    subscriptionManagerEnrichmentAndCancellation: "Subscription Manager",
+    smTxnSrcFinLnk: "Financial Account Link",
+    pioStudentLoanAidSubmission: "Student Loan Aid Submission",
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Analytics</h1>
-        <p className="text-[hsl(var(--admin-text-muted))]">Performance metrics and client statistics.</p>
+        <p className="text-[hsl(var(--admin-text-muted))]">Real business metrics from live data.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* ── Top KPI cards ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <AdminStatCard
           label="Total Clients"
-          value={clientUsers.length}
+          value={isLoading ? "—" : (analytics?.clients.total ?? clientUsers.length)}
           icon={<Users className="h-6 w-6" />}
+          trend={analytics ? { value: Math.abs(analytics.clients.newMoM ?? 0), positive: (analytics.clients.newMoM ?? 0) >= 0 } : undefined}
           color="blue"
         />
         <AdminStatCard
-          label="Active Issues"
-          value={12}
-          icon={<AlertTriangle className="h-6 w-6" />}
+          label="New This Month"
+          value={isLoading ? "—" : (analytics?.clients.newThisMonth ?? 0)}
+          icon={<UserPlus className="h-6 w-6" />}
+          trend={analytics ? { value: Math.abs(analytics.clients.newMoM ?? 0), positive: (analytics.clients.newMoM ?? 0) >= 0 } : undefined}
+          color="green"
+        />
+        <AdminStatCard
+          label="Disputes Filed"
+          value={isLoading ? "—" : (analytics?.disputes.total ?? 0)}
+          icon={<FileText className="h-6 w-6" />}
+          trend={analytics ? { value: Math.abs(analytics.disputes.moM ?? 0), positive: (analytics.disputes.moM ?? 0) >= 0 } : undefined}
           color="orange"
         />
         <AdminStatCard
-          label="Disputes Sent"
-          value={8}
+          label="Letters Mailed"
+          value={isLoading ? "—" : (analytics?.lob.totalMailed ?? 0)}
           icon={<Send className="h-6 w-6" />}
-          color="green"
+          trend={analytics ? { value: Math.abs(analytics.lob.mailedMoM ?? 0), positive: (analytics.lob.mailedMoM ?? 0) >= 0 } : undefined}
+          color="purple"
         />
       </div>
 
+      {/* ── Dispute + Revenue row ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AdminCard>
           <AdminCardHeader>
-            <AdminCardTitle icon={<TrendingUp className="h-5 w-5" />}>AI Features Usage</AdminCardTitle>
+            <AdminCardTitle icon={<CheckSquare className="h-5 w-5" />}>Dispute Metrics</AdminCardTitle>
           </AdminCardHeader>
           <AdminCardContent>
-            <div className="space-y-4">
-              {[
-                { feature: "Bureau Response Analysis", usage: 24, trend: "+12%" },
-                { feature: "Credit Utilization Optimizer", usage: 18, trend: "+8%" },
-                { feature: "Loan Readiness Assessment", usage: 15, trend: "+15%" },
-                { feature: "Dispute Letter Generation", usage: 32, trend: "+22%" },
-                { feature: "Identity Theft Recovery", usage: 6, trend: "+3%" },
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50">
-                  <div>
-                    <p className="font-medium text-sm text-white">{item.feature}</p>
-                    <p className="text-xs text-[hsl(var(--admin-text-muted))]">{item.usage} uses this month</p>
-                  </div>
-                  <AdminBadge variant="success">{item.trend}</AdminBadge>
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1,2,3,4].map(i => <SkeletonLine key={i} w="3/4" />)}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: "Total Filed", value: analytics?.disputes.total ?? 0 },
+                    { label: "Resolved", value: analytics?.disputes.resolved ?? 0 },
+                    { label: "Success Rate", value: `${analytics?.disputes.successRate ?? 0}%` },
+                    { label: "Avg Resolution", value: analytics?.disputes.avgResolutionDays ? `${analytics.disputes.avgResolutionDays}d` : "—" },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                      <p className="text-xs text-[hsl(var(--admin-text-muted))]">{label}</p>
+                      <p className="text-xl font-bold text-white">{value}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+                <div className="space-y-3 pt-2">
+                  <p className="text-xs font-semibold text-[hsl(var(--admin-text-muted))] uppercase tracking-wide">By Bureau</p>
+                  {(analytics?.disputes.bureauBreakdown ?? []).length === 0 && (
+                    <p className="text-sm text-[hsl(var(--admin-text-subtle))]">No dispute data yet</p>
+                  )}
+                  {(analytics?.disputes.bureauBreakdown ?? []).map((row) => (
+                    <div key={row.bureau} className="space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-white capitalize">{row.bureau.charAt(0) + row.bureau.slice(1).toLowerCase()}</span>
+                        <span className="text-xs text-[hsl(var(--admin-accent))]">{row.rate}% ({row.resolved}/{row.total})</span>
+                      </div>
+                      <div className="w-full bg-[hsl(var(--admin-bg))] rounded-full h-1.5">
+                        <div className="bg-gradient-to-r from-[hsl(var(--admin-accent))] to-[hsl(25,95%,45%)] h-1.5 rounded-full transition-all duration-500" style={{ width: `${row.rate}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-1">
+                  <p className="text-xs text-[hsl(var(--admin-text-muted))]">Filed this month: <span className="font-medium text-white">{analytics?.disputes.thisMonth ?? 0}</span></p>
+                  <MoMBadge value={analytics?.disputes.moM ?? null} />
+                </div>
+                {(analytics?.timeSeries.disputes.length ?? 0) > 0 && (
+                  <div className="pt-2 border-t border-[hsl(var(--admin-border))]">
+                    <p className="text-xs font-semibold text-[hsl(var(--admin-text-muted))] uppercase tracking-wide mb-2">Disputes — 6-Month Trend</p>
+                    <div className="flex items-end gap-1 h-8">
+                      {analytics!.timeSeries.disputes.map((pt, i) => {
+                        const max = Math.max(...analytics!.timeSeries.disputes.map(p => p.count), 1);
+                        const pct = Math.round((pt.count / max) * 100);
+                        return (
+                          <div key={i} className="flex-1">
+                            <div
+                              className="w-full bg-[hsl(var(--admin-warning))]/60 rounded-sm"
+                              style={{ height: `${Math.max(pct, 4)}%` }}
+                              title={`${pt.count} disputes`}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </AdminCardContent>
         </AdminCard>
 
         <AdminCard>
           <AdminCardHeader>
-            <AdminCardTitle icon={<BarChart className="h-5 w-5" />}>Credit Score Improvements</AdminCardTitle>
+            <AdminCardTitle icon={<DollarSign className="h-5 w-5" />}>Revenue</AdminCardTitle>
           </AdminCardHeader>
           <AdminCardContent>
-            <div className="space-y-4">
-              {[
-                { client: "Sarah M.", improvement: "+87 pts", timeframe: "3 months" },
-                { client: "Michael R.", improvement: "+65 pts", timeframe: "4 months" },
-                { client: "Jennifer L.", improvement: "+52 pts", timeframe: "2 months" },
-                { client: "David K.", improvement: "+94 pts", timeframe: "5 months" },
-                { client: "Lisa W.", improvement: "+71 pts", timeframe: "3 months" }
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50">
-                  <div>
-                    <p className="font-medium text-sm text-white">{item.client}</p>
-                    <p className="text-xs text-[hsl(var(--admin-text-muted))]">{item.timeframe}</p>
-                  </div>
-                  <span className="font-bold text-[hsl(var(--admin-success))]">{item.improvement}</span>
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1,2,3].map(i => <SkeletonLine key={i} w="2/3" />)}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: "Total Revenue", value: fmt$(analytics?.revenue.total ?? 0) },
+                    { label: "This Month (MRR)", value: fmt$(analytics?.revenue.thisMonth ?? 0) },
+                    { label: "Last Month", value: fmt$(analytics?.revenue.lastMonth ?? 0) },
+                    { label: "Avg / Client", value: fmt$(analytics?.revenue.avgPerClient ?? 0) },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                      <p className="text-xs text-[hsl(var(--admin-text-muted))]">{label}</p>
+                      <p className="text-xl font-bold text-white">{value}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+                <div className="pt-1">
+                  <MoMBadge value={analytics?.revenue.moM ?? null} />
+                </div>
+                <div className="pt-2 border-t border-[hsl(var(--admin-border))]">
+                  <p className="text-xs font-semibold text-[hsl(var(--admin-text-muted))] uppercase tracking-wide mb-2">Client Subscriptions</p>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-[hsl(var(--admin-text-muted))]">Active subs:</span>
+                    <span className="font-semibold text-white">{analytics?.clients.activeSubscriptions ?? 0}</span>
+                    <span className="text-xs text-[hsl(var(--admin-text-muted))]">Retention: <span className="font-medium text-white">{analytics?.clients.retentionRate ?? 0}%</span></span>
+                  </div>
+                </div>
+              </div>
+            )}
           </AdminCardContent>
         </AdminCard>
       </div>
 
+      {/* ── AI Usage + Array row ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AdminCard>
+          <AdminCardHeader>
+            <AdminCardTitle icon={<Brain className="h-5 w-5" />}>AI & Letter Usage</AdminCardTitle>
+          </AdminCardHeader>
+          <AdminCardContent>
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1,2,3].map(i => <SkeletonLine key={i} w="3/4" />)}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {[
+                  {
+                    label: "Dispute Letters Generated",
+                    value: analytics?.aiUsage.lettersThisMonth ?? 0,
+                    moM: analytics?.aiUsage.lettersMoM ?? null,
+                    sub: `${analytics?.aiUsage.lettersLastMonth ?? 0} last month`,
+                  },
+                  {
+                    label: "AI Analysis Requests",
+                    value: analytics?.aiUsage.aiAnalysisThisMonth ?? 0,
+                    moM: analytics?.aiUsage.analysisMoM ?? null,
+                    sub: `${analytics?.aiUsage.aiAnalysisLastMonth ?? 0} last month`,
+                  },
+                  {
+                    label: "AI Credits (Token Cost Proxy)",
+                    value: analytics?.aiUsage.aiCreditsThisMonth ?? 0,
+                    moM: analytics?.aiUsage.creditsMoM ?? null,
+                    sub: `${analytics?.aiUsage.aiCreditsLastMonth ?? 0} last month`,
+                  },
+                ].map(({ label, value, moM, sub }) => (
+                  <div key={label} className="flex items-center justify-between p-3 rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50">
+                    <div>
+                      <p className="font-medium text-sm text-white">{label}</p>
+                      <p className="text-xs text-[hsl(var(--admin-text-muted))]">{sub}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-bold text-white">{value}</p>
+                      <MoMBadge value={moM} />
+                    </div>
+                  </div>
+                ))}
+                {/* 6-month letter trend sparkline (bar-based) */}
+                {(analytics?.timeSeries.letters.length ?? 0) > 0 && (
+                  <div className="pt-2 border-t border-[hsl(var(--admin-border))]">
+                    <p className="text-xs font-semibold text-[hsl(var(--admin-text-muted))] uppercase tracking-wide mb-2">Letters — 6-Month Trend</p>
+                    <div className="flex items-end gap-1 h-10">
+                      {analytics!.timeSeries.letters.map((pt, i) => {
+                        const max = Math.max(...analytics!.timeSeries.letters.map(p => p.count), 1);
+                        const pct = Math.round((pt.count / max) * 100);
+                        return (
+                          <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+                            <div
+                              className="w-full bg-[hsl(var(--admin-accent))]/60 rounded-sm transition-all"
+                              style={{ height: `${Math.max(pct, 4)}%` }}
+                              title={`${pt.count} letters`}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </AdminCardContent>
+        </AdminCard>
+
+        <AdminCard>
+          <AdminCardHeader>
+            <AdminCardTitle icon={<Shield className="h-5 w-5" />}>Array Credit Monitoring</AdminCardTitle>
+          </AdminCardHeader>
+          <AdminCardContent>
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1,2,3].map(i => <SkeletonLine key={i} w="2/3" />)}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                    <p className="text-xs text-[hsl(var(--admin-text-muted))]">Total Enrolled</p>
+                    <p className="text-2xl font-bold text-white">{analytics?.array.totalEnrolled ?? 0}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[hsl(var(--admin-bg))]/50 border border-[hsl(var(--admin-border))]">
+                    <p className="text-xs text-[hsl(var(--admin-text-muted))]">Enrolled This Month</p>
+                    <p className="text-2xl font-bold text-white">{analytics?.array.enrolledThisMonth ?? 0}</p>
+                  </div>
+                </div>
+                <MoMBadge value={analytics?.array.enrolledMoM ?? null} />
+                {Object.keys(analytics?.array.productCodeBreakdown ?? {}).length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-[hsl(var(--admin-border))]">
+                    <p className="text-xs font-semibold text-[hsl(var(--admin-text-muted))] uppercase tracking-wide">Product Distribution</p>
+                    {Object.entries(analytics?.array.productCodeBreakdown ?? {})
+                      .sort(([, a], [, b]) => b - a)
+                      .map(([code, count]) => (
+                        <div key={code} className="flex items-center justify-between">
+                          <span className="text-xs text-[hsl(var(--admin-text-muted))] truncate max-w-[200px]">
+                            {PRODUCT_LABELS[code] ?? code}
+                          </span>
+                          <AdminBadge variant="info">{count}</AdminBadge>
+                        </div>
+                      ))}
+                  </div>
+                )}
+                {Object.keys(analytics?.array.productCodeBreakdown ?? {}).length === 0 && !isLoading && (
+                  <p className="text-sm text-[hsl(var(--admin-text-subtle))]">No product codes assigned yet</p>
+                )}
+              </div>
+            )}
+          </AdminCardContent>
+        </AdminCard>
+      </div>
+
+      {/* ── Lob / Mail Metrics ── */}
       <AdminCard>
         <AdminCardHeader>
-          <AdminCardTitle icon={<CalendarDays className="h-5 w-5" />}>Monthly Performance Summary</AdminCardTitle>
+          <AdminCardTitle icon={<Mail className="h-5 w-5" />}>Lob Mail Metrics</AdminCardTitle>
         </AdminCardHeader>
         <AdminCardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: "Total Disputes Filed", value: "127", trend: "+23%" },
-              { label: "Successful Removals", value: "96", trend: "+18%" },
-              { label: "Debt Removed", value: "$2.3M", trend: "+34%" },
-              { label: "Avg Score Improvement", value: "67", trend: "+12%" },
-            ].map((item, idx) => (
-              <div key={idx} className="text-center p-4 rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50">
-                <div className="text-2xl font-bold text-[hsl(var(--admin-accent))]">{item.value}</div>
-                <p className="text-sm text-[hsl(var(--admin-text-muted))]">{item.label}</p>
-                <AdminBadge variant="success" className="mt-2">{item.trend}</AdminBadge>
-              </div>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[1,2,3,4].map(i => <SkeletonLine key={i} />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: "Mailed This Month", value: analytics?.lob.mailedThisMonth ?? 0, moM: analytics?.lob.mailedMoM ?? null },
+                { label: "Total Mailed (All Time)", value: analytics?.lob.totalMailed ?? 0, moM: null },
+                { label: "Delivered", value: analytics?.lob.totalDelivered ?? 0, moM: null },
+                { label: "Delivery Rate", value: `${analytics?.lob.deliveredRate ?? 0}%`, moM: null },
+              ].map(({ label, value, moM }) => (
+                <div key={label} className="text-center p-4 rounded-lg border border-[hsl(var(--admin-border))] bg-[hsl(var(--admin-bg))]/50">
+                  <div className="text-2xl font-bold text-[hsl(var(--admin-accent))]">{value}</div>
+                  <p className="text-sm text-[hsl(var(--admin-text-muted))] mt-1">{label}</p>
+                  {moM !== null && <div className="mt-2"><MoMBadge value={moM} /></div>}
+                </div>
+              ))}
+            </div>
+          )}
+          {!isLoading && analytics && (
+            <div className="mt-4 flex items-center gap-4 text-sm text-[hsl(var(--admin-text-muted))]">
+              <span>Pending delivery: <span className="font-medium text-white">{analytics.lob.totalPending}</span></span>
+              <span>Last month mailed: <span className="font-medium text-white">{analytics.lob.mailedLastMonth}</span></span>
+            </div>
+          )}
         </AdminCardContent>
       </AdminCard>
     </div>
