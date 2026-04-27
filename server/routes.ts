@@ -285,6 +285,17 @@ const requireFeature = (feature: string) => (req: Request, res: Response, next: 
   next();
 };
 
+// Map Lob lobStatus field to USPSTracking component status values
+function mapLobStatus(lobStatus: string | null | undefined): "label_created" | "in_transit" | "out_for_delivery" | "delivered" {
+  switch (lobStatus) {
+    case "mailed":
+    case "in_transit": return "in_transit";
+    case "out_for_delivery": return "out_for_delivery";
+    case "delivered": return "delivered";
+    default: return "label_created";
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Users (Admin only)
   app.get("/api/users", authenticateToken, requireAdmin, async (req, res) => {
@@ -453,6 +464,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error fetching client dispute letters:", error);
       res.status(500).json({ message: "Failed to fetch dispute letters" });
+    }
+  });
+
+  // GET /api/dispute-letters/tracking — client's Lob-sent letters for USPS tracking UI
+  app.get("/api/dispute-letters/tracking", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const allLetters = await storage.getDisputeLettersNewByClient(user.id);
+      const bureauLabels: Record<string, string> = {
+        EXPERIAN: "Experian", EQUIFAX: "Equifax", TRANSUNION: "TransUnion",
+      };
+      const lobLetters = allLetters
+        .filter((l) => !!l.lobId)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .map((l) => ({
+          id: String(l.id),
+          trackingNumber: l.trackingNumber ?? "",
+          bureau: bureauLabels[l.bureau] ?? l.bureau,
+          mailedDate: l.sentDate ?? l.createdAt,
+          expectedDate: l.expectedDeliveryDate ?? undefined,
+          status: mapLobStatus(l.lobStatus),
+          sentViaLob: true,
+        }));
+      res.json(lobLetters);
+    } catch (error: any) {
+      console.error("Error fetching tracking letters:", error);
+      res.status(500).json({ message: "Failed to fetch tracking data" });
+    }
+  });
+
+  // POST /api/webhooks/lob — handle Lob delivery status webhooks
+  // Lob events: letter.mailed, letter.in_transit, letter.out_for_delivery, letter.delivered
+  app.post("/api/webhooks/lob", async (req: Request, res: Response) => {
+    try {
+      const event = req.body as { event_type: string; body?: { id?: string; tracking_number?: string; tracking_events?: { name: string }[] } };
+      const eventType: string = event?.event_type ?? "";
+      const lobData = event?.body;
+      const lobId: string | undefined = lobData?.id;
+
+      if (!lobId) {
+        return res.status(200).json({ received: true });
+      }
+
+      // Map Lob event type to our status field
+      const statusMap: Record<string, string> = {
+        "letter.mailed": "mailed",
+        "letter.in_transit": "in_transit",
+        "letter.out_for_delivery": "out_for_delivery",
+        "letter.delivered": "delivered",
+      };
+      const newStatus = statusMap[eventType];
+      if (!newStatus) {
+        return res.status(200).json({ received: true, skipped: true });
+      }
+
+      // Find the letter by lobId and update its status
+      const allLetters = await db.select().from(disputeLettersNew);
+      const letter = allLetters.find((l) => l.lobId === lobId);
+      if (letter) {
+        const updates: Record<string, any> = { lobStatus: newStatus };
+        if (newStatus === "delivered") updates.status = "mailed";
+        await db.update(disputeLettersNew).set(updates).where(eq(disputeLettersNew.id, letter.id));
+        console.log(`[Lob Webhook] Updated letter ${letter.id} status → ${newStatus}`);
+      }
+
+      res.status(200).json({ received: true });
+    } catch (error: any) {
+      console.error("[Lob Webhook] Error:", error);
+      res.status(200).json({ received: true });
     }
   });
 

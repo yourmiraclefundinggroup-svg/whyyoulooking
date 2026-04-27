@@ -143,11 +143,18 @@ export function USPSTracking({ entries }: USPSTrackingProps) {
   if (!entries.length) {
     return (
       <Card className="shadow-sm border border-slate-200">
-        <CardHeader>
+        <CardHeader className="pb-3">
           <CardTitle className="text-lg font-bold text-slate-900">USPS Tracking</CardTitle>
+          <p className="text-xs text-slate-500 mt-1">Certified mail tracking for your dispute letters</p>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-slate-500">No letters mailed yet.</p>
+          <div className="flex flex-col items-center justify-center py-8 text-center gap-2">
+            <Package className="h-10 w-10 text-slate-300" />
+            <p className="text-sm font-medium text-slate-600">No letters mailed yet</p>
+            <p className="text-xs text-slate-400 max-w-xs">
+              Your dispute letters will appear here once your specialist sends them via certified mail.
+            </p>
+          </div>
         </CardContent>
       </Card>
     );

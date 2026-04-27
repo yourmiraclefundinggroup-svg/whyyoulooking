@@ -109,36 +109,7 @@ const mockRemovedItems: RemovedItem[] = [
   },
 ];
 
-// USPS tracking entries
-const mockTrackingEntries: TrackingEntry[] = [
-  {
-    id: "exp-1",
-    trackingNumber: "9400111899223456789012",
-    bureau: "Experian",
-    mailedDate: "Mar 18, 2026",
-    expectedDate: "Mar 22, 2026",
-    status: "in_transit",
-    sentViaLob: true,
-  },
-  {
-    id: "eq-1",
-    trackingNumber: "9400111899223456789034",
-    bureau: "Equifax",
-    mailedDate: "Mar 18, 2026",
-    deliveredDate: "Mar 21, 2026",
-    status: "delivered",
-    sentViaLob: true,
-  },
-  {
-    id: "tu-1",
-    trackingNumber: "9400111899223456789056",
-    bureau: "TransUnion",
-    mailedDate: "Mar 18, 2026",
-    deliveredDate: "Mar 20, 2026",
-    status: "delivered",
-    sentViaLob: true,
-  },
-];
+// USPS tracking — loaded from API, no hardcoded entries
 
 // Uploaded documents
 const mockUploadedFiles: UploadedFile[] = [
@@ -263,6 +234,13 @@ export default function Dashboard() {
 
   const { data: arrayEnrollment } = useQuery<ArrayEnrollmentData>({
     queryKey: ["/api/array/enrollment"],
+    enabled: !!user,
+    retry: false,
+  });
+
+  // Live USPS tracking from Lob-sent letters
+  const { data: trackingEntries = [] } = useQuery<TrackingEntry[]>({
+    queryKey: ["/api/dispute-letters/tracking"],
     enabled: !!user,
     retry: false,
   });
@@ -416,7 +394,7 @@ export default function Dashboard() {
         <ScoreMap />
 
         {/* ── 5. USPS Tracking ── */}
-        <USPSTracking entries={showMockData ? mockTrackingEntries : []} />
+        <USPSTracking entries={trackingEntries} />
 
         {/* ── Two-column layout for lower sections ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
