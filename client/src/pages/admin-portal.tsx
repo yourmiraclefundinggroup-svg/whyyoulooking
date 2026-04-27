@@ -17,7 +17,8 @@ import { FollowUpAlerts } from "@/components/follow-up-alerts";
 import { BureauResponseAnalysis } from "@/components/bureau-response-analysis";
 import { SecureChat } from "@/components/secure-chat";
 import { AdminSettings } from "@/components/admin-settings";
-import { User, CreditReport, CreditIssue, Dispute, CreditReportUpload, CreditReportAccount, CreditReportInquiry, CreditReportCollection, CreditReportPublicRecord, DisputeLetterNew, DisputeCalendarEvent, Lead, Affiliate, AffiliateSignup, DeletionEvent } from "@shared/schema";
+import { User, CreditReport, CreditIssue, Dispute, CreditReportUpload, CreditReportAccount, CreditReportInquiry, CreditReportCollection, CreditReportPublicRecord, DisputeLetterNew, DisputeCalendarEvent, Lead, Affiliate, AffiliateSignup, DeletionEvent, CreditScoreHistory } from "@shared/schema";
+import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -1140,6 +1141,16 @@ function ClientManagementPage({
   handleCreateClient, createClientMutation,
   onRefetchUsers,
 }: any) {
+  const { data: scoreHistory = [], isLoading: scoreHistoryLoading } = useQuery<CreditScoreHistory[]>({
+    queryKey: [`/api/admin/clients/${selectedClientId}/score-history`],
+    enabled: !!selectedClientId,
+  });
+
+  const scoreChartData = scoreHistory.map((entry) => ({
+    date: new Date(entry.recordedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }),
+    score: entry.score,
+  }));
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -1338,6 +1349,85 @@ function ClientManagementPage({
 
               {/* Array enrollment status */}
               <ArrayEnrollmentBadge client={selectedClient} />
+            </AdminCardContent>
+          </AdminCard>
+
+          {/* Score History Chart */}
+          <AdminCard>
+            <AdminCardHeader>
+              <AdminCardTitle icon={<TrendingUp className="h-5 w-5" />}>Credit Score History</AdminCardTitle>
+            </AdminCardHeader>
+            <AdminCardContent>
+              {scoreHistoryLoading ? (
+                <div className="h-48 flex items-center justify-center">
+                  <div className="text-sm text-[hsl(var(--admin-text-muted))]">Loading score history…</div>
+                </div>
+              ) : scoreChartData.length === 0 ? (
+                <div className="h-48 flex items-center justify-center">
+                  <p className="text-sm text-[hsl(var(--admin-text-subtle))] text-center">
+                    No score history yet. Score snapshots are recorded automatically each time a credit report is parsed.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center gap-6 mb-4">
+                    <div>
+                      <div className="text-2xl font-bold text-[hsl(var(--admin-accent))]">
+                        {scoreChartData[scoreChartData.length - 1].score}
+                      </div>
+                      <div className="text-xs text-[hsl(var(--admin-text-muted))]">Latest Score</div>
+                    </div>
+                    {scoreChartData.length >= 2 && (
+                      <div>
+                        <div className={`text-2xl font-bold ${scoreChartData[scoreChartData.length - 1].score - scoreChartData[0].score >= 0 ? "text-[hsl(var(--admin-success))]" : "text-[hsl(var(--admin-error))]"}`}>
+                          {scoreChartData[scoreChartData.length - 1].score - scoreChartData[0].score >= 0 ? "+" : ""}
+                          {scoreChartData[scoreChartData.length - 1].score - scoreChartData[0].score} pts
+                        </div>
+                        <div className="text-xs text-[hsl(var(--admin-text-muted))]">Total Change</div>
+                      </div>
+                    )}
+                    <div className="ml-auto text-xs text-[hsl(var(--admin-text-subtle))]">
+                      {scoreChartData.length} data point{scoreChartData.length !== 1 ? "s" : ""}
+                    </div>
+                  </div>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={scoreChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--admin-border))" />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fill: "hsl(var(--admin-text-muted))", fontSize: 11 }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        domain={["auto", "auto"]}
+                        tick={{ fill: "hsl(var(--admin-text-muted))", fontSize: 11 }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={40}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--admin-surface))",
+                          border: "1px solid hsl(var(--admin-border))",
+                          borderRadius: "8px",
+                          color: "hsl(var(--admin-text))",
+                          fontSize: 12,
+                        }}
+                        formatter={(value: number) => [value, "Score"]}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="score"
+                        stroke="hsl(var(--admin-accent))"
+                        strokeWidth={2}
+                        dot={{ fill: "hsl(var(--admin-accent))", strokeWidth: 0, r: 4 }}
+                        activeDot={{ r: 6, fill: "hsl(var(--admin-accent))" }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </AdminCardContent>
           </AdminCard>
 

@@ -5519,6 +5519,22 @@ Please contact this lead within 24 hours.
     }
   });
 
+  app.get("/api/admin/clients/:id/score-history", authenticateToken, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      if (user.accessLevel !== "ADMIN") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const clientId = parseInt(req.params.id);
+      if (isNaN(clientId)) return res.status(400).json({ error: "Invalid client id" });
+      const history = await storage.getCreditScoreHistory(clientId);
+      res.json(history);
+    } catch (error: any) {
+      console.error("Error fetching client score history:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Get single credit report upload with all parsed data
   app.get("/api/admin/credit-report-uploads/:id", authenticateToken, async (req, res) => {
     try {
