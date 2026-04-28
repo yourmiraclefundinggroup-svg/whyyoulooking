@@ -13,8 +13,8 @@ export function Footer() {
       links: ['Features', 'Pricing', 'Dashboard', 'Dispute IQ™', 'LoanBridge™', 'Credit Coach AI'],
     },
     {
-      title: 'Business',
-      links: ['White Label', 'API Access', 'Affiliate Program', 'Resellers', 'Enterprise'],
+      title: 'For Business',
+      links: ['White Label', 'SaaS Reseller', 'API Access', 'Affiliate Program', 'Enterprise'],
     },
     {
       title: 'Resources',
@@ -40,7 +40,7 @@ export function Footer() {
               <span className="font-black text-white text-lg">ScoreShift</span>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed mb-4">
-              AI-powered credit repair that connects your dispute journey to loan approval.
+              AI-powered credit repair with live 3-bureau monitoring, automated disputes, and loan-ready outcomes.
             </p>
             <div className="flex flex-col gap-2 text-sm text-slate-400">
               <div className="flex items-center gap-2">
@@ -51,6 +51,10 @@ export function Footer() {
                 <Mail size={14} className="shrink-0" />
                 <span>support@scoreshift.io</span>
               </div>
+            </div>
+            <div className="mt-5 inline-flex items-center gap-2 bg-slate-800 border border-slate-700 text-slate-400 text-xs font-semibold px-3 py-2 rounded-lg">
+              <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+              Live 3-Bureau Credit Monitoring
             </div>
           </div>
 

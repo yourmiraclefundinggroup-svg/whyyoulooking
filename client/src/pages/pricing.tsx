@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Sparkles } from "lucide-react";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 
 const personalPlans = [
   {
@@ -14,9 +16,10 @@ const personalPlans = [
     badge: null,
     features: [
       "Dashboard access",
-      "Credit overview & score tracker",
+      "Credit overview & score tracker (3 bureaus)",
       "3 dispute letters / month",
       "Credit report viewer",
+      "ScoreMap™ roadmap",
       "Email support",
     ],
   },
@@ -25,16 +28,17 @@ const personalPlans = [
     tier: "pro",
     price: 79,
     yearlyPrice: 66,
-    description: "Unlimited disputes, alerts, and premium tools",
+    description: "Unlimited disputes, real-time alerts, and premium tools",
     popular: true,
     badge: "Most Popular",
     features: [
       "Everything in Starter",
       "Unlimited dispute letters",
-      "Credit Alerts (real-time)",
+      "Real-Time Credit Alerts",
       "Automated Lob.com certified mail",
       "Score Simulator",
       "Debt Analysis & Debt Navigator",
+      "Credit Coach AI — 24/7",
       "Priority support",
     ],
   },
@@ -45,14 +49,14 @@ const personalPlans = [
     yearlyPrice: 124,
     description: "Full protection suite with identity & privacy tools",
     popular: false,
-    badge: null,
+    badge: "🚀 June 1st Launch",
     features: [
       "Everything in Pro",
-      "Identity Protect",
+      "Identity Protect (dark web + fraud alerts)",
       "Privacy Protect (data broker removal)",
       "Subscription Manager",
       "Student Loan Aid",
-      "White-label documents",
+      "LoanBridge™ DSCR loan connection",
       "Dedicated account manager",
     ],
   },
@@ -61,6 +65,7 @@ const personalPlans = [
 const businessPlans = [
   {
     name: "Starter",
+    tier: "biz-starter",
     price: 79.99,
     yearlyPrice: 67,
     description: "Launch your white-label credit repair brand",
@@ -69,14 +74,15 @@ const businessPlans = [
     features: [
       "1 user",
       "Up to 100 clients",
-      "Manual credit report upload",
+      "Live 3-bureau credit monitoring",
       "Client dashboard",
-      "Basic branding",
-      "Early access support",
+      "Basic white-label branding",
+      "Email support",
     ],
   },
   {
     name: "Growth",
+    tier: "biz-growth",
     price: 329.99,
     yearlyPrice: 275,
     description: "Scale your branded portal with a growing team",
@@ -85,26 +91,29 @@ const businessPlans = [
     features: [
       "Up to 5 users",
       "Up to 1,250 clients",
-      "Manual credit report upload",
-      "White-label branding",
+      "Live 3-bureau credit monitoring",
+      "Full white-label branding",
       "Client management tools",
+      "AutoCycle batch automation",
       "Priority support",
     ],
   },
   {
     name: "Scaling",
+    tier: "biz-scaling",
     price: 459.99,
     yearlyPrice: 384,
-    description: "Full white-label experience for high-volume shops",
+    description: "Full white-label SaaS for high-volume agencies",
     popular: false,
     badge: null,
     features: [
       "Up to 10 users",
       "Up to 2,500 clients",
-      "Manual credit report upload",
+      "Live 3-bureau credit monitoring",
       "Full white-label experience",
       "Advanced client management",
-      "Priority support",
+      "API + Zapier integration",
+      "Dedicated account manager",
     ],
   },
 ];
@@ -117,46 +126,15 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "#050A14" }}>
-      <nav
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b"
-        style={{
-          background: "rgba(5,10,20,0.85)",
-          borderColor: "rgba(255,255,255,0.06)",
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/">
-              <div className="flex items-center gap-2 cursor-pointer">
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-black font-black text-sm"
-                  style={{ background: "linear-gradient(135deg, #F59E0B, #FCD34D)" }}
-                >
-                  SS
-                </div>
-                <span className="text-white font-bold text-lg tracking-tight">ScoreShift</span>
-              </div>
-            </Link>
-            <div className="flex items-center gap-3">
-              <Link href="/auth">
-                <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-white/5">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-black font-bold glow-gold">
-                  Start Free
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
-      <div className="pt-32 pb-24 px-4">
+      <div className="pt-44 pb-24 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <div className="text-xs uppercase tracking-widest text-amber-400 mb-3 font-medium">Simple Pricing</div>
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-md mb-5">
+              <Sparkles size={12} className="text-yellow-300" />
+              3-Bureau Credit Monitoring — Launching June 1st
+            </div>
             <h1 className="text-5xl md:text-6xl font-black text-white tracking-tight mb-4">
               Choose Your Plan
             </h1>
@@ -167,6 +145,7 @@ export default function PricingPage() {
 
           <div className="flex justify-center mb-8">
             <div
+              id="business"
               className="flex rounded-full p-1"
               style={{
                 background: "#0F1E35",
@@ -213,7 +192,7 @@ export default function PricingPage() {
             </span>
           </div>
 
-          <div className={`grid gap-6 mb-16 ${plans.length === 3 ? "md:grid-cols-3" : "md:grid-cols-3"}`}>
+          <div className="grid gap-6 mb-16 md:grid-cols-3">
             {plans.map((plan) => (
               <div
                 key={plan.name}
@@ -230,6 +209,17 @@ export default function PricingPage() {
                     style={{ background: "linear-gradient(135deg, #F59E0B, #FCD34D)" }}
                   >
                     ⭐ Most Popular
+                  </div>
+                )}
+
+                {plan.badge && !plan.popular && (
+                  <div className="mb-3">
+                    <span
+                      className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full text-white"
+                      style={{ background: "linear-gradient(135deg, #2563EB, #4F46E5)" }}
+                    >
+                      {plan.badge}
+                    </span>
                   </div>
                 )}
 
@@ -261,7 +251,7 @@ export default function PricingPage() {
                   ))}
                 </ul>
 
-                <Link href={"tier" in plan ? `/checkout?tier=${plan.tier}` : "/signup"}>
+                <Link href={audience === "personal" ? `/checkout?tier=${plan.tier}` : "/signup"}>
                   <Button
                     className={`w-full font-bold ${
                       plan.popular
@@ -286,7 +276,7 @@ export default function PricingPage() {
             >
               <span className="text-amber-400 mt-0.5 text-base leading-none flex-shrink-0">ℹ</span>
               <p className="text-slate-300 leading-relaxed">
-                <span className="font-semibold text-amber-400">Current Version:</span> Credit reports are manually uploaded at this stage while direct credit integration is being finalized.
+                <span className="font-semibold text-amber-400">White-Label & SaaS Reseller:</span> All business plans include live 3-bureau credit monitoring, full white-label branding under your domain, and a complete client management portal. Launch your own credit repair brand with enterprise-grade technology.
               </p>
             </div>
           )}
@@ -313,25 +303,28 @@ export default function PricingPage() {
               {(audience === "business" ? [
                 { label: "Users included", values: ["1 user", "Up to 5 users", "Up to 10 users"] },
                 { label: "Client seats", values: ["100 clients", "1,250 clients", "2,500 clients"] },
-                { label: "Manual credit report upload", values: [true, true, true] },
+                { label: "Live 3-bureau credit monitoring", values: [true, true, true] },
                 { label: "Client dashboard", values: [true, true, true] },
                 { label: "White-label branding", values: ["Basic", "Full", "Full"] },
                 { label: "Client management tools", values: [false, true, true] },
+                { label: "AutoCycle batch automation", values: [false, true, true] },
+                { label: "API + Zapier integration", values: [false, false, true] },
                 { label: "Advanced client management", values: [false, false, true] },
                 { label: "Priority support", values: [false, true, true] },
+                { label: "Dedicated account manager", values: [false, false, true] },
               ] : [
                 { label: "Credit overview & score tracker", values: [true, true, true] },
+                { label: "3-bureau coverage", values: [true, true, true] },
                 { label: "Dispute letters", values: ["3/month", "Unlimited", "Unlimited"] },
-                { label: "Credit Alerts (real-time)", values: [false, true, true] },
+                { label: "Real-Time Credit Alerts", values: [false, true, true] },
                 { label: "Certified mail (Lob.com)", values: [false, true, true] },
                 { label: "Score Simulator", values: [false, true, true] },
-                { label: "Debt Analysis", values: [false, true, true] },
                 { label: "Debt Navigator", values: [false, true, true] },
+                { label: "Credit Coach AI", values: [false, true, true] },
                 { label: "Identity Protect", values: [false, false, true] },
                 { label: "Privacy Protect", values: [false, false, true] },
-                { label: "Subscription Manager", values: [false, false, true] },
                 { label: "Student Loan Aid", values: [false, false, true] },
-                { label: "White-label documents", values: [false, false, true] },
+                { label: "LoanBridge™", values: [false, false, true] },
                 { label: "Dedicated account manager", values: [false, false, true] },
               ]).map((row, i) => (
                 <div
@@ -376,11 +369,11 @@ export default function PricingPage() {
                 },
                 {
                   q: "What's the difference between Starter, Pro, and Elite?",
-                  a: "Starter gives you the basics — credit overview, score tracking, and 3 dispute letters per month. Pro adds unlimited disputes, Credit Alerts, certified mail sending, Score Simulator, and Debt tools. Elite adds full identity protection, privacy guard, Subscription Manager, and Student Loan Aid.",
+                  a: "Starter gives you the basics — 3-bureau credit overview, score tracking, and 3 dispute letters per month. Pro adds unlimited disputes, Real-Time Alerts, certified mail sending, Score Simulator, and Debt Navigator. Elite adds full identity protection, privacy guard, Student Loan Aid, and a dedicated account manager.",
                 },
                 {
                   q: "Do features unlock automatically after upgrading?",
-                  a: "Yes. When your payment processes, your tier updates immediately and all included features — including ScoreShift credit monitoring — are activated automatically without any manual steps.",
+                  a: "Yes. When your payment processes, your tier updates immediately and all included features — including credit monitoring and identity protection — are activated automatically without any manual steps.",
                 },
               ].map((faq) => (
                 <div
@@ -396,16 +389,7 @@ export default function PricingPage() {
         </div>
       </div>
 
-      <footer
-        className="py-8 px-4 border-t text-center text-slate-600 text-sm"
-        style={{ borderColor: "rgba(255,255,255,0.06)" }}
-      >
-        © 2027 ScoreShift. All rights reserved.
-        <span className="mx-3">·</span>
-        <Link href="/privacy-policy"><span className="hover:text-white cursor-pointer">Privacy</span></Link>
-        <span className="mx-3">·</span>
-        <Link href="/terms"><span className="hover:text-white cursor-pointer">Terms</span></Link>
-      </footer>
+      <Footer />
     </div>
   );
 }
