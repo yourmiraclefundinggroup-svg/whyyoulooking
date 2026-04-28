@@ -12,13 +12,69 @@
   }
 }
 
-:root {
-  /* ScoreShift 2027 Design System */
-  --bg-primary: #050A14;
-  --bg-secondary: #0A1628;
-  --bg-card: #0F1E35;
-  --bg-elevated: #162540;
+/* ============================================================
+   ScoreShift 2028 Design System
+   Light mode in :root and .light, dark mode in .dark
+   ============================================================ */
 
+:root,
+.light {
+  /* ScoreShift brand colors */
+  --gold-400: #F59E0B;
+  --gold-500: #D97706;
+  --gold-glow: rgba(245, 158, 11, 0.12);
+
+  --blue-400: #3B82F6;
+  --blue-glow: rgba(59, 130, 246, 0.1);
+  --emerald-400: #10B981;
+  --emerald-glow: rgba(16, 185, 129, 0.1);
+
+  /* Text */
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+
+  /* Backgrounds */
+  --bg-primary: #F8FAFC;
+  --bg-secondary: #F1F5F9;
+  --bg-card: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+
+  /* Borders */
+  --border-subtle: rgba(0,0,0,0.06);
+  --border-glow: rgba(245, 158, 11, 0.2);
+
+  /* Shadcn compatibility — LIGHT MODE */
+  --background: 210 20% 98%;
+  --foreground: 222 47% 11%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --border: 214 31% 91%;
+  --input: 214 31% 91%;
+  --primary: 38 92% 50%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 38 92% 50%;
+  --radius: 0.75rem;
+
+  /* Trust blue */
+  --trust-blue: 213 94% 68%;
+  --success-green: 142 60% 38%;
+  --warning-orange: 33 100% 50%;
+  --slate-gray: 214 32% 91%;
+}
+
+.dark {
+  /* ScoreShift brand colors — dark mode */
   --gold-400: #F59E0B;
   --gold-500: #D97706;
   --gold-glow: rgba(245, 158, 11, 0.15);
@@ -28,14 +84,22 @@
   --emerald-400: #34D399;
   --emerald-glow: rgba(52, 211, 153, 0.1);
 
+  /* Text */
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
   --text-muted: #475569;
 
+  /* Backgrounds */
+  --bg-primary: #050A14;
+  --bg-secondary: #0A1628;
+  --bg-card: #0F1E35;
+  --bg-elevated: #162540;
+
+  /* Borders */
   --border-subtle: rgba(255,255,255,0.06);
   --border-glow: rgba(245, 158, 11, 0.2);
 
-  /* Shadcn compatibility - mapped to dark theme */
+  /* Shadcn compatibility — DARK MODE */
   --background: 222 47% 4%;
   --foreground: 210 40% 98%;
   --muted: 222 30% 10%;
@@ -55,71 +119,41 @@
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
   --ring: 38 92% 50%;
-  --radius: 0.75rem;
 
-  /* Trust blue kept for admin */
+  /* Trust blue */
   --trust-blue: 207 70% 50%;
   --success-green: 122 47% 35%;
   --warning-orange: 33 100% 50%;
   --slate-gray: 207 8% 15%;
 }
 
-.dark {
-  --background: 222 47% 4%;
-  --foreground: 210 40% 98%;
-  --muted: 222 30% 10%;
-  --muted-foreground: 215 20% 65%;
-  --popover: 222 35% 8%;
-  --popover-foreground: 210 40% 98%;
-  --card: 222 35% 10%;
-  --card-foreground: 210 40% 98%;
-  --border: 222 20% 14%;
-  --input: 222 20% 14%;
-  --primary: 38 92% 50%;
-  --primary-foreground: 0 0% 0%;
-  --secondary: 222 30% 12%;
-  --secondary-foreground: 210 40% 98%;
-  --accent: 222 30% 12%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
-  --ring: 38 92% 50%;
-}
-
 /* ============================================================
    Admin Portal Theme System
-   Variables defined at :root (dark default) and .light (override)
-   so they are accessible inside Radix UI portals and everywhere.
    ============================================================ */
 
-/* --- DARK MODE (DEFAULT) — zinc near-black palette --- */
 :root,
 .admin-theme {
-  /* Backgrounds: zinc-950 → zinc-900 → zinc-800 */
-  --admin-bg:           240 10% 4%;   /* zinc-950 #09090b */
-  --admin-bg-elevated:  240 6% 7%;    /* zinc-900 ish */
-  --admin-sidebar:      240 10% 3%;   /* slightly deeper than bg */
-  --admin-card:         240 6% 10%;   /* zinc-900 #18181b */
-  --admin-card-hover:   240 4% 14%;   /* zinc-800 ish */
-  --admin-border:       240 4% 18%;   /* zinc-700 ish */
-  --admin-border-accent:240 4% 24%;   /* brighter border */
+  --admin-bg:           240 10% 4%;
+  --admin-bg-elevated:  240 6% 7%;
+  --admin-sidebar:      240 10% 3%;
+  --admin-card:         240 6% 10%;
+  --admin-card-hover:   240 4% 14%;
+  --admin-border:       240 4% 18%;
+  --admin-border-accent:240 4% 24%;
 
-  /* Text: #F8FAFC / #94A3B8 */
-  --admin-text:         210 40% 98%;  /* #F8FAFC */
-  --admin-text-muted:   215 19% 65%;  /* #94A3B8 */
-  --admin-text-subtle:  215 14% 44%;  /* dimmer muted */
+  --admin-text:         210 40% 98%;
+  --admin-text-muted:   215 19% 65%;
+  --admin-text-subtle:  215 14% 44%;
 
-  /* Accents */
-  --admin-accent:       38 90% 51%;   /* gold #F59E0B */
-  --admin-accent-hover: 38 90% 60%;   /* gold lighter */
-  --admin-accent-deep:  32 92% 38%;   /* deep warm gold for gradients */
-  --admin-success:      160 68% 52%;  /* emerald #34D399 */
-  --admin-warning:      38 90% 51%;   /* same gold */
-  --admin-danger:       0 84% 60%;    /* red */
-  --admin-info:         213 94% 68%;  /* blue #60A5FA */
+  --admin-accent:       38 90% 51%;
+  --admin-accent-hover: 38 90% 60%;
+  --admin-accent-deep:  32 92% 38%;
+  --admin-success:      160 68% 52%;
+  --admin-warning:      38 90% 51%;
+  --admin-danger:       0 84% 60%;
+  --admin-info:         213 94% 68%;
 }
 
-/* --- LIGHT MODE OVERRIDE --- */
 .light,
 .light .admin-theme {
   --admin-bg:           210 30% 96%;
@@ -134,16 +168,13 @@
   --admin-text-subtle:  220 8% 62%;
   --admin-accent:       38 92% 44%;
   --admin-accent-hover: 38 92% 38%;
-  --admin-accent-deep:  32 92% 30%;   /* deep warm gold for gradients - light mode */
+  --admin-accent-deep:  32 92% 30%;
   --admin-success:      142 60% 38%;
   --admin-warning:      38 92% 44%;
   --admin-danger:       0 84% 55%;
   --admin-info:         213 80% 48%;
 }
 
-/* Scoped light-mode safety: only covers admin sidebar/layout content, NOT Radix portals.
-   New dialog/modal code uses hsl(var(--admin-text)) directly. This override applies only
-   to legacy non-dialog content until a full text-white migration is complete. */
 .light .admin-theme .text-white {
   color: hsl(220 25% 12%) !important;
 }
@@ -153,7 +184,6 @@
   border-color: hsl(220 18% 88%) !important;
 }
 
-/* Radix portal dialogs/popovers — ensure light mode variables cascade correctly */
 .light [role="dialog"],
 .light [data-radix-popper-content-wrapper] {
   --admin-bg:           210 30% 96%;
@@ -175,20 +205,13 @@
 
   body {
     @apply font-sans antialiased;
-    /* Light mode: clean white */
-    background-color: #ffffff;
-    color: #0f172a;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  }
-
-  /* Dark mode: ScoreShift deep navy */
-  .dark body {
-    background-color: #050A14;
-    color: #F8FAFC;
   }
 }
 
-/* === SCORESHIFT 2027 GLOBAL EFFECTS === */
+/* === SCORESHIFT 2028 GLOBAL EFFECTS === */
 
 /* Frosted glass navbar */
 .glass {
@@ -305,7 +328,6 @@
 }
 .animate-card-float { animation: card-float 6s ease-in-out infinite; }
 
-/* PaymentCard3D helper classes */
 .card-3d-container {
   transform-style: preserve-3d;
   perspective: 1200px;
@@ -338,7 +360,7 @@
   animation: chip-float-anim 3s ease-in-out infinite;
 }
 
-/* Stat chip float */
+/* Stat chip float variants */
 @keyframes stat-float-1 {
   0%, 100% { transform: translateY(0px) translateX(0px); }
   50% { transform: translateY(-8px) translateX(4px); }
@@ -364,7 +386,16 @@
   animation: credit-score-fill 2s ease-out forwards;
 }
 
-/* Utility classes for trust-blue backward compat */
+/* ScoreShift branded spinner */
+@keyframes ss-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.ss-spinner {
+  animation: ss-spin 0.8s linear infinite;
+}
+
+/* Utility classes for backward compat */
 .trust-blue { color: hsl(var(--trust-blue)); }
 .bg-trust-blue { background-color: hsl(var(--trust-blue)); }
 .success-green { color: hsl(var(--success-green)); }
@@ -373,3 +404,11 @@
 .bg-warning-orange { background-color: hsl(var(--warning-orange)); }
 .slate-gray { color: hsl(var(--slate-gray)); }
 .bg-slate-gray { background-color: hsl(var(--slate-gray)); }
+
+/* Bureau brand colors */
+.bureau-experian { color: #0062FF; }
+.bureau-equifax { color: #E12726; }
+.bureau-transunion { color: #662D8C; }
+.bg-bureau-experian { background-color: #0062FF; }
+.bg-bureau-equifax { background-color: #E12726; }
+.bg-bureau-transunion { background-color: #662D8C; }

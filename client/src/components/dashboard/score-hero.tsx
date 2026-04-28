@@ -1,12 +1,13 @@
 /**
  * ScoreHero — Credit Score hero section.
  * Shows Array live components when enrolled, or static placeholder data otherwise.
+ * Bureau brand colors: Experian #0062FF, Equifax #E12726, TransUnion #662D8C
  */
 import { useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Minus, Sparkles, Loader2, ShieldCheck } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Sparkles, Loader2, ShieldCheck, Zap } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -18,28 +19,25 @@ import {
 export interface ScoreData {
   scores: { experian: number; equifax: number; transunion: number };
   scoreChange: { experian: number; equifax: number; transunion: number };
-  scoreHistory: number[]; // last 6 months
+  scoreHistory: number[];
   lastUpdated: string;
 }
 
 interface ScoreHeroProps {
   data: ScoreData;
-  /** When provided and enrolled=true, renders Array live components instead of static data */
   arrayToken?: { token: string; appKey: string };
   isEnrolled?: boolean;
   scriptReady?: boolean;
 }
 
-// Map a score to a color label for display
 function getScoreLabel(score: number): { label: string; color: string } {
-  if (score >= 800) return { label: "Exceptional", color: "text-emerald-600" };
-  if (score >= 740) return { label: "Very Good", color: "text-green-600" };
-  if (score >= 670) return { label: "Good", color: "text-lime-600" };
-  if (score >= 580) return { label: "Fair", color: "text-amber-600" };
-  return { label: "Poor", color: "text-red-600" };
+  if (score >= 800) return { label: "Exceptional", color: "text-emerald-600 dark:text-emerald-400" };
+  if (score >= 740) return { label: "Very Good", color: "text-green-600 dark:text-green-400" };
+  if (score >= 670) return { label: "Good", color: "text-lime-600 dark:text-lime-400" };
+  if (score >= 580) return { label: "Fair", color: "text-amber-600 dark:text-amber-400" };
+  return { label: "Poor", color: "text-red-600 dark:text-red-400" };
 }
 
-// Returns a fill color for the score range bar segment
 function getScoreBarColor(score: number): string {
   if (score >= 740) return "bg-emerald-500";
   if (score >= 670) return "bg-green-500";
@@ -47,8 +45,32 @@ function getScoreBarColor(score: number): string {
   return "bg-red-500";
 }
 
+const BUREAU_CONFIG = {
+  Experian: {
+    color: "#0062FF",
+    bg: "bg-blue-50 dark:bg-blue-950/30",
+    border: "border-blue-200 dark:border-blue-800/50",
+    badge: "bg-[#0062FF] text-white",
+    dot: "bg-[#0062FF]",
+  },
+  Equifax: {
+    color: "#E12726",
+    bg: "bg-red-50 dark:bg-red-950/30",
+    border: "border-red-200 dark:border-red-800/50",
+    badge: "bg-[#E12726] text-white",
+    dot: "bg-[#E12726]",
+  },
+  TransUnion: {
+    color: "#662D8C",
+    bg: "bg-purple-50 dark:bg-purple-950/30",
+    border: "border-purple-200 dark:border-purple-800/50",
+    badge: "bg-[#662D8C] text-white",
+    dot: "bg-[#662D8C]",
+  },
+} as const;
+
 interface BureauCardProps {
-  bureau: string;
+  bureau: keyof typeof BUREAU_CONFIG;
   score: number;
   change: number;
 }
@@ -57,24 +79,37 @@ function BureauCard({ bureau, score, change }: BureauCardProps) {
   const isUp = change > 0;
   const isDown = change < 0;
   const { label, color } = getScoreLabel(score);
+  const cfg = BUREAU_CONFIG[bureau];
 
   return (
-    <div className="flex flex-col items-center p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-blue-200 hover:bg-blue-50/30 transition-all">
-      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-        {bureau}
+    <div
+      className={`flex flex-col items-center p-4 rounded-xl border transition-all hover:-translate-y-0.5 ${cfg.bg} ${cfg.border}`}
+    >
+      <div className="flex items-center gap-1.5 mb-2">
+        <span
+          className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${cfg.badge}`}
+        >
+          {bureau}
+        </span>
+      </div>
+      <span className="text-3xl font-black text-slate-900 dark:text-white tabular-nums">
+        {score}
       </span>
-      <span className="text-3xl font-bold text-slate-900">{score}</span>
-      <span className={`text-xs font-medium mt-0.5 ${color}`}>{label}</span>
+      <span className={`text-xs font-semibold mt-0.5 ${color}`}>{label}</span>
       <div className="flex items-center gap-1 mt-2">
         {isUp ? (
           <>
             <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-            <span className="text-xs font-semibold text-emerald-600">+{change} pts</span>
+            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              +{change} pts
+            </span>
           </>
         ) : isDown ? (
           <>
             <TrendingDown className="h-3.5 w-3.5 text-red-500" />
-            <span className="text-xs font-semibold text-red-600">{change} pts</span>
+            <span className="text-xs font-semibold text-red-600 dark:text-red-400">
+              {change} pts
+            </span>
           </>
         ) : (
           <>
@@ -87,10 +122,8 @@ function BureauCard({ bureau, score, change }: BureauCardProps) {
   );
 }
 
-// Month labels for the sparkline x-axis
 const MONTH_LABELS = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
 
-/** Renders a single Array web component by tag name */
 function ArrayWebComponent({
   tag,
   token,
@@ -122,7 +155,10 @@ function ArrayWebComponent({
   if (scriptReady === false) {
     return (
       <div className={`${className} flex items-center justify-center`}>
-        <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-amber-400 border-t-transparent ss-spinner" />
+          <p className="text-xs text-slate-500 dark:text-slate-400">Loading credit data...</p>
+        </div>
       </div>
     );
   }
@@ -130,13 +166,61 @@ function ArrayWebComponent({
   return <div ref={containerRef} className={className} />;
 }
 
+function ArrayCard({
+  title,
+  description,
+  children,
+  icon: Icon,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }>;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 dark:border-white/[0.07] bg-white dark:bg-[#0F1E35] overflow-hidden">
+      <div className="px-4 pt-4 pb-3 border-b border-slate-100 dark:border-white/[0.05]">
+        <div className="flex items-center gap-2">
+          {Icon && (
+            <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
+              <Icon className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+            </div>
+          )}
+          <div>
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{title}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
+          </div>
+        </div>
+      </div>
+      <div className="p-4">{children}</div>
+    </div>
+  );
+}
+
 export function ScoreHero({ data, arrayToken, isEnrolled, scriptReady }: ScoreHeroProps) {
-  // Show live Array components when user is enrolled and token is available
   if (isEnrolled && arrayToken?.token && arrayToken?.appKey) {
     return (
       <div className="space-y-4">
-        {/* Primary overview component */}
-        <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
+        {/* Bureau badges row */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {(["Experian", "Equifax", "TransUnion"] as const).map((b) => (
+            <span
+              key={b}
+              className={`text-[11px] font-bold px-2 py-1 rounded-full text-white ${BUREAU_CONFIG[b].badge}`}
+            >
+              ✓ {b}
+            </span>
+          ))}
+          <span className="ml-auto text-xs text-slate-400 dark:text-slate-500">
+            Powered by Array
+          </span>
+        </div>
+
+        <ArrayCard
+          title="Credit Overview"
+          description="Live 3-bureau credit scores and account summary"
+          icon={Sparkles}
+        >
           <ArrayWebComponent
             tag="array-credit-overview"
             token={arrayToken.token}
@@ -144,49 +228,50 @@ export function ScoreHero({ data, arrayToken, isEnrolled, scriptReady }: ScoreHe
             scriptReady={scriptReady}
             className="w-full min-h-[220px]"
           />
-        </div>
+        </ArrayCard>
 
-        {/* Score tracker + debt analysis side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-              Score Tracker
-            </p>
+          <ArrayCard
+            title="Score Tracker"
+            description="Track your score trend over time"
+            icon={TrendingUp}
+          >
             <ArrayWebComponent
-              tag="array-score-tracker"
+              tag="array-credit-score"
               token={arrayToken.token}
               appKey={arrayToken.appKey}
               scriptReady={scriptReady}
               className="w-full min-h-[180px]"
             />
-          </div>
-          <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-              Debt Analysis
-            </p>
+          </ArrayCard>
+          <ArrayCard
+            title="Debt Analysis"
+            description="Utilization and debt breakdown"
+            icon={Zap}
+          >
             <ArrayWebComponent
-              tag="array-debt-analysis"
+              tag="array-credit-debt-analysis"
               token={arrayToken.token}
               appKey={arrayToken.appKey}
               scriptReady={scriptReady}
               className="w-full min-h-[180px]"
             />
-          </div>
+          </ArrayCard>
         </div>
 
-        {/* Score simulator */}
-        <div className="rounded-xl overflow-hidden border border-slate-200 bg-white p-4">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-            Score Simulator
-          </p>
+        <ArrayCard
+          title="Score Simulator"
+          description="See how financial decisions would impact your score"
+          icon={Sparkles}
+        >
           <ArrayWebComponent
-            tag="array-score-simulator"
+            tag="array-credit-score-simulator"
             token={arrayToken.token}
             appKey={arrayToken.appKey}
             scriptReady={scriptReady}
             className="w-full min-h-[200px]"
           />
-        </div>
+        </ArrayCard>
       </div>
     );
   }
@@ -201,7 +286,6 @@ export function ScoreHero({ data, arrayToken, isEnrolled, scriptReady }: ScoreHe
     (scoreChange.experian + scoreChange.equifax + scoreChange.transunion) / 3
   );
   const { label: avgLabel } = getScoreLabel(avgScore);
-
   const scorePercent = Math.round(((avgScore - 300) / 550) * 100);
 
   const sparkData = scoreHistory.map((val, i) => ({
@@ -212,9 +296,21 @@ export function ScoreHero({ data, arrayToken, isEnrolled, scriptReady }: ScoreHe
   return (
     <Card className="shadow-lg border-0 overflow-hidden bg-gradient-to-br from-[#0F172A] to-[#1E3A5F]">
       <CardContent className="p-6 md:p-8">
+        {/* Bureau status row */}
+        <div className="flex items-center gap-2 mb-5 flex-wrap">
+          {(["Experian", "Equifax", "TransUnion"] as const).map((b) => (
+            <span
+              key={b}
+              className={`text-[11px] font-bold px-2 py-1 rounded-full text-white ${BUREAU_CONFIG[b].badge}`}
+            >
+              ✓ {b}
+            </span>
+          ))}
+          <span className="ml-auto text-xs text-white/40">Sample data</span>
+        </div>
+
         {/* Top row */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-
           {/* Left: Big score */}
           <div className="flex flex-col items-center md:items-start">
             <div className="flex items-center gap-2 mb-1">
@@ -230,9 +326,7 @@ export function ScoreHero({ data, arrayToken, isEnrolled, scriptReady }: ScoreHe
                   <TrendingUp className="h-3.5 w-3.5 mr-1" />
                   +{avgChange} pts this month
                 </Badge>
-                <span className="text-sm font-semibold opacity-90 text-white/80">
-                  {avgLabel}
-                </span>
+                <span className="text-sm font-semibold text-white/80">{avgLabel}</span>
               </div>
             </div>
             <p className="text-slate-400 text-xs mt-1">Last updated: {lastUpdated}</p>
@@ -249,9 +343,7 @@ export function ScoreHero({ data, arrayToken, isEnrolled, scriptReady }: ScoreHe
                   style={{ width: `${scorePercent}%` }}
                 />
               </div>
-              <div className="text-center mt-1 text-xs text-slate-400">
-                {avgScore} / 850
-              </div>
+              <div className="text-center mt-1 text-xs text-slate-400">{avgScore} / 850</div>
             </div>
           </div>
 
@@ -299,6 +391,9 @@ export function ScoreHero({ data, arrayToken, isEnrolled, scriptReady }: ScoreHe
           <BureauCard bureau="Equifax" score={scores.equifax} change={scoreChange.equifax} />
           <BureauCard bureau="TransUnion" score={scores.transunion} change={scoreChange.transunion} />
         </div>
+
+        {/* Attribution */}
+        <p className="text-center text-xs text-white/30 mt-4">Powered by Array · 3-bureau live data</p>
 
         {/* Credit monitoring CTA — shown only when not enrolled */}
         {!isEnrolled && (

@@ -332,7 +332,7 @@ export default function Dashboard() {
     : mockClient.name;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       {/* ── 1. Header / Nav ── */}
       <DashboardHeader clientName={clientName} />
 
@@ -340,18 +340,20 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
         {/* Welcome greeting row */}
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Welcome back, {clientName.split(" ")[0]} 👋
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Here's what's happening with your credit repair case
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              Welcome back, {clientName.split(" ")[0]} 👋
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Here's what's happening with your credit repair case
+            </p>
+          </div>
         </div>
 
         {/* Sample data banner — shown until admin uploads real credit report */}
         {showMockData && (
-          <div className="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 flex items-center gap-3 text-sm text-blue-800">
+          <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 px-4 py-3 flex items-center gap-3 text-sm text-blue-800 dark:text-blue-300">
             <span className="text-blue-500">📋</span>
             <span><strong>Sample Dashboard</strong> — Your personalized credit data will appear here once your admin uploads your credit report.</span>
           </div>
@@ -408,10 +410,10 @@ export default function Dashboard() {
         <ReferralEngine userId={user?.id} />
 
         {/* ── Try Denial Decoder CTA ── */}
-        <div className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-5 flex items-center justify-between gap-4">
+        <div className="rounded-xl border border-amber-200 dark:border-amber-500/25 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 p-5 flex items-center justify-between gap-4">
           <div>
-            <h3 className="font-semibold text-slate-900">Got a loan denial? Let AI decode it.</h3>
-            <p className="text-sm text-slate-600 mt-0.5">Paste your denial letter — we'll tell you exactly what to fix and how long it takes.</p>
+            <h3 className="font-semibold text-slate-900 dark:text-white">Got a loan denial? Let AI decode it.</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">Paste your denial letter — we'll tell you exactly what to fix and how long it takes.</p>
           </div>
           <Link href="/denial-decoder">
             <button className="shrink-0 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition-colors">

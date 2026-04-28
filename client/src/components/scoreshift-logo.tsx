@@ -1,39 +1,51 @@
 interface ScoreShiftLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
-  animated?: boolean;
+  showWordmark?: boolean;
+  variant?: 'default' | 'light' | 'dark';
 }
 
-export function ScoreShiftLogo({ size = 'md', className = '', animated = false }: ScoreShiftLogoProps) {
-  const sizeClasses = {
-    sm: 'text-lg',
-    md: 'text-xl',
-    lg: 'text-2xl',
-    xl: 'text-3xl'
-  };
+export function ScoreShiftLogo({
+  size = 'md',
+  className = '',
+  showWordmark = true,
+  variant = 'default',
+}: ScoreShiftLogoProps) {
+  const iconSizes = { sm: 'w-6 h-6', md: 'w-8 h-8', lg: 'w-10 h-10', xl: 'w-12 h-12' };
+  const textSizes = { sm: 'text-base', md: 'text-xl', lg: 'text-2xl', xl: 'text-3xl' };
+  const fontSizes = { sm: 'text-[9px]', md: 'text-[11px]', lg: 'text-[13px]', xl: 'text-[15px]' };
 
-  const paddingClasses = {
-    sm: 'px-2 py-1',
-    md: 'px-3 py-1',
-    lg: 'px-4 py-2',
-    xl: 'px-6 py-3'
-  };
+  const wordmarkColor =
+    variant === 'light'
+      ? 'text-white'
+      : variant === 'dark'
+      ? 'text-slate-900'
+      : 'text-foreground';
+
+  const accentColor =
+    variant === 'light' ? 'text-amber-300' : 'text-amber-500';
 
   return (
-    <div className={`flex items-center space-x-1 ${className}`}>
-      <div className={`
-        bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg font-bold
-        ${sizeClasses[size]} ${paddingClasses[size]}
-        ${animated ? 'hover:shadow-md transition-all duration-200 hover:scale-105' : ''}
-      `}>
-        Score
+    <div className={`flex items-center gap-2.5 ${className}`}>
+      {/* Dual-circle mark */}
+      <div className={`relative shrink-0 ${iconSizes[size]}`}>
+        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow-md" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className={`text-white font-black leading-none tracking-tight ${fontSizes[size]}`}>
+            SS
+          </span>
+        </div>
+        <div
+          className="absolute rounded-full border-2 border-white/30"
+          style={{ inset: '-3px' }}
+        />
       </div>
-      <div className={`
-        text-blue-700 font-bold ${sizeClasses[size]}
-        ${animated ? 'hover:text-blue-800 transition-colors duration-200' : ''}
-      `}>
-        Shift
-      </div>
+
+      {showWordmark && (
+        <span className={`font-bold tracking-tight ${textSizes[size]} ${wordmarkColor}`}>
+          Score<span className={accentColor}>Shift</span>
+        </span>
+      )}
     </div>
   );
 }
