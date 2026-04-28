@@ -5,9 +5,12 @@ import { Menu, X, Sun, Moon, Sparkles } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { useTheme } from '@/components/theme-provider'
 
+const LAUNCH_DATE = new Date('2026-06-01T00:00:00')
+
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { theme, toggleTheme } = useTheme()
+  const isPostLaunch = new Date() >= LAUNCH_DATE
 
   const links = [
     { label: 'Features', href: '/#features' },
@@ -21,14 +24,29 @@ export function Navbar() {
       {/* ─── LAUNCH ANNOUNCEMENT BAR ─── */}
       <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white text-xs sm:text-sm py-2 px-4 text-center flex items-center justify-center gap-2">
         <Sparkles size={14} className="text-gold-300 shrink-0" />
-        <span className="font-semibold">
-          🚀 Live 3-Bureau Credit Monitoring launches <span className="text-gold-300 font-black">June 1st</span>
-        </span>
-        <Link to="/pricing">
-          <span className="hidden sm:inline ml-2 underline underline-offset-2 cursor-pointer hover:text-gold-200 transition-colors font-semibold">
-            See what's included →
-          </span>
-        </Link>
+        {isPostLaunch ? (
+          <>
+            <span className="font-semibold">
+              🎉 Now live: <span className="text-gold-300 font-black">3-Bureau Credit Monitoring</span> powered by Array
+            </span>
+            <Link to="/pricing">
+              <span className="hidden sm:inline ml-2 underline underline-offset-2 cursor-pointer hover:text-gold-200 transition-colors font-semibold">
+                Get started →
+              </span>
+            </Link>
+          </>
+        ) : (
+          <>
+            <span className="font-semibold">
+              🚀 Live 3-Bureau Credit Monitoring launches <span className="text-gold-300 font-black">June 1st</span>
+            </span>
+            <Link to="/pricing">
+              <span className="hidden sm:inline ml-2 underline underline-offset-2 cursor-pointer hover:text-gold-200 transition-colors font-semibold">
+                See what's included →
+              </span>
+            </Link>
+          </>
+        )}
       </div>
 
       <motion.nav
