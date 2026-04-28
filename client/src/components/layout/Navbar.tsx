@@ -7,10 +7,15 @@ import { useTheme } from '@/components/theme-provider'
 
 const LAUNCH_DATE = new Date('2026-06-01T00:00:00')
 
-export function Navbar() {
+interface NavbarProps {
+  variant?: 'light' | 'dark'
+}
+
+export function Navbar({ variant = 'light' }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { theme, toggleTheme } = useTheme()
   const isPostLaunch = new Date() >= LAUNCH_DATE
+  const isDark = variant === 'dark'
 
   const links = [
     { label: 'Features', href: '/#features' },
@@ -53,7 +58,11 @@ export function Navbar() {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4 }}
-        className="fixed top-[36px] left-0 right-0 z-50 glass border-b border-slate-200/80 dark:border-white/10"
+        className={
+          isDark
+            ? 'fixed top-[36px] left-0 right-0 z-50 border-b navbar-dark'
+            : 'fixed top-[36px] left-0 right-0 z-50 glass border-b border-slate-200/80 dark:border-white/10'
+        }
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16 gap-8">
@@ -63,7 +72,7 @@ export function Navbar() {
                 <div className="absolute left-0 top-0.5 w-5 h-5 rounded-full bg-blue-600" />
                 <div className="absolute left-3 top-0.5 w-5 h-5 rounded-full bg-gold-500 opacity-90" />
               </div>
-              <span className="font-black text-slate-900 text-lg tracking-tight dark:text-white">ScoreShift</span>
+              <span className={`font-black text-lg tracking-tight ${isDark ? 'text-white' : 'text-slate-900 dark:text-white'}`}>ScoreShift</span>
             </Link>
 
             {/* Desktop nav links */}
@@ -72,7 +81,11 @@ export function Navbar() {
                 <Link
                   key={link.label}
                   to={link.href}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/8"
+                  className={
+                    isDark
+                      ? 'px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/8 rounded-lg transition-all'
+                      : 'px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/8'
+                  }
                 >
                   {link.label}
                 </Link>
@@ -84,7 +97,11 @@ export function Navbar() {
               {/* Dark mode toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-all dark:text-slate-400 dark:hover:bg-white/8"
+                className={
+                  isDark
+                    ? 'p-2 rounded-lg text-slate-400 hover:bg-white/8 transition-all'
+                    : 'p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-all dark:text-slate-400 dark:hover:bg-white/8'
+                }
                 aria-label="Toggle dark mode"
               >
                 {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -92,7 +109,11 @@ export function Navbar() {
 
               <Link
                 to="/login"
-                className="hidden sm:inline-flex px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-all dark:text-slate-300 dark:hover:bg-white/8"
+                className={
+                  isDark
+                    ? 'hidden sm:inline-flex px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-white/8 rounded-lg transition-all'
+                    : 'hidden sm:inline-flex px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-all dark:text-slate-300 dark:hover:bg-white/8'
+                }
               >
                 Sign In
               </Link>
@@ -105,7 +126,11 @@ export function Navbar() {
               {/* Mobile hamburger */}
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
-                className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-all"
+                className={
+                  isDark
+                    ? 'md:hidden p-2 rounded-lg text-slate-300 hover:bg-white/8 transition-all'
+                    : 'md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-all'
+                }
               >
                 {mobileOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
@@ -121,7 +146,11 @@ export function Navbar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="md:hidden border-t border-slate-200 bg-white dark:bg-navy-800 dark:border-white/8"
+              className={
+                isDark
+                  ? 'md:hidden border-t border-white/8 bg-[#050A14]'
+                  : 'md:hidden border-t border-slate-200 bg-white dark:bg-navy-800 dark:border-white/8'
+              }
             >
               <div className="px-4 py-4 flex flex-col gap-1">
                 {links.map((link) => (
@@ -129,13 +158,22 @@ export function Navbar() {
                     key={link.label}
                     to={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className="px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-all dark:text-slate-300"
+                    className={
+                      isDark
+                        ? 'px-4 py-3 text-sm font-medium text-slate-300 hover:bg-white/8 rounded-lg transition-all'
+                        : 'px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-all dark:text-slate-300'
+                    }
                   >
                     {link.label}
                   </Link>
                 ))}
-                <div className="pt-3 border-t border-slate-200 dark:border-white/8 mt-2 flex flex-col gap-2">
-                  <Link to="/login" className="px-4 py-3 text-sm font-medium text-center text-slate-700 border border-slate-200 rounded-xl">Sign In</Link>
+                <div className={`pt-3 border-t mt-2 flex flex-col gap-2 ${isDark ? 'border-white/8' : 'border-slate-200 dark:border-white/8'}`}>
+                  <Link
+                    to="/login"
+                    className={`px-4 py-3 text-sm font-medium text-center rounded-xl border ${isDark ? 'text-slate-300 border-white/10' : 'text-slate-700 border-slate-200'}`}
+                  >
+                    Sign In
+                  </Link>
                   <Link to="/signup">
                     <Button variant="primary" fullWidth>Start Free →</Button>
                   </Link>

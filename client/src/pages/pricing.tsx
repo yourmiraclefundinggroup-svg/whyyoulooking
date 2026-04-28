@@ -126,7 +126,7 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "#050A14" }}>
-      <Navbar />
+      <Navbar variant="dark" />
 
       <div className="pt-44 pb-24 px-4">
         <div className="max-w-6xl mx-auto">
