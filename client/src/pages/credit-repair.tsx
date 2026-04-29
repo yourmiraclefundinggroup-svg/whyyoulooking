@@ -76,9 +76,9 @@ function IssueTypeBadge({ type }: { type: string }) {
   const { label, icon, bgColor, textColor, borderColor } = config[type] || {
     label: type,
     icon: <AlertCircle className="h-3.5 w-3.5" />,
-    bgColor: 'bg-gray-500 dark:bg-gray-600',
+    bgColor: 'bg-muted',
     textColor: 'text-white',
-    borderColor: 'border-gray-600 dark:border-gray-500'
+    borderColor: 'border-border'
   };
 
   return (
@@ -134,8 +134,8 @@ function ClientProgressTab() {
       <Card>
         <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
-            <div className="h-24 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-6 bg-muted rounded w-1/3" />
+            <div className="h-24 bg-muted rounded-xl" />
           </div>
         </CardContent>
       </Card>
@@ -149,8 +149,8 @@ function ClientProgressTab() {
           <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Progress Data Yet</h3>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
+          <h3 className="text-lg font-medium text-foreground mb-2">No Progress Data Yet</h3>
+          <p className="text-muted-foreground text-sm">
             Your progress report will appear here once your admin uploads your credit report.
           </p>
         </CardContent>
@@ -164,11 +164,11 @@ function ClientProgressTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <CheckCircle className="h-6 w-6 text-blue-500" />
             My Credit Repair Progress
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             Based on {progress.totalUploads} credit report{(progress.totalUploads ?? 0) > 1 ? 's' : ''}
             {progress.latestBureau ? ` · ${progress.latestBureau}` : ''}
           </p>
@@ -186,14 +186,14 @@ function ClientProgressTab() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-gray-900 dark:text-white">{progress.startingScore ?? '—'}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Starting Score</div>
+              <div className="text-3xl font-bold text-foreground">{progress.startingScore ?? '—'}</div>
+              <div className="text-xs text-muted-foreground mt-1">Starting Score</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{progress.currentScore ?? '—'}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Current Score</div>
+              <div className="text-xs text-muted-foreground mt-1">Current Score</div>
             </CardContent>
           </Card>
           <Card>
@@ -201,13 +201,13 @@ function ClientProgressTab() {
               <div className={`text-3xl font-bold ${scoreDelta >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {scoreDelta >= 0 ? '+' : ''}{scoreDelta}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Score Change</div>
+              <div className="text-xs text-muted-foreground mt-1">Score Change</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-3xl font-bold text-green-600 dark:text-green-400">{progress.lettersRemoved ?? 0}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Items Removed</div>
+              <div className="text-xs text-muted-foreground mt-1">Items Removed</div>
             </CardContent>
           </Card>
         </div>
@@ -215,21 +215,21 @@ function ClientProgressTab() {
         {/* Dispute letters summary */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base text-gray-900 dark:text-white">Dispute Letter Summary</CardTitle>
+            <CardTitle className="text-base text-foreground">Dispute Letter Summary</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{progress.lettersSent ?? 0}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Sent to Bureaus</div>
+                <div className="text-xs text-muted-foreground mt-1">Sent to Bureaus</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">{progress.lettersRemoved ?? 0}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Confirmed Removed</div>
+                <div className="text-xs text-muted-foreground mt-1">Confirmed Removed</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{progress.lettersDraft ?? 0}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">In Progress</div>
+                <div className="text-xs text-muted-foreground mt-1">In Progress</div>
               </div>
             </div>
           </CardContent>
@@ -243,10 +243,10 @@ function ClientProgressTab() {
                 <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                <div className="text-sm font-medium text-foreground">
                   Next Dispute Round {progress.nextDisputeRound ?? ''}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
+                <div className="text-xs text-muted-foreground">
                   Scheduled for {new Date(progress.nextDisputeDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
               </div>
@@ -291,8 +291,8 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
       <Card>
         <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            <div className="h-6 bg-muted rounded w-1/4" />
+            <div className="h-20 bg-muted rounded-xl" />
           </div>
         </CardContent>
       </Card>
@@ -306,8 +306,8 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
           <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Credit Reports Yet</h3>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
+          <h3 className="text-lg font-medium text-foreground mb-2">No Credit Reports Yet</h3>
+          <p className="text-muted-foreground text-sm">
             Your admin will upload your credit report data. Once available, you'll be able to view your accounts, disputes, and progress here.
           </p>
         </CardContent>
@@ -353,19 +353,19 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
                       }`} />
                     </div>
                     <div className="ml-3">
-                      <p className="font-medium text-gray-900 dark:text-white">{upload.bureau}</p>
-                      <p className="text-xs text-gray-500">{new Date(upload.createdAt).toLocaleDateString()}</p>
+                      <p className="font-medium text-foreground">{upload.bureau}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(upload.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
                   <ChevronRight className={`h-5 w-5 transition-transform ${
-                    selectedReportId === upload.id ? 'rotate-90 text-blue-500' : 'text-gray-400'
+                    selectedReportId === upload.id ? 'rotate-90 text-blue-500' : 'text-muted-foreground'
                   }`} />
                 </div>
                 
                 {/* Credit Score */}
                 {upload.creditScore && (
                   <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-                    <span className="text-sm text-gray-500">Score</span>
+                    <span className="text-sm text-muted-foreground">Score</span>
                     <span className={`text-lg font-bold ${
                       (upload.creditScore || 0) >= 700 ? 'text-green-600' :
                       (upload.creditScore || 0) >= 600 ? 'text-yellow-600' :
@@ -380,7 +380,7 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
                   className={`mt-2 ${
                     upload.parseStatus === 'succeeded' ? 'bg-green-100 text-green-700' :
                     upload.parseStatus === 'processing' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-gray-100 text-gray-700'
+                    'bg-muted text-muted-foreground'
                   }`}
                 >
                   {upload.parseStatus}
@@ -403,8 +403,8 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
                     <Wallet className="h-5 w-5 text-purple-600" />
                   </div>
                   <div className="ml-3">
-                    <p className="text-xs text-gray-500">Accounts</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{reportDetails.accounts.length}</p>
+                    <p className="text-xs text-muted-foreground">Accounts</p>
+                    <p className="text-xl font-bold text-foreground">{reportDetails.accounts.length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -417,8 +417,8 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
                     <Search className="h-5 w-5 text-orange-600" />
                   </div>
                   <div className="ml-3">
-                    <p className="text-xs text-gray-500">Inquiries</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{reportDetails.inquiries.length}</p>
+                    <p className="text-xs text-muted-foreground">Inquiries</p>
+                    <p className="text-xl font-bold text-foreground">{reportDetails.inquiries.length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -431,8 +431,8 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
                     <FileWarning className="h-5 w-5 text-red-600" />
                   </div>
                   <div className="ml-3">
-                    <p className="text-xs text-gray-500">Collections</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{reportDetails.collections.length}</p>
+                    <p className="text-xs text-muted-foreground">Collections</p>
+                    <p className="text-xl font-bold text-foreground">{reportDetails.collections.length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -445,8 +445,8 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
                     <Mail className="h-5 w-5 text-blue-600" />
                   </div>
                   <div className="ml-3">
-                    <p className="text-xs text-gray-500">Letters</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{reportDetails.letters.length}</p>
+                    <p className="text-xs text-muted-foreground">Letters</p>
+                    <p className="text-xl font-bold text-foreground">{reportDetails.letters.length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -474,25 +474,25 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
                               {account.status || 'Unknown'}
                             </Badge>
                           </div>
-                          <span className="text-sm text-gray-500">{formatCurrency(account.balance || 0)}</span>
+                          <span className="text-sm text-muted-foreground">{formatCurrency(account.balance || 0)}</span>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent>
                         <div className="grid grid-cols-2 gap-4 py-2 text-sm">
                           <div>
-                            <span className="text-gray-500">Account Type:</span>
+                            <span className="text-muted-foreground">Account Type:</span>
                             <span className="ml-2 font-medium">{account.accountType}</span>
                           </div>
                           <div>
-                            <span className="text-gray-500">Credit Limit:</span>
+                            <span className="text-muted-foreground">Credit Limit:</span>
                             <span className="ml-2 font-medium">{formatCurrency(account.creditLimit || 0)}</span>
                           </div>
                           <div>
-                            <span className="text-gray-500">Payment Status:</span>
+                            <span className="text-muted-foreground">Payment Status:</span>
                             <span className="ml-2 font-medium">{account.paymentStatus}</span>
                           </div>
                           <div>
-                            <span className="text-gray-500">Opened:</span>
+                            <span className="text-muted-foreground">Opened:</span>
                             <span className="ml-2 font-medium">{account.dateOpened ? new Date(account.dateOpened).toLocaleDateString() : 'N/A'}</span>
                           </div>
                         </div>
@@ -516,10 +516,10 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
               <CardContent>
                 <div className="space-y-3">
                   {reportDetails.inquiries.map((inquiry) => (
-                    <div key={inquiry.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div key={inquiry.id} className="flex items-center justify-between p-3 bg-muted/40 rounded-lg">
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{inquiry.creditorName}</p>
-                        <p className="text-sm text-gray-500">{inquiry.inquiryDate ? new Date(inquiry.inquiryDate).toLocaleDateString() : 'N/A'}</p>
+                        <p className="font-medium text-foreground">{inquiry.creditorName}</p>
+                        <p className="text-sm text-muted-foreground">{inquiry.inquiryDate ? new Date(inquiry.inquiryDate).toLocaleDateString() : 'N/A'}</p>
                       </div>
                       <Badge variant={inquiry.inquiryType === 'hard' ? 'destructive' : 'secondary'}>
                         {inquiry.inquiryType}
@@ -577,21 +577,21 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
                     <div key={letter.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-white">{letter.letterType} - {letter.bureau}</p>
-                          <p className="text-sm text-gray-500">Created: {new Date(letter.createdAt).toLocaleDateString()}</p>
+                          <p className="font-medium text-foreground">{letter.letterType} - {letter.bureau}</p>
+                          <p className="text-sm text-muted-foreground">Created: {new Date(letter.createdAt).toLocaleDateString()}</p>
                         </div>
                         <Badge className={
                           letter.status === 'approved' ? 'bg-green-100 text-green-700' :
                           letter.status === 'sent' ? 'bg-blue-100 text-blue-700' :
                           letter.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-gray-100 text-gray-700'
+                          'bg-muted text-muted-foreground'
                         }>
                           {letter.status}
                         </Badge>
                       </div>
                       
                       {letter.downloadUrl && (
-                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mt-2">
+                        <div className="flex items-center text-sm text-muted-foreground mt-2">
                           <Mail className="h-4 w-4 mr-1" />
                           Download available
                         </div>
@@ -625,8 +625,8 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
                     'bg-yellow-500'
                   }`} />
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900 dark:text-white">Round {event.round}</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="font-medium text-foreground">Round {event.round}</p>
+                    <p className="text-sm text-muted-foreground">
                       {event.scheduledSendDate ? `Scheduled: ${new Date(event.scheduledSendDate).toLocaleDateString()}` : ''}
                     </p>
                   </div>
@@ -706,11 +706,14 @@ export default function CreditRepair() {
 
   if (issuesLoading || disputesLoading) {
     return (
-      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-32 bg-gray-200 rounded"></div>
-          <div className="h-32 bg-gray-200 rounded"></div>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-muted rounded w-24" />
+            <div className="h-8 bg-muted rounded w-1/4" />
+            <div className="h-32 bg-muted rounded-xl" />
+            <div className="h-32 bg-muted rounded-xl" />
+          </div>
         </div>
       </div>
     );
@@ -752,18 +755,20 @@ export default function CreditRepair() {
       {/* Header - More compact for mobile */}
       <div className="mb-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Credit Repair</h1>
+          <div>
+            <div className="text-xs uppercase tracking-widest text-amber-500 dark:text-amber-400 mb-1 font-medium">ScoreShift</div>
+            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">Credit Repair</h1>
+          </div>
           <div className="flex items-center space-x-4">
             {user && (
-              <span className="text-sm text-gray-600 dark:text-gray-300">
+              <span className="text-sm text-muted-foreground">
                 {user.firstName} {user.lastName}
               </span>
             )}
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={logout}
-              className="text-gray-500 hover:text-gray-700"
             >
               <LogOut className="h-4 w-4 mr-1" />
               Logout
@@ -772,10 +777,10 @@ export default function CreditRepair() {
         </div>
         {isClientViewer ? (
           <div className="mt-3 space-y-3">
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-sm text-blue-800 dark:text-blue-200 flex items-start">
-                <Eye className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0 text-blue-700 dark:text-blue-200" />
-                <span><strong>Client View:</strong> This shows the work being done on your credit file. 
+            <div className="p-3 bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 rounded-xl">
+              <p className="text-sm text-amber-700 dark:text-amber-300 flex items-start">
+                <Eye className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                <span><strong>Client View:</strong> This shows the work being done on your credit file.
                 You can view dispute progress and tracking but cannot create new disputes.</span>
               </p>
             </div>
@@ -806,21 +811,21 @@ export default function CreditRepair() {
                   ))}
                 </div>
               ) : (
-                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <div className="p-4 bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 rounded-xl">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-red-100 dark:bg-red-800 rounded-lg flex items-center justify-center">
-                        <Shield className="h-5 w-5 text-red-600 dark:text-red-400" />
+                      <div className="w-10 h-10 bg-amber-500/10 dark:bg-amber-500/15 rounded-xl flex items-center justify-center">
+                        <Shield className="h-5 w-5 text-amber-500 dark:text-amber-400" />
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold text-red-900">Connect to Experian</h3>
-                        <p className="text-xs text-red-700">Get real-time credit monitoring and updates</p>
+                        <h3 className="text-sm font-semibold text-foreground">Connect to Experian</h3>
+                        <p className="text-xs text-muted-foreground">Get real-time credit monitoring and updates</p>
                       </div>
                     </div>
                     <Link href="/experian">
-                      <Button 
+                      <Button
                         size="sm"
-                        className="bg-red-600 hover:bg-red-700 text-white"
+                        className="bg-amber-500 hover:bg-amber-400 text-black font-bold"
                       >
                         <ExternalLink className="h-4 w-4 mr-1" />
                         Connect
@@ -832,7 +837,7 @@ export default function CreditRepair() {
             </div>
           </div>
         ) : (
-          <p className="mt-1 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+          <p className="mt-1 text-sm sm:text-base text-muted-foreground">
             Dispute negative items to improve your credit score.
           </p>
         )}
@@ -849,7 +854,7 @@ export default function CreditRepair() {
                 </div>
               </div>
               <div className="ml-2 sm:ml-3">
-                <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Active Issues</p>
+                <p className="text-xs sm:text-sm font-medium text-foreground">Active Issues</p>
                 <p className="text-lg sm:text-2xl font-bold text-red-600">{activeIssues.length}</p>
               </div>
             </div>
@@ -865,7 +870,7 @@ export default function CreditRepair() {
                 </div>
               </div>
               <div className="ml-2 sm:ml-3">
-                <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Disputed</p>
+                <p className="text-xs sm:text-sm font-medium text-foreground">Disputed</p>
                 <p className="text-lg sm:text-2xl font-bold text-yellow-600">{disputedIssues.length}</p>
               </div>
             </div>
@@ -881,7 +886,7 @@ export default function CreditRepair() {
                 </div>
               </div>
               <div className="ml-2 sm:ml-3">
-                <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Resolved</p>
+                <p className="text-xs sm:text-sm font-medium text-foreground">Resolved</p>
                 <p className="text-lg sm:text-2xl font-bold text-green-600">{resolvedIssues.length}</p>
               </div>
             </div>
@@ -897,7 +902,7 @@ export default function CreditRepair() {
                 </div>
               </div>
               <div className="ml-2 sm:ml-3">
-                <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">Pending</p>
+                <p className="text-xs sm:text-sm font-medium text-foreground">Pending</p>
                 <p className="text-lg sm:text-2xl font-bold text-blue-600">{pendingDisputes.length}</p>
               </div>
             </div>
@@ -958,9 +963,9 @@ export default function CreditRepair() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{issue.title}</h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{issue.description}</p>
-                            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                            <h4 className="text-sm font-medium text-foreground truncate">{issue.title}</h4>
+                            <p className="text-sm text-muted-foreground mt-1">{issue.description}</p>
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
                               <span>Creditor: {issue.creditor}</span>
                               {issue.amount && <span>Amount: {formatCurrency(issue.amount)}</span>}
                               <span>Impact: {issue.impact} points</span>
@@ -1001,12 +1006,12 @@ export default function CreditRepair() {
                   </motion.div>
                 ))}
                 {activeIssues.length === 0 && (
-                  <div className="text-center py-8 sm:py-12 text-gray-500 dark:text-gray-400">
+                  <div className="text-center py-8 sm:py-12 text-muted-foreground">
                     <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
                       <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                     </div>
-                    <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Active Issues</h3>
-                    <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+                    <h3 className="text-base sm:text-lg font-medium text-foreground mb-2">No Active Issues</h3>
+                    <p className="text-sm sm:text-base text-muted-foreground">
                       Great! You don't have any active credit issues to address.
                     </p>
                   </div>
@@ -1095,10 +1100,10 @@ export default function CreditRepair() {
                   );
                 })}
                 {pendingDisputes.length === 0 && (
-                  <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                    <FileText className="h-10 w-10 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Pending Disputes</h3>
-                    <p className="text-gray-600 dark:text-gray-300">
+                  <div className="text-center py-12 text-muted-foreground">
+                    <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">No Pending Disputes</h3>
+                    <p className="text-muted-foreground">
                       You don't have any disputes currently pending with credit bureaus.
                     </p>
                   </div>
@@ -1187,7 +1192,7 @@ export default function CreditRepair() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 mb-4">
+                <p className="text-muted-foreground mb-4">
                   Connect your financial accounts to strengthen loan applications and improve credit qualification
                 </p>
                 <Tabs defaultValue="bank-accounts" className="space-y-4">
@@ -1286,7 +1291,7 @@ export default function CreditRepair() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                    <p className="text-sm text-muted-foreground">
                       Get personalized AI-powered recommendations for your credit repair strategy.
                     </p>
                     <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
@@ -1306,7 +1311,7 @@ export default function CreditRepair() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                    <p className="text-sm text-muted-foreground">
                       Simulate how different actions could impact your credit score.
                     </p>
                     <CreditSimulatorModal 
