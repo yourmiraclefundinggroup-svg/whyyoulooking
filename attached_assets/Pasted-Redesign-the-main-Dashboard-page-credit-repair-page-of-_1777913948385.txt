@@ -1,0 +1,56 @@
+Redesign the main Dashboard page (credit repair page) of ScoreShift to look like a high-end, exclusive luxury credit repair and monitoring service. Here is exactly what needs to happen:
+
+---
+
+DESIGN STYLE:
+- Color palette: Deep navy (#0A0F1E) and rich charcoal (#111827) backgrounds, gold/amber (#D4A843) accents, white text, subtle glassmorphism cards
+- Typography: Clean, modern sans-serif. Large bold headings, generous spacing
+- Feel: Think Black Card / Private Banking — premium, spacious, sophisticated
+- No cluttered elements. Every section should breathe with proper padding (at least 24px between sections)
+- Cards should have subtle box shadows and soft borders — nothing flat or cheap-looking
+- Use gold (#D4A843) for all accent lines, icons, and highlights
+
+---
+
+DASHBOARD PAGE LAYOUT (top to bottom):
+
+1. HERO HEADER SECTION:
+   - Dark navy gradient background
+   - Left side: "Welcome back, [Name]" in large white text, subtitle: "Your exclusive credit management portal"
+   - Right side: show "Elite Plan" badge + "Monitoring Active" badge (green dot) + "All 3 Bureaus: Experian | Equifax | TransUnion"
+
+2. CREDIT OVERVIEW SECTION (move from Credit Monitoring > Overview tab):
+   - Pull the full Credit Overview component (the Array-powered widget showing the credit score gauge, score history line chart, and bureau selector: TransUnion / Equifax / Experian / All Bureaus) and embed it directly on the dashboard
+   - This should be in a wide, full-width card with a dark navy background
+   - The score gauge on the left, the score history trend chart on the right — side by side, not stacked
+   - Plenty of whitespace, nothing cramped
+
+3. STATS ROW (4 equal cards side by side, full width):
+   - Active Issues | Disputed | Resolved | Pending
+   - Each card: dark card background, gold icon, large number, label underneath
+   - Equal width, evenly spaced, no overflow or squishing
+   - On mobile these should stack 2x2
+
+4. SCORE TRACKER + DEBT ANALYSIS (side by side, 50/50 split):
+   - Left card: Score Tracker — showing 3-bureau score history (TransUnion, Equifax, Experian) with mini line charts (pull from Credit Monitoring Overview)
+   - Right card: Debt Analysis — utilization breakdown showing Credit Cards, Auto Loans, Other Loans, Collections with balance and payment history (pull from Credit Monitoring Overview)
+   - Both cards same height, dark background, gold accents
+
+5. CONNECT TO EXPERIAN BANNER:
+   - Move this below the credit sections, not at the top
+   - Style it as a sleek dark card with a gold "Connect" button — not a yellow warning box
+
+6. ACTIVE CREDIT ISSUES TAB SECTION:
+   - Keep the existing tab bar (Issues, Disputes, Monitor, Utilization, Loan, Mix, ID Theft, Rent, Verify, Business, Chat, Password, AI Tools, Reports, Progress)
+   - Style the tab bar with a dark pill/underline design — gold underline on active tab
+   - The tab content panel below should be a clean dark card, full width
+
+---
+
+GENERAL RULES:
+- Every box/card must have enough internal padding so content never touches the edges (min 24px padding)
+- No horizontal scrolling on desktop
+- All grid layouts should use CSS Grid or Flexbox with proper gap spacing
+- The page should feel like you are viewing a private wealth management dashboard
+- Do not remove any existing functionality — only restyle and reorganize the layout as described above
+- The Array-powered components (credit score, score tracker, debt analysis) should remain functional — just moved to the dashboard and restyled to match the new dark luxury theme
