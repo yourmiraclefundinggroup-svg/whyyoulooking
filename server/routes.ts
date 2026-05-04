@@ -346,7 +346,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(user);
       // Fire-and-forget: audit log + welcome communication + signup-path Array enrollment
       (async () => {
-        const source: string = (req.body as any).source || "direct";
+        const ALLOWED_SOURCES = new Set(["signup", "admin", "direct"]);
+        const rawSource: string = (req.body as any).source ?? "";
+        const source: string = ALLOWED_SOURCES.has(rawSource) ? rawSource : "direct";
         try {
           const { logAction } = await import("./automation/audit-engine");
           await logAction({ userId: user.id, action: "user_created", entity: "user", entityId: user.id, details: { email: user.email, source } });
