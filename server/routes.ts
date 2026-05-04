@@ -344,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertUserSchema.parse(body);
       const user = await storage.createUser(validatedData);
       res.status(201).json(user);
-      // Fire-and-forget: log + welcome communication
+      // Fire-and-forget: log + welcome communication + Array enrollment
       (async () => {
         try {
           const { logAction } = await import("./automation/audit-engine");
@@ -352,6 +352,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const { triggerCommunication, COMMUNICATION_TRIGGERS } = await import("./automation/communication-engine");
           await triggerCommunication(COMMUNICATION_TRIGGERS.USER_SIGNED_UP, user.id);
         } catch (e) { console.error("Post-signup automation error:", e); }
+        // Auto-enroll every new signup in Array so isEnrolled is true from first login
+        try {
+          const { arrayEnrollments } = await import("@shared/schema");
+          const arrayUserId = `scoreshift_user_${user.id}`;
+          const existing = await db.select().from(arrayEnrollments).where(eq(arrayEnrollments.userId, user.id));
+          if (existing.length === 0) {
+            await db.insert(arrayEnrollments).values({ userId: user.id, arrayUserId, productCodes: [] });
+            console.log(`[Array] Auto-enrolled new user ${user.id} (${user.email})`);
+          }
+        } catch (e) { console.error("[Array] Auto-enroll on signup error:", e); }
       })();
     } catch (error) {
       if (error instanceof z.ZodError) {

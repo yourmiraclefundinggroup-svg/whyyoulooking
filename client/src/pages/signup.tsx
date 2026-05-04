@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,12 @@ import {
   TrendingUp, ChevronRight, ChevronLeft, User, Phone, Mail,
   Lock, Eye, EyeOff, CheckCircle, Shield, CreditCard, Zap, Star, Sparkles
 } from "lucide-react";
+import {
+  useArrayScript,
+  ARRAY_SANDBOX_APP_KEY,
+  ARRAY_SANDBOX_API_URL,
+  ARRAY_SANDBOX_TOKENS,
+} from "@/hooks/use-array-script";
 
 const STEPS = [
   { label: "Your Rights", icon: Shield },
@@ -88,6 +94,11 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Array script + enrollment state
+  const { loaded: scriptReady } = useArrayScript();
+  const [arrayEnrolled, setArrayEnrolled] = useState(false);
+  const arrayEnrollRef = useRef<HTMLDivElement>(null);
+
   // Step 0 — CROA
   const [croaAccepted, setCroaAccepted] = useState(false);
   const [croaAcceptedAt, setCroaAcceptedAt] = useState<string | null>(null);
@@ -112,6 +123,44 @@ export default function Signup() {
 
   // Step 4 — Plan
   const [selectedPlan, setSelectedPlan] = useState("free");
+
+  // Mount array-account-enroll when on step 2 and script is ready
+  useEffect(() => {
+    if (step !== 2 || !arrayEnrollRef.current || !scriptReady) return;
+    arrayEnrollRef.current.innerHTML = "";
+
+    const el = document.createElement("array-account-enroll");
+    el.setAttribute("appKey", ARRAY_SANDBOX_APP_KEY);
+    el.setAttribute("apiUrl", ARRAY_SANDBOX_API_URL);
+    el.setAttribute("sandbox", "true");
+    el.setAttribute("userToken", ARRAY_SANDBOX_TOKENS.default);
+    el.setAttribute("showQuickView", "true");
+
+    const handleEvent = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (import.meta.env.DEV) {
+        console.log("[Array signup] array-event detail:", JSON.stringify(detail));
+      }
+      const tag: string = detail?.tagName ?? "";
+      const type: string = detail?.type ?? "";
+      if (
+        tag.includes("account-enroll") ||
+        type === "complete" ||
+        type === "success" ||
+        type === "enrolled" ||
+        type === "enroll-success"
+      ) {
+        setArrayEnrolled(true);
+      }
+    };
+
+    el.addEventListener("array-event", handleEvent);
+    arrayEnrollRef.current.appendChild(el);
+
+    return () => {
+      if (arrayEnrollRef.current) arrayEnrollRef.current.innerHTML = "";
+    };
+  }, [step, scriptReady]);
 
   const handleCroaCheck = (checked: boolean) => {
     setCroaAccepted(checked);
@@ -500,6 +549,48 @@ export default function Signup() {
                       placeholder="your@email.com"
                       className="pl-9"
                     />
+                  </div>
+                </div>
+
+                {/* Array credit profile enrollment — embedded in signup */}
+                <div className="rounded-xl border-2 border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 overflow-hidden">
+                  <div className="px-5 py-4 border-b border-blue-200 dark:border-blue-800/40 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
+                        <Shield className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">Connect Your Credit Profile</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Required to access your live credit data</p>
+                      </div>
+                    </div>
+                    {arrayEnrolled ? (
+                      <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 text-xs font-semibold">
+                        <CheckCircle className="h-4 w-4" />
+                        Connected
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                        <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                        Awaiting
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-4">
+                    {!scriptReady ? (
+                      <div className="flex items-center justify-center py-8 gap-3">
+                        <div className="w-6 h-6 rounded-full border-2 border-blue-400 border-t-transparent animate-spin" />
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Loading secure enrollment form...</span>
+                      </div>
+                    ) : (
+                      <div ref={arrayEnrollRef} className="w-full min-h-[180px]" />
+                    )}
+                  </div>
+
+                  <div className="px-5 pb-4 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                    <Shield className="h-3.5 w-3.5 shrink-0 text-green-500" />
+                    <span>Your information is encrypted. Powered by Array — a trusted credit data platform.</span>
                   </div>
                 </div>
               </div>
