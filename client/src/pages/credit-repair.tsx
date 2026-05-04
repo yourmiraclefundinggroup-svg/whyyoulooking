@@ -20,6 +20,7 @@ import {
   ARRAY_SANDBOX_API_URL,
   ARRAY_SANDBOX_TOKENS,
 } from "@/hooks/use-array-script";
+import { useFeatureAccess, FEATURES } from "@/hooks/use-feature-access";
 import {
   X, Clock, Search, AlertCircle, CheckCircle, Gavel, Check, FileText, Bot,
   Eye, CreditCard, Calendar, Wallet, FileWarning, Mail, ChevronRight,
@@ -485,6 +486,7 @@ export default function CreditRepair() {
 
   const { loaded: scriptReady } = useArrayScript();
   const userToken = ARRAY_SANDBOX_TOKENS.default;
+  const featureAccess = useFeatureAccess();
 
   const { data: creditIssues = [], isLoading: issuesLoading } = useQuery<CreditIssue[]>({
     queryKey: ["/api/credit-issues", userId],
@@ -875,18 +877,10 @@ export default function CreditRepair() {
             )}
           </TabsContent>
 
-          {/* Monitor Tab — Array credit alerts + identity protect */}
+          {/* Monitor Tab — tier-gated Array credit alerts + identity protect */}
           <TabsContent value="monitoring" className="space-y-4">
-            {isEnrolled ? (
-              <>
-                <ArrayCard title="Credit Alerts" description="Real-time notifications for changes across all 3 bureaus" icon={Shield} badge="Live Monitoring">
-                  <ArrayWebComponent tag="array-credit-alerts" userToken={userToken} scriptReady={scriptReady} className="w-full min-h-[300px]" />
-                </ArrayCard>
-                <ArrayCard title="Identity Protection" description="Monitor for fraud, data breaches, and identity theft" icon={Lock} badge="Identity Shield">
-                  <ArrayWebComponent tag="array-identity-protect" userToken={userToken} scriptReady={scriptReady} className="w-full min-h-[300px]" />
-                </ArrayCard>
-              </>
-            ) : (
+            {!isEnrolled ? (
+              /* Not enrolled — activate CTA */
               <Card>
                 <CardContent className="p-8 text-center">
                   <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -905,6 +899,75 @@ export default function CreditRepair() {
                   </Link>
                 </CardContent>
               </Card>
+            ) : featureAccess.canAccess(FEATURES.CREDIT_ALERTS) ? (
+              /* Enrolled + Pro or Elite — show credit alerts (+ identity protect if elite) */
+              <>
+                <ArrayCard title="Credit Alerts" description="Real-time notifications for changes across all 3 bureaus" icon={Shield} badge="Live Monitoring">
+                  <ArrayWebComponent tag="array-credit-alerts" userToken={userToken} scriptReady={scriptReady} className="w-full min-h-[300px]" />
+                </ArrayCard>
+
+                {featureAccess.canAccess(FEATURES.IDENTITY_PROTECT) ? (
+                  <ArrayCard title="Identity Protection" description="Monitor for fraud, data breaches, and identity theft" icon={Lock} badge="Elite · Identity Shield">
+                    <ArrayWebComponent tag="array-identity-protect" userToken={userToken} scriptReady={scriptReady} className="w-full min-h-[300px]" />
+                  </ArrayCard>
+                ) : (
+                  /* Pro users — identity protect locked behind Elite */
+                  <div className="rounded-xl border border-slate-200 dark:border-white/[0.07] bg-gradient-to-br from-slate-900 to-slate-800 overflow-hidden shadow-sm">
+                    <div className="p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+                      <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center shrink-0">
+                        <Lock className="h-6 w-6 text-amber-400" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-base font-bold text-white">Identity Protection</h3>
+                          <Badge className="bg-amber-500 text-black text-[10px] font-bold px-2">Elite</Badge>
+                        </div>
+                        <p className="text-sm text-slate-400">
+                          Full dark-web monitoring, data breach alerts, and identity theft protection. Available on the Elite plan.
+                        </p>
+                      </div>
+                      <Link href="/pricing">
+                        <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-black font-bold gap-1.5 shrink-0">
+                          Upgrade to Elite <ArrowRight className="h-3.5 w-3.5" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Enrolled but Starter (no credit_alerts) or no plan — upgrade to Pro */
+              <div className="rounded-xl border border-slate-200 dark:border-white/[0.07] bg-gradient-to-br from-slate-900 to-slate-800 overflow-hidden shadow-sm">
+                <div className="p-6 sm:p-8">
+                  <div className="flex items-start gap-4 mb-6">
+                    <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center shrink-0">
+                      <Shield className="h-6 w-6 text-amber-400" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-lg font-bold text-white">Credit Alerts</h3>
+                        <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] font-bold px-2">Pro+</Badge>
+                      </div>
+                      <p className="text-slate-400 text-sm">
+                        Get instant alerts when your credit score changes, new accounts are opened, or inquiries are made — across all 3 bureaus.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-3 mb-6">
+                    {["Score change alerts", "New account notifications", "Inquiry alerts", "Balance change tracking"].map((f) => (
+                      <div key={f} className="flex items-center gap-2 text-sm text-slate-300">
+                        <CheckCircle className="h-4 w-4 text-amber-400 shrink-0" />
+                        {f}
+                      </div>
+                    ))}
+                  </div>
+                  <Link href="/pricing">
+                    <Button className="bg-amber-500 hover:bg-amber-400 text-black font-bold gap-2">
+                      Upgrade to Pro — $79/mo <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
             )}
           </TabsContent>
 
