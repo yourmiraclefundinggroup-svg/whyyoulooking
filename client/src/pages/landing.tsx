@@ -12,6 +12,7 @@ import { PaymentCard3D } from '../components/ui/PaymentCard3D'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { StatCounter } from '../components/ui/StatCounter'
+import { useTheme } from '@/components/theme-provider'
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
@@ -222,10 +223,11 @@ const pricingPlans = [
 
 export default function LandingPage() {
   const logos = ['Experian', 'Equifax', 'TransUnion', 'Lob.com', 'Stripe Secured', 'Anthropic AI']
+  const { theme } = useTheme()
 
   return (
     <div className="min-h-screen bg-white dark:bg-navy-950 text-slate-900 dark:text-white">
-      <Navbar />
+      <Navbar variant={theme === 'dark' ? 'dark' : 'light'} />
 
       {/* ─── HERO ─── */}
       <section className="relative pt-36 pb-20 overflow-hidden bg-white dark:bg-navy-950">
