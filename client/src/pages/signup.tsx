@@ -136,21 +136,18 @@ export default function Signup() {
     el.setAttribute("userToken", ARRAY_SANDBOX_TOKENS.default);
     el.setAttribute("showQuickView", "true");
 
+    const COMPLETION_TYPES = new Set(["complete", "success", "enrolled", "enroll-success", "userRegistrationCreated"]);
+
     const handleEvent = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (import.meta.env.DEV) {
         console.log("[Array signup] array-event detail:", JSON.stringify(detail));
       }
-      const tag: string = detail?.tagName ?? "";
       const type: string = detail?.type ?? "";
-      if (
-        tag.includes("account-enroll") ||
-        type === "complete" ||
-        type === "success" ||
-        type === "enrolled" ||
-        type === "enroll-success"
-      ) {
+      if (COMPLETION_TYPES.has(type)) {
         setArrayEnrolled(true);
+        // Auto-advance to the password step
+        setStep(3);
       }
     };
 
@@ -198,6 +195,10 @@ export default function Signup() {
       if (!email.trim()) { toast({ title: "Email address is required", variant: "destructive" }); return false; }
       if (!smsOptIn) {
         toast({ title: "SMS Consent Required", description: "Please check the SMS opt-in box to continue.", variant: "destructive" });
+        return false;
+      }
+      if (!arrayEnrolled) {
+        toast({ title: "Credit Profile Required", description: "Please complete the credit profile setup above to continue.", variant: "destructive" });
         return false;
       }
       return true;
@@ -251,6 +252,15 @@ export default function Signup() {
       localStorage.setItem("auth_token", loginData.token);
       localStorage.setItem("user_id", loginData.user.id.toString());
       setCurrentUserId(loginData.user.id);
+
+      // Record Array enrollment in DB now that we have a valid auth token
+      if (arrayEnrolled) {
+        try {
+          await apiRequest("POST", "/api/array/enroll", {});
+        } catch (e) {
+          console.warn("[Array] Failed to record enrollment after signup:", e);
+        }
+      }
 
       toast({
         title: "Welcome to ScoreShift!",
