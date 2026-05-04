@@ -21,6 +21,7 @@ import {
   ARRAY_SANDBOX_TOKENS,
 } from "@/hooks/use-array-script";
 import { useFeatureAccess, FEATURES } from "@/hooks/use-feature-access";
+import { ScoreHero } from "@/components/dashboard/score-hero";
 import {
   X, Clock, Search, AlertCircle, CheckCircle, Gavel, Check, FileText, Bot,
   Eye, CreditCard, Calendar, Wallet, FileWarning, Mail, ChevronRight,
@@ -449,6 +450,40 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
             </Card>
           )}
 
+          {reportDetails.letters.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-base flex items-center"><Mail className="h-5 w-5 mr-2 text-amber-500" />Dispute Letters ({reportDetails.letters.length})</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {reportDetails.letters.map((letter) => (
+                    <div key={letter.id} className="p-4 border border-slate-200 dark:border-white/10 rounded-xl">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="font-medium text-foreground">{letter.letterType} — {letter.bureau}</p>
+                          <p className="text-sm text-muted-foreground">Created: {new Date(letter.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <Badge className={
+                          letter.status === "approved" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                          letter.status === "sent" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
+                          letter.status === "draft" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
+                          "bg-muted text-muted-foreground"
+                        }>
+                          {letter.status}
+                        </Badge>
+                      </div>
+                      {letter.downloadUrl && (
+                        <div className="flex items-center text-sm text-muted-foreground mt-2">
+                          <Mail className="h-4 w-4 mr-1" />
+                          Download available
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {calendarEvents.length > 0 && (
             <Card>
               <CardHeader className="pb-3"><CardTitle className="text-base flex items-center"><Calendar className="h-5 w-5 mr-2 text-amber-500" />Dispute Timeline</CardTitle></CardHeader>
@@ -473,6 +508,14 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
     </div>
   );
 }
+
+/* ── Static score placeholder for non-enrolled users ─────────────────────── */
+const STATIC_SCORE_DATA = {
+  scores: { experian: 621, equifax: 618, transunion: 625 },
+  scoreChange: { experian: 12, equifax: 8, transunion: 11 },
+  scoreHistory: [582, 591, 603, 610, 618, 621],
+  lastUpdated: "Sample data",
+};
 
 /* ── Main page ────────────────────────────────────────────────────────────── */
 export default function CreditRepair() {
@@ -619,33 +662,8 @@ export default function CreditRepair() {
             </div>
           </div>
         ) : (
-          /* Not enrolled — clean CTA to activate monitoring */
-          <div className="rounded-xl border border-slate-200 dark:border-white/[0.07] bg-gradient-to-br from-[#0F172A] to-[#1E3A5F] overflow-hidden shadow-lg">
-            <div className="p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="h-4 w-4 text-amber-400" />
-                  <span className="text-amber-400 text-sm font-semibold uppercase tracking-wider">Credit Monitoring</span>
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Activate Live Credit Monitoring</h2>
-                <p className="text-slate-400 text-sm max-w-md">
-                  Connect all 3 bureaus to see your real-time credit scores, get instant alerts, and track every change as it happens.
-                </p>
-                <div className="flex items-center gap-2 mt-4 flex-wrap">
-                  {[{ label: "Experian", color: "bg-[#0062FF]" }, { label: "Equifax", color: "bg-[#E12726]" }, { label: "TransUnion", color: "bg-[#662D8C]" }].map((b) => (
-                    <span key={b.label} className={`text-[11px] font-bold px-2.5 py-1 rounded-full text-white ${b.color}`}>{b.label}</span>
-                  ))}
-                </div>
-              </div>
-              <Link href="/credit-monitoring">
-                <Button className="bg-amber-500 hover:bg-amber-400 text-black font-bold gap-2 shrink-0 shadow-lg shadow-amber-500/20">
-                  <Shield className="h-4 w-4" />
-                  Activate Monitoring
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-          </div>
+          /* Not enrolled — static score card with activate CTA */
+          <ScoreHero data={STATIC_SCORE_DATA} isEnrolled={false} scriptReady={scriptReady} />
         )}
 
         {/* ── Stats row ───────────────────────────────────────────────────── */}
