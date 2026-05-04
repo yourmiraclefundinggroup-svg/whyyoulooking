@@ -7507,6 +7507,34 @@ If you are just answering a question (not updating the letter), just respond nor
     }
   });
 
+  app.get("/api/client/score-history", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      let history = await storage.getCreditScoreHistory(user.id);
+
+      // If no dedicated score history snapshots exist yet, synthesize them from
+      // credit_report_uploads so clients always see their score trajectory.
+      if (history.length === 0) {
+        const uploads = await storage.getCreditReportUploads(user.id);
+        history = uploads
+          .filter(u => u.creditScore != null)
+          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+          .map(u => ({
+            id: -(u.id), // negative id to distinguish synthetic rows
+            userId: u.userId,
+            score: u.creditScore as number,
+            source: "credit_report_upload" as const,
+            uploadId: u.id,
+            recordedAt: u.createdAt,
+          }));
+      }
+
+      res.json(history);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ============================================================
   // LEADS CRM API
   // ============================================================

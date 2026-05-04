@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +29,7 @@ import {
   Sparkles, BarChart3, Shield, Zap, TrendingUp, Lock, ArrowRight,
   MessageSquare, Settings, LayoutDashboard, Activity,
 } from "lucide-react";
-import type { CreditIssue, Dispute, CreditReportUpload, CreditReportAccount, CreditReportInquiry, CreditReportCollection, DisputeLetterNew, DisputeCalendarEvent } from "@shared/schema";
+import type { CreditIssue, Dispute, CreditReportUpload, CreditReportAccount, CreditReportInquiry, CreditReportCollection, DisputeLetterNew, DisputeCalendarEvent, CreditScoreHistory } from "@shared/schema";
 import { LogOut } from "lucide-react";
 import { Link } from "wouter";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -165,6 +166,18 @@ function ClientProgressTab() {
     latestBureau?: string;
   }>({ queryKey: ["/api/client/progress-summary"] });
 
+  const { data: scoreHistory = [], isError: scoreHistoryError } = useQuery<CreditScoreHistory[]>({
+    queryKey: ["/api/client/score-history"],
+  });
+
+  const scoreChartData = scoreHistory
+    .slice()
+    .sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime())
+    .map((entry) => ({
+      date: new Date(entry.recordedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }),
+      score: entry.score,
+    }));
+
   const handlePrint = () => {
     const el = document.getElementById("client-progress-printable");
     if (!el) return;
@@ -247,6 +260,95 @@ function ClientProgressTab() {
           </Card>
         )}
       </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base text-foreground flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-amber-500" />
+            Score History
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {scoreHistoryError ? (
+            <div className="h-40 flex items-center justify-center">
+              <p className="text-sm text-destructive text-center">
+                Unable to load score history. Please try refreshing the page.
+              </p>
+            </div>
+          ) : scoreChartData.length === 0 ? (
+            <div className="h-40 flex items-center justify-center">
+              <p className="text-sm text-muted-foreground text-center">
+                Score snapshots are recorded automatically each time your credit report is processed.
+              </p>
+            </div>
+          ) : scoreChartData.length === 1 ? (
+            <div className="flex items-center gap-6 py-4">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{scoreChartData[0].score}</div>
+                <div className="text-xs text-muted-foreground mt-1">Score on {scoreChartData[0].date}</div>
+              </div>
+              <p className="text-sm text-muted-foreground">Upload additional reports over time to see your score trajectory.</p>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center gap-6 mb-4">
+                <div>
+                  <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                    {scoreChartData[scoreChartData.length - 1].score}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Latest Score</div>
+                </div>
+                <div>
+                  <div className={`text-2xl font-bold ${scoreChartData[scoreChartData.length - 1].score - scoreChartData[0].score >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                    {scoreChartData[scoreChartData.length - 1].score - scoreChartData[0].score >= 0 ? "+" : ""}
+                    {scoreChartData[scoreChartData.length - 1].score - scoreChartData[0].score} pts
+                  </div>
+                  <div className="text-xs text-muted-foreground">Total Change</div>
+                </div>
+                <div className="ml-auto text-xs text-muted-foreground">
+                  {scoreChartData.length} data point{scoreChartData.length !== 1 ? "s" : ""}
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={scoreChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    domain={["auto", "auto"]}
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={40}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      color: "hsl(var(--foreground))",
+                      fontSize: 12,
+                    }}
+                    formatter={(value: number) => [value, "Score"]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    stroke="hsl(var(--amber-500, 245 158 11))"
+                    strokeWidth={2}
+                    dot={{ fill: "#d97706", strokeWidth: 0, r: 4 }}
+                    activeDot={{ r: 6, fill: "#d97706" }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
