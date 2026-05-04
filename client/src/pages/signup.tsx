@@ -146,8 +146,8 @@ export default function Signup() {
       const type: string = detail?.type ?? "";
       if (COMPLETION_TYPES.has(type)) {
         setArrayEnrolled(true);
-        // Auto-advance to the password step
-        setStep(3);
+        // Do NOT auto-advance — user must still confirm their info fields
+        // and click Continue (validateStep will confirm arrayEnrolled is true)
       }
     };
 
@@ -233,6 +233,7 @@ export default function Signup() {
         subscriptionStatus: selectedPlan === "free" ? "TRIALING" : null,
         croaAcceptedAt,
         aiConsentAcceptedAt,
+        source: "signup",
       });
 
       if (!createRes.ok) {

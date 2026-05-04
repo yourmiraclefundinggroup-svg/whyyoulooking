@@ -344,14 +344,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertUserSchema.parse(body);
       const user = await storage.createUser(validatedData);
       res.status(201).json(user);
-      // Fire-and-forget: log + welcome communication + Array enrollment
+      // Fire-and-forget: audit log + welcome communication + signup-path Array enrollment
       (async () => {
+        const source: string = (req.body as any).source || "direct";
         try {
           const { logAction } = await import("./automation/audit-engine");
-          await logAction({ userId: user.id, action: "user_created", entity: "user", entityId: user.id, details: { email: user.email, source: (req.body as any).source || "direct" } });
+          await logAction({ userId: user.id, action: "user_created", entity: "user", entityId: user.id, details: { email: user.email, source } });
           const { triggerCommunication, COMMUNICATION_TRIGGERS } = await import("./automation/communication-engine");
           await triggerCommunication(COMMUNICATION_TRIGGERS.USER_SIGNED_UP, user.id);
         } catch (e) { console.error("Post-signup automation error:", e); }
+        // Guarantee Array enrollment row exists for clients who sign up via the web flow
+        if (source === "signup") {
+          try {
+            const { arrayEnrollments } = await import("@shared/schema");
+            const existing = await db.select().from(arrayEnrollments).where(eq(arrayEnrollments.userId, user.id));
+            if (existing.length === 0) {
+              const arrayUserId = `scoreshift_user_${user.id}`;
+              await db.insert(arrayEnrollments).values({ userId: user.id, arrayUserId, productCodes: [] });
+            }
+          } catch (e) { console.error("[Array] Signup enrollment record error:", e); }
+        }
       })();
     } catch (error) {
       if (error instanceof z.ZodError) {
