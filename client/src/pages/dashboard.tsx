@@ -18,7 +18,6 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useQuery } from "@tanstack/react-query";
-import { useArrayToken } from "@/hooks/use-array-token";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { ScoreHero } from "@/components/dashboard/score-hero";
 import { DisputeTracker } from "@/components/dashboard/dispute-tracker";
@@ -218,9 +217,6 @@ export default function Dashboard() {
   const [realDisputes, setRealDisputes] = useState<any[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
 
-  // Token comes from shared context — no per-page fetch
-  const { token: arrayTokenValue, appKey: arrayAppKey, isReady: arrayTokenReady } = useArrayToken();
-
   const { data: arrayEnrollment } = useQuery<ArrayEnrollmentData>({
     queryKey: ["/api/array/enrollment"],
     enabled: !!user,
@@ -361,32 +357,25 @@ export default function Dashboard() {
 
 
         {/* ── 2. Credit Score Hero — live credit data if enrolled, else static ── */}
-        {(hasRealData || showMockData || arrayEnrollment?.enrolled) && (
-          <ScoreHero
-            data={scoreData}
-            arrayToken={arrayTokenReady && arrayTokenValue && arrayAppKey ? { token: arrayTokenValue, appKey: arrayAppKey } : undefined}
-            isEnrolled={arrayEnrollment?.enrolled ?? false}
-            scriptReady={arrayScriptReady}
-          />
-        )}
+        <ScoreHero
+          data={scoreData}
+          isEnrolled={arrayEnrollment?.enrolled ?? false}
+          scriptReady={arrayScriptReady}
+        />
 
-        {/* ── 9. Loan Readiness (prominent — above the fold on desktop) ── */}
-        {(hasRealData || showMockData) && <LoanReadiness data={loanData} />}
+        {/* ── 3 & 4. Dispute Tracker + Items Removed — always visible, right below scores ── */}
+        {(hasRealData || showMockData) && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <DisputeTracker data={disputeData} />
+            <ItemsRemoved count={removedItems.length} items={removedItems} />
+          </div>
+        )}
 
         {/* ── 8. Action Center ── */}
         <ActionCenter actions={mockActions} />
 
-        {/* ── Two-column layout for middle sections ── */}
-        {(hasRealData || showMockData) && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-            {/* ── 3. Dispute Tracker ── */}
-            <DisputeTracker data={disputeData} />
-
-            {/* ── 4. Items Removed Wins ── */}
-            <ItemsRemoved count={removedItems.length} items={removedItems} />
-          </div>
-        )}
+        {/* ── 9. Loan Readiness ── */}
+        {(hasRealData || showMockData) && <LoanReadiness data={loanData} />}
 
         {/* ── ScoreMap (Credit Roadmap) ── */}
         <ScoreMap />

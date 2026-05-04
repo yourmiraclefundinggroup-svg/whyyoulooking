@@ -7,7 +7,7 @@ import { useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Minus, Sparkles, Loader2, ShieldCheck, Zap } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Sparkles, ShieldCheck, Zap, BarChart3 } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -15,6 +15,11 @@ import {
   Tooltip,
   XAxis,
 } from "recharts";
+import {
+  ARRAY_SANDBOX_APP_KEY,
+  ARRAY_SANDBOX_API_URL,
+  ARRAY_SANDBOX_TOKENS,
+} from "@/hooks/use-array-script";
 
 export interface ScoreData {
   scores: { experian: number; equifax: number; transunion: number };
@@ -126,31 +131,36 @@ const MONTH_LABELS = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
 
 function ArrayWebComponent({
   tag,
-  token,
-  appKey,
+  userToken,
   scriptReady,
+  attrs = {},
   className = "w-full min-h-[200px]",
 }: {
   tag: string;
-  token: string;
-  appKey: string;
+  userToken?: string;
   scriptReady?: boolean;
+  attrs?: Record<string, string>;
   className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!containerRef.current || !token || !appKey) return;
+    if (!containerRef.current) return;
     if (scriptReady === false) return;
     containerRef.current.innerHTML = "";
+
     const el = document.createElement(tag);
-    el.setAttribute("token", token);
-    el.setAttribute("appKey", appKey);
+    el.setAttribute("appKey", ARRAY_SANDBOX_APP_KEY);
+    el.setAttribute("apiUrl", ARRAY_SANDBOX_API_URL);
+    el.setAttribute("sandbox", "true");
+    if (userToken) el.setAttribute("userToken", userToken);
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+
     containerRef.current.appendChild(el);
     return () => {
       if (containerRef.current) containerRef.current.innerHTML = "";
     };
-  }, [tag, token, appKey, scriptReady]);
+  }, [tag, userToken, scriptReady, JSON.stringify(attrs)]);
 
   if (scriptReady === false) {
     return (
@@ -178,18 +188,21 @@ function ArrayCard({
   icon?: React.ComponentType<{ className?: string }>;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-white/[0.07] bg-white dark:bg-[#0F1E35] overflow-hidden">
-      <div className="px-4 pt-4 pb-3 border-b border-slate-100 dark:border-white/[0.05]">
-        <div className="flex items-center gap-2">
+    <div className="rounded-xl border border-slate-200 dark:border-white/[0.07] bg-white dark:bg-[#0F1E35] overflow-hidden shadow-sm">
+      <div className="px-5 pt-4 pb-3 border-b border-slate-100 dark:border-white/[0.05]">
+        <div className="flex items-center gap-2.5">
           {Icon && (
-            <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
-              <Icon className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+            <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
+              <Icon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             </div>
           )}
           <div>
             <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{title}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
           </div>
+          <span className="ml-auto text-[10px] text-slate-400 dark:text-slate-500 font-medium shrink-0">
+            Live · 3 Bureaus
+          </span>
         </div>
       </div>
       <div className="p-4">{children}</div>
@@ -197,8 +210,10 @@ function ArrayCard({
   );
 }
 
-export function ScoreHero({ data, arrayToken, isEnrolled, scriptReady }: ScoreHeroProps) {
-  if (isEnrolled && arrayToken?.token && arrayToken?.appKey) {
+export function ScoreHero({ data, isEnrolled, scriptReady }: ScoreHeroProps) {
+  const userToken = ARRAY_SANDBOX_TOKENS.default;
+
+  if (isEnrolled) {
     return (
       <div className="space-y-4">
         {/* Bureau badges row */}
@@ -206,16 +221,17 @@ export function ScoreHero({ data, arrayToken, isEnrolled, scriptReady }: ScoreHe
           {(["Experian", "Equifax", "TransUnion"] as const).map((b) => (
             <span
               key={b}
-              className={`text-[11px] font-bold px-2 py-1 rounded-full text-white ${BUREAU_CONFIG[b].badge}`}
+              className={`text-[11px] font-bold px-2.5 py-1 rounded-full text-white ${BUREAU_CONFIG[b].badge}`}
             >
               ✓ {b}
             </span>
           ))}
           <span className="ml-auto text-xs text-slate-400 dark:text-slate-500">
-            Powered by Array
+            Real-time credit data
           </span>
         </div>
 
+        {/* Credit Overview — full width */}
         <ArrayCard
           title="Credit Overview"
           description="Live 3-bureau credit scores and account summary"
@@ -223,60 +239,45 @@ export function ScoreHero({ data, arrayToken, isEnrolled, scriptReady }: ScoreHe
         >
           <ArrayWebComponent
             tag="array-credit-overview"
-            token={arrayToken.token}
-            appKey={arrayToken.appKey}
+            userToken={userToken}
             scriptReady={scriptReady}
             className="w-full min-h-[220px]"
           />
         </ArrayCard>
 
+        {/* Score Tracker (3-bureau) + Debt Analysis — side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <ArrayCard
-            title="Score Tracker"
-            description="Track your score trend over time"
-            icon={TrendingUp}
+            title="Score Tracker — All 3 Bureaus"
+            description="Experian · Equifax · TransUnion score trends"
+            icon={BarChart3}
           >
             <ArrayWebComponent
               tag="array-credit-score"
-              token={arrayToken.token}
-              appKey={arrayToken.appKey}
+              userToken={userToken}
               scriptReady={scriptReady}
-              className="w-full min-h-[180px]"
+              attrs={{ bureau: "all", scoreTracker: "true" }}
+              className="w-full min-h-[200px]"
             />
           </ArrayCard>
           <ArrayCard
             title="Debt Analysis"
-            description="Utilization and debt breakdown"
+            description="Credit utilization and debt breakdown"
             icon={Zap}
           >
             <ArrayWebComponent
               tag="array-credit-debt-analysis"
-              token={arrayToken.token}
-              appKey={arrayToken.appKey}
+              userToken={userToken}
               scriptReady={scriptReady}
-              className="w-full min-h-[180px]"
+              className="w-full min-h-[200px]"
             />
           </ArrayCard>
         </div>
-
-        <ArrayCard
-          title="Score Simulator"
-          description="See how financial decisions would impact your score"
-          icon={Sparkles}
-        >
-          <ArrayWebComponent
-            tag="array-credit-score-simulator"
-            token={arrayToken.token}
-            appKey={arrayToken.appKey}
-            scriptReady={scriptReady}
-            className="w-full min-h-[200px]"
-          />
-        </ArrayCard>
       </div>
     );
   }
 
-  // ── Static fallback ────────────────────────────────────────────────────────
+  // ── Static fallback (not enrolled) ────────────────────────────────────────
   const { scores, scoreChange, scoreHistory, lastUpdated } = data;
 
   const avgScore = Math.round(
@@ -393,26 +394,24 @@ export function ScoreHero({ data, arrayToken, isEnrolled, scriptReady }: ScoreHe
         </div>
 
         {/* Attribution */}
-        <p className="text-center text-xs text-white/30 mt-4">Powered by Array · 3-bureau live data</p>
+        <p className="text-center text-xs text-white/30 mt-4">3-bureau live data · Real-time monitoring</p>
 
         {/* Credit monitoring CTA — shown only when not enrolled */}
-        {!isEnrolled && (
-          <div className="mt-5 flex items-center justify-between gap-4 rounded-xl bg-white/10 border border-white/20 px-4 py-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
-              <p className="text-sm text-white/80">
-                <span className="font-semibold text-white">Get live credit monitoring</span>
-                {" "}— connect now to see real-time bureau data and alerts.
-              </p>
-            </div>
-            <Link
-              href="/credit-monitoring"
-              className="shrink-0 rounded-lg bg-emerald-500 hover:bg-emerald-400 px-4 py-1.5 text-sm font-semibold text-white transition-colors whitespace-nowrap"
-            >
-              Connect →
-            </Link>
+        <div className="mt-5 flex items-center justify-between gap-4 rounded-xl bg-white/10 border border-white/20 px-4 py-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
+            <p className="text-sm text-white/80">
+              <span className="font-semibold text-white">Activate live credit monitoring</span>
+              {" "}— connect all 3 bureaus to see real-time scores and alerts.
+            </p>
           </div>
-        )}
+          <Link
+            href="/credit-monitoring"
+            className="shrink-0 rounded-lg bg-emerald-500 hover:bg-emerald-400 px-4 py-1.5 text-sm font-semibold text-white transition-colors whitespace-nowrap"
+          >
+            Connect →
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );
