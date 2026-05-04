@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,33 +8,122 @@ import { motion } from "framer-motion";
 import { DisputeLetterModal } from "@/components/dispute-letter-modal";
 import { USPSTracking } from "@/components/usps-tracking";
 import { AICreditAnalysis } from "@/components/ai-credit-analysis";
-import { CreditSimulatorModal } from "@/components/credit-simulator-modal";
-import { CreditMonitoringConnections } from "@/components/credit-monitoring-connections";
-import { CreditUtilizationOptimizer } from "@/components/credit-utilization-optimizer";
-import { LoanReadinessAssessment } from "@/components/loan-readiness-assessment";
-import { CreditMixOptimizer } from "@/components/credit-mix-optimizer";
-import { IdentityTheftRecovery } from "@/components/identity-theft-recovery";
-import { RentUtilityOptimizer } from "@/components/rent-utility-optimizer";
-import { BankAccountIntegration } from "@/components/bank-account-integration";
-import { TaxSoftwareIntegration } from "@/components/tax-software-integration";
-import { EmploymentVerification } from "@/components/employment-verification";
-import { BusinessCreditPortal } from "@/components/business-credit-portal";
 import { SecureChat } from "@/components/secure-chat";
 import { PasswordReset } from "@/components/password-reset";
 import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatRelativeDate, getIssueTypeColor, getDisputeStatusColor } from "@/lib/utils";
-import { X, Clock, Search, AlertCircle, CheckCircle, Gavel, Check, FileText, Bot, Calculator, Eye, CreditCard, Calendar, ArrowUpCircle, ArrowDownCircle, Building2, Users, Wallet, FileWarning, Mail, ChevronRight } from "lucide-react";
+import {
+  useArrayScript,
+  ARRAY_SANDBOX_APP_KEY,
+  ARRAY_SANDBOX_API_URL,
+  ARRAY_SANDBOX_TOKENS,
+} from "@/hooks/use-array-script";
+import {
+  X, Clock, Search, AlertCircle, CheckCircle, Gavel, Check, FileText, Bot,
+  Eye, CreditCard, Calendar, Wallet, FileWarning, Mail, ChevronRight,
+  Sparkles, BarChart3, Shield, Zap, TrendingUp, Lock, ArrowRight,
+  MessageSquare, Settings, LayoutDashboard, Activity,
+} from "lucide-react";
+import type { CreditIssue, Dispute, CreditReportUpload, CreditReportAccount, CreditReportInquiry, CreditReportCollection, DisputeLetterNew, DisputeCalendarEvent } from "@shared/schema";
+import { LogOut } from "lucide-react";
+import { Link } from "wouter";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
+/* ── Array web component helpers ─────────────────────────────────────────── */
+function ArrayWebComponent({
+  tag,
+  userToken,
+  scriptReady,
+  attrs = {},
+  className = "w-full min-h-[200px]",
+}: {
+  tag: string;
+  userToken?: string;
+  scriptReady?: boolean;
+  attrs?: Record<string, string>;
+  className?: string;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    if (scriptReady === false) return;
+    containerRef.current.innerHTML = "";
+
+    const el = document.createElement(tag);
+    el.setAttribute("appKey", ARRAY_SANDBOX_APP_KEY);
+    el.setAttribute("apiUrl", ARRAY_SANDBOX_API_URL);
+    el.setAttribute("sandbox", "true");
+    if (userToken) el.setAttribute("userToken", userToken);
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+
+    containerRef.current.appendChild(el);
+    return () => {
+      if (containerRef.current) containerRef.current.innerHTML = "";
+    };
+  }, [tag, userToken, scriptReady, JSON.stringify(attrs)]);
+
+  if (scriptReady === false) {
+    return (
+      <div className={`${className} flex items-center justify-center`}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-amber-400 border-t-transparent ss-spinner" />
+          <p className="text-xs text-slate-500 dark:text-slate-400">Loading credit data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <div ref={containerRef} className={className} />;
+}
+
+function ArrayCard({
+  title,
+  description,
+  children,
+  icon: Icon,
+  badge,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }>;
+  badge?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 dark:border-white/[0.07] bg-white dark:bg-[#0F1E35] overflow-hidden shadow-sm">
+      <div className="px-5 pt-4 pb-3 border-b border-slate-100 dark:border-white/[0.05]">
+        <div className="flex items-center gap-2.5">
+          {Icon && (
+            <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
+              <Icon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            </div>
+          )}
+          <div>
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{title}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
+          </div>
+          <span className="ml-auto text-[10px] text-slate-400 dark:text-slate-500 font-medium shrink-0">
+            {badge ?? "Powered by Array"}
+          </span>
+        </div>
+      </div>
+      <div className="p-4">{children}</div>
+    </div>
+  );
+}
+
+/* ── Issue helpers ────────────────────────────────────────────────────────── */
 function getIssueIcon(type: string) {
   switch (type) {
-    case 'COLLECTION':
-    case 'CHARGE_OFF':
+    case "COLLECTION":
+    case "CHARGE_OFF":
       return <X className="h-4 w-4 text-white" />;
-    case 'LATE_PAYMENT':
+    case "LATE_PAYMENT":
       return <Clock className="h-4 w-4 text-white" />;
-    case 'INQUIRY':
+    case "INQUIRY":
       return <Search className="h-4 w-4 text-white" />;
     default:
       return <AlertCircle className="h-4 w-4 text-white" />;
@@ -43,44 +132,12 @@ function getIssueIcon(type: string) {
 
 function IssueTypeBadge({ type }: { type: string }) {
   const config: Record<string, { label: string; icon: JSX.Element; bgColor: string; textColor: string; borderColor: string }> = {
-    'COLLECTION': {
-      label: 'Collection',
-      icon: <X className="h-3.5 w-3.5" />,
-      bgColor: 'bg-red-600 dark:bg-red-700',
-      textColor: 'text-white',
-      borderColor: 'border-red-700 dark:border-red-600'
-    },
-    'CHARGE_OFF': {
-      label: 'Charge-Off',
-      icon: <AlertCircle className="h-3.5 w-3.5" />,
-      bgColor: 'bg-rose-600 dark:bg-rose-700',
-      textColor: 'text-white',
-      borderColor: 'border-rose-700 dark:border-rose-600'
-    },
-    'LATE_PAYMENT': {
-      label: 'Late Payment',
-      icon: <Clock className="h-3.5 w-3.5" />,
-      bgColor: 'bg-orange-500 dark:bg-orange-600',
-      textColor: 'text-white',
-      borderColor: 'border-orange-600 dark:border-orange-500'
-    },
-    'INQUIRY': {
-      label: 'Inquiry',
-      icon: <Search className="h-3.5 w-3.5" />,
-      bgColor: 'bg-amber-500 dark:bg-amber-600',
-      textColor: 'text-white',
-      borderColor: 'border-amber-600 dark:border-amber-500'
-    }
+    COLLECTION: { label: "Collection", icon: <X className="h-3.5 w-3.5" />, bgColor: "bg-red-600 dark:bg-red-700", textColor: "text-white", borderColor: "border-red-700 dark:border-red-600" },
+    CHARGE_OFF: { label: "Charge-Off", icon: <AlertCircle className="h-3.5 w-3.5" />, bgColor: "bg-rose-600 dark:bg-rose-700", textColor: "text-white", borderColor: "border-rose-700 dark:border-rose-600" },
+    LATE_PAYMENT: { label: "Late Payment", icon: <Clock className="h-3.5 w-3.5" />, bgColor: "bg-orange-500 dark:bg-orange-600", textColor: "text-white", borderColor: "border-orange-600 dark:border-orange-500" },
+    INQUIRY: { label: "Inquiry", icon: <Search className="h-3.5 w-3.5" />, bgColor: "bg-amber-500 dark:bg-amber-600", textColor: "text-white", borderColor: "border-amber-600 dark:border-amber-500" },
   };
-
-  const { label, icon, bgColor, textColor, borderColor } = config[type] || {
-    label: type,
-    icon: <AlertCircle className="h-3.5 w-3.5" />,
-    bgColor: 'bg-muted',
-    textColor: 'text-white',
-    borderColor: 'border-border'
-  };
-
+  const { label, icon, bgColor, textColor, borderColor } = config[type] || { label: type, icon: <AlertCircle className="h-3.5 w-3.5" />, bgColor: "bg-muted", textColor: "text-white", borderColor: "border-border" };
   return (
     <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${bgColor} ${textColor} border ${borderColor} shadow-sm`}>
       {icon}
@@ -88,13 +145,8 @@ function IssueTypeBadge({ type }: { type: string }) {
     </div>
   );
 }
-import type { CreditIssue, Dispute, CreditReportUpload, CreditReportAccount, CreditReportInquiry, CreditReportCollection, DisputeLetterNew, DisputeCalendarEvent } from "@shared/schema";
-import { Shield, LogOut, ExternalLink } from "lucide-react";
-import { Link } from "wouter";
-import { Progress } from "@/components/ui/progress";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
-// Client Progress Tab - Shows the client's credit repair progress report
+/* ── Progress Tab ─────────────────────────────────────────────────────────── */
 function ClientProgressTab() {
   const { data: progress, isLoading } = useQuery<{
     hasData: boolean;
@@ -109,50 +161,29 @@ function ClientProgressTab() {
     nextDisputeRound?: string | null;
     latestUploadDate?: string;
     latestBureau?: string;
-  }>({ queryKey: ['/api/client/progress-summary'] });
+  }>({ queryKey: ["/api/client/progress-summary"] });
 
   const handlePrint = () => {
-    const el = document.getElementById('client-progress-printable');
+    const el = document.getElementById("client-progress-printable");
     if (!el) return;
-    const w = window.open('', '_blank');
+    const w = window.open("", "_blank");
     if (!w) return;
-    w.document.write(`<html><head><title>My Credit Repair Progress</title><style>
-      body{font-family:Arial,sans-serif;padding:40px;color:#111;max-width:700px;margin:0 auto}
-      h1{border-bottom:3px solid #2563eb;padding-bottom:8px;color:#1e3a8a}
-      .stat{display:inline-block;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px 20px;margin:6px 4px;text-align:center;min-width:110px}
-      .stat-val{font-size:28px;font-weight:bold;color:#2563eb}
-      .stat-lbl{font-size:11px;color:#6b7280;margin-top:2px}
-      .delta-pos{color:#16a34a}.delta-neg{color:#dc2626}
-      @media print{body{padding:20px}}
-    </style></head><body>${el.innerHTML}</body></html>`);
+    w.document.write(`<html><head><title>My Credit Repair Progress</title><style>body{font-family:Arial,sans-serif;padding:40px;color:#111;max-width:700px;margin:0 auto}h1{border-bottom:3px solid #2563eb;padding-bottom:8px;color:#1e3a8a}.stat{display:inline-block;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px 20px;margin:6px 4px;text-align:center;min-width:110px}.stat-val{font-size:28px;font-weight:bold;color:#2563eb}.stat-lbl{font-size:11px;color:#6b7280;margin-top:2px}@media print{body{padding:20px}}</style></head><body>${el.innerHTML}</body></html>`);
     w.document.close();
     w.print();
   };
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-6 bg-muted rounded w-1/3" />
-            <div className="h-24 bg-muted rounded-xl" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  if (isLoading) return <Card><CardContent className="p-6"><div className="animate-pulse space-y-4"><div className="h-6 bg-muted rounded w-1/3" /><div className="h-24 bg-muted rounded-xl" /></div></CardContent></Card>;
 
   if (!progress?.hasData) {
     return (
       <Card>
         <CardContent className="p-8 text-center">
-          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Activity className="h-8 w-8 text-amber-600 dark:text-amber-400" />
           </div>
           <h3 className="text-lg font-medium text-foreground mb-2">No Progress Data Yet</h3>
-          <p className="text-muted-foreground text-sm">
-            Your progress report will appear here once your admin uploads your credit report.
-          </p>
+          <p className="text-muted-foreground text-sm">Your progress report will appear here once your admin uploads your credit report.</p>
         </CardContent>
       </Card>
     );
@@ -165,12 +196,12 @@ function ClientProgressTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <CheckCircle className="h-6 w-6 text-blue-500" />
+            <CheckCircle className="h-6 w-6 text-amber-500" />
             My Credit Repair Progress
           </h2>
           <p className="text-sm text-muted-foreground">
-            Based on {progress.totalUploads} credit report{(progress.totalUploads ?? 0) > 1 ? 's' : ''}
-            {progress.latestBureau ? ` · ${progress.latestBureau}` : ''}
+            Based on {progress.totalUploads} credit report{(progress.totalUploads ?? 0) > 1 ? "s" : ""}
+            {progress.latestBureau ? ` · ${progress.latestBureau}` : ""}
           </p>
         </div>
         <Button onClick={handlePrint} size="sm" variant="outline" className="gap-2">
@@ -180,74 +211,34 @@ function ClientProgressTab() {
       </div>
 
       <div id="client-progress-printable">
-        <h1 style={{ display: 'none' }}>My Credit Repair Progress</h1>
-
-        {/* Score cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-foreground">{progress.startingScore ?? '—'}</div>
-              <div className="text-xs text-muted-foreground mt-1">Starting Score</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{progress.currentScore ?? '—'}</div>
-              <div className="text-xs text-muted-foreground mt-1">Current Score</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className={`text-3xl font-bold ${scoreDelta >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                {scoreDelta >= 0 ? '+' : ''}{scoreDelta}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">Score Change</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-green-600 dark:text-green-400">{progress.lettersRemoved ?? 0}</div>
-              <div className="text-xs text-muted-foreground mt-1">Items Removed</div>
-            </CardContent>
-          </Card>
+          <Card><CardContent className="p-4 text-center"><div className="text-3xl font-bold text-foreground">{progress.startingScore ?? "—"}</div><div className="text-xs text-muted-foreground mt-1">Starting Score</div></CardContent></Card>
+          <Card><CardContent className="p-4 text-center"><div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{progress.currentScore ?? "—"}</div><div className="text-xs text-muted-foreground mt-1">Current Score</div></CardContent></Card>
+          <Card><CardContent className="p-4 text-center"><div className={`text-3xl font-bold ${scoreDelta >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>{scoreDelta >= 0 ? "+" : ""}{scoreDelta}</div><div className="text-xs text-muted-foreground mt-1">Score Change</div></CardContent></Card>
+          <Card><CardContent className="p-4 text-center"><div className="text-3xl font-bold text-green-600 dark:text-green-400">{progress.lettersRemoved ?? 0}</div><div className="text-xs text-muted-foreground mt-1">Items Removed</div></CardContent></Card>
         </div>
 
-        {/* Dispute letters summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base text-foreground">Dispute Letter Summary</CardTitle>
-          </CardHeader>
+        <Card className="mt-4">
+          <CardHeader><CardTitle className="text-base text-foreground">Dispute Letter Summary</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{progress.lettersSent ?? 0}</div>
-                <div className="text-xs text-muted-foreground mt-1">Sent to Bureaus</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{progress.lettersRemoved ?? 0}</div>
-                <div className="text-xs text-muted-foreground mt-1">Confirmed Removed</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{progress.lettersDraft ?? 0}</div>
-                <div className="text-xs text-muted-foreground mt-1">In Progress</div>
-              </div>
+              <div><div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{progress.lettersSent ?? 0}</div><div className="text-xs text-muted-foreground mt-1">Sent to Bureaus</div></div>
+              <div><div className="text-2xl font-bold text-green-600 dark:text-green-400">{progress.lettersRemoved ?? 0}</div><div className="text-xs text-muted-foreground mt-1">Confirmed Removed</div></div>
+              <div><div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{progress.lettersDraft ?? 0}</div><div className="text-xs text-muted-foreground mt-1">In Progress</div></div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Next dispute */}
         {progress.nextDisputeDate && (
-          <Card>
+          <Card className="mt-4">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
-                <div className="text-sm font-medium text-foreground">
-                  Next Dispute Round {progress.nextDisputeRound ?? ''}
-                </div>
+                <div className="text-sm font-medium text-foreground">Next Dispute Round {progress.nextDisputeRound ?? ""}</div>
                 <div className="text-xs text-muted-foreground">
-                  Scheduled for {new Date(progress.nextDisputeDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  Scheduled for {new Date(progress.nextDisputeDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
                 </div>
               </div>
             </CardContent>
@@ -258,17 +249,15 @@ function ClientProgressTab() {
   );
 }
 
-// Client Credit Reports Tab - Read-only view of credit reports
+/* ── Credit Reports Tab ───────────────────────────────────────────────────── */
 function ClientCreditReportsTab({ userId }: { userId: number }) {
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
 
-  // Fetch client's credit report uploads
   const { data: uploads = [], isLoading: uploadsLoading } = useQuery<CreditReportUpload[]>({
-    queryKey: ['/api/client/credit-report-uploads'],
+    queryKey: ["/api/client/credit-report-uploads"],
   });
 
-  // Fetch details for selected report
-  const { data: reportDetails, isLoading: detailsLoading } = useQuery<{
+  const { data: reportDetails } = useQuery<{
     upload: CreditReportUpload;
     accounts: CreditReportAccount[];
     inquiries: CreditReportInquiry[];
@@ -277,39 +266,27 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
     disputeItems: any[];
     letters: DisputeLetterNew[];
   }>({
-    queryKey: ['/api/client/credit-report-uploads', selectedReportId],
+    queryKey: ["/api/client/credit-report-uploads", selectedReportId],
     enabled: !!selectedReportId,
   });
 
-  // Fetch client's dispute calendar
   const { data: calendarEvents = [] } = useQuery<DisputeCalendarEvent[]>({
-    queryKey: ['/api/client/dispute-calendar'],
+    queryKey: ["/api/client/dispute-calendar"],
   });
 
   if (uploadsLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-6 bg-muted rounded w-1/4" />
-            <div className="h-20 bg-muted rounded-xl" />
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <Card><CardContent className="p-6"><div className="animate-pulse space-y-4"><div className="h-6 bg-muted rounded w-1/4" /><div className="h-20 bg-muted rounded-xl" /></div></CardContent></Card>;
   }
 
   if (uploads.length === 0) {
     return (
       <Card>
         <CardContent className="p-8 text-center">
-          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <FileText className="h-8 w-8 text-amber-600 dark:text-amber-400" />
           </div>
           <h3 className="text-lg font-medium text-foreground mb-2">No Credit Reports Yet</h3>
-          <p className="text-muted-foreground text-sm">
-            Your admin will upload your credit report data. Once available, you'll be able to view your accounts, disputes, and progress here.
-          </p>
+          <p className="text-muted-foreground text-sm">Your admin will upload your credit report data. Once available, you'll be able to view your accounts, disputes, and progress here.</p>
         </CardContent>
       </Card>
     );
@@ -317,39 +294,34 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
 
   return (
     <div className="space-y-6">
-      {/* Report Selection */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center text-lg">
-            <CreditCard className="h-5 w-5 mr-2 text-blue-600" />
+            <CreditCard className="h-5 w-5 mr-2 text-amber-500" />
             Your Credit Reports
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {uploads.map((upload) => (
-              <motion.div
+              <div
                 key={upload.id}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
                 onClick={() => setSelectedReportId(upload.id)}
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  selectedReportId === upload.id 
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                    : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
+                className={`p-4 rounded-xl border-2 cursor-pointer transition-all hover:-translate-y-0.5 ${
+                  selectedReportId === upload.id
+                    ? "border-amber-500 bg-amber-50 dark:bg-amber-900/10"
+                    : "border-slate-200 dark:border-white/10 hover:border-amber-300 dark:hover:border-amber-600/50"
                 }`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      upload.bureau === 'EXPERIAN' ? 'bg-blue-100 dark:bg-blue-900/50' :
-                      upload.bureau === 'EQUIFAX' ? 'bg-red-100 dark:bg-red-900/50' :
-                      'bg-green-100 dark:bg-green-900/50'
+                      upload.bureau === "EXPERIAN" ? "bg-blue-100 dark:bg-blue-900/50" :
+                      upload.bureau === "EQUIFAX" ? "bg-red-100 dark:bg-red-900/50" : "bg-purple-100 dark:bg-purple-900/50"
                     }`}>
-                      <Building2 className={`h-5 w-5 ${
-                        upload.bureau === 'EXPERIAN' ? 'text-blue-600' :
-                        upload.bureau === 'EQUIFAX' ? 'text-red-600' :
-                        'text-green-600'
+                      <CreditCard className={`h-5 w-5 ${
+                        upload.bureau === "EXPERIAN" ? "text-blue-600" :
+                        upload.bureau === "EQUIFAX" ? "text-red-600" : "text-purple-600"
                       }`} />
                     </div>
                     <div className="ml-3">
@@ -357,144 +329,72 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
                       <p className="text-xs text-muted-foreground">{new Date(upload.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
-                  <ChevronRight className={`h-5 w-5 transition-transform ${
-                    selectedReportId === upload.id ? 'rotate-90 text-blue-500' : 'text-muted-foreground'
-                  }`} />
+                  <ChevronRight className={`h-5 w-5 transition-transform ${selectedReportId === upload.id ? "rotate-90 text-amber-500" : "text-muted-foreground"}`} />
                 </div>
-                
-                {/* Credit Score */}
                 {upload.creditScore && (
-                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 dark:border-white/10">
                     <span className="text-sm text-muted-foreground">Score</span>
-                    <span className={`text-lg font-bold ${
-                      (upload.creditScore || 0) >= 700 ? 'text-green-600' :
-                      (upload.creditScore || 0) >= 600 ? 'text-yellow-600' :
-                      'text-red-600'
-                    }`}>
+                    <span className={`text-lg font-bold ${(upload.creditScore || 0) >= 700 ? "text-green-600" : (upload.creditScore || 0) >= 600 ? "text-yellow-600" : "text-red-600"}`}>
                       {upload.creditScore}
                     </span>
                   </div>
                 )}
-
-                <Badge 
-                  className={`mt-2 ${
-                    upload.parseStatus === 'succeeded' ? 'bg-green-100 text-green-700' :
-                    upload.parseStatus === 'processing' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-muted text-muted-foreground'
-                  }`}
-                >
+                <Badge className={`mt-2 text-xs ${upload.parseStatus === "succeeded" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : upload.parseStatus === "processing" ? "bg-yellow-100 text-yellow-700" : "bg-muted text-muted-foreground"}`}>
                   {upload.parseStatus}
                 </Badge>
-              </motion.div>
+              </div>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Report Details */}
       {selectedReportId && reportDetails && (
         <div className="space-y-6">
-          {/* Overview Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
-                    <Wallet className="h-5 w-5 text-purple-600" />
+            {[
+              { label: "Accounts", value: reportDetails.accounts.length, icon: Wallet, color: "text-purple-600", bg: "bg-purple-100 dark:bg-purple-900/50" },
+              { label: "Inquiries", value: reportDetails.inquiries.length, icon: Search, color: "text-orange-600", bg: "bg-orange-100 dark:bg-orange-900/50" },
+              { label: "Collections", value: reportDetails.collections.length, icon: FileWarning, color: "text-red-600", bg: "bg-red-100 dark:bg-red-900/50" },
+              { label: "Letters", value: reportDetails.letters.length, icon: Mail, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-900/50" },
+            ].map(({ label, value, icon: Icon, color, bg }) => (
+              <Card key={label}>
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <div className={`w-10 h-10 ${bg} rounded-lg flex items-center justify-center`}>
+                      <Icon className={`h-5 w-5 ${color}`} />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-xs text-muted-foreground">{label}</p>
+                      <p className="text-xl font-bold text-foreground">{value}</p>
+                    </div>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-xs text-muted-foreground">Accounts</p>
-                    <p className="text-xl font-bold text-foreground">{reportDetails.accounts.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center">
-                    <Search className="h-5 w-5 text-orange-600" />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-xs text-muted-foreground">Inquiries</p>
-                    <p className="text-xl font-bold text-foreground">{reportDetails.inquiries.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-red-100 dark:bg-red-900/50 rounded-lg flex items-center justify-center">
-                    <FileWarning className="h-5 w-5 text-red-600" />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-xs text-muted-foreground">Collections</p>
-                    <p className="text-xl font-bold text-foreground">{reportDetails.collections.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
-                    <Mail className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-xs text-muted-foreground">Letters</p>
-                    <p className="text-xl font-bold text-foreground">{reportDetails.letters.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
-          {/* Accounts Section */}
           {reportDetails.accounts.length > 0 && (
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center">
-                  <Wallet className="h-5 w-5 mr-2 text-purple-600" />
-                  Accounts ({reportDetails.accounts.length})
-                </CardTitle>
-              </CardHeader>
+              <CardHeader className="pb-3"><CardTitle className="text-base flex items-center"><Wallet className="h-5 w-5 mr-2 text-purple-600" />Accounts ({reportDetails.accounts.length})</CardTitle></CardHeader>
               <CardContent>
                 <Accordion type="single" collapsible className="space-y-2">
-                  {reportDetails.accounts.map((account, index) => (
+                  {reportDetails.accounts.map((account) => (
                     <AccordionItem key={account.id} value={`account-${account.id}`} className="border rounded-lg px-4">
                       <AccordionTrigger className="hover:no-underline">
                         <div className="flex items-center justify-between w-full pr-4">
                           <div className="flex items-center">
                             <span className="font-medium">{account.creditorName}</span>
-                            <Badge className="ml-2" variant={account.status === 'Open' ? 'default' : 'secondary'}>
-                              {account.status || 'Unknown'}
-                            </Badge>
+                            <Badge className="ml-2" variant={account.status === "Open" ? "default" : "secondary"}>{account.status || "Unknown"}</Badge>
                           </div>
                           <span className="text-sm text-muted-foreground">{formatCurrency(account.balance || 0)}</span>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent>
                         <div className="grid grid-cols-2 gap-4 py-2 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Account Type:</span>
-                            <span className="ml-2 font-medium">{account.accountType}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Credit Limit:</span>
-                            <span className="ml-2 font-medium">{formatCurrency(account.creditLimit || 0)}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Payment Status:</span>
-                            <span className="ml-2 font-medium">{account.paymentStatus}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Opened:</span>
-                            <span className="ml-2 font-medium">{account.dateOpened ? new Date(account.dateOpened).toLocaleDateString() : 'N/A'}</span>
-                          </div>
+                          <div><span className="text-muted-foreground">Account Type:</span><span className="ml-2 font-medium">{account.accountType}</span></div>
+                          <div><span className="text-muted-foreground">Credit Limit:</span><span className="ml-2 font-medium">{formatCurrency(account.creditLimit || 0)}</span></div>
+                          <div><span className="text-muted-foreground">Payment Status:</span><span className="ml-2 font-medium">{account.paymentStatus}</span></div>
+                          <div><span className="text-muted-foreground">Opened:</span><span className="ml-2 font-medium">{account.dateOpened ? new Date(account.dateOpened).toLocaleDateString() : "N/A"}</span></div>
                         </div>
                       </AccordionContent>
                     </AccordionItem>
@@ -504,26 +404,18 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
             </Card>
           )}
 
-          {/* Inquiries Section */}
           {reportDetails.inquiries.length > 0 && (
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center">
-                  <Search className="h-5 w-5 mr-2 text-orange-600" />
-                  Credit Inquiries ({reportDetails.inquiries.length})
-                </CardTitle>
-              </CardHeader>
+              <CardHeader className="pb-3"><CardTitle className="text-base flex items-center"><Search className="h-5 w-5 mr-2 text-orange-600" />Credit Inquiries ({reportDetails.inquiries.length})</CardTitle></CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {reportDetails.inquiries.map((inquiry) => (
                     <div key={inquiry.id} className="flex items-center justify-between p-3 bg-muted/40 rounded-lg">
                       <div>
                         <p className="font-medium text-foreground">{inquiry.creditorName}</p>
-                        <p className="text-sm text-muted-foreground">{inquiry.inquiryDate ? new Date(inquiry.inquiryDate).toLocaleDateString() : 'N/A'}</p>
+                        <p className="text-sm text-muted-foreground">{inquiry.inquiryDate ? new Date(inquiry.inquiryDate).toLocaleDateString() : "N/A"}</p>
                       </div>
-                      <Badge variant={inquiry.inquiryType === 'hard' ? 'destructive' : 'secondary'}>
-                        {inquiry.inquiryType}
-                      </Badge>
+                      <Badge variant={inquiry.inquiryType === "hard" ? "destructive" : "secondary"}>{inquiry.inquiryType}</Badge>
                     </div>
                   ))}
                 </div>
@@ -531,15 +423,9 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
             </Card>
           )}
 
-          {/* Collections Section */}
           {reportDetails.collections.length > 0 && (
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center">
-                  <FileWarning className="h-5 w-5 mr-2 text-red-600" />
-                  Collections ({reportDetails.collections.length})
-                </CardTitle>
-              </CardHeader>
+              <CardHeader className="pb-3"><CardTitle className="text-base flex items-center"><FileWarning className="h-5 w-5 mr-2 text-red-600" />Collections ({reportDetails.collections.length})</CardTitle></CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {reportDetails.collections.map((collection) => (
@@ -553,7 +439,7 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
                       </div>
                       <div className="flex items-center mt-2 text-sm text-red-600 dark:text-red-400">
                         <Calendar className="h-4 w-4 mr-1" />
-                        <span>Reported: {collection.dateReported ? new Date(collection.dateReported).toLocaleDateString() : 'N/A'}</span>
+                        <span>Reported: {collection.dateReported ? new Date(collection.dateReported).toLocaleDateString() : "N/A"}</span>
                       </div>
                     </div>
                   ))}
@@ -562,40 +448,19 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
             </Card>
           )}
 
-          {/* Dispute Letters Section */}
-          {reportDetails.letters.length > 0 && (
+          {calendarEvents.length > 0 && (
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center">
-                  <Mail className="h-5 w-5 mr-2 text-blue-600" />
-                  Dispute Letters ({reportDetails.letters.length})
-                </CardTitle>
-              </CardHeader>
+              <CardHeader className="pb-3"><CardTitle className="text-base flex items-center"><Calendar className="h-5 w-5 mr-2 text-amber-500" />Dispute Timeline</CardTitle></CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {reportDetails.letters.map((letter) => (
-                    <div key={letter.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="font-medium text-foreground">{letter.letterType} - {letter.bureau}</p>
-                          <p className="text-sm text-muted-foreground">Created: {new Date(letter.createdAt).toLocaleDateString()}</p>
-                        </div>
-                        <Badge className={
-                          letter.status === 'approved' ? 'bg-green-100 text-green-700' :
-                          letter.status === 'sent' ? 'bg-blue-100 text-blue-700' :
-                          letter.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-muted text-muted-foreground'
-                        }>
-                          {letter.status}
-                        </Badge>
+                  {calendarEvents.map((event) => (
+                    <div key={event.id} className="flex items-center p-3 border border-slate-200 dark:border-white/10 rounded-lg">
+                      <div className={`w-3 h-3 rounded-full mr-4 ${event.status === "completed" ? "bg-green-500" : event.status === "sent" ? "bg-amber-500" : event.status === "overdue" ? "bg-red-500" : "bg-yellow-500"}`} />
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">Round {event.round}</p>
+                        <p className="text-sm text-muted-foreground">{event.scheduledSendDate ? `Scheduled: ${new Date(event.scheduledSendDate).toLocaleDateString()}` : ""}</p>
                       </div>
-                      
-                      {letter.downloadUrl && (
-                        <div className="flex items-center text-sm text-muted-foreground mt-2">
-                          <Mail className="h-4 w-4 mr-1" />
-                          Download available
-                        </div>
-                      )}
+                      <Badge variant="outline">{event.status}</Badge>
                     </div>
                   ))}
                 </div>
@@ -604,43 +469,11 @@ function ClientCreditReportsTab({ userId }: { userId: number }) {
           )}
         </div>
       )}
-
-      {/* Dispute Calendar */}
-      {calendarEvents.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center">
-              <Calendar className="h-5 w-5 mr-2 text-green-600" />
-              Dispute Timeline
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {calendarEvents.map((event) => (
-                <div key={event.id} className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-                  <div className={`w-3 h-3 rounded-full mr-4 ${
-                    event.status === 'completed' ? 'bg-green-500' :
-                    event.status === 'sent' ? 'bg-blue-500' :
-                    event.status === 'overdue' ? 'bg-red-500' :
-                    'bg-yellow-500'
-                  }`} />
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">Round {event.round}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {event.scheduledSendDate ? `Scheduled: ${new Date(event.scheduledSendDate).toLocaleDateString()}` : ''}
-                    </p>
-                  </div>
-                  <Badge variant="outline">{event.status}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
 
+/* ── Main page ────────────────────────────────────────────────────────────── */
 export default function CreditRepair() {
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<CreditIssue | undefined>();
@@ -648,21 +481,26 @@ export default function CreditRepair() {
   const queryClient = useQueryClient();
   const { user, canCreateDisputes, isClientViewer, logout } = useUserContext();
 
-  // Use current user ID from context or default to 1
   const userId = user?.id || 1;
 
+  const { loaded: scriptReady } = useArrayScript();
+  const userToken = ARRAY_SANDBOX_TOKENS.default;
+
   const { data: creditIssues = [], isLoading: issuesLoading } = useQuery<CreditIssue[]>({
-    queryKey: ['/api/credit-issues', userId],
+    queryKey: ["/api/credit-issues", userId],
   });
 
   const { data: disputes = [], isLoading: disputesLoading } = useQuery<Dispute[]>({
-    queryKey: ['/api/disputes', userId],
+    queryKey: ["/api/disputes", userId],
   });
 
-  const { data: creditConnections = [] } = useQuery({
-    queryKey: ['/api/credit-monitoring-connections', userId],
-    queryFn: () => fetch(`/api/credit-monitoring-connections?userId=${userId}`).then(res => res.json()),
+  const { data: arrayEnrollment } = useQuery<{ enrolled: boolean; arrayUserId: string | null; productCodes: string[] }>({
+    queryKey: ["/api/array/enrollment"],
+    enabled: !!user,
+    retry: false,
   });
+
+  const isEnrolled = arrayEnrollment?.enrolled ?? false;
 
   const updateIssueMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: number; updates: Partial<CreditIssue> }) => {
@@ -670,18 +508,11 @@ export default function CreditRepair() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/credit-issues', userId] });
-      toast({
-        title: "Success",
-        description: "Issue updated successfully",
-      });
+      queryClient.invalidateQueries({ queryKey: ["/api/credit-issues", userId] });
+      toast({ title: "Success", description: "Issue updated successfully" });
     },
     onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update issue",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to update issue", variant: "destructive" });
     },
   });
 
@@ -691,18 +522,14 @@ export default function CreditRepair() {
   };
 
   const handleMarkResolved = (issue: CreditIssue) => {
-    updateIssueMutation.mutate({
-      id: issue.id,
-      updates: { status: 'RESOLVED' }
-    });
+    updateIssueMutation.mutate({ id: issue.id, updates: { status: "RESOLVED" } });
   };
 
-  const activeIssues = creditIssues.filter(issue => issue.status === 'ACTIVE');
-  const disputedIssues = creditIssues.filter(issue => issue.status === 'DISPUTED');
-  const resolvedIssues = creditIssues.filter(issue => issue.status === 'RESOLVED');
-
-  const pendingDisputes = disputes.filter(dispute => dispute.status === 'PENDING' || dispute.status === 'SENT' || dispute.status === 'DELIVERED');
-  const resolvedDisputes = disputes.filter(dispute => dispute.status === 'RESOLVED');
+  const activeIssues = creditIssues.filter((i) => i.status === "ACTIVE");
+  const disputedIssues = creditIssues.filter((i) => i.status === "DISPUTED");
+  const resolvedIssues = creditIssues.filter((i) => i.status === "RESOLVED");
+  const pendingDisputes = disputes.filter((d) => d.status === "PENDING" || d.status === "SENT" || d.status === "DELIVERED");
+  const resolvedDisputes = disputes.filter((d) => d.status === "RESOLVED");
 
   if (issuesLoading || disputesLoading) {
     return (
@@ -711,7 +538,7 @@ export default function CreditRepair() {
           <div className="animate-pulse space-y-4">
             <div className="h-4 bg-muted rounded w-24" />
             <div className="h-8 bg-muted rounded w-1/4" />
-            <div className="h-32 bg-muted rounded-xl" />
+            <div className="h-48 bg-muted rounded-xl" />
             <div className="h-32 bg-muted rounded-xl" />
           </div>
         </div>
@@ -721,627 +548,459 @@ export default function CreditRepair() {
 
   return (
     <>
-      {/* Animated Background */}
+      {/* Subtle animated background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/50 to-purple-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300" />
-        <motion.div
-          className="absolute top-10 right-10 w-[500px] h-[500px] bg-blue-500/20 dark:bg-blue-600/30 rounded-full blur-[100px]"
-          animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.7, 0.4], rotate: [0, 180, 360] }}
-          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute bottom-20 left-10 w-[450px] h-[450px] bg-purple-500/20 dark:bg-purple-600/35 rounded-full blur-[100px]"
-          animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.3, 0.5], x: [-20, 20, -20] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-cyan-500/15 dark:bg-cyan-500/30 rounded-full blur-[80px]"
-          animate={{ x: [-80, 80, -80], y: [-50, 50, -50], scale: [1, 1.15, 1] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute bottom-1/3 right-1/4 w-[350px] h-[350px] bg-pink-500/10 dark:bg-pink-500/25 rounded-full blur-[70px]"
-          animate={{ x: [50, -50, 50], y: [30, -30, 30], opacity: [0.3, 0.6, 0.3] }}
-          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute top-2/3 right-10 w-[300px] h-[300px] bg-emerald-500/10 dark:bg-emerald-500/20 rounded-full blur-[60px]"
-          animate={{ scale: [1, 1.2, 1], rotate: [0, -90, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-amber-50/20 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300" />
       </div>
-      
-      <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 relative">
-      {/* Header - More compact for mobile */}
-      <div className="mb-6">
+
+      <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 relative space-y-6">
+
+        {/* ── Page Header ─────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xs uppercase tracking-widest text-amber-500 dark:text-amber-400 mb-1 font-medium">ScoreShift</div>
             <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">Credit Repair</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {isClientViewer ? "Viewing the work being done on your credit file." : "Dispute negative items and track your credit repair progress."}
+            </p>
           </div>
-          <div className="flex items-center space-x-4">
-            {user && (
-              <span className="text-sm text-muted-foreground">
-                {user.firstName} {user.lastName}
-              </span>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={logout}
-            >
+          <div className="flex items-center gap-4">
+            {user && <span className="text-sm text-muted-foreground hidden sm:block">{user.firstName} {user.lastName}</span>}
+            <Button variant="ghost" size="sm" onClick={logout}>
               <LogOut className="h-4 w-4 mr-1" />
               Logout
             </Button>
           </div>
         </div>
-        {isClientViewer ? (
-          <div className="mt-3 space-y-3">
-            <div className="p-3 bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 rounded-xl">
-              <p className="text-sm text-amber-700 dark:text-amber-300 flex items-start">
-                <Eye className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                <span><strong>Client View:</strong> This shows the work being done on your credit file.
-                You can view dispute progress and tracking but cannot create new disputes.</span>
-              </p>
+
+        {isClientViewer && (
+          <div className="p-3 bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 rounded-xl">
+            <p className="text-sm text-amber-700 dark:text-amber-300 flex items-start gap-2">
+              <Eye className="h-4 w-4 mt-0.5 shrink-0" />
+              <span><strong>Client View:</strong> You can view dispute progress and tracking but cannot create new disputes.</span>
+            </p>
+          </div>
+        )}
+
+        {/* ── Live Credit Score Section ────────────────────────────────────── */}
+        {isEnrolled ? (
+          <div className="space-y-4">
+            {/* Bureau badges row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {(["Experian", "Equifax", "TransUnion"] as const).map((b) => {
+                const colors: Record<string, string> = { Experian: "bg-[#0062FF]", Equifax: "bg-[#E12726]", TransUnion: "bg-[#662D8C]" };
+                return (
+                  <span key={b} className={`text-[11px] font-bold px-2.5 py-1 rounded-full text-white ${colors[b]}`}>
+                    ✓ {b}
+                  </span>
+                );
+              })}
+              <Badge className="ml-auto bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-xs gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Credit Data
+              </Badge>
             </div>
-            
-            {/* Credit Monitoring Connections Status */}
-            <div className="space-y-3">
-              {creditConnections.length > 0 ? (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h3 className="text-sm font-semibold text-green-900 mb-2">Connected Credit Monitoring</h3>
-                  {creditConnections.map((connection: any) => (
-                    <div key={connection.id} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-green-100 dark:bg-green-800 rounded-lg flex items-center justify-center">
-                          <Shield className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-green-900">{connection.provider}</p>
-                          <p className="text-xs text-green-700">
-                            Connected {connection.accountEmail} • Last sync: {new Date(connection.lastSyncDate).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-xs text-green-600">Active</span>
-                      </div>
-                    </div>
+
+            {/* Credit Overview — full width */}
+            <ArrayCard title="Credit Overview" description="Live 3-bureau credit scores and account summary" icon={Sparkles} badge="Live · 3 Bureaus">
+              <ArrayWebComponent tag="array-credit-overview" userToken={userToken} scriptReady={scriptReady} className="w-full min-h-[220px]" />
+            </ArrayCard>
+
+            {/* Score Tracker + Debt Analysis — side by side */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <ArrayCard title="Score Tracker" description="Experian · Equifax · TransUnion score trends" icon={BarChart3} badge="All 3 Bureaus">
+                <ArrayWebComponent tag="array-credit-score" userToken={userToken} scriptReady={scriptReady} attrs={{ bureau: "all", scoreTracker: "true" }} className="w-full min-h-[200px]" />
+              </ArrayCard>
+              <ArrayCard title="Debt Analysis" description="Credit utilization and balance breakdown" icon={Zap} badge="Live">
+                <ArrayWebComponent tag="array-credit-debt-analysis" userToken={userToken} scriptReady={scriptReady} className="w-full min-h-[200px]" />
+              </ArrayCard>
+            </div>
+          </div>
+        ) : (
+          /* Not enrolled — clean CTA to activate monitoring */
+          <div className="rounded-xl border border-slate-200 dark:border-white/[0.07] bg-gradient-to-br from-[#0F172A] to-[#1E3A5F] overflow-hidden shadow-lg">
+            <div className="p-6 md:p-8 flex flex-col md:flex-row md:items-center gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="h-4 w-4 text-amber-400" />
+                  <span className="text-amber-400 text-sm font-semibold uppercase tracking-wider">Credit Monitoring</span>
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">Activate Live Credit Monitoring</h2>
+                <p className="text-slate-400 text-sm max-w-md">
+                  Connect all 3 bureaus to see your real-time credit scores, get instant alerts, and track every change as it happens.
+                </p>
+                <div className="flex items-center gap-2 mt-4 flex-wrap">
+                  {[{ label: "Experian", color: "bg-[#0062FF]" }, { label: "Equifax", color: "bg-[#E12726]" }, { label: "TransUnion", color: "bg-[#662D8C]" }].map((b) => (
+                    <span key={b.label} className={`text-[11px] font-bold px-2.5 py-1 rounded-full text-white ${b.color}`}>{b.label}</span>
                   ))}
                 </div>
+              </div>
+              <Link href="/credit-monitoring">
+                <Button className="bg-amber-500 hover:bg-amber-400 text-black font-bold gap-2 shrink-0 shadow-lg shadow-amber-500/20">
+                  <Shield className="h-4 w-4" />
+                  Activate Monitoring
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* ── Stats row ───────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { label: "Active Issues", value: activeIssues.length, color: "text-red-500", bg: "bg-red-100 dark:bg-red-900/30", icon: AlertCircle },
+            { label: "Disputed", value: disputedIssues.length, color: "text-yellow-600", bg: "bg-yellow-100 dark:bg-yellow-900/30", icon: Gavel },
+            { label: "Resolved", value: resolvedIssues.length, color: "text-green-600", bg: "bg-green-100 dark:bg-green-900/30", icon: CheckCircle },
+            { label: "Pending", value: pendingDisputes.length, color: "text-amber-500", bg: "bg-amber-100 dark:bg-amber-900/30", icon: Clock },
+          ].map(({ label, value, color, bg, icon: Icon }) => (
+            <Card key={label}>
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 ${bg} rounded-lg flex items-center justify-center shrink-0`}>
+                    <Icon className={`h-4 w-4 ${color}`} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">{label}</p>
+                    <p className={`text-xl font-bold ${color}`}>{value}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* ── Tabs ────────────────────────────────────────────────────────── */}
+        <Tabs defaultValue="issues" className="space-y-4">
+          <TabsList className="flex flex-wrap h-auto gap-1 p-1 w-full bg-muted/60">
+            <TabsTrigger value="issues" className="text-xs px-3 py-2 flex items-center gap-1.5 flex-1 sm:flex-none">
+              <AlertCircle className="h-3.5 w-3.5" />Issues
+            </TabsTrigger>
+            <TabsTrigger value="disputes" className="text-xs px-3 py-2 flex items-center gap-1.5 flex-1 sm:flex-none">
+              <Gavel className="h-3.5 w-3.5" />Disputes
+            </TabsTrigger>
+            <TabsTrigger value="monitoring" className="text-xs px-3 py-2 flex items-center gap-1.5 flex-1 sm:flex-none">
+              <Shield className="h-3.5 w-3.5" />Monitor
+            </TabsTrigger>
+            <TabsTrigger value="tools" className="text-xs px-3 py-2 flex items-center gap-1.5 flex-1 sm:flex-none">
+              <Bot className="h-3.5 w-3.5" />Tools
+            </TabsTrigger>
+            <TabsTrigger value="credit-reports" className="text-xs px-3 py-2 flex items-center gap-1.5 flex-1 sm:flex-none">
+              <FileText className="h-3.5 w-3.5" />Reports
+            </TabsTrigger>
+            <TabsTrigger value="progress" className="text-xs px-3 py-2 flex items-center gap-1.5 flex-1 sm:flex-none">
+              <Activity className="h-3.5 w-3.5" />Progress
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="text-xs px-3 py-2 flex items-center gap-1.5 flex-1 sm:flex-none">
+              <MessageSquare className="h-3.5 w-3.5" />Chat
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="text-xs px-3 py-2 flex items-center gap-1.5 flex-1 sm:flex-none">
+              <Settings className="h-3.5 w-3.5" />Settings
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Issues Tab */}
+          <TabsContent value="issues" className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between text-base sm:text-lg">
+                  <span>Active Credit Issues</span>
+                  <Badge variant="destructive" className="text-xs">{activeIssues.length} Issues</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-3">
+                  {activeIssues.map((issue, index) => (
+                    <motion.div
+                      key={issue.id}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.07 }}
+                      className={`flex flex-col sm:flex-row sm:items-start gap-3 p-3 sm:p-4 rounded-xl border cursor-pointer transition-all ${getIssueTypeColor(issue.type)}`}
+                    >
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center shadow-md shrink-0">
+                          {getIssueIcon(issue.type)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-medium text-foreground truncate">{issue.title}</h4>
+                              <p className="text-sm text-muted-foreground mt-0.5">{issue.description}</p>
+                              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
+                                <span>Creditor: {issue.creditor}</span>
+                                {issue.amount && <span>Amount: {formatCurrency(issue.amount)}</span>}
+                                <span>Impact: {issue.impact} pts</span>
+                              </div>
+                            </div>
+                            <IssueTypeBadge type={issue.type} />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-row sm:flex-col gap-2 shrink-0">
+                        {canCreateDisputes ? (
+                          <>
+                            <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white flex-1 sm:flex-none text-xs" onClick={() => handleDispute(issue)}>Dispute</Button>
+                            <Button size="sm" variant="outline" className="flex-1 sm:flex-none text-xs" onClick={() => handleMarkResolved(issue)} disabled={updateIssueMutation.isPending}>Resolved</Button>
+                          </>
+                        ) : (
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                            <Eye className="h-3.5 w-3.5" /><span>View Only</span>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                  {activeIssues.length === 0 && (
+                    <div className="text-center py-10 text-muted-foreground">
+                      <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                      </div>
+                      <h3 className="text-base font-medium text-foreground mb-1">No Active Issues</h3>
+                      <p className="text-sm text-muted-foreground">Great! No active credit issues to address.</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {resolvedIssues.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between text-base">
+                    <span>Resolved Issues</span>
+                    <Badge variant="secondary">{resolvedIssues.length} Resolved</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {resolvedIssues.map((issue) => (
+                      <div key={issue.id} className="flex items-start gap-4 p-4 bg-green-50 dark:bg-green-950/30 rounded-xl border border-green-200 dark:border-green-800/50">
+                        <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center shrink-0">
+                          <Check className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-medium text-green-900 dark:text-green-100">{issue.title}</h4>
+                          <p className="text-sm text-green-700 dark:text-green-300">{issue.description}</p>
+                          <div className="flex flex-wrap gap-3 mt-2 text-xs text-green-600 dark:text-green-400">
+                            <span>Creditor: {issue.creditor}</span>
+                            {issue.amount && <span>Amount: {formatCurrency(issue.amount)}</span>}
+                            <span>Was impacting: {Math.abs(issue.impact)} pts</span>
+                          </div>
+                        </div>
+                        <Badge className="bg-green-600 shrink-0">Resolved</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Disputes Tab */}
+          <TabsContent value="disputes" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between text-base">
+                  <span>Pending Disputes</span>
+                  <Badge variant="secondary">{pendingDisputes.length} Pending</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {pendingDisputes.map((dispute) => {
+                    const issue = creditIssues.find((i) => i.id === dispute.issueId);
+                    return (
+                      <div key={dispute.id} className="space-y-3">
+                        <div className={`flex items-start gap-4 p-4 rounded-xl border ${getDisputeStatusColor(dispute.status)}`}>
+                          <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse mt-2 shrink-0" />
+                          <div className="flex-1">
+                            <h4 className="text-sm font-medium text-foreground">{dispute.bureau} – {issue?.title}</h4>
+                            <p className="text-sm text-muted-foreground">{issue?.description}</p>
+                            <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+                              <span>Sent: {formatRelativeDate(dispute.dateSent)}</span>
+                              <span>Expected: {formatRelativeDate(dispute.expectedResponse)}</span>
+                              <span>Bureau: {dispute.bureau}</span>
+                            </div>
+                          </div>
+                          <Badge className="bg-amber-500 text-black shrink-0">{dispute.status}</Badge>
+                        </div>
+                        <USPSTracking dispute={dispute} />
+                      </div>
+                    );
+                  })}
+                  {pendingDisputes.length === 0 && (
+                    <div className="text-center py-10 text-muted-foreground">
+                      <FileText className="h-10 w-10 mx-auto mb-4 opacity-40" />
+                      <h3 className="text-base font-medium text-foreground mb-1">No Pending Disputes</h3>
+                      <p className="text-sm text-muted-foreground">No disputes currently pending with credit bureaus.</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {resolvedDisputes.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between text-base">
+                    <span>Resolved Disputes</span>
+                    <Badge variant="secondary">{resolvedDisputes.length} Resolved</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {resolvedDisputes.map((dispute) => {
+                      const issue = creditIssues.find((i) => i.id === dispute.issueId);
+                      return (
+                        <div key={dispute.id} className="flex items-start gap-4 p-4 bg-green-50 dark:bg-green-950/30 rounded-xl border border-green-200 dark:border-green-800/50">
+                          <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center shrink-0">
+                            <Check className="h-4 w-4 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-sm font-medium text-green-900 dark:text-green-100">{dispute.bureau} – {issue?.title}</h4>
+                            <p className="text-sm text-green-700 dark:text-green-300">Successfully resolved and removed from credit report</p>
+                            <div className="flex flex-wrap gap-3 mt-2 text-xs text-green-600 dark:text-green-400">
+                              <span>Sent: {formatRelativeDate(dispute.dateSent)}</span>
+                              <span>Resolved: {formatRelativeDate(dispute.actualResponse || dispute.dateSent)}</span>
+                            </div>
+                          </div>
+                          <Badge className="bg-green-600 shrink-0">Resolved</Badge>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Monitor Tab — Array credit alerts + identity protect */}
+          <TabsContent value="monitoring" className="space-y-4">
+            {isEnrolled ? (
+              <>
+                <ArrayCard title="Credit Alerts" description="Real-time notifications for changes across all 3 bureaus" icon={Shield} badge="Live Monitoring">
+                  <ArrayWebComponent tag="array-credit-alerts" userToken={userToken} scriptReady={scriptReady} className="w-full min-h-[300px]" />
+                </ArrayCard>
+                <ArrayCard title="Identity Protection" description="Monitor for fraud, data breaches, and identity theft" icon={Lock} badge="Identity Shield">
+                  <ArrayWebComponent tag="array-identity-protect" userToken={userToken} scriptReady={scriptReady} className="w-full min-h-[300px]" />
+                </ArrayCard>
+              </>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Shield className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Credit Monitoring Not Active</h3>
+                  <p className="text-muted-foreground text-sm max-w-md mx-auto mb-6">
+                    Activate credit monitoring to see real-time alerts and identity protection across all 3 bureaus.
+                  </p>
+                  <Link href="/credit-monitoring">
+                    <Button className="bg-amber-500 hover:bg-amber-400 text-black font-bold gap-2">
+                      <Shield className="h-4 w-4" />
+                      Activate Monitoring
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Tools Tab — AI analysis + Array score simulator */}
+          <TabsContent value="tools" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* AI Credit Analysis */}
+              <div className="rounded-xl border border-slate-200 dark:border-white/[0.07] bg-white dark:bg-[#0F1E35] overflow-hidden shadow-sm">
+                <div className="px-5 pt-4 pb-3 border-b border-slate-100 dark:border-white/[0.05]">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
+                      <Bot className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">AI Credit Analysis</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Personalized dispute strategy powered by AI</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <AICreditAnalysis userId={userId} />
+                </div>
+              </div>
+
+              {/* Array Score Simulator */}
+              {isEnrolled ? (
+                <ArrayCard title="Score Simulator" description="See how credit actions could impact your score" icon={TrendingUp} badge="Interactive">
+                  <ArrayWebComponent tag="array-credit-score-simulator" userToken={userToken} scriptReady={scriptReady} className="w-full min-h-[300px]" />
+                </ArrayCard>
               ) : (
-                <div className="p-4 bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-amber-500/10 dark:bg-amber-500/15 rounded-xl flex items-center justify-center">
-                        <Shield className="h-5 w-5 text-amber-500 dark:text-amber-400" />
+                <div className="rounded-xl border border-slate-200 dark:border-white/[0.07] bg-white dark:bg-[#0F1E35] overflow-hidden shadow-sm flex flex-col">
+                  <div className="px-5 pt-4 pb-3 border-b border-slate-100 dark:border-white/[0.05]">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
+                        <TrendingUp className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold text-foreground">Connect to Experian</h3>
-                        <p className="text-xs text-muted-foreground">Get real-time credit monitoring and updates</p>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Score Simulator</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Interactive credit score modeling</p>
                       </div>
+                      <Lock className="h-4 w-4 text-slate-400 ml-auto" />
                     </div>
-                    <Link href="/experian">
-                      <Button
-                        size="sm"
-                        className="bg-amber-500 hover:bg-amber-400 text-black font-bold"
-                      >
-                        <ExternalLink className="h-4 w-4 mr-1" />
-                        Connect
-                      </Button>
-                    </Link>
+                  </div>
+                  <div className="p-8 flex-1 flex items-center justify-center text-center">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-4">Activate credit monitoring to use the interactive score simulator.</p>
+                      <Link href="/credit-monitoring">
+                        <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-black font-bold gap-1.5">
+                          Activate <ArrowRight className="h-3.5 w-3.5" />
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
-          </div>
-        ) : (
-          <p className="mt-1 text-sm sm:text-base text-muted-foreground">
-            Dispute negative items to improve your credit score.
-          </p>
+          </TabsContent>
+
+          {/* Reports Tab */}
+          <TabsContent value="credit-reports" className="space-y-4">
+            <ClientCreditReportsTab userId={userId} />
+          </TabsContent>
+
+          {/* Progress Tab */}
+          <TabsContent value="progress" className="space-y-4">
+            <ClientProgressTab />
+          </TabsContent>
+
+          {/* Chat Tab */}
+          <TabsContent value="chat" className="space-y-4">
+            <SecureChat userId={userId} userType="client" />
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Settings className="h-5 w-5 text-amber-500" />
+                  Account Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PasswordReset />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {!isClientViewer && (
+          <DisputeLetterModal
+            open={disputeModalOpen}
+            onOpenChange={setDisputeModalOpen}
+            issue={selectedIssue}
+          />
         )}
-      </div>
-
-      {/* Summary Cards - Better mobile grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6">
-        <Card>
-          <CardContent className="p-3 sm:p-4 lg:p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-red-100 dark:bg-red-800 rounded-lg flex items-center justify-center">
-                  <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-red-600 dark:text-red-400" />
-                </div>
-              </div>
-              <div className="ml-2 sm:ml-3">
-                <p className="text-xs sm:text-sm font-medium text-foreground">Active Issues</p>
-                <p className="text-lg sm:text-2xl font-bold text-red-600">{activeIssues.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-3 sm:p-4 lg:p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <Gavel className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
-                </div>
-              </div>
-              <div className="ml-2 sm:ml-3">
-                <p className="text-xs sm:text-sm font-medium text-foreground">Disputed</p>
-                <p className="text-lg sm:text-2xl font-bold text-yellow-600">{disputedIssues.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-3 sm:p-4 lg:p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
-                </div>
-              </div>
-              <div className="ml-2 sm:ml-3">
-                <p className="text-xs sm:text-sm font-medium text-foreground">Resolved</p>
-                <p className="text-lg sm:text-2xl font-bold text-green-600">{resolvedIssues.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-3 sm:p-4 lg:p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
-                </div>
-              </div>
-              <div className="ml-2 sm:ml-3">
-                <p className="text-xs sm:text-sm font-medium text-foreground">Pending</p>
-                <p className="text-lg sm:text-2xl font-bold text-blue-600">{pendingDisputes.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="issues" className="space-y-4 sm:space-y-6">
-        <TabsList className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 h-auto gap-1 p-1">
-          <TabsTrigger value="issues" className="text-xs px-2 py-2">Issues</TabsTrigger>
-          <TabsTrigger value="disputes" className="text-xs px-2 py-2">Disputes</TabsTrigger>
-          <TabsTrigger value="monitoring" className="text-xs px-2 py-2">Monitor</TabsTrigger>
-          <TabsTrigger value="utilization" className="text-xs px-2 py-2">Utilization</TabsTrigger>
-          <TabsTrigger value="loan-readiness" className="text-xs px-2 py-2">Loan</TabsTrigger>
-          <TabsTrigger value="credit-mix" className="text-xs px-2 py-2">Mix</TabsTrigger>
-          <TabsTrigger value="identity-theft" className="text-xs px-2 py-2">ID Theft</TabsTrigger>
-          <TabsTrigger value="rent-utility" className="text-xs px-2 py-2">Rent</TabsTrigger>
-          <TabsTrigger value="integrations" className="text-xs px-2 py-2">Verify</TabsTrigger>
-          <TabsTrigger value="business-credit" className="text-xs px-2 py-2">Business</TabsTrigger>
-          <TabsTrigger value="chat" className="text-xs px-2 py-2">Chat</TabsTrigger>
-          <TabsTrigger value="password-reset" className="text-xs px-2 py-2">Password</TabsTrigger>
-          <TabsTrigger value="ai-tools" className="text-xs px-2 py-2">AI Tools</TabsTrigger>
-          <TabsTrigger value="credit-reports" className="text-xs px-2 py-2">Reports</TabsTrigger>
-          <TabsTrigger value="progress" className="text-xs px-2 py-2">Progress</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="issues" className="space-y-4 sm:space-y-6">
-          {/* Active Issues */}
-          <Card>
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="flex items-center justify-between text-base sm:text-lg">
-                <span>Active Credit Issues</span>
-                <Badge variant="destructive" className="text-xs">{activeIssues.length} Issues</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-3 sm:space-y-4">
-                {activeIssues.map((issue, index) => (
-                  <motion.div
-                    key={issue.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    whileHover={{ scale: 1.02, boxShadow: "0 10px 40px -10px rgba(0,0,0,0.2)" }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 rounded-xl border cursor-pointer transition-all duration-200 ${getIssueTypeColor(issue.type)}`}
-                  >
-                    <div className="flex items-start space-x-3 sm:space-x-4">
-                      <motion.div 
-                        className="flex-shrink-0"
-                        whileHover={{ rotate: [0, -10, 10, 0] }}
-                        transition={{ duration: 0.5 }}
-                      >
-                        <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center shadow-lg">
-                          {getIssueIcon(issue.type)}
-                        </div>
-                      </motion.div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="text-sm font-medium text-foreground truncate">{issue.title}</h4>
-                            <p className="text-sm text-muted-foreground mt-1">{issue.description}</p>
-                            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
-                              <span>Creditor: {issue.creditor}</span>
-                              {issue.amount && <span>Amount: {formatCurrency(issue.amount)}</span>}
-                              <span>Impact: {issue.impact} points</span>
-                              <span className="hidden sm:inline">Added: {formatRelativeDate(issue.dateAdded)}</span>
-                            </div>
-                          </div>
-                          <IssueTypeBadge type={issue.type} />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-row sm:flex-col space-x-2 sm:space-x-0 sm:space-y-2 flex-shrink-0">
-                      {canCreateDisputes ? (
-                        <>
-                          <Button
-                            size="sm"
-                            className="bg-red-600 hover:bg-red-700 text-white flex-1 sm:flex-none text-xs"
-                            onClick={() => handleDispute(issue)}
-                          >
-                            Dispute
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1 sm:flex-none text-xs"
-                            onClick={() => handleMarkResolved(issue)}
-                            disabled={updateIssueMutation.isPending}
-                          >
-                            Mark Resolved
-                          </Button>
-                        </>
-                      ) : (
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                          <Eye className="h-3.5 w-3.5" />
-                          <span>View Only</span>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-                {activeIssues.length === 0 && (
-                  <div className="text-center py-8 sm:py-12 text-muted-foreground">
-                    <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
-                    </div>
-                    <h3 className="text-base sm:text-lg font-medium text-foreground mb-2">No Active Issues</h3>
-                    <p className="text-sm sm:text-base text-muted-foreground">
-                      Great! You don't have any active credit issues to address.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Resolved Issues */}
-          {resolvedIssues.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Resolved Issues</span>
-                  <Badge variant="secondary">{resolvedIssues.length} Resolved</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {resolvedIssues.map((issue) => (
-                    <div
-                      key={issue.id}
-                      className="flex items-start space-x-4 p-4 bg-green-50 dark:bg-green-950/50 rounded-lg border border-green-200 dark:border-green-800"
-                    >
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                          <Check className="h-4 w-4 text-white" />
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium text-green-900 dark:text-green-100">{issue.title}</h4>
-                        <p className="text-sm text-green-700 dark:text-green-300">{issue.description}</p>
-                        <div className="flex items-center space-x-4 mt-2 text-xs text-green-600 dark:text-green-400">
-                          <span>Creditor: {issue.creditor}</span>
-                          {issue.amount && <span>Amount: {formatCurrency(issue.amount)}</span>}
-                          <span>Was impacting: {Math.abs(issue.impact)} points</span>
-                        </div>
-                      </div>
-                      <Badge className="bg-green-600">Resolved</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="disputes" className="space-y-6">
-          {/* Pending Disputes */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Pending Disputes</span>
-                <Badge variant="secondary">{pendingDisputes.length} Pending</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {pendingDisputes.map((dispute) => {
-                  const issue = creditIssues.find(i => i.id === dispute.issueId);
-                  return (
-                    <div key={dispute.id} className="space-y-4">
-                      <div
-                        className={`flex items-start space-x-4 p-4 rounded-lg border ${getDisputeStatusColor(dispute.status)}`}
-                      >
-                        <div className="flex-shrink-0">
-                          <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse mt-2"></div>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                            {dispute.bureau} - {issue?.title}
-                          </h4>
-                          <p className="text-sm text-blue-700 dark:text-blue-300">
-                            {issue?.description}
-                          </p>
-                          <div className="flex items-center space-x-4 mt-2 text-xs text-blue-600 dark:text-blue-400">
-                            <span>Sent: {formatRelativeDate(dispute.dateSent)}</span>
-                            <span>Expected Response: {formatRelativeDate(dispute.expectedResponse)}</span>
-                            <span>Bureau: {dispute.bureau}</span>
-                          </div>
-                        </div>
-                        <Badge className="bg-blue-600">{dispute.status}</Badge>
-                      </div>
-                      <USPSTracking dispute={dispute} />
-                    </div>
-                  );
-                })}
-                {pendingDisputes.length === 0 && (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-foreground mb-2">No Pending Disputes</h3>
-                    <p className="text-muted-foreground">
-                      You don't have any disputes currently pending with credit bureaus.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Resolved Disputes */}
-          {resolvedDisputes.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Resolved Disputes</span>
-                  <Badge variant="secondary">{resolvedDisputes.length} Resolved</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {resolvedDisputes.map((dispute) => {
-                    const issue = creditIssues.find(i => i.id === dispute.issueId);
-                    return (
-                      <div
-                        key={dispute.id}
-                        className="flex items-start space-x-4 p-4 bg-green-50 dark:bg-green-950/50 rounded-lg border border-green-200 dark:border-green-800"
-                      >
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                            <Check className="h-4 w-4 text-white" />
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="text-sm font-medium text-green-900 dark:text-green-100">
-                            {dispute.bureau} - {issue?.title}
-                          </h4>
-                          <p className="text-sm text-green-700 dark:text-green-300">
-                            Successfully resolved and removed from credit report
-                          </p>
-                          <div className="flex items-center space-x-4 mt-2 text-xs text-green-600 dark:text-green-400">
-                            <span>Sent: {formatRelativeDate(dispute.dateSent)}</span>
-                            <span>Resolved: {formatRelativeDate(dispute.actualResponse || dispute.dateSent)}</span>
-                            <span>Bureau: {dispute.bureau}</span>
-                          </div>
-                        </div>
-                        <Badge className="bg-green-600">Resolved</Badge>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="monitoring" className="space-y-6">
-          <CreditMonitoringConnections userId={userId} />
-        </TabsContent>
-
-        <TabsContent value="utilization" className="space-y-6">
-          <CreditUtilizationOptimizer userId={userId} />
-        </TabsContent>
-
-        <TabsContent value="loan-readiness" className="space-y-6">
-          <LoanReadinessAssessment userId={userId} />
-        </TabsContent>
-
-        <TabsContent value="credit-mix" className="space-y-6">
-          <CreditMixOptimizer userId={userId} />
-        </TabsContent>
-
-        <TabsContent value="identity-theft" className="space-y-6">
-          <IdentityTheftRecovery userId={userId} />
-        </TabsContent>
-
-        <TabsContent value="rent-utility" className="space-y-6">
-          <RentUtilityOptimizer userId={userId} />
-        </TabsContent>
-
-        <TabsContent value="integrations" className="space-y-6">
-          <div className="grid grid-cols-1 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Secure Financial Verification
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  Connect your financial accounts to strengthen loan applications and improve credit qualification
-                </p>
-                <Tabs defaultValue="bank-accounts" className="space-y-4">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="bank-accounts">Bank Accounts</TabsTrigger>
-                    <TabsTrigger value="tax-software">Tax Software</TabsTrigger>
-                    <TabsTrigger value="employment">Employment</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="bank-accounts">
-                    <BankAccountIntegration userId={userId} />
-                  </TabsContent>
-                  
-                  <TabsContent value="tax-software">
-                    <TaxSoftwareIntegration userId={userId} />
-                  </TabsContent>
-                  
-                  <TabsContent value="employment">
-                    <EmploymentVerification userId={userId} />
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="business-credit" className="space-y-6">
-          <BusinessCreditPortal userId={userId} />
-        </TabsContent>
-
-        <TabsContent value="chat" className="space-y-6">
-          <SecureChat userId={userId} userType="client" />
-        </TabsContent>
-
-        <TabsContent value="password-reset" className="space-y-6">
-          <PasswordReset />
-        </TabsContent>
-
-        <TabsContent value="ai-tools" className="space-y-6">
-          {isClientViewer ? (
-            // Client View - Limited AI Tools
-            <div className="space-y-6">
-              <div className="p-6 bg-blue-900/20 dark:bg-blue-950/40 border border-blue-700/30 dark:border-blue-600/30 rounded-lg">
-                <h3 className="text-lg font-semibold text-blue-300 dark:text-blue-200 mb-2">AI Analysis & Insights</h3>
-                <p className="text-blue-400 dark:text-blue-300 mb-4">
-                  Your credit repair specialist uses advanced AI tools to analyze your credit profile and create personalized strategies.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-card rounded-lg border border-border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Bot className="h-5 w-5 text-blue-400" />
-                      <span className="font-medium text-foreground">AI Credit Analysis</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">Your specialist runs AI analysis on your credit file to identify priority issues and optimal dispute strategies.</p>
-                  </div>
-                  <div className="p-4 bg-card rounded-lg border border-border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calculator className="h-5 w-5 text-green-400" />
-                      <span className="font-medium text-foreground">Score Simulation</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">AI simulates the impact of potential credit improvements to predict your score increases.</p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* AI Credit Analysis - View Only for Clients */}
-              <Card className="bg-card text-card-foreground border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-foreground">
-                    <Bot className="h-5 w-5 text-blue-400 mr-3" />
-                    Your AI Credit Analysis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      View the AI analysis results generated by your credit repair specialist.
-                    </p>
-                    <div>
-                      <AICreditAnalysis userId={userId} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            // Admin/Beta Tester View - Full AI Tools
-            <div className="space-y-6">
-              {/* AI Credit Analysis */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Bot className="h-5 w-5 text-blue-600 mr-3" />
-                    AI Credit Analysis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      Get personalized AI-powered recommendations for your credit repair strategy.
-                    </p>
-                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
-                      <AICreditAnalysis userId={userId} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Credit Score Simulator */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Calculator className="h-5 w-5 text-green-600 mr-3" />
-                    Credit Score Simulator
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      Simulate how different actions could impact your credit score.
-                    </p>
-                    <CreditSimulatorModal 
-                      open={false} 
-                      onOpenChange={() => {}} 
-                      currentScore={650} 
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="credit-reports" className="space-y-6">
-          <ClientCreditReportsTab userId={userId} />
-        </TabsContent>
-
-        <TabsContent value="progress" className="space-y-6">
-          <ClientProgressTab />
-        </TabsContent>
-      </Tabs>
-
-      {!isClientViewer && (
-        <DisputeLetterModal
-          open={disputeModalOpen}
-          onOpenChange={setDisputeModalOpen}
-          issue={selectedIssue}
-        />
-      )}
       </div>
     </>
   );
