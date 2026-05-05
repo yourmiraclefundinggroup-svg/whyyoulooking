@@ -139,7 +139,7 @@ export default function LandingPage() {
                 <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 20, marginBottom: 16 }}>
                   Connect to view your live score
                 </p>
-                <p style={{ color: 'var(--gold)', fontSize: 11, fontWeight: 500 }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 400 }}>
                   Powered by ScoreShift
                 </p>
               </div>

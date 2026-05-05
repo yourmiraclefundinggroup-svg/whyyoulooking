@@ -50,8 +50,8 @@
   --danger: #E05252;
 
   /* ── Borders ── */
-  --border: rgba(201,168,76,0.15);
-  --border-gold: rgba(201,168,76,0.15);
+  --border-gold: rgba(201,168,76,0.15);  /* exact luxury spec: rgba(201,168,76,0.15) */
+  --border: 42 20% 18%;                  /* HSL fragment for Tailwind border-border compat */
   --border-subtle: rgba(255,255,255,0.06);
   --border-glow: rgba(201,168,76,0.2);
 
@@ -265,7 +265,7 @@
 
 .ss-card {
   background: var(--bg-surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-gold);
   border-radius: 16px;
   padding: 28px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.5);
@@ -273,7 +273,7 @@
 
 .ss-card-elevated {
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-gold);
   border-radius: 16px;
   padding: 28px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.5);
@@ -306,7 +306,7 @@
   color: var(--gold);
   font-weight: 600;
   border-radius: 10px;
-  border: 1px solid var(--gold);
+  border: 1px solid var(--gold-light);
   cursor: pointer;
   font-size: 15px;
   font-family: inherit;

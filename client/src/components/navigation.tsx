@@ -41,7 +41,7 @@ export function Navigation() {
             <div className="flex items-center gap-2 cursor-pointer">
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-black font-black text-sm"
-                style={{ background: "linear-gradient(135deg, #F59E0B, #FCD34D)" }}
+                style={{ background: "linear-gradient(135deg, var(--gold), var(--gold-light))" }}
               >
                 SS
               </div>

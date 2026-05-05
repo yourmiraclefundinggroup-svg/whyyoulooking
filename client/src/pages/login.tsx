@@ -123,9 +123,10 @@ export default function Login() {
                 onClick={() => setLoginType("client")}
                 className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all ${
                   loginType === "client"
-                    ? "bg-amber-500 text-black"
+                    ? "text-black"
                     : "text-slate-400 hover:text-white"
                 }`}
+                style={loginType === "client" ? { background: "linear-gradient(135deg, var(--gold), var(--gold-light))" } : {}}
               >
                 Client Portal
               </button>
@@ -134,9 +135,10 @@ export default function Login() {
                 onClick={() => setLoginType("admin")}
                 className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all ${
                   loginType === "admin"
-                    ? "bg-amber-500 text-black"
+                    ? "text-black"
                     : "text-slate-400 hover:text-white"
                 }`}
+                style={loginType === "admin" ? { background: "linear-gradient(135deg, var(--gold), var(--gold-light))" } : {}}
               >
                 Admin Portal
               </button>
@@ -220,7 +222,7 @@ export default function Login() {
 
           <div className="mt-6 text-center text-sm text-slate-500">
             Don't have an account?{" "}
-            <a href="/signup" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">
+            <a href="/signup" style={{ color: "var(--gold-light)" }} className="font-medium transition-colors hover:opacity-80">
               Sign up free
             </a>
           </div>
