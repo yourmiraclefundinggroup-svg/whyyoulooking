@@ -17,34 +17,82 @@
    Light mode in :root and .light, dark mode in .dark
    ============================================================ */
 
-:root,
+/* ============================================================
+   ScoreShift Luxury Design Tokens — always-on, theme-independent.
+   These define the client-facing dark luxury palette available
+   on ALL pages regardless of the ThemeProvider state.
+   Admin portal uses --admin-* vars and is unaffected.
+   ============================================================ */
+:root {
+  /* ── Luxury gold palette ── */
+  --gold: #C9A84C;
+  --gold-light: #E8C96B;
+  --gold-dim: #7A6030;
+  --gold-400: #C9A84C;
+  --gold-500: #A88630;
+  --gold-glow: rgba(201,168,76,0.15);
+
+  /* ── Luxury backgrounds ── */
+  --bg-primary: #080C14;
+  --bg-surface: #0F1520;
+  --bg-secondary: #0F1520;
+  --bg-card: #0F1520;
+  --bg-elevated: #161D2E;
+
+  /* ── Luxury text ── */
+  --text-primary: #F0EDE8;
+  --text-secondary: #8A9BB5;
+  --text-muted: #4A566A;
+
+  /* ── Semantic colors ── */
+  --success: #2ECC8A;
+  --warning: #E8A020;
+  --danger: #E05252;
+
+  /* ── Borders ── */
+  --border: rgba(201,168,76,0.15);
+  --border-gold: rgba(201,168,76,0.15);
+  --border-subtle: rgba(255,255,255,0.06);
+  --border-glow: rgba(201,168,76,0.2);
+
+  /* ── Legacy compat aliases ── */
+  --blue-400: #60A5FA;
+  --blue-glow: rgba(96,165,250,0.1);
+  --emerald-400: #34D399;
+  --emerald-glow: rgba(52,211,153,0.1);
+
+  /* ── Shadcn compatibility (dark-first) ── */
+  --background: 216 43% 5%;
+  --foreground: 37 28% 93%;
+  --muted: 218 35% 13%;
+  --muted-foreground: 213 21% 60%;
+  --popover: 219 36% 9%;
+  --popover-foreground: 37 28% 93%;
+  --card: 219 36% 9%;
+  --card-foreground: 37 28% 93%;
+  --input: rgba(201,168,76,0.12);
+  --primary: 38 92% 50%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 218 35% 13%;
+  --secondary-foreground: 37 28% 93%;
+  --accent: 218 35% 13%;
+  --accent-foreground: 37 28% 93%;
+  --destructive: 0 70% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 38 92% 50%;
+  --radius: 0.75rem;
+
+  /* Trust/semantic (legacy) */
+  --trust-blue: 213 94% 68%;
+  --success-green: 142 60% 38%;
+  --warning-orange: 33 100% 50%;
+  --slate-gray: 214 32% 91%;
+}
+
+/* .light — Shadcn compat overrides for admin portal light-mode components.
+   Luxury layout tokens (--bg-primary, --text-primary, --gold, etc.) are
+   intentionally NOT overridden here so client-facing pages remain dark. */
 .light {
-  /* ScoreShift brand colors */
-  --gold-400: #F59E0B;
-  --gold-500: #D97706;
-  --gold-glow: rgba(245, 158, 11, 0.12);
-
-  --blue-400: #3B82F6;
-  --blue-glow: rgba(59, 130, 246, 0.1);
-  --emerald-400: #10B981;
-  --emerald-glow: rgba(16, 185, 129, 0.1);
-
-  /* Text */
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #94A3B8;
-
-  /* Backgrounds */
-  --bg-primary: #F8FAFC;
-  --bg-secondary: #F1F5F9;
-  --bg-card: #FFFFFF;
-  --bg-elevated: #FFFFFF;
-
-  /* Borders */
-  --border-subtle: rgba(0,0,0,0.06);
-  --border-glow: rgba(245, 158, 11, 0.2);
-
-  /* Shadcn compatibility — LIGHT MODE */
   --background: 210 20% 98%;
   --foreground: 222 47% 11%;
   --muted: 210 40% 96%;
@@ -53,24 +101,12 @@
   --popover-foreground: 222 47% 11%;
   --card: 0 0% 100%;
   --card-foreground: 222 47% 11%;
-  --border: 214 31% 91%;
-  --input: 214 31% 91%;
-  --primary: 38 92% 50%;
-  --primary-foreground: 0 0% 0%;
   --secondary: 210 40% 96%;
   --secondary-foreground: 222 47% 11%;
   --accent: 210 40% 96%;
   --accent-foreground: 222 47% 11%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --ring: 38 92% 50%;
-  --radius: 0.75rem;
-
-  /* Trust blue */
-  --trust-blue: 213 94% 68%;
-  --success-green: 142 60% 38%;
-  --warning-orange: 33 100% 50%;
-  --slate-gray: 214 32% 91%;
 }
 
 .dark {
@@ -118,8 +154,8 @@
   --popover-foreground: 37 28% 93%;
   --card: 219 36% 9%;            /* #0F1520 */
   --card-foreground: 37 28% 93%;
-  --border: 42 32% 20%;          /* dark gold-hued border */
-  --input: 42 32% 20%;
+  --border: rgba(201,168,76,0.15); /* exact luxury spec border */
+  --input: rgba(201,168,76,0.12);
   --primary: 38 92% 50%;
   --primary-foreground: 0 0% 0%;
   --secondary: 222 30% 12%;
@@ -218,7 +254,73 @@
     background-color: var(--bg-primary, hsl(var(--background)));
     color: var(--text-primary, hsl(var(--foreground)));
     font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    min-height: 100vh;
   }
+}
+
+/* ============================================================
+   ScoreShift Luxury Foundation — reusable UI primitives
+   All client views must inherit from these foundation classes.
+   ============================================================ */
+
+.ss-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+
+.ss-card-elevated {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+
+.ss-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--bg-primary);
+  font-weight: 700;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-family: inherit;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+.ss-btn-primary:hover { opacity: 0.9; }
+
+.ss-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: transparent;
+  color: var(--gold);
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid var(--gold);
+  cursor: pointer;
+  font-size: 15px;
+  font-family: inherit;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+.ss-btn-ghost:hover { background: rgba(201,168,76,0.08); }
+
+.ss-overline {
+  color: var(--gold);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 600;
 }
 
 /* === SCORESHIFT 2028 GLOBAL EFFECTS === */
@@ -274,16 +376,16 @@
   background-clip: text;
 }
 
-/* 3D Card effect */
+/* 3D Card effect — updated to luxury palette */
 .card-3d {
-  background: linear-gradient(135deg, #0F1E35 0%, #162540 100%);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: var(--bg-surface, linear-gradient(135deg, #0F1520 0%, #161D2E 100%));
+  border: 1px solid var(--border, rgba(201,168,76,0.15));
   border-radius: 16px;
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.4),
     0 10px 15px -3px rgba(0, 0, 0, 0.3),
     0 20px 40px -8px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255,255,255,0.06);
+    inset 0 1px 0 rgba(255,255,255,0.04);
   transform: perspective(1000px) rotateX(2deg);
   transition: all 0.3s ease;
 }
@@ -293,8 +395,8 @@
     0 8px 12px -2px rgba(0, 0, 0, 0.5),
     0 20px 30px -5px rgba(0, 0, 0, 0.4),
     0 40px 80px -15px rgba(0, 0, 0, 0.6),
-    0 0 60px rgba(245, 158, 11, 0.08),
-    inset 0 1px 0 rgba(255,255,255,0.08);
+    0 0 60px rgba(201, 168, 76, 0.08),
+    inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
 /* Gold border highlight on hover */

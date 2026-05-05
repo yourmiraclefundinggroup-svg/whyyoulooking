@@ -69,7 +69,7 @@ export default function Login() {
   return (
     <div
       className="min-h-screen flex items-center justify-center py-12 px-4 relative overflow-hidden"
-      style={{ background: "#050A14" }}
+      style={{ background: "var(--bg-primary)" }}
     >
       {/* Ambient orbs */}
       <div
@@ -88,7 +88,7 @@ export default function Login() {
             <div className="inline-flex items-center gap-2 cursor-pointer mb-4">
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-black font-black"
-                style={{ background: "linear-gradient(135deg, #F59E0B, #FCD34D)" }}
+                style={{ background: "linear-gradient(135deg, var(--gold), var(--gold-light))" }}
               >
                 SS
               </div>
@@ -212,7 +212,7 @@ export default function Login() {
               type="submit"
               disabled={loginMutation.isPending || !email || !password}
               className="w-full py-3 rounded-xl font-bold text-black text-sm transition-all glow-gold disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ background: "linear-gradient(135deg, #F59E0B, #FCD34D)" }}
+              style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)" }}
             >
               {loginMutation.isPending ? "Signing in..." : "Sign In →"}
             </button>
