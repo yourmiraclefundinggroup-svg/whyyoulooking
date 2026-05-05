@@ -402,99 +402,218 @@ function DisputeWizard({
         </div>
       )}
 
-      {/* ── STEP 1: Select up to 3 issues ── */}
-      {step === 1 && (
-        <div className="space-y-4">
-          {slots.map((slot, i) => (
-            <div key={slot.id} className="rounded-2xl p-5 space-y-4"
-              style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black"
-                    style={{ background: "rgba(201,168,76,0.12)", color: "var(--gold)" }}>{i + 1}</div>
-                  <span className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>Letter {i + 1}</span>
-                </div>
-                {slots.length > 1 && (
-                  <button onClick={() => removeSlot(i)} style={{ color: "var(--text-muted)" }}>
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
+      {/* ── STEP 1: Flagged-items picker + manual slots ── */}
+      {step === 1 && (() => {
+        const activeIssues = creditIssues.filter((x) => x.status === "ACTIVE");
+        const selectedIssueIds = slots.map((s) => s.issue?.id).filter(Boolean) as number[];
 
-              {/* Bureau */}
-              <div>
-                <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-secondary)" }}>Credit Bureau</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {BUREAUS.map((b) => (
-                    <button key={b} onClick={() => updateSlot(i, { bureau: b })}
-                      className="py-2 rounded-xl text-xs font-bold transition-all"
-                      style={{
-                        background: slot.bureau === b ? BUREAU_COLORS[b] : "var(--bg-elevated)",
-                        color: slot.bureau === b ? "#fff" : "var(--text-secondary)",
-                        border: `1px solid ${slot.bureau === b ? BUREAU_COLORS[b] : "var(--border-gold)"}`,
-                      }}>
-                      {b}
-                    </button>
-                  ))}
-                </div>
-              </div>
+        const toggleIssue = (issue: CreditIssue) => {
+          const alreadyIdx = slots.findIndex((s) => s.issue?.id === issue.id);
+          if (alreadyIdx >= 0) {
+            // deselect
+            if (slots.length === 1) {
+              updateSlot(0, { issue: null, creditor: "", reason: DISPUTE_REASONS[0], bureau: "Experian" });
+            } else {
+              removeSlot(alreadyIdx);
+            }
+          } else {
+            if (slots.length >= MAX_LETTERS) return;
+            // find first empty slot or add new
+            const emptyIdx = slots.findIndex((s) => !s.issue && !s.creditor);
+            const patch: Partial<typeof slots[0]> = {
+              issue,
+              creditor: issue.creditor ?? "",
+              bureau: "Experian",
+              reason: DISPUTE_REASONS[0],
+            };
+            if (emptyIdx >= 0) {
+              updateSlot(emptyIdx, patch);
+            } else {
+              setSlots((prev) => [...prev, { ...freshSlot(prev.length), ...patch }]);
+            }
+          }
+        };
 
-              {/* Issue picker (optional) */}
-              {creditIssues.filter((x) => x.status === "ACTIVE").length > 0 && (
+        return (
+          <div className="space-y-5">
+            {/* Flagged items analysis panel */}
+            {activeIssues.length > 0 && (
+              <div className="rounded-2xl p-5 space-y-4"
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
                 <div>
-                  <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-secondary)" }}>Credit Issue (optional)</label>
-                  <select
-                    value={slot.issue?.id ?? ""}
-                    onChange={(e) => {
-                      const found = creditIssues.find((x) => String(x.id) === e.target.value) ?? null;
-                      updateSlot(i, { issue: found, creditor: found?.creditor ?? slot.creditor });
-                    }}
-                    className="w-full px-3 py-2.5 rounded-lg text-sm outline-none appearance-none"
-                    style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)", color: "var(--text-primary)" }}>
-                    <option value="">-- Select an issue --</option>
-                    {creditIssues.filter((x) => x.status === "ACTIVE").map((issue) => (
-                      <option key={issue.id} value={issue.id}>{issue.title}{issue.creditor ? ` — ${issue.creditor}` : ""}</option>
-                    ))}
-                  </select>
+                  <div className="ss-overline mb-1">Dispute IQ Analysis</div>
+                  <h3 className="font-black text-base" style={{ color: "var(--text-primary)" }}>
+                    {activeIssues.length} Flagged Item{activeIssues.length !== 1 ? "s" : ""} Detected
+                  </h3>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
+                    Select up to {MAX_LETTERS} item{MAX_LETTERS !== 1 ? "s" : ""} to dispute. Tap a card to include it.
+                  </p>
                 </div>
-              )}
-
-              {/* Creditor */}
-              <div>
-                <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-secondary)" }}>Creditor / Account Name</label>
-                <input value={slot.creditor} onChange={(e) => updateSlot(i, { creditor: e.target.value })}
-                  placeholder="e.g. Capital One, Midland Credit"
-                  className="w-full px-3 py-2.5 rounded-lg text-sm outline-none"
-                  style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)", color: "var(--text-primary)" }} />
+                <div className="space-y-2">
+                  {activeIssues.map((issue) => {
+                    const isSelected = selectedIssueIds.includes(issue.id);
+                    const typeInfo = ISSUE_TYPE_LABELS[issue.type ?? ""] ?? null;
+                    const bureauColor = "var(--gold)";
+                    const isDisabled = !isSelected && slots.filter((s) => s.issue).length >= MAX_LETTERS;
+                    return (
+                      <button
+                        key={issue.id}
+                        onClick={() => toggleIssue(issue)}
+                        disabled={isDisabled}
+                        className="w-full text-left p-3.5 rounded-xl transition-all"
+                        style={{
+                          background: isSelected ? "rgba(201,168,76,0.08)" : "var(--bg-elevated)",
+                          border: `1px solid ${isSelected ? "rgba(201,168,76,0.5)" : "var(--border-gold)"}`,
+                          opacity: isDisabled ? 0.45 : 1,
+                        }}>
+                        <div className="flex items-start gap-3">
+                          {/* Checkbox indicator */}
+                          <div className="mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0"
+                            style={{
+                              background: isSelected ? "linear-gradient(135deg,var(--gold),var(--gold-light))" : "var(--bg-surface)",
+                              border: `1px solid ${isSelected ? "var(--gold)" : "var(--border-gold)"}`,
+                            }}>
+                            {isSelected && <Check className="h-2.5 w-2.5" style={{ color: "var(--bg-primary)" }} />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm mb-1.5" style={{ color: "var(--text-primary)" }}>
+                              {issue.title}
+                              {issue.creditor && <span className="font-normal ml-1" style={{ color: "var(--text-muted)" }}>· {issue.creditor}</span>}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {/* Violation type context pill */}
+                              {issue.type && (
+                                <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                                  style={{ background: "rgba(201,168,76,0.1)", color: bureauColor }}>
+                                  {issue.type}
+                                </span>
+                              )}
+                              {/* Violation type pill */}
+                              {typeInfo && (
+                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                                  style={{ background: `${typeInfo.color}12`, color: typeInfo.color }}>
+                                  {typeInfo.label}
+                                </span>
+                              )}
+                              {/* Severity badge */}
+                              {typeInfo && (
+                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-wide"
+                                  style={{
+                                    background: typeInfo.severity === "HIGH" ? "rgba(224,82,82,0.1)" : typeInfo.severity === "MED" ? "rgba(232,160,32,0.1)" : "rgba(96,165,250,0.1)",
+                                    color: typeInfo.severity === "HIGH" ? "#E05252" : typeInfo.severity === "MED" ? "#E8A020" : "#60A5FA",
+                                  }}>
+                                  {typeInfo.severity}
+                                </span>
+                              )}
+                              {/* Impact */}
+                              {issue.impact != null && issue.impact !== 0 && (
+                                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                                  {Math.abs(issue.impact)} pt impact
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+            )}
 
-              {/* Reason */}
-              <div>
-                <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-secondary)" }}>Dispute Reason</label>
-                <select value={slot.reason} onChange={(e) => updateSlot(i, { reason: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-lg text-sm outline-none appearance-none"
-                  style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)", color: "var(--text-primary)" }}>
-                  {DISPUTE_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
+            {/* Slots — shown for manual entry or items with no issue */}
+            {slots.map((slot, i) => {
+              const isIssueSlot = !!slot.issue;
+              if (isIssueSlot) return null; // issue-backed slots: nothing to show in step 1
+              return (
+                <div key={slot.id} className="rounded-2xl p-5 space-y-4"
+                  style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="ss-overline mb-0.5">Manual Entry</div>
+                      <span className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>Letter {i + 1}</span>
+                    </div>
+                    {(slots.length > 1 || activeIssues.length > 0) && (
+                      <button onClick={() => removeSlot(i)} style={{ color: "var(--text-muted)" }}>
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  {/* Bureau */}
+                  <div>
+                    <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-secondary)" }}>Credit Bureau</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {BUREAUS.map((b) => (
+                        <button key={b} onClick={() => updateSlot(i, { bureau: b })}
+                          className="py-2 rounded-xl text-xs font-bold transition-all"
+                          style={{
+                            background: slot.bureau === b ? BUREAU_COLORS[b] : "var(--bg-elevated)",
+                            color: slot.bureau === b ? "#fff" : "var(--text-secondary)",
+                            border: `1px solid ${slot.bureau === b ? BUREAU_COLORS[b] : "var(--border-gold)"}`,
+                          }}>
+                          {b}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Creditor */}
+                  <div>
+                    <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-secondary)" }}>Creditor / Account Name</label>
+                    <input value={slot.creditor} onChange={(e) => updateSlot(i, { creditor: e.target.value })}
+                      placeholder="e.g. Capital One, Midland Credit"
+                      className="w-full px-3 py-2.5 rounded-lg text-sm outline-none"
+                      style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)", color: "var(--text-primary)" }} />
+                  </div>
+                  {/* Reason */}
+                  <div>
+                    <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-secondary)" }}>Dispute Reason</label>
+                    <select value={slot.reason} onChange={(e) => updateSlot(i, { reason: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-lg text-sm outline-none appearance-none"
+                      style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)", color: "var(--text-primary)" }}>
+                      {DISPUTE_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Add manual slot */}
+            {slots.filter((s) => !s.issue).length === 0 && slots.length < MAX_LETTERS && (
+              <button onClick={addSlot}
+                className="w-full py-3 rounded-xl text-sm font-semibold border-2 border-dashed transition-all"
+                style={{ borderColor: "var(--border-gold)", color: "var(--text-secondary)", background: "transparent" }}>
+                <Plus className="h-4 w-4 inline mr-1" />
+                Add manual item not listed above
+              </button>
+            )}
+            {slots.length < MAX_LETTERS && MAX_LETTERS > 1 && activeIssues.length === 0 && (
+              <button onClick={addSlot}
+                className="w-full py-3 rounded-xl text-sm font-semibold border-2 border-dashed transition-all"
+                style={{ borderColor: "var(--border-gold)", color: "var(--text-secondary)", background: "transparent" }}>
+                <Plus className="h-4 w-4 inline mr-1" />
+                Add another letter ({slots.length}/{MAX_LETTERS})
+              </button>
+            )}
+
+            {/* Selected summary */}
+            {selectedIssueIds.length > 0 && (
+              <div className="px-4 py-2.5 rounded-xl text-sm"
+                style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)" }}>
+                <span style={{ color: "var(--text-secondary)" }}>{selectedIssueIds.length} item{selectedIssueIds.length !== 1 ? "s" : ""} selected</span>
+                {" "}<span style={{ color: "var(--gold)" }}>· Ready to generate</span>
               </div>
-            </div>
-          ))}
+            )}
 
-          {slots.length < MAX_LETTERS && MAX_LETTERS > 1 && (
-            <button onClick={addSlot}
-              className="w-full py-3 rounded-xl text-sm font-semibold border-2 border-dashed transition-all"
-              style={{ borderColor: "var(--border-gold)", color: "var(--text-secondary)", background: "transparent" }}>
-              <Plus className="h-4 w-4 inline mr-1" />
-              Add another letter ({slots.length}/{MAX_LETTERS})
+            <button
+              onClick={handleGenerateAll}
+              disabled={slots.every((s) => !s.issue && !s.creditor.trim())}
+              className="ss-btn-primary w-full justify-center">
+              <Sparkles className="h-4 w-4" />
+              Generate {slots.filter((s) => s.issue || s.creditor.trim()).length || slots.length} AI Dispute Letter{slots.length !== 1 ? "s" : ""}
             </button>
-          )}
-
-          <button onClick={handleGenerateAll} className="ss-btn-primary w-full justify-center">
-            <Sparkles className="h-4 w-4" />
-            Generate {slots.length} AI Dispute Letter{slots.length > 1 ? "s" : ""}
-          </button>
-        </div>
-      )}
+          </div>
+        );
+      })()}
 
       {/* ── STEP 2: Review letters + per-letter send ── */}
       {step === 2 && (

@@ -88,7 +88,7 @@ export default function Billing() {
           <div className="relative">
             <div className="ss-overline mb-2">Account</div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-1" style={{ color: "var(--text-primary)" }}>
-              Billing & Subscriptions
+              Billing & Membership
             </h1>
             <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
               Manage your plan, payment method, and billing history.

@@ -16,7 +16,7 @@ import { Link } from "wouter";
 import {
   Shield, AlertCircle, CheckCircle, Clock, Gavel, TrendingUp,
   ArrowRight, ChevronRight, Sparkles, BarChart3, Eye, X, Check,
-  Activity, Bell,
+  Activity, Bell, Star, Copy,
 } from "lucide-react";
 import type { CreditIssue, Dispute } from "@shared/schema";
 
@@ -179,17 +179,39 @@ export default function CreditRepair() {
             {/* Ambient glow */}
             <div className="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)" }} />
 
-            <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="relative flex flex-col sm:flex-row sm:items-start justify-between gap-6">
               <div>
                 <div className="ss-overline mb-2">Credit Repair</div>
-                <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-1" style={{ color: "var(--text-primary)" }}>
-                  Welcome back, {firstName} 👋
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-2" style={{ color: "var(--text-primary)" }}>
+                  Welcome back, {firstName}
                 </h1>
-                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>
                   {isClientViewer
                     ? "Viewing the work being done on your credit file."
                     : "Here's your credit snapshot for today."}
                 </p>
+                {/* Hero pills: plan · monitoring · 3-bureau */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {user?.subscriptionPlan && (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full"
+                      style={{ background: "rgba(201,168,76,0.12)", color: "var(--gold)", border: "1px solid rgba(201,168,76,0.3)" }}>
+                      <Star className="h-3 w-3" />{user.subscriptionPlan}
+                    </span>
+                  )}
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full"
+                    style={{
+                      background: isEnrolled ? "rgba(46,204,138,0.1)" : "rgba(255,255,255,0.04)",
+                      color: isEnrolled ? "#2ECC8A" : "var(--text-muted)",
+                      border: `1px solid ${isEnrolled ? "rgba(46,204,138,0.3)" : "var(--border-gold)"}`,
+                    }}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${isEnrolled ? "bg-[#2ECC8A] animate-pulse" : "bg-current opacity-40"}`} />
+                    {isEnrolled ? "Monitoring Active" : "Monitoring Off"}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full"
+                    style={{ background: "rgba(96,165,250,0.08)", color: "#60A5FA", border: "1px solid rgba(96,165,250,0.2)" }}>
+                    <Shield className="h-3 w-3" />3-Bureau
+                  </span>
+                </div>
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <div className="text-right">
@@ -456,35 +478,64 @@ export default function CreditRepair() {
                     Experian: "#0062FF", Equifax: "#E12726", TransUnion: "#662D8C",
                   };
                   const bColor = bureauColors[dispute.bureau] || "var(--gold)";
+                  const methodLabel = (() => {
+                    const lc = (dispute.letterContent ?? "").toLowerCase();
+                    if (lc.includes("goodwill")) return "Goodwill";
+                    if (lc.includes("validat")) return "Validation";
+                    return "Dispute";
+                  })();
+                  const statusColors: Record<string, { bg: string; color: string }> = {
+                    PENDING:   { bg: "rgba(232,160,32,0.12)", color: "#E8A020" },
+                    SENT:      { bg: "rgba(96,165,250,0.12)", color: "#60A5FA" },
+                    DELIVERED: { bg: "rgba(46,204,138,0.12)", color: "#2ECC8A" },
+                  };
+                  const sc = statusColors[dispute.status] ?? { bg: "rgba(255,255,255,0.06)", color: "var(--text-secondary)" };
                   return (
                     <div
                       key={dispute.id}
-                      className="flex items-start gap-4 p-4 rounded-xl"
+                      className="p-4 rounded-xl space-y-2.5"
                       style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)" }}
                     >
-                      <div className="flex items-center gap-2 shrink-0">
-                        <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: bColor }} />
-                        <div
-                          className="text-xs font-black px-2 py-0.5 rounded-full"
-                          style={{ background: `${bColor}15`, color: bColor }}
-                        >
-                          {dispute.bureau}
+                      {/* Row 1: bureau pill + title + status */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: bColor }} />
+                          <span className="text-xs font-black px-2 py-0.5 rounded-full"
+                            style={{ background: `${bColor}18`, color: bColor }}>
+                            {dispute.bureau}
+                          </span>
                         </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-sm mb-0.5" style={{ color: "var(--text-primary)" }}>
+                        <div className="font-semibold text-sm flex-1 min-w-0 truncate" style={{ color: "var(--text-primary)" }}>
                           {issue?.title || "Dispute"}
                         </div>
-                        <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                          Sent {formatRelativeDate(dispute.dateSent)} · Expected {formatRelativeDate(dispute.expectedResponse)}
-                        </div>
+                        <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
+                          style={{ background: sc.bg, color: sc.color }}>
+                          {dispute.status}
+                        </span>
                       </div>
-                      <span
-                        className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
-                        style={{ background: "rgba(232,160,32,0.12)", color: "#E8A020" }}
-                      >
-                        {dispute.status}
-                      </span>
+                      {/* Row 2: date · method · tracking */}
+                      <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
+                        {dispute.dateSent && (
+                          <span>Sent {formatRelativeDate(dispute.dateSent)}</span>
+                        )}
+                        <span className="px-1.5 py-0.5 rounded"
+                          style={{ background: "rgba(201,168,76,0.08)", color: "var(--gold)" }}>
+                          {methodLabel}
+                        </span>
+                        {dispute.uspsTrackingNumber && (
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(dispute.uspsTrackingNumber!);
+                              toast({ title: "Copied!", description: `Tracking: ${dispute.uspsTrackingNumber}` });
+                            }}
+                            className="flex items-center gap-1 font-mono hover:opacity-70 transition-opacity"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
+                            <Copy className="h-3 w-3" />
+                            {dispute.uspsTrackingNumber}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

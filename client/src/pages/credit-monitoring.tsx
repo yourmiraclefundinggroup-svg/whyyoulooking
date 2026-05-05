@@ -217,12 +217,6 @@ function ArrayCard({
 /* ── Tab definition ──────────────────────────────────────────────────────── */
 const TABS = [
   {
-    id: "report",
-    label: "Full Report",
-    subtitle: "3-bureau detail",
-    icon: FileSearch,
-  },
-  {
     id: "alerts",
     label: "Alerts & Protection",
     subtitle: "Real-time monitoring",
@@ -230,9 +224,15 @@ const TABS = [
   },
   {
     id: "tools",
-    label: "Tools & Premium",
-    subtitle: "Simulators · loan aid",
+    label: "Tools",
+    subtitle: "Simulators · analysis",
     icon: Zap,
+  },
+  {
+    id: "report",
+    label: "Full Report",
+    subtitle: "3-bureau detail",
+    icon: FileSearch,
   },
 ] as const;
 
@@ -242,7 +242,7 @@ type TabId = typeof TABS[number]["id"];
 export default function CreditMonitoring() {
   const { user } = useUserContext();
   const queryClient = useQueryClient();
-  const [activeSection, setActiveSection] = useState<TabId>("report");
+  const [activeSection, setActiveSection] = useState<TabId>("alerts");
   const access = useFeatureAccess();
 
   const { loaded: scriptReady } = useArrayScript();

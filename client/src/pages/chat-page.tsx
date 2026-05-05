@@ -16,7 +16,9 @@ export default function ChatPage() {
             Message your credit repair team securely. All messages are encrypted.
           </p>
         </div>
-        <SecureChat userId={user?.id ?? 0} userType="client" />
+        <div className="ss-chat-wrap">
+          <SecureChat userId={user?.id ?? 0} userType="client" />
+        </div>
       </div>
     </div>
   );
