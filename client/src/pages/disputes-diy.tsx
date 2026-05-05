@@ -928,9 +928,37 @@ export default function DisputeIQ() {
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-1" style={{ color: "var(--text-primary)" }}>
                 Dispute IQ
               </h1>
-              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+              <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>
                 AI-generated dispute letters — up to 3 at a time — with USPS Certified Mail.
               </p>
+              {/* Credits tracker badge at page level */}
+              {(() => {
+                const monthlyCredits = TIER_MONTHLY_CREDITS[tier] ?? 1;
+                const creditsLeft = monthlyCredits === null ? null : Math.max(0, monthlyCredits - creditsUsed);
+                const atLimit = monthlyCredits !== null && creditsLeft === 0;
+                return (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full"
+                      style={{
+                        background: atLimit ? "rgba(224,82,82,0.1)" : "rgba(201,168,76,0.1)",
+                        color: atLimit ? "#E05252" : "var(--gold)",
+                        border: `1px solid ${atLimit ? "rgba(224,82,82,0.3)" : "var(--border-gold)"}`,
+                      }}>
+                      <CreditCard className="h-3 w-3" />
+                      {monthlyCredits === null
+                        ? "Unlimited letters this month"
+                        : `Credits remaining: ${creditsLeft} / ${monthlyCredits}`}
+                    </span>
+                    {atLimit && (
+                      <a href="/billing"
+                        className="text-xs font-bold px-3 py-1.5 rounded-full transition-all"
+                        style={{ background: "linear-gradient(135deg,var(--gold),var(--gold-light))", color: "var(--bg-primary)" }}>
+                        Upgrade for more →
+                      </a>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             {canCreateDisputes && (
               <button className="ss-btn-primary shrink-0" onClick={() => setWizardActive(true)}>

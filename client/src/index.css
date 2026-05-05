@@ -533,6 +533,27 @@
 .bg-bureau-equifax { background-color: #E12726; }
 .bg-bureau-transunion { background-color: #662D8C; }
 
+/* ── Array embed transparent background override (dashboard / monitoring) ── */
+.ss-array-transparent,
+.ss-array-transparent > * {
+  background: transparent !important;
+}
+/* Force Array web component hosts to be transparent in dark cards */
+array-credit-overview,
+array-credit-score,
+array-credit-alerts,
+array-identity-protect,
+array-pip-dashboard,
+array-credit-score-simulator,
+array-credit-debt-analysis,
+array-student-loan-navigator,
+array-student-loan-aid,
+array-debt-navigator {
+  --array-background: transparent;
+  --color-background: transparent;
+  background: transparent !important;
+}
+
 /* ── Array branding suppression for DIY credit report panel ─────────────── */
 .diy-array-report-wrap array-credit-report::part(footer),
 .diy-array-report-wrap [class*="array-footer"],

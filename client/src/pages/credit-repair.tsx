@@ -260,11 +260,12 @@ export default function CreditRepair() {
               )}
             </div>
 
-            {isEnrolled ? (
-              /* Live Array components */
-              <div className="space-y-4">
+            {/* Unified layout: bureau pill selector + score gauge left + sparkline/Array right */}
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Left: bureau pills + gauge */}
+              <div className="flex flex-col items-center gap-4">
                 {/* Bureau pills */}
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap justify-center">
                   {BUREAUS.map((b) => (
                     <button
                       key={b}
@@ -280,76 +281,62 @@ export default function CreditRepair() {
                     </button>
                   ))}
                 </div>
-                <ArrayWebComponent
-                  tag="array-credit-overview"
-                  userToken={userToken}
-                  scriptReady={scriptReady}
-                  className="w-full min-h-[240px]"
-                />
-              </div>
-            ) : (
-              /* Static score display */
-              <div className="flex flex-col lg:flex-row gap-6">
-                {/* Left: bureau pills + gauge */}
-                <div className="flex flex-col items-center gap-4">
-                  {/* Bureau pills */}
-                  <div className="flex gap-2 flex-wrap justify-center">
-                    {BUREAUS.map((b) => (
-                      <button
-                        key={b}
-                        onClick={() => setSelectedBureau(b)}
-                        className="px-3 py-1 rounded-full text-xs font-bold transition-all"
-                        style={{
-                          background: selectedBureau === b ? BUREAU_CONFIG[b].color : "rgba(255,255,255,0.04)",
-                          color: selectedBureau === b ? "#fff" : "var(--text-secondary)",
-                          border: `1px solid ${selectedBureau === b ? BUREAU_CONFIG[b].color : "var(--border-gold)"}`,
-                        }}
-                      >
-                        {b}
-                      </button>
-                    ))}
-                  </div>
 
-                  {/* Score gauge */}
-                  <ScoreGauge score={bureau.score} />
+                {/* Score gauge */}
+                <ScoreGauge score={bureau.score} />
 
-                  {/* Score change */}
-                  <div className="text-center">
-                    <span className="text-sm font-bold" style={{ color: bureau.change >= 0 ? "#2ECC8A" : "#E05252" }}>
-                      {bureau.change >= 0 ? "+" : ""}{bureau.change} pts
-                    </span>
-                    <span className="text-xs ml-1" style={{ color: "var(--text-muted)" }}>this month</span>
-                  </div>
+                {/* Score change */}
+                <div className="text-center">
+                  <span className="text-sm font-bold" style={{ color: bureau.change >= 0 ? "#2ECC8A" : "#E05252" }}>
+                    {bureau.change >= 0 ? "+" : ""}{bureau.change} pts
+                  </span>
+                  <span className="text-xs ml-1" style={{ color: "var(--text-muted)" }}>this month</span>
                 </div>
+              </div>
 
-                {/* Right: trend chart */}
-                <div className="flex-1">
-                  <div className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>6-Month Score Trend</div>
-                  <ResponsiveContainer width="100%" height={160}>
-                    <LineChart data={chartData}>
-                      <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} />
-                      <YAxis domain={[560, 650]} tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
-                      <Tooltip
-                        contentStyle={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)", borderRadius: 8, color: "var(--text-primary)", fontSize: 12 }}
+              {/* Right: Array sparkline (enrolled) or static 6-month trend chart */}
+              <div className="flex-1">
+                {isEnrolled ? (
+                  <>
+                    <div className="text-xs font-semibold mb-2" style={{ color: "var(--text-muted)" }}>Live Score Overview</div>
+                    <div className="ss-array-transparent rounded-xl overflow-hidden" style={{ minHeight: 180 }}>
+                      <ArrayWebComponent
+                        tag="array-credit-overview"
+                        userToken={userToken}
+                        scriptReady={scriptReady}
+                        className="w-full"
                       />
-                      <Line type="monotone" dataKey="score" stroke="var(--gold)" strokeWidth={2.5} dot={{ fill: "var(--gold)", r: 4 }} activeDot={{ r: 6 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>6-Month Score Trend</div>
+                    <ResponsiveContainer width="100%" height={160}>
+                      <LineChart data={chartData}>
+                        <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <YAxis domain={[560, 650]} tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+                        <Tooltip
+                          contentStyle={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)", borderRadius: 8, color: "var(--text-primary)", fontSize: 12 }}
+                        />
+                        <Line type="monotone" dataKey="score" stroke="var(--gold)" strokeWidth={2.5} dot={{ fill: "var(--gold)", r: 4 }} activeDot={{ r: 6 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </>
+                )}
 
-                  {/* Bureau score row */}
-                  <div className="grid grid-cols-3 gap-3 mt-4">
-                    {BUREAUS.map((b) => (
-                      <div key={b} className="text-center p-3 rounded-xl" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)" }}>
-                        <div className="w-2 h-2 rounded-full mx-auto mb-1.5" style={{ background: BUREAU_CONFIG[b].color }} />
-                        <div className="font-black text-xl" style={{ color: "var(--text-primary)" }}>{BUREAU_CONFIG[b].score}</div>
-                        <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{b.slice(0, 3)}</div>
-                        <div className="text-xs font-semibold mt-0.5" style={{ color: "#2ECC8A" }}>+{BUREAU_CONFIG[b].change}</div>
-                      </div>
-                    ))}
-                  </div>
+                {/* Bureau score row */}
+                <div className="grid grid-cols-3 gap-3 mt-4">
+                  {BUREAUS.map((b) => (
+                    <div key={b} className="text-center p-3 rounded-xl" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)" }}>
+                      <div className="w-2 h-2 rounded-full mx-auto mb-1.5" style={{ background: BUREAU_CONFIG[b].color }} />
+                      <div className="font-black text-xl" style={{ color: "var(--text-primary)" }}>{BUREAU_CONFIG[b].score}</div>
+                      <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{b.slice(0, 3)}</div>
+                      <div className="text-xs font-semibold mt-0.5" style={{ color: "#2ECC8A" }}>+{BUREAU_CONFIG[b].change}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            )}
+            </div>
           </div>
 
           {/* ── 3. Credit Alerts ────────────────────────────────────────────── */}

@@ -205,9 +205,9 @@ export default function ProgressPage() {
                 style={{ background: "rgba(201,168,76,0.08)" }}>
                 <Activity className="h-8 w-8" style={{ color: "var(--gold)" }} />
               </div>
-              <div className="font-semibold mb-2" style={{ color: "var(--text-primary)" }}>No removals yet</div>
+              <div className="font-semibold mb-2" style={{ color: "var(--text-primary)" }}>No deletions recorded yet. Your journey starts now.</div>
               <div className="text-sm max-w-xs mx-auto" style={{ color: "var(--text-secondary)" }}>
-                Resolved disputes and confirmed deletions will appear here once bureau acknowledgements come in.
+                Confirmed deletions and bureau acknowledgements will appear here as your disputes resolve.
               </div>
             </div>
           ) : (
