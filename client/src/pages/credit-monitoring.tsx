@@ -203,7 +203,7 @@ function ArrayCard({
           <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
         </div>
         <span className="ml-auto text-[10px] text-slate-300 dark:text-slate-600 font-medium">
-          Powered by Array
+          Powered by ScoreShift
         </span>
       </div>
       <div className="p-5">{children}</div>

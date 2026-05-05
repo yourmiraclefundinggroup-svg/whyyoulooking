@@ -83,8 +83,8 @@ export function Navbar({ variant = 'light' }: NavbarProps) {
                   to={link.href}
                   className={
                     isDark
-                      ? 'px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/8 rounded-lg transition-all'
-                      : 'px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/8'
+                      ? 'px-4 py-2 text-sm font-medium text-[#8A9BB5] hover:text-[#E8C96B] rounded-lg transition-all'
+                      : 'px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all dark:text-[#8A9BB5] dark:hover:text-[#E8C96B]'
                   }
                 >
                   {link.label}

@@ -29,6 +29,11 @@ export default function Login() {
       // Set user context
       setCurrentUserId(data.user.id);
 
+      // Store first name for welcome toast on dashboard
+      if (data.user?.firstName) {
+        sessionStorage.setItem("ss_welcome_name", data.user.firstName);
+      }
+
       // Redirect to root and let App.tsx handle routing to correct portal
       window.location.href = "/";
     },

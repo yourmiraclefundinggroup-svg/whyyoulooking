@@ -84,16 +84,25 @@
   --emerald-400: #34D399;
   --emerald-glow: rgba(52, 211, 153, 0.1);
 
+  /* Luxury dark palette */
+  --gold: #C9A84C;
+  --gold-light: #E8C96B;
+  --gold-dim: #7A6030;
+  --success: #2ECC8A;
+  --warning: #E8A020;
+  --danger: #E05252;
+  --border-gold: rgba(201,168,76,0.15);
+
   /* Text */
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #475569;
+  --text-primary: #F0EDE8;
+  --text-secondary: #8A9BB5;
+  --text-muted: #4A566A;
 
   /* Backgrounds */
-  --bg-primary: #050A14;
-  --bg-secondary: #0A1628;
-  --bg-card: #0F1E35;
-  --bg-elevated: #162540;
+  --bg-primary: #080C14;
+  --bg-secondary: #0F1520;
+  --bg-card: #0F1520;
+  --bg-elevated: #161D2E;
 
   /* Borders */
   --border-subtle: rgba(255,255,255,0.06);
@@ -207,7 +216,7 @@
     @apply font-sans antialiased;
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   }
 }
 
@@ -227,10 +236,10 @@
 
 /* Dark-variant navbar (for dark-background pages like pricing) */
 .navbar-dark {
-  background: rgba(5, 10, 20, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(8, 12, 20, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-color: rgba(201, 168, 76, 0.15);
 }
 
 /* Glow effects */

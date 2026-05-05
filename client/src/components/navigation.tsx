@@ -30,8 +30,8 @@ export function Navigation() {
     <header
       className="sticky top-0 z-50 backdrop-blur-md border-b"
       style={{
-        background: "rgba(5,10,20,0.9)",
-        borderColor: "rgba(255,255,255,0.06)",
+        background: "rgba(8,12,20,0.95)",
+        borderColor: "rgba(201,168,76,0.15)",
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -55,11 +55,15 @@ export function Navigation() {
               <Link key={item.href} href={item.href}>
                 <span
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                    "px-3 py-1.5 text-sm font-medium transition-all cursor-pointer relative",
                     location === item.href
-                      ? "text-amber-400 bg-amber-500/10"
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                      ? "text-[#E8C96B]"
+                      : "text-[#8A9BB5] hover:text-[#E8C96B]"
                   )}
+                  style={location === item.href ? {
+                    borderBottom: "2px solid #C9A84C",
+                    paddingBottom: 4,
+                  } : {}}
                 >
                   {item.label}
                 </span>
@@ -75,12 +79,12 @@ export function Navigation() {
                 {displayUser.firstName} {displayUser.lastName}
               </div>
               {isClientViewer && (
-                <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full text-xs">
-                  Client View
+                <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: "rgba(201,168,76,0.12)", color: "#E8C96B", border: "1px solid rgba(201,168,76,0.25)" }}>
+                  Client
                 </span>
               )}
               {isAdmin && (
-                <span className="px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-xs">
+                <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: "rgba(201,168,76,0.12)", color: "#E8C96B", border: "1px solid rgba(201,168,76,0.25)" }}>
                   Admin
                 </span>
               )}
@@ -129,8 +133,8 @@ export function Navigation() {
                     className={cn(
                       "block px-3 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-all",
                       location === item.href
-                        ? "text-amber-400 bg-amber-500/10"
-                        : "text-slate-400 hover:text-white hover:bg-white/5"
+                        ? "text-[#E8C96B] bg-[rgba(201,168,76,0.08)]"
+                        : "text-[#8A9BB5] hover:text-[#E8C96B] hover:bg-white/5"
                     )}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >

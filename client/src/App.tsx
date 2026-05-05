@@ -3,6 +3,8 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 import { Navigation } from "@/components/navigation";
 import { UserProvider, useUserContext } from "@/hooks/use-user-context";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -33,6 +35,25 @@ import WhiteLabelOnboarding from "@/pages/white-label-onboarding";
 import CreditMonitoring from "@/pages/credit-monitoring";
 import NotFound from "@/pages/not-found";
 import { TrialUpgradeWall } from "@/components/trial-upgrade-wall";
+
+// Shows a personalized welcome toast once after login
+function WelcomeToast() {
+  const { toast } = useToast();
+  useEffect(() => {
+    const name = sessionStorage.getItem("ss_welcome_name");
+    if (name) {
+      sessionStorage.removeItem("ss_welcome_name");
+      setTimeout(() => {
+        toast({
+          title: `Welcome back, ${name}.`,
+          description: "Here's your credit snapshot for today.",
+          duration: 5000,
+        });
+      }, 600);
+    }
+  }, []);
+  return null;
+}
 
 // Loads the Array SDK script globally once the shared token context has an appKey.
 function ArrayScriptLoader() {
@@ -195,6 +216,7 @@ function App() {
           <AuthenticatedArrayProvider>
             <TooltipProvider>
               <Toaster />
+              <WelcomeToast />
               <Router />
             </TooltipProvider>
           </AuthenticatedArrayProvider>

@@ -601,7 +601,7 @@ export default function Signup() {
 
                   <div className="px-5 pb-4 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
                     <Shield className="h-3.5 w-3.5 shrink-0 text-green-500" />
-                    <span>Your information is encrypted. Powered by Array — a trusted credit data platform.</span>
+                    <span>Your information is encrypted and secured by ScoreShift.</span>
                   </div>
                 </div>
               </div>
