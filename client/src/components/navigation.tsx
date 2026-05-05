@@ -8,17 +8,18 @@ import { useUserContext } from "@/hooks/use-user-context";
 export function Navigation() {
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, isClientViewer, isAdmin, canCreateDisputes, logout } = useUserContext();
+  const { user, isClientViewer, isAdmin, isDIYMode, canCreateDisputes, logout } = useUserContext();
 
   const displayUser = user || { firstName: "Loading", lastName: "", accessLevel: "CLIENT_VIEWER" };
 
-  // DIY tab visible for any subscriber (subscriptionTier != none) or admin/beta
-  const isDIYUser = canCreateDisputes;
+  // DIY tab visible only for users in explicit DIY mode (subscriptionTier != none, non-admin)
+  // or admin/beta for testing purposes
+  const showDIYTab = isDIYMode || (!isAdmin && canCreateDisputes);
 
   const clientNavItems = [
     { href: "/credit-repair", label: "Dashboard" },
     { href: "/credit-monitoring", label: "Credit Monitoring" },
-    ...(isDIYUser ? [{ href: "/disputes-diy", label: "Disputes" }] : []),
+    ...(showDIYTab ? [{ href: "/disputes-diy", label: "Disputes" }] : []),
     { href: "/debt-navigator", label: "Debt Navigator" },
     { href: "/student-loans", label: "Student Loan Aid" },
     { href: "/progress", label: "Progress" },

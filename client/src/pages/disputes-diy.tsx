@@ -84,10 +84,16 @@ const ISSUE_TYPE_LABELS: Record<string, { label: string; severity: "HIGH" | "MED
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 
-function buildLetter(bureau: Bureau, creditor: string, reason: string): string {
-  return `[Your Name]
-[Your Address]
-[City, State ZIP]
+function buildLetter(
+  bureau: Bureau,
+  creditor: string,
+  reason: string,
+  user?: { firstName?: string | null; lastName?: string | null; email?: string | null } | null,
+): string {
+  const fullName = user ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() : "";
+  const displayName = fullName || "[Your Name]";
+  return `${displayName}
+[Your Address, City, State ZIP]
 ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
 
 ${bureau}
@@ -109,10 +115,9 @@ Please provide written confirmation of the results and any changes made to my cr
 
 Sincerely,
 
-[Your Signature]
-[Your Name]
+${displayName}
 [Last 4 Digits of SSN]
-[Phone Number]`;
+${user?.email ?? "[Email Address]"}`;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -249,20 +254,26 @@ function DisputeWizard({
   const removeSlot = (i: number) =>
     setSlots((p) => p.filter((_, idx) => idx !== i));
 
-  /* Step 1 → Step 2: generate all letters */
+  /* Step 1 → Step 2: generate all letters with "Dispute IQ is analyzing…" UX */
+  const [analyzing, setAnalyzing] = useState(false);
+
   const handleGenerateAll = async () => {
     const valid = slots.filter((s) => s.creditor.trim() || s.issue);
     if (valid.length === 0) {
       toast({ title: "Add at least one item", description: "Enter a creditor or select an issue.", variant: "destructive" });
       return;
     }
+    // Show analyzing overlay before transitioning to step 2
+    setAnalyzing(true);
+    await new Promise((r) => setTimeout(r, 1400));
+    setAnalyzing(false);
     setStep(2);
     for (let i = 0; i < slots.length; i++) {
       const s = slots[i];
       const creditor = (s.issue?.creditor ?? s.creditor) || "the account";
       updateSlot(i, { generating: true, generated: "" });
-      await new Promise((r) => setTimeout(r, 1500 + i * 400));
-      updateSlot(i, { generating: false, generated: buildLetter(s.bureau, creditor, s.reason) });
+      await new Promise((r) => setTimeout(r, 1200 + i * 300));
+      updateSlot(i, { generating: false, generated: buildLetter(s.bureau, creditor, s.reason, user) });
     }
   };
 
@@ -313,15 +324,38 @@ function DisputeWizard({
   };
 
   /* Print slot */
-  const printSlot = (i: number) => {
+  const downloadSlot = (i: number) => {
     const s = slots[i];
-    const w = window.open("", "_blank");
-    if (!w) return;
-    w.document.write(`<html><head><title>Dispute Letter</title>
-      <style>body{font-family:Arial,sans-serif;padding:60px;color:#111;max-width:700px;margin:0 auto;white-space:pre-wrap}</style>
-    </head><body>${s.generated}</body></html>`);
-    w.document.close();
-    w.print();
+    const bureauAddresses: Record<string, string> = {
+      Experian:   "P.O. Box 4500, Allen, TX 75013",
+      Equifax:    "P.O. Box 740256, Atlanta, GA 30374",
+      TransUnion: "P.O. Box 2000, Chester, PA 19016",
+    };
+    const html = `<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <title>Dispute Letter — ${s.bureau}</title>
+  <style>
+    @page { margin: 1in; }
+    body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.7;
+           color: #000; max-width: 6.5in; margin: 0 auto; white-space: pre-wrap; }
+    h1 { font-size: 13pt; border-bottom: 1px solid #ccc; padding-bottom: 8px; margin-bottom: 24px; }
+    .footer { margin-top: 48px; font-size: 10pt; color: #555; border-top: 1px solid #eee; padding-top: 8px; }
+  </style>
+</head><body>
+<h1>FCRA Dispute Letter · ${s.bureau} · ${new Date().toLocaleDateString()}</h1>
+${s.generated}
+<p class="footer">Bureau mailing address: ${bureauAddresses[s.bureau] ?? s.bureau + " Dispute Department"}</p>
+</body></html>`;
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `dispute-letter-${s.bureau.toLowerCase()}-${Date.now()}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
     updateSlot(i, { sent: "print" });
     apiRequest("POST", "/api/disputes", {
       bureau: s.bureau,
@@ -334,6 +368,33 @@ function DisputeWizard({
 
   const allSent = slots.every((s) => s.sent !== null);
   const allGenerated = slots.every((s) => s.generated !== "");
+
+  /* Analyzing overlay */
+  if (analyzing) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-24 flex flex-col items-center justify-center gap-6 text-center">
+        <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
+          style={{ background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.3)" }}>
+          <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: "var(--gold)", borderTopColor: "transparent" }} />
+        </div>
+        <div>
+          <h2 className="text-xl font-black mb-2" style={{ color: "var(--text-primary)" }}>
+            Dispute IQ is analyzing your selections…
+          </h2>
+          <p className="text-sm max-w-xs mx-auto" style={{ color: "var(--text-secondary)" }}>
+            Matching FCRA statutes, Metro 2 standards, and drafting your dispute letters.
+          </p>
+        </div>
+        <div className="flex gap-1.5">
+          {[0, 200, 400].map((delay) => (
+            <span key={delay} className="w-2 h-2 rounded-full animate-bounce inline-block"
+              style={{ background: "var(--gold)", animationDelay: `${delay}ms` }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
@@ -766,12 +827,12 @@ function DisputeWizard({
                                   : `$${SEND_PRICE.toFixed(2)} · USPS tracking included`}
                               </div>
                             </button>
-                            <button onClick={() => printSlot(i)}
+                            <button onClick={() => downloadSlot(i)}
                               className="p-3 rounded-xl text-left transition-all"
                               style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)" }}>
                               <Printer className="h-4 w-4 mb-1.5" style={{ color: "var(--text-secondary)" }} />
-                              <div className="font-bold text-xs mb-0.5" style={{ color: "var(--text-primary)" }}>Print & Mail</div>
-                              <div className="text-xs" style={{ color: "var(--text-muted)" }}>Download PDF to mail yourself</div>
+                              <div className="font-bold text-xs mb-0.5" style={{ color: "var(--text-primary)" }}>Download & Print</div>
+                              <div className="text-xs" style={{ color: "var(--text-muted)" }}>Save letter file to mail yourself</div>
                             </button>
                           </div>
                         ) : (

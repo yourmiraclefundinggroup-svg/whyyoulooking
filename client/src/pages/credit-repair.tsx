@@ -58,12 +58,17 @@ function ArrayWebComponent({
 /* ─── Bureau pill selector ─────────────────────────────────────────────────── */
 const BUREAUS = ["Experian", "Equifax", "TransUnion"] as const;
 type Bureau = typeof BUREAUS[number];
+type BureauSelection = Bureau | "All";
 
 const BUREAU_CONFIG: Record<Bureau, { color: string; score: number; change: number }> = {
   Experian:   { color: "#0062FF", score: 634, change: +12 },
   Equifax:    { color: "#E12726", score: 621, change: +8 },
   TransUnion: { color: "#662D8C", score: 628, change: +11 },
 };
+
+const AVG_SCORE = Math.round(
+  (BUREAU_CONFIG.Experian.score + BUREAU_CONFIG.Equifax.score + BUREAU_CONFIG.TransUnion.score) / 3
+);
 
 const MOCK_HISTORY = [572, 581, 595, 610, 618, 634];
 
@@ -104,7 +109,7 @@ export default function CreditRepair() {
   const queryClient = useQueryClient();
   const userId = user?.id || 1;
 
-  const [selectedBureau, setSelectedBureau] = useState<Bureau>("Experian");
+  const [selectedBureau, setSelectedBureau] = useState<BureauSelection>("All");
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<CreditIssue | undefined>();
 
@@ -142,12 +147,23 @@ export default function CreditRepair() {
 
   const firstName = user?.firstName || "there";
 
-  const bureau = BUREAU_CONFIG[selectedBureau];
+  // Derive display values for the selected bureau (or average when "All")
+  const bureau = selectedBureau === "All"
+    ? { color: "var(--gold)", score: AVG_SCORE, change: +10 }
+    : BUREAU_CONFIG[selectedBureau];
 
   const chartData = MOCK_HISTORY.map((score, i) => ({
     month: ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"][i],
     score,
   }));
+
+  // Map impact score to severity label + color for alert severity pills
+  function issueSeverity(impact: number): { label: string; color: string; bg: string } {
+    const abs = Math.abs(impact);
+    if (abs >= 50) return { label: "High",   color: "#E05252", bg: "rgba(224,82,82,0.12)" };
+    if (abs >= 20) return { label: "Medium", color: "#E8A020", bg: "rgba(232,160,32,0.12)" };
+    return            { label: "Low",    color: "#60A5FA", bg: "rgba(96,165,250,0.12)" };
+  }
 
   const alerts = [
     ...activeIssues.slice(0, 3).map((issue) => ({
@@ -155,6 +171,8 @@ export default function CreditRepair() {
       type: "warning" as const,
       title: issue.title,
       body: `${issue.creditor} · ${Math.abs(issue.impact)} pt impact`,
+      severity: issueSeverity(issue.impact),
+      date: issue.dateAdded ? new Date(issue.dateAdded).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : null,
       action: canCreateDisputes ? { label: "Dispute", onClick: () => { setSelectedIssue(issue); setDisputeModalOpen(true); } } : undefined,
     })),
     ...(resolvedIssues.length > 0 ? [{
@@ -162,6 +180,8 @@ export default function CreditRepair() {
       type: "success" as const,
       title: `${resolvedIssues.length} item${resolvedIssues.length > 1 ? "s" : ""} resolved`,
       body: "Successfully removed from your credit report",
+      severity: null as null,
+      date: null as null,
       action: undefined,
     }] : []),
   ];
@@ -264,22 +284,26 @@ export default function CreditRepair() {
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Left: bureau pills + gauge */}
               <div className="flex flex-col items-center gap-4">
-                {/* Bureau pills */}
+                {/* Bureau pills — includes "All Bureaus" */}
                 <div className="flex gap-2 flex-wrap justify-center">
-                  {BUREAUS.map((b) => (
-                    <button
-                      key={b}
-                      onClick={() => setSelectedBureau(b)}
-                      className="px-3 py-1 rounded-full text-xs font-bold transition-all"
-                      style={{
-                        background: selectedBureau === b ? BUREAU_CONFIG[b].color : "rgba(255,255,255,0.04)",
-                        color: selectedBureau === b ? "#fff" : "var(--text-secondary)",
-                        border: `1px solid ${selectedBureau === b ? BUREAU_CONFIG[b].color : "var(--border-gold)"}`,
-                      }}
-                    >
-                      {b}
-                    </button>
-                  ))}
+                  {(["All", ...BUREAUS] as BureauSelection[]).map((b) => {
+                    const isActive = selectedBureau === b;
+                    const color = b === "All" ? "var(--gold)" : BUREAU_CONFIG[b].color;
+                    return (
+                      <button
+                        key={b}
+                        onClick={() => setSelectedBureau(b)}
+                        className="px-3 py-1 rounded-full text-xs font-bold transition-all"
+                        style={{
+                          background: isActive ? color : "rgba(255,255,255,0.04)",
+                          color: isActive ? (b === "All" ? "var(--bg-primary)" : "#fff") : "var(--text-secondary)",
+                          border: `1px solid ${isActive ? color : "var(--border-gold)"}`,
+                        }}
+                      >
+                        {b === "All" ? "All Bureaus" : b}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Score gauge */}
@@ -385,7 +409,18 @@ export default function CreditRepair() {
                           : <CheckCircle className="h-4 w-4" style={{ color: "#2ECC8A" }} />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-sm mb-0.5" style={{ color: "var(--text-primary)" }}>{alert.title}</div>
+                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                          <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{alert.title}</span>
+                          {alert.severity && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                              style={{ background: alert.severity.bg, color: alert.severity.color }}>
+                              {alert.severity.label}
+                            </span>
+                          )}
+                          {alert.date && (
+                            <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{alert.date}</span>
+                          )}
+                        </div>
                         <div className="text-xs" style={{ color: "var(--text-secondary)" }}>{alert.body}</div>
                       </div>
                       {alert.action && canCreateDisputes && (
@@ -471,12 +506,15 @@ export default function CreditRepair() {
                     if (lc.includes("validat")) return "Validation";
                     return "Dispute";
                   })();
-                  const statusColors: Record<string, { bg: string; color: string }> = {
-                    PENDING:   { bg: "rgba(232,160,32,0.12)", color: "#E8A020" },
-                    SENT:      { bg: "rgba(96,165,250,0.12)", color: "#60A5FA" },
-                    DELIVERED: { bg: "rgba(46,204,138,0.12)", color: "#2ECC8A" },
+                  const statusConfig: Record<string, { bg: string; color: string; label: string }> = {
+                    PENDING:    { bg: "rgba(232,160,32,0.12)",  color: "#E8A020", label: "Pending"    },
+                    SENT:       { bg: "rgba(96,165,250,0.12)",  color: "#60A5FA", label: "Sent"       },
+                    IN_TRANSIT: { bg: "rgba(96,165,250,0.12)",  color: "#60A5FA", label: "In Transit" },
+                    DELIVERED:  { bg: "rgba(46,204,138,0.12)",  color: "#2ECC8A", label: "Delivered"  },
+                    RESOLVED:   { bg: "rgba(46,204,138,0.12)",  color: "#2ECC8A", label: "Resolved"   },
+                    REJECTED:   { bg: "rgba(224,82,82,0.12)",   color: "#E05252", label: "Rejected"   },
                   };
-                  const sc = statusColors[dispute.status] ?? { bg: "rgba(255,255,255,0.06)", color: "var(--text-secondary)" };
+                  const sc = statusConfig[dispute.status] ?? { bg: "rgba(255,255,255,0.06)", color: "var(--text-secondary)", label: dispute.status };
                   return (
                     <div
                       key={dispute.id}
@@ -497,7 +535,7 @@ export default function CreditRepair() {
                         </div>
                         <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
                           style={{ background: sc.bg, color: sc.color }}>
-                          {dispute.status}
+                          {sc.label}
                         </span>
                       </div>
                       {/* Row 2: date · method · tracking */}
