@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TrendingDown, DollarSign, Calculator, Target, Zap, ChevronRight, ArrowRight, BarChart3, CheckCircle } from "lucide-react";
+import { TrendingDown, DollarSign, Calculator, Zap, BarChart3, CheckCircle, CreditCard, AlertTriangle, X } from "lucide-react";
 
 interface DebtEntry {
   id: string;
@@ -322,7 +322,129 @@ export default function DebtNavigator() {
           </div>
         </div>
 
+        {/* Subscription Manager */}
+        <SubscriptionManager />
+
       </div>
+    </div>
+  );
+}
+
+/* ── Subscription Manager ─────────────────────────────────────────────────── */
+
+interface SubscriptionRow {
+  id: string;
+  name: string;
+  amount: number;
+  cycle: string;
+  category: string;
+  flag: "cancel" | "dispute" | null;
+}
+
+const DEMO_SUBS: SubscriptionRow[] = [
+  { id: "s1", name: "Gym Membership",       amount: 49.99,  cycle: "Monthly", category: "Health",      flag: "cancel"  },
+  { id: "s2", name: "Streaming Service",    amount: 15.99,  cycle: "Monthly", category: "Entertainment", flag: null      },
+  { id: "s3", name: "Credit Monitoring Co", amount: 29.99,  cycle: "Monthly", category: "Finance",      flag: "dispute" },
+  { id: "s4", name: "Cloud Storage",        amount: 9.99,   cycle: "Monthly", category: "Tech",         flag: null      },
+];
+
+function SubscriptionManager() {
+  const [subs] = useState<SubscriptionRow[]>(DEMO_SUBS);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+
+  const visible = subs.filter((s) => !dismissed.has(s.id));
+  const totalMonthly = visible.reduce((acc, s) => acc + s.amount, 0);
+  const flagged = visible.filter((s) => s.flag !== null);
+
+  const dismiss = (id: string) => setDismissed((prev) => new Set([...prev, id]));
+
+  return (
+    <div className="rounded-2xl p-6" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
+      <div className="flex items-start justify-between mb-5 gap-4">
+        <div>
+          <div className="ss-overline mb-1">Subscription Manager</div>
+          <h2 className="font-black text-lg" style={{ color: "var(--text-primary)" }}>
+            Recurring Charges
+          </h2>
+          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+            {visible.length} active · <span style={{ color: "var(--gold)" }}>${totalMonthly.toFixed(2)}/mo</span>
+            {flagged.length > 0 && (
+              <> · <span style={{ color: "#E05252" }}>{flagged.length} flagged for review</span></>
+            )}
+          </p>
+        </div>
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          style={{ background: "rgba(201,168,76,0.1)" }}>
+          <CreditCard className="h-5 w-5" style={{ color: "var(--gold)" }} />
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {visible.map((sub) => (
+          <div key={sub.id}
+            className="flex items-center gap-3 p-4 rounded-xl"
+            style={{
+              background: "var(--bg-elevated)",
+              border: `1px solid ${sub.flag === "dispute" ? "rgba(224,82,82,0.25)" : sub.flag === "cancel" ? "rgba(232,160,32,0.2)" : "var(--border-gold)"}`,
+            }}>
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: sub.flag === "dispute" ? "rgba(224,82,82,0.1)" : sub.flag === "cancel" ? "rgba(232,160,32,0.1)" : "rgba(201,168,76,0.08)" }}>
+              {sub.flag === "dispute"
+                ? <AlertTriangle className="h-4 w-4" style={{ color: "#E05252" }} />
+                : sub.flag === "cancel"
+                  ? <AlertTriangle className="h-4 w-4" style={{ color: "#E8A020" }} />
+                  : <CreditCard className="h-4 w-4" style={{ color: "var(--gold)" }} />}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{sub.name}</span>
+                {sub.flag === "dispute" && (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                    style={{ background: "rgba(224,82,82,0.1)", color: "#E05252" }}>Dispute?</span>
+                )}
+                {sub.flag === "cancel" && (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                    style={{ background: "rgba(232,160,32,0.1)", color: "#E8A020" }}>Consider canceling</span>
+                )}
+              </div>
+              <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                {sub.category} · {sub.cycle}
+              </div>
+            </div>
+
+            <div className="text-right shrink-0">
+              <div className="font-black text-sm" style={{ color: "var(--text-primary)" }}>
+                ${sub.amount.toFixed(2)}
+              </div>
+              <div className="text-xs" style={{ color: "var(--text-muted)" }}>/mo</div>
+            </div>
+
+            <button onClick={() => dismiss(sub.id)}
+              className="shrink-0 p-1.5 rounded-lg transition-colors"
+              style={{ color: "var(--text-muted)" }}>
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ))}
+
+        {visible.length === 0 && (
+          <div className="py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+            No recurring subscriptions detected.
+          </div>
+        )}
+      </div>
+
+      {flagged.length > 0 && (
+        <div className="mt-4 p-3 rounded-xl text-xs"
+          style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)", color: "var(--text-secondary)" }}>
+          <span style={{ color: "var(--gold)", fontWeight: 700 }}>Tip:</span> Canceling flagged subscriptions could save you{" "}
+          <span style={{ color: "var(--gold)", fontWeight: 700 }}>
+            ${flagged.reduce((a, s) => a + s.amount, 0).toFixed(2)}/mo
+          </span>{" "}
+          (${(flagged.reduce((a, s) => a + s.amount, 0) * 12).toFixed(0)}/yr).
+        </div>
+      )}
     </div>
   );
 }

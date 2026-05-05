@@ -217,12 +217,6 @@ function ArrayCard({
 /* ── Tab definition ──────────────────────────────────────────────────────── */
 const TABS = [
   {
-    id: "overview",
-    label: "Overview",
-    subtitle: "Scores & summary",
-    icon: BarChart3,
-  },
-  {
     id: "report",
     label: "Full Report",
     subtitle: "3-bureau detail",
@@ -236,15 +230,9 @@ const TABS = [
   },
   {
     id: "tools",
-    label: "Tools",
-    subtitle: "Simulators & planners",
+    label: "Tools & Premium",
+    subtitle: "Simulators · loan aid",
     icon: Zap,
-  },
-  {
-    id: "premium",
-    label: "Premium Services",
-    subtitle: "Elite features",
-    icon: Star,
   },
 ] as const;
 
@@ -254,7 +242,7 @@ type TabId = typeof TABS[number]["id"];
 export default function CreditMonitoring() {
   const { user } = useUserContext();
   const queryClient = useQueryClient();
-  const [activeSection, setActiveSection] = useState<TabId>("overview");
+  const [activeSection, setActiveSection] = useState<TabId>("report");
   const access = useFeatureAccess();
 
   const { loaded: scriptReady } = useArrayScript();
@@ -455,61 +443,6 @@ export default function CreditMonitoring() {
         {/* ── Enrolled content by tab ────────────────────────────────────── */}
         {isEnrolled ? (
           <>
-            {activeSection === "overview" && (
-              <div className="space-y-5">
-                <ArrayCard
-                  icon={BarChart3}
-                  title="Credit Overview"
-                  description="Live 3-bureau credit scores and account summary"
-                >
-                  <CreditComponent
-                    tag="array-credit-overview"
-                    appKey={ARRAY_SANDBOX_APP_KEY}
-                    userToken={ARRAY_SANDBOX_TOKENS.default}
-                    scriptReady={scriptReady}
-                  />
-                </ArrayCard>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                  <ArrayCard
-                    icon={TrendingUp}
-                    title="Score Tracker"
-                    description="Track your score history across all three bureaus"
-                  >
-                    <CreditComponent
-                      tag="array-credit-score"
-                      appKey={ARRAY_SANDBOX_APP_KEY}
-                      userToken={ARRAY_SANDBOX_TOKENS.default}
-                      scriptReady={scriptReady}
-                      attrs={{ bureau: "all", scoreTracker: "true" }}
-                    />
-                  </ArrayCard>
-
-                  {access.canAccess(FEATURES.DEBT_ANALYSIS) ? (
-                    <ArrayCard
-                      icon={CreditCard}
-                      title="Debt Analysis"
-                      description="Utilization breakdown and balance summary"
-                    >
-                      <CreditComponent
-                        tag="array-credit-debt-analysis"
-                        appKey={ARRAY_SANDBOX_APP_KEY}
-                        userToken={ARRAY_SANDBOX_TOKENS.default}
-                        scriptReady={scriptReady}
-                      />
-                    </ArrayCard>
-                  ) : (
-                    <TierUpgradeCard
-                      label="Debt Analysis"
-                      icon={CreditCard}
-                      description="See a full breakdown of your debts, balances, and credit utilization by account."
-                      requiredTier="pro"
-                    />
-                  )}
-                </div>
-              </div>
-            )}
-
             {activeSection === "report" && (
               <ArrayCard
                 icon={FileSearch}
@@ -651,11 +584,7 @@ export default function CreditMonitoring() {
                     requiredTier="pro"
                   />
                 )}
-              </div>
-            )}
 
-            {activeSection === "premium" && (
-              <div className="space-y-5">
                 {access.canAccess(FEATURES.STUDENT_LOAN_AID) && enrollment?.productCodes?.includes("pioStudentLoanAidSubmission") ? (
                   <ArrayCard
                     icon={GraduationCap}

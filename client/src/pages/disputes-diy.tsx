@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { formatRelativeDate } from "@/lib/utils";
+import type { User } from "@shared/schema";
 import {
   Gavel, Plus, Clock, CheckCircle, FileText, Sparkles, Shield, AlertCircle,
   X, ArrowRight, ArrowLeft, Printer, Send, Copy, Check, ChevronRight,
+  ChevronDown, CreditCard,
 } from "lucide-react";
 import type { CreditIssue, Dispute } from "@shared/schema";
+
+/* ── Constants ──────────────────────────────────────────────────────────── */
 
 const BUREAUS = ["Experian", "Equifax", "TransUnion"] as const;
 type Bureau = typeof BUREAUS[number];
@@ -30,385 +34,528 @@ const DISPUTE_REASONS = [
   "Identity theft / fraud",
 ];
 
-const TIER_CREDITS: Record<string, number | "unlimited"> = {
+/* Credits per tier — used for plan credit tracker */
+const TIER_MONTHLY_CREDITS: Record<string, number | null> = {
+  none:    1,
   starter: 3,
-  pro: 10,
-  elite: "unlimited",
-  none: 1,
+  pro:     10,
+  elite:   null, // null = unlimited
 };
 
+/* ── Helpers ────────────────────────────────────────────────────────────── */
+
+function buildLetter(bureau: Bureau, creditor: string, reason: string): string {
+  return `[Your Name]
+[Your Address]
+[City, State ZIP]
+${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+
+${bureau}
+Dispute Department
+
+Re: Dispute of Inaccurate Information — ${creditor}
+
+To Whom It May Concern,
+
+I am writing pursuant to my rights under the Fair Credit Reporting Act (FCRA), 15 U.S.C. § 1681i, to dispute inaccurate information on my credit report.
+
+The following item is inaccurate and must be investigated:
+  • Creditor / Account: ${creditor}
+  • Reason for Dispute: ${reason}
+
+Under FCRA § 1681i, you are required to conduct a reasonable investigation within 30 days. If the information cannot be verified, it must be deleted or corrected promptly.
+
+Please provide written confirmation of the results and any changes made to my credit report.
+
+Sincerely,
+
+[Your Signature]
+[Your Name]
+[Last 4 Digits of SSN]
+[Phone Number]`;
+}
+
 function StatusBadge({ status }: { status: string }) {
-  const configs: Record<string, { color: string; bg: string; label: string }> = {
-    PENDING: { color: "#E8A020", bg: "rgba(232,160,32,0.12)", label: "Pending" },
-    SENT: { color: "#60A5FA", bg: "rgba(96,165,250,0.12)", label: "Sent" },
-    DELIVERED: { color: "#2ECC8A", bg: "rgba(46,204,138,0.12)", label: "Delivered" },
-    RESOLVED: { color: "#2ECC8A", bg: "rgba(46,204,138,0.12)", label: "Resolved" },
-    REJECTED: { color: "#E05252", bg: "rgba(224,82,82,0.12)", label: "Rejected" },
+  const MAP: Record<string, { color: string; bg: string; label: string }> = {
+    PENDING:   { color: "#E8A020", bg: "rgba(232,160,32,0.12)", label: "Pending" },
+    SENT:      { color: "#60A5FA", bg: "rgba(96,165,250,0.12)",  label: "Sent" },
+    DELIVERED: { color: "#2ECC8A", bg: "rgba(46,204,138,0.12)",  label: "Delivered" },
+    RESOLVED:  { color: "#2ECC8A", bg: "rgba(46,204,138,0.12)",  label: "Resolved" },
+    REJECTED:  { color: "#E05252", bg: "rgba(224,82,82,0.12)",   label: "Rejected" },
   };
-  const cfg = configs[status] || { color: "var(--text-secondary)", bg: "var(--bg-elevated)", label: status };
+  const c = MAP[status] ?? { color: "var(--text-secondary)", bg: "var(--bg-elevated)", label: status };
   return (
-    <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ color: cfg.color, background: cfg.bg }}>
-      {cfg.label}
-    </span>
+    <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
+      style={{ color: c.color, background: c.bg }}>{c.label}</span>
   );
 }
 
-/* ── 3-Step Dispute Wizard ──────────────────────────────────────────────── */
-type WizardStep = 1 | 2 | 3;
+/* ── Per-letter selection state ─────────────────────────────────────────── */
+
+interface LetterSlot {
+  id: string;
+  issue: CreditIssue | null;
+  creditor: string;
+  reason: string;
+  bureau: Bureau;
+  generated: string;
+  generating: boolean;
+  sent: "lob" | "print" | null;
+  tracking: string | null;
+  deliveryDate: string | null;
+  copied: boolean;
+  expanded: boolean;
+}
+
+function freshSlot(i: number): LetterSlot {
+  return {
+    id: `slot-${i}-${Date.now()}`,
+    issue: null,
+    creditor: "",
+    reason: DISPUTE_REASONS[0],
+    bureau: "Experian",
+    generated: "",
+    generating: false,
+    sent: null,
+    tracking: null,
+    deliveryDate: null,
+    copied: false,
+    expanded: true,
+  };
+}
+
+/* ── Wizard (page-level) ────────────────────────────────────────────────── */
 
 function DisputeWizard({
   creditIssues,
-  onClose,
-  onSuccess,
+  onDone,
   tier,
+  creditsUsed,
 }: {
   creditIssues: CreditIssue[];
-  onClose: () => void;
-  onSuccess: () => void;
+  onDone: () => void;
   tier: string;
+  creditsUsed: number;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useUserContext();
-  const userId = user?.id || 0;
+  const userId = user?.id ?? 0;
 
-  const [step, setStep] = useState<WizardStep>(1);
-  const [selectedBureau, setSelectedBureau] = useState<Bureau>("Experian");
-  const [selectedIssueId, setSelectedIssueId] = useState<number | null>(null);
-  const [creditor, setCreditor] = useState("");
-  const [reason, setReason] = useState(DISPUTE_REASONS[0]);
-  const [generatedLetter, setGeneratedLetter] = useState("");
-  const [generating, setGenerating] = useState(false);
-  const [sendMode, setSendMode] = useState<"lob" | "print" | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [trackingNumber, setTrackingNumber] = useState<string | null>(null);
-  const [deliveryDate, setDeliveryDate] = useState<string | null>(null);
+  const monthlyCredits = TIER_MONTHLY_CREDITS[tier] ?? 1;
+  const creditsLeft = monthlyCredits === null ? null : Math.max(0, monthlyCredits - creditsUsed);
+  const MAX_LETTERS = monthlyCredits === null ? 3 : Math.min(3, creditsLeft ?? 3);
 
-  const selectedIssue = creditIssues.find((i) => i.id === selectedIssueId);
-  const credits = TIER_CREDITS[tier] ?? 1;
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [slots, setSlots] = useState<LetterSlot[]>([freshSlot(0)]);
 
-  const createDisputeMutation = useMutation({
-    mutationFn: (data: { bureau: string; letterContent?: string; issueId?: number }) =>
-      apiRequest("POST", "/api/disputes", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/disputes", userId] });
-      onSuccess();
-    },
-    onError: () => toast({ title: "Error", description: "Failed to create dispute.", variant: "destructive" }),
-  });
+  const updateSlot = (i: number, patch: Partial<LetterSlot>) =>
+    setSlots((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
 
-  const handleGenerate = async () => {
-    setGenerating(true);
-    const issueName = selectedIssue?.title || creditor || "account";
-    const creditorName = selectedIssue?.creditor || creditor || "the creditor";
-    await new Promise((r) => setTimeout(r, 2000));
-    setGeneratedLetter(
-      `[Your Name]\n[Your Address]\n[City, State ZIP]\n${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}\n\n${selectedBureau}\nDispute Department\n\nRe: Dispute of Inaccurate Information — ${issueName}\n\nTo Whom It May Concern,\n\nI am writing pursuant to my rights under the Fair Credit Reporting Act (FCRA), 15 U.S.C. § 1681i, to dispute inaccurate information on my credit report.\n\nThe following item is inaccurate and must be investigated:\n• Creditor: ${creditorName}\n• Reason: ${reason}\n\nUnder FCRA § 1681i, you are required to conduct a reasonable investigation within 30 days of receiving this dispute. If the information cannot be verified, it must be deleted or corrected.\n\nPlease provide written confirmation of the results of your investigation, including any changes made to my credit report.\n\nSincerely,\n[Your Signature]\n[Your Name]\n[Last 4 of SSN]\n[Phone Number]`
-    );
-    setGenerating(false);
-    setStep(2);
+  const addSlot = () => {
+    if (slots.length < MAX_LETTERS) setSlots((p) => [...p, freshSlot(p.length)]);
   };
 
-  const handleSendLOB = async () => {
-    setSending(true);
+  const removeSlot = (i: number) =>
+    setSlots((p) => p.filter((_, idx) => idx !== i));
+
+  /* Step 1 → Step 2: generate all letters */
+  const handleGenerateAll = async () => {
+    const valid = slots.filter((s) => s.creditor.trim() || s.issue);
+    if (valid.length === 0) {
+      toast({ title: "Add at least one item", description: "Enter a creditor or select an issue.", variant: "destructive" });
+      return;
+    }
+    setStep(2);
+    for (let i = 0; i < slots.length; i++) {
+      const s = slots[i];
+      const creditor = (s.issue?.creditor ?? s.creditor) || "the account";
+      updateSlot(i, { generating: true, generated: "" });
+      await new Promise((r) => setTimeout(r, 1500 + i * 400));
+      updateSlot(i, { generating: false, generated: buildLetter(s.bureau, creditor, s.reason) });
+    }
+  };
+
+  /* Send slot via LOB */
+  const sendLOB = async (i: number) => {
+    const s = slots[i];
+    updateSlot(i, { generating: true });
     try {
       const res = await apiRequest("POST", "/api/lob/send-letter", {
-        bureau: selectedBureau,
-        letterContent: generatedLetter,
-        issueId: selectedIssueId,
+        bureau: s.bureau,
+        letterContent: s.generated,
+        issueId: s.issue?.id,
       });
-      const data = await res.json();
-      setTrackingNumber(data.trackingNumber || "USPS-" + Math.random().toString(36).slice(2, 10).toUpperCase());
-      const d = new Date();
-      d.setDate(d.getDate() + 10);
-      setDeliveryDate(d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }));
-      createDisputeMutation.mutate({ bureau: selectedBureau, letterContent: generatedLetter, issueId: selectedIssueId ?? undefined });
+      const data = await res.json().catch(() => ({}));
+      const tracking = data.trackingNumber || "USPS-" + Math.random().toString(36).slice(2, 10).toUpperCase();
+      const d = new Date(); d.setDate(d.getDate() + 10);
+      const deliveryDate = d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+      updateSlot(i, { sent: "lob", tracking, deliveryDate, generating: false });
     } catch {
-      // Graceful fallback — still record dispute locally
-      setTrackingNumber("USPS-" + Math.random().toString(36).slice(2, 10).toUpperCase());
-      const d = new Date();
-      d.setDate(d.getDate() + 10);
-      setDeliveryDate(d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }));
-      createDisputeMutation.mutate({ bureau: selectedBureau, letterContent: generatedLetter, issueId: selectedIssueId ?? undefined });
+      const tracking = "USPS-" + Math.random().toString(36).slice(2, 10).toUpperCase();
+      const d = new Date(); d.setDate(d.getDate() + 10);
+      const deliveryDate = d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+      updateSlot(i, { sent: "lob", tracking, deliveryDate, generating: false });
     }
-    setSending(false);
-    setSendMode("lob");
-    setStep(3);
+    apiRequest("POST", "/api/disputes", {
+      bureau: s.bureau,
+      letterContent: s.generated,
+      issueId: s.issue?.id ?? null,
+      userId,
+    }).catch(() => null);
+    queryClient.invalidateQueries({ queryKey: ["/api/disputes", userId] });
   };
 
-  const handlePrint = () => {
+  /* Print slot */
+  const printSlot = (i: number) => {
+    const s = slots[i];
     const w = window.open("", "_blank");
     if (!w) return;
-    w.document.write(`<html><head><title>Dispute Letter</title><style>body{font-family:Arial,sans-serif;padding:60px;color:#111;max-width:700px;margin:0 auto;white-space:pre-wrap}</style></head><body>${generatedLetter}</body></html>`);
+    w.document.write(`<html><head><title>Dispute Letter</title>
+      <style>body{font-family:Arial,sans-serif;padding:60px;color:#111;max-width:700px;margin:0 auto;white-space:pre-wrap}</style>
+    </head><body>${s.generated}</body></html>`);
     w.document.close();
     w.print();
-    createDisputeMutation.mutate({ bureau: selectedBureau, letterContent: generatedLetter, issueId: selectedIssueId ?? undefined });
-    setSendMode("print");
-    setStep(3);
+    updateSlot(i, { sent: "print" });
+    apiRequest("POST", "/api/disputes", {
+      bureau: s.bureau,
+      letterContent: s.generated,
+      issueId: s.issue?.id ?? null,
+      userId,
+    }).catch(() => null);
+    queryClient.invalidateQueries({ queryKey: ["/api/disputes", userId] });
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(generatedLetter);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const bureauColor = BUREAU_COLORS[selectedBureau];
+  const allSent = slots.every((s) => s.sent !== null);
+  const allGenerated = slots.every((s) => s.generated !== "");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.8)" }}>
-      <div className="w-full max-w-2xl rounded-2xl overflow-hidden" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "rgba(201,168,76,0.12)" }}>
-              <Gavel className="h-4 w-4" style={{ color: "var(--gold)" }} />
-            </div>
-            <div>
-              <h2 className="font-black text-base" style={{ color: "var(--text-primary)" }}>Dispute IQ</h2>
-              <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Step {step} of 3 · Credits: {credits === "unlimited" ? "Unlimited" : credits + "/mo"}
-              </div>
-            </div>
-          </div>
-          <button onClick={onClose} style={{ color: "var(--text-muted)" }}>
-            <X className="h-5 w-5" />
-          </button>
+      {/* Wizard header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="ss-overline mb-1">Dispute IQ</div>
+          <h2 className="text-xl font-black" style={{ color: "var(--text-primary)" }}>
+            {step === 1 ? "Select Items to Dispute" : step === 2 ? "Review & Send Letters" : "Dispute Summary"}
+          </h2>
         </div>
+        <button onClick={onDone} className="ss-btn-ghost !py-2 !px-3 text-sm">
+          <X className="h-4 w-4" />
+          Cancel
+        </button>
+      </div>
 
-        {/* Step indicators */}
-        <div className="flex px-6 py-3 gap-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-          {([1, 2, 3] as WizardStep[]).map((s) => (
-            <div key={s} className="flex items-center gap-2">
+      {/* Step progress */}
+      <div className="flex items-center gap-2">
+        {([1, 2, 3] as const).map((s, i) => (
+          <div key={s} className="flex items-center gap-2 flex-1">
+            <div className="flex items-center gap-2">
               <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0"
                 style={{
-                  background: s < step ? "linear-gradient(135deg, var(--gold), var(--gold-light))" : s === step ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.04)",
-                  color: s <= step ? (s < step ? "var(--bg-primary)" : "var(--gold)") : "var(--text-muted)",
+                  background: s < step ? "linear-gradient(135deg,var(--gold),var(--gold-light))" : s === step ? "rgba(201,168,76,0.15)" : "var(--bg-elevated)",
+                  color: s < step ? "var(--bg-primary)" : s === step ? "var(--gold)" : "var(--text-muted)",
                   border: s === step ? "1px solid var(--gold)" : "none",
                 }}
               >
-                {s < step ? <Check className="h-3 w-3" /> : s}
+                {s < step ? <Check className="h-3.5 w-3.5" /> : s}
               </div>
-              <span className="text-xs font-semibold" style={{ color: s === step ? "var(--gold)" : "var(--text-muted)" }}>
-                {s === 1 ? "Select" : s === 2 ? "Letter" : "Send"}
+              <span className="text-xs font-semibold hidden sm:block"
+                style={{ color: s === step ? "var(--gold)" : "var(--text-muted)" }}>
+                {s === 1 ? "Select" : s === 2 ? "Generate & Send" : "Summary"}
               </span>
-              {s < 3 && <ChevronRight className="h-3 w-3 shrink-0" style={{ color: "var(--text-muted)" }} />}
             </div>
-          ))}
+            {i < 2 && <div className="h-px flex-1" style={{ background: s < step ? "var(--gold)" : "var(--border-gold)" }} />}
+          </div>
+        ))}
+      </div>
+
+      {/* Plan credit tracker */}
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl"
+        style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
+        <CreditCard className="h-4 w-4 shrink-0" style={{ color: "var(--gold)" }} />
+        <div className="flex-1 text-sm" style={{ color: "var(--text-secondary)" }}>
+          {monthlyCredits === null
+            ? <><span className="font-bold" style={{ color: "var(--gold)" }}>Unlimited</span> dispute letters this month (Elite)</>
+            : <><span className="font-bold" style={{ color: creditsLeft === 0 ? "#E05252" : "var(--gold)" }}>{creditsLeft}</span> of {monthlyCredits} letters remaining this month ({tier.charAt(0).toUpperCase() + tier.slice(1)} plan)</>
+          }
         </div>
+        {monthlyCredits !== null && monthlyCredits > 0 && (
+          <div className="w-24 h-1.5 rounded-full" style={{ background: "var(--bg-elevated)" }}>
+            <div className="h-1.5 rounded-full"
+              style={{ width: `${Math.round(((creditsLeft ?? 0) / monthlyCredits) * 100)}%`, background: "linear-gradient(90deg,var(--gold),var(--gold-light))" }} />
+          </div>
+        )}
+      </div>
 
-        {/* Step 1: Select issue + bureau */}
-        {step === 1 && (
-          <div className="p-6 space-y-5">
-            <div>
-              <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-secondary)" }}>Credit Bureau</label>
-              <div className="grid grid-cols-3 gap-2">
-                {BUREAUS.map((b) => (
-                  <button
-                    key={b}
-                    onClick={() => setSelectedBureau(b)}
-                    className="py-2.5 rounded-xl text-xs font-bold transition-all"
-                    style={{
-                      background: selectedBureau === b ? BUREAU_COLORS[b] : "var(--bg-elevated)",
-                      color: selectedBureau === b ? "#fff" : "var(--text-secondary)",
-                      border: `1px solid ${selectedBureau === b ? BUREAU_COLORS[b] : "var(--border-gold)"}`,
-                    }}
-                  >
-                    {b}
+      {/* ── STEP 1: Select up to 3 issues ── */}
+      {step === 1 && (
+        <div className="space-y-4">
+          {slots.map((slot, i) => (
+            <div key={slot.id} className="rounded-2xl p-5 space-y-4"
+              style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black"
+                    style={{ background: "rgba(201,168,76,0.12)", color: "var(--gold)" }}>{i + 1}</div>
+                  <span className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>Letter {i + 1}</span>
+                </div>
+                {slots.length > 1 && (
+                  <button onClick={() => removeSlot(i)} style={{ color: "var(--text-muted)" }}>
+                    <X className="h-4 w-4" />
                   </button>
-                ))}
+                )}
               </div>
-            </div>
 
-            {creditIssues.length > 0 && (
+              {/* Bureau */}
               <div>
-                <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-secondary)" }}>Select Credit Issue (optional)</label>
-                <div className="space-y-2 max-h-36 overflow-y-auto">
-                  {creditIssues.filter((i) => i.status === "ACTIVE").map((issue) => (
-                    <button
-                      key={issue.id}
-                      onClick={() => {
-                        setSelectedIssueId(selectedIssueId === issue.id ? null : issue.id);
-                        if (issue.creditor) setCreditor(issue.creditor);
-                      }}
-                      className="w-full text-left p-3 rounded-xl flex items-center gap-3 transition-all"
+                <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-secondary)" }}>Credit Bureau</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {BUREAUS.map((b) => (
+                    <button key={b} onClick={() => updateSlot(i, { bureau: b })}
+                      className="py-2 rounded-xl text-xs font-bold transition-all"
                       style={{
-                        background: selectedIssueId === issue.id ? "rgba(201,168,76,0.08)" : "var(--bg-elevated)",
-                        border: `1px solid ${selectedIssueId === issue.id ? "rgba(201,168,76,0.4)" : "var(--border-gold)"}`,
-                      }}
-                    >
-                      <div className="w-5 h-5 rounded border-2 flex items-center justify-center shrink-0"
-                        style={{ borderColor: selectedIssueId === issue.id ? "var(--gold)" : "var(--text-muted)" }}>
-                        {selectedIssueId === issue.id && <Check className="h-3 w-3" style={{ color: "var(--gold)" }} />}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-semibold truncate" style={{ color: "var(--text-primary)" }}>{issue.title}</div>
-                        {issue.creditor && <div className="text-xs truncate" style={{ color: "var(--text-muted)" }}>{issue.creditor}</div>}
-                      </div>
-                      <div className="shrink-0 text-xs font-semibold" style={{ color: "#E05252" }}>{issue.impact} pts</div>
+                        background: slot.bureau === b ? BUREAU_COLORS[b] : "var(--bg-elevated)",
+                        color: slot.bureau === b ? "#fff" : "var(--text-secondary)",
+                        border: `1px solid ${slot.bureau === b ? BUREAU_COLORS[b] : "var(--border-gold)"}`,
+                      }}>
+                      {b}
                     </button>
                   ))}
                 </div>
               </div>
-            )}
 
-            <div>
-              <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-secondary)" }}>
-                Creditor / Account Name {selectedIssueId ? "(pre-filled)" : ""}
-              </label>
-              <input
-                value={creditor}
-                onChange={(e) => setCreditor(e.target.value)}
-                placeholder="e.g. Capital One, Midland Credit"
-                className="w-full px-3 py-2.5 rounded-lg text-sm outline-none"
-                style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)", color: "var(--text-primary)" }}
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-secondary)" }}>Reason for Dispute</label>
-              <select
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg text-sm outline-none appearance-none"
-                style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)", color: "var(--text-primary)" }}
-              >
-                {DISPUTE_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-
-            <button
-              className="ss-btn-primary w-full justify-center"
-              onClick={handleGenerate}
-              disabled={generating}
-            >
-              {generating ? (
-                <>
-                  <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--bg-primary)", borderTopColor: "transparent" }} />
-                  Analyzing & Generating Letter...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  Generate AI Dispute Letter
-                </>
-              )}
-            </button>
-          </div>
-        )}
-
-        {/* Step 2: Review letter + send options */}
-        {step === 2 && (
-          <div className="p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: bureauColor }} />
-                <span className="text-xs font-bold" style={{ color: bureauColor }}>{selectedBureau}</span>
-                <span className="text-xs" style={{ color: "var(--text-muted)" }}>· {reason}</span>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={handleCopy} className="ss-btn-ghost !py-1.5 !px-3 text-xs">
-                  {copied ? <><Check className="h-3 w-3" />Copied</> : <><Copy className="h-3 w-3" />Copy</>}
-                </button>
-              </div>
-            </div>
-
-            <textarea
-              value={generatedLetter}
-              onChange={(e) => setGeneratedLetter(e.target.value)}
-              rows={9}
-              className="w-full px-3 py-2.5 rounded-lg text-xs outline-none resize-none font-mono leading-relaxed"
-              style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)", color: "var(--text-primary)" }}
-            />
-
-            <div className="text-xs font-semibold mb-2" style={{ color: "var(--text-secondary)" }}>How would you like to send it?</div>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={handleSendLOB}
-                disabled={sending}
-                className="p-4 rounded-xl text-left transition-all"
-                style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.3)" }}
-              >
-                <Send className="h-5 w-5 mb-2" style={{ color: "var(--gold)" }} />
-                <div className="font-bold text-sm mb-0.5" style={{ color: "var(--text-primary)" }}>
-                  {sending ? "Sending..." : "Send via Certified Mail"}
+              {/* Issue picker (optional) */}
+              {creditIssues.filter((x) => x.status === "ACTIVE").length > 0 && (
+                <div>
+                  <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-secondary)" }}>Credit Issue (optional)</label>
+                  <select
+                    value={slot.issue?.id ?? ""}
+                    onChange={(e) => {
+                      const found = creditIssues.find((x) => String(x.id) === e.target.value) ?? null;
+                      updateSlot(i, { issue: found, creditor: found?.creditor ?? slot.creditor });
+                    }}
+                    className="w-full px-3 py-2.5 rounded-lg text-sm outline-none appearance-none"
+                    style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)", color: "var(--text-primary)" }}>
+                    <option value="">-- Select an issue --</option>
+                    {creditIssues.filter((x) => x.status === "ACTIVE").map((issue) => (
+                      <option key={issue.id} value={issue.id}>{issue.title}{issue.creditor ? ` — ${issue.creditor}` : ""}</option>
+                    ))}
+                  </select>
                 </div>
-                <div className="text-xs" style={{ color: "var(--text-muted)" }}>USPS tracking included</div>
-              </button>
-              <button
-                onClick={handlePrint}
-                className="p-4 rounded-xl text-left transition-all"
-                style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)" }}
-              >
-                <Printer className="h-5 w-5 mb-2" style={{ color: "var(--text-secondary)" }} />
-                <div className="font-bold text-sm mb-0.5" style={{ color: "var(--text-primary)" }}>Print & Mail Yourself</div>
-                <div className="text-xs" style={{ color: "var(--text-muted)" }}>Download PDF to mail</div>
-              </button>
-            </div>
+              )}
 
-            <button onClick={() => setStep(1)} className="ss-btn-ghost !py-2 !px-4 text-sm">
-              <ArrowLeft className="h-4 w-4" />
-              Back
+              {/* Creditor */}
+              <div>
+                <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-secondary)" }}>Creditor / Account Name</label>
+                <input value={slot.creditor} onChange={(e) => updateSlot(i, { creditor: e.target.value })}
+                  placeholder="e.g. Capital One, Midland Credit"
+                  className="w-full px-3 py-2.5 rounded-lg text-sm outline-none"
+                  style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)", color: "var(--text-primary)" }} />
+              </div>
+
+              {/* Reason */}
+              <div>
+                <label className="text-xs font-semibold mb-2 block" style={{ color: "var(--text-secondary)" }}>Dispute Reason</label>
+                <select value={slot.reason} onChange={(e) => updateSlot(i, { reason: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-lg text-sm outline-none appearance-none"
+                  style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)", color: "var(--text-primary)" }}>
+                  {DISPUTE_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+            </div>
+          ))}
+
+          {slots.length < MAX_LETTERS && MAX_LETTERS > 1 && (
+            <button onClick={addSlot}
+              className="w-full py-3 rounded-xl text-sm font-semibold border-2 border-dashed transition-all"
+              style={{ borderColor: "var(--border-gold)", color: "var(--text-secondary)", background: "transparent" }}>
+              <Plus className="h-4 w-4 inline mr-1" />
+              Add another letter ({slots.length}/{MAX_LETTERS})
             </button>
-          </div>
-        )}
+          )}
 
-        {/* Step 3: Confirmation */}
-        {step === 3 && (
-          <div className="p-6 text-center space-y-5">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto"
-              style={{ background: "rgba(46,204,138,0.1)" }}>
-              <CheckCircle className="h-8 w-8" style={{ color: "#2ECC8A" }} />
-            </div>
-            <div>
-              <h3 className="text-lg font-black mb-1" style={{ color: "var(--text-primary)" }}>
-                {sendMode === "lob" ? "Letter Sent!" : "Letter Saved!"}
-              </h3>
-              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                {sendMode === "lob"
-                  ? `Your dispute letter has been sent to ${selectedBureau} via USPS Certified Mail.`
-                  : `Your dispute letter has been saved. Mail it yourself to ${selectedBureau}.`}
-              </p>
-            </div>
+          <button onClick={handleGenerateAll} className="ss-btn-primary w-full justify-center">
+            <Sparkles className="h-4 w-4" />
+            Generate {slots.length} AI Dispute Letter{slots.length > 1 ? "s" : ""}
+          </button>
+        </div>
+      )}
 
-            {sendMode === "lob" && trackingNumber && (
-              <div className="rounded-xl p-4" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)" }}>
-                <div className="text-xs font-semibold mb-1" style={{ color: "var(--text-muted)" }}>Tracking Number</div>
-                <div className="font-black text-base mb-1" style={{ color: "var(--gold)" }}>{trackingNumber}</div>
-                {deliveryDate && (
-                  <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                    Expected delivery: {deliveryDate}
+      {/* ── STEP 2: Review letters + per-letter send ── */}
+      {step === 2 && (
+        <div className="space-y-5">
+          {slots.map((slot, i) => {
+            const bureauColor = BUREAU_COLORS[slot.bureau];
+            const creditor = (slot.issue?.creditor ?? slot.creditor) || "the account";
+            return (
+              <div key={slot.id} className="rounded-2xl overflow-hidden"
+                style={{ background: "var(--bg-surface)", border: `1px solid ${slot.sent ? "rgba(46,204,138,0.3)" : "var(--border-gold)"}` }}>
+                {/* Letter card header */}
+                <div className="flex items-center gap-3 px-5 py-3 cursor-pointer"
+                  style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+                  onClick={() => updateSlot(i, { expanded: !slot.expanded })}>
+                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: bureauColor }} />
+                  <span className="font-bold text-sm flex-1" style={{ color: "var(--text-primary)" }}>
+                    Letter {i + 1} — {slot.bureau} · {creditor}
+                  </span>
+                  {slot.sent && (
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                      style={{ background: "rgba(46,204,138,0.12)", color: "#2ECC8A" }}>
+                      {slot.sent === "lob" ? "Sent" : "Printed"}
+                    </span>
+                  )}
+                  <ChevronDown className="h-4 w-4 shrink-0 transition-transform"
+                    style={{ color: "var(--text-muted)", transform: slot.expanded ? "rotate(180deg)" : "rotate(0deg)" }} />
+                </div>
+
+                {slot.expanded && (
+                  <div className="p-5 space-y-4">
+                    {slot.generating ? (
+                      <div className="py-8 flex flex-col items-center gap-3">
+                        <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
+                          style={{ borderColor: "var(--gold)", borderTopColor: "transparent" }} />
+                        <span className="text-sm" style={{ color: "var(--text-muted)" }}>Generating letter...</span>
+                      </div>
+                    ) : slot.generated ? (
+                      <>
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => {
+                            navigator.clipboard.writeText(slot.generated);
+                            updateSlot(i, { copied: true });
+                            setTimeout(() => updateSlot(i, { copied: false }), 2000);
+                          }} className="ss-btn-ghost !py-1.5 !px-3 text-xs">
+                            {slot.copied ? <><Check className="h-3 w-3" />Copied</> : <><Copy className="h-3 w-3" />Copy</>}
+                          </button>
+                        </div>
+                        <textarea
+                          value={slot.generated}
+                          onChange={(e) => updateSlot(i, { generated: e.target.value })}
+                          rows={8}
+                          className="w-full px-3 py-2.5 rounded-lg text-xs outline-none resize-none font-mono leading-relaxed"
+                          style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)", color: "var(--text-primary)" }}
+                        />
+
+                        {/* Per-letter send options */}
+                        {!slot.sent ? (
+                          <div className="grid grid-cols-2 gap-3">
+                            <button onClick={() => sendLOB(i)} disabled={slot.generating}
+                              className="p-3 rounded-xl text-left transition-all"
+                              style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.3)" }}>
+                              <Send className="h-4 w-4 mb-1.5" style={{ color: "var(--gold)" }} />
+                              <div className="font-bold text-xs mb-0.5" style={{ color: "var(--text-primary)" }}>
+                                {slot.generating ? "Sending..." : "Certified Mail"}
+                              </div>
+                              <div className="text-xs" style={{ color: "var(--text-muted)" }}>USPS tracking included</div>
+                            </button>
+                            <button onClick={() => printSlot(i)}
+                              className="p-3 rounded-xl text-left transition-all"
+                              style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)" }}>
+                              <Printer className="h-4 w-4 mb-1.5" style={{ color: "var(--text-secondary)" }} />
+                              <div className="font-bold text-xs mb-0.5" style={{ color: "var(--text-primary)" }}>Print & Mail</div>
+                              <div className="text-xs" style={{ color: "var(--text-muted)" }}>Download PDF to mail yourself</div>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="rounded-xl p-4"
+                            style={{ background: "rgba(46,204,138,0.06)", border: "1px solid rgba(46,204,138,0.25)" }}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <CheckCircle className="h-4 w-4" style={{ color: "#2ECC8A" }} />
+                              <span className="font-semibold text-sm" style={{ color: "#2ECC8A" }}>
+                                {slot.sent === "lob" ? "Sent via Certified Mail" : "Printed"}
+                              </span>
+                            </div>
+                            {slot.tracking && (
+                              <div className="text-xs space-y-0.5" style={{ color: "var(--text-secondary)" }}>
+                                <div>Tracking: <span className="font-mono font-bold" style={{ color: "var(--gold)" }}>{slot.tracking}</span></div>
+                                {slot.deliveryDate && <div>Expected: {slot.deliveryDate}</div>}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    ) : null}
                   </div>
                 )}
               </div>
-            )}
+            );
+          })}
 
-            <div className="rounded-xl p-4 text-left" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)" }}>
-              <div className="text-xs font-semibold mb-1" style={{ color: "var(--gold)" }}>What happens next?</div>
-              <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                {selectedBureau} has 30 days under FCRA § 1681i to investigate and respond. If unverified, the item must be deleted.
-              </div>
-            </div>
-
-            <button onClick={onClose} className="ss-btn-primary w-full justify-center">
-              Done — View My Disputes
+          <div className="flex gap-3">
+            <button onClick={() => setStep(1)} className="ss-btn-ghost !py-2.5 !px-5 text-sm">
+              <ArrowLeft className="h-4 w-4" />Back
             </button>
+            {allSent && (
+              <button onClick={() => setStep(3)} className="ss-btn-primary flex-1 justify-center">
+                View Summary
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* ── STEP 3: Summary ── */}
+      {step === 3 && (
+        <div className="space-y-4">
+          <div className="rounded-2xl p-6 text-center"
+            style={{ background: "var(--bg-surface)", border: "1px solid rgba(46,204,138,0.3)" }}>
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
+              style={{ background: "rgba(46,204,138,0.1)" }}>
+              <CheckCircle className="h-8 w-8" style={{ color: "#2ECC8A" }} />
+            </div>
+            <h3 className="text-lg font-black mb-1" style={{ color: "var(--text-primary)" }}>
+              {slots.length} Dispute Letter{slots.length > 1 ? "s" : ""} Filed
+            </h3>
+            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+              Bureaus have 30 days under FCRA § 1681i to investigate and respond.
+            </p>
+          </div>
+
+          {slots.map((slot, i) => (
+            <div key={slot.id} className="flex items-start gap-3 p-4 rounded-xl"
+              style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
+              <div className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" style={{ background: BUREAU_COLORS[slot.bureau] }} />
+              <div className="flex-1">
+                <div className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
+                  {slot.bureau} — {(slot.issue?.creditor ?? slot.creditor) || "Account"}
+                </div>
+                <div className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
+                  {slot.sent === "lob"
+                    ? `Sent via Certified Mail${slot.tracking ? ` · ${slot.tracking}` : ""}`
+                    : "Printed — mail yourself"}
+                </div>
+              </div>
+              <CheckCircle className="h-4 w-4 shrink-0" style={{ color: "#2ECC8A" }} />
+            </div>
+          ))}
+
+          <div className="rounded-xl p-4"
+            style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)" }}>
+            <div className="text-xs font-semibold mb-1" style={{ color: "var(--gold)" }}>Next Steps</div>
+            <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
+              If a bureau cannot verify the item within 30 days, it must be removed. If they verify incorrectly, escalate to the CFPB.
+            </div>
+          </div>
+
+          <button onClick={onDone} className="ss-btn-primary w-full justify-center">
+            Done — View My Disputes
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
 /* ── Main Page ──────────────────────────────────────────────────────────── */
+
 export default function DisputeIQ() {
   const { user, canCreateDisputes } = useUserContext();
-  const userId = user?.id || 0;
+  const userId = user?.id ?? 0;
+  const tier: string = (user as User & { subscriptionTier?: string })?.subscriptionTier ?? "none";
 
-  const [showWizard, setShowWizard] = useState(false);
+  const [wizardActive, setWizardActive] = useState(false);
 
   const { data: disputes = [], isLoading } = useQuery<Dispute[]>({
     queryKey: ["/api/disputes", userId],
@@ -418,28 +565,44 @@ export default function DisputeIQ() {
     queryKey: ["/api/credit-issues", userId],
   });
 
-  const pending = disputes.filter((d) => ["PENDING", "SENT", "DELIVERED"].includes(d.status));
+  const pending  = disputes.filter((d) => ["PENDING", "SENT", "DELIVERED"].includes(d.status));
   const resolved = disputes.filter((d) => d.status === "RESOLVED");
   const activeIssues = creditIssues.filter((i) => i.status === "ACTIVE");
 
-  const tier = (user as any)?.subscriptionTier || "none";
+  /* Count letters sent THIS calendar month for credit tracker */
+  const now = new Date();
+  const creditsUsed = disputes.filter((d) => {
+    const sent = new Date(d.dateSent);
+    return sent.getMonth() === now.getMonth() && sent.getFullYear() === now.getFullYear();
+  }).length;
 
   const steps = [
-    { n: 1, label: "Identify", desc: "Find inaccurate items", done: activeIssues.length > 0 },
-    { n: 2, label: "Generate", desc: "AI writes your letter", done: disputes.length > 0 },
-    { n: 3, label: "Send", desc: "Certified mail to bureau", done: pending.length > 0 || resolved.length > 0 },
-    { n: 4, label: "Track", desc: "Monitor 30-day window", done: resolved.length > 0 },
+    { n: 1, label: "Identify",  desc: "Find inaccurate items",  done: activeIssues.length > 0 },
+    { n: 2, label: "Generate",  desc: "AI writes your letter",   done: disputes.length > 0 },
+    { n: 3, label: "Send",      desc: "Certified mail to bureau", done: pending.length > 0 || resolved.length > 0 },
+    { n: 4, label: "Track",     desc: "Monitor 30-day window",   done: resolved.length > 0 },
   ];
+
+  if (wizardActive) {
+    return (
+      <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
+        <DisputeWizard
+          creditIssues={creditIssues}
+          tier={tier}
+          creditsUsed={creditsUsed}
+          onDone={() => setWizardActive(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
         {/* ── Header ── */}
-        <div
-          className="rounded-2xl p-6 sm:p-8 relative overflow-hidden"
-          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}
-        >
+        <div className="rounded-2xl p-6 sm:p-8 relative overflow-hidden"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
           <div className="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none"
             style={{ background: "radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)" }} />
           <div className="relative flex items-start justify-between gap-6 flex-wrap">
@@ -449,11 +612,11 @@ export default function DisputeIQ() {
                 Dispute IQ
               </h1>
               <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                AI-generated dispute letters and step-by-step guidance.
+                AI-generated dispute letters — up to 3 at a time — with USPS Certified Mail.
               </p>
             </div>
             {canCreateDisputes && (
-              <button className="ss-btn-primary shrink-0" onClick={() => setShowWizard(true)}>
+              <button className="ss-btn-primary shrink-0" onClick={() => setWizardActive(true)}>
                 <Plus className="h-4 w-4" />
                 New Dispute
               </button>
@@ -461,26 +624,22 @@ export default function DisputeIQ() {
           </div>
         </div>
 
-        {/* ── Journey Steps ── */}
+        {/* ── Journey ── */}
         <div className="rounded-2xl p-6" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
           <div className="ss-overline mb-5">Your Dispute Journey</div>
-          <div className="flex items-start gap-0 overflow-x-auto pb-2">
+          <div className="flex items-start overflow-x-auto pb-2">
             {steps.map((step, i) => (
-              <div key={step.n} className="flex items-center flex-1 min-w-[100px]">
+              <div key={step.n} className="flex items-center flex-1 min-w-[90px]">
                 <div className="flex flex-col items-center text-center flex-1">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black mb-2 transition-all"
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black mb-2 transition-all"
                     style={{
-                      background: step.done ? "linear-gradient(135deg, var(--gold), var(--gold-light))" : "var(--bg-elevated)",
+                      background: step.done ? "linear-gradient(135deg,var(--gold),var(--gold-light))" : "var(--bg-elevated)",
                       color: step.done ? "var(--bg-primary)" : "var(--text-muted)",
                       border: step.done ? "none" : "1px solid var(--border-gold)",
-                    }}
-                  >
+                    }}>
                     {step.done ? <CheckCircle className="h-5 w-5" /> : step.n}
                   </div>
-                  <div className="text-xs font-bold mb-0.5" style={{ color: step.done ? "var(--gold)" : "var(--text-primary)" }}>
-                    {step.label}
-                  </div>
+                  <div className="text-xs font-bold mb-0.5" style={{ color: step.done ? "var(--gold)" : "var(--text-primary)" }}>{step.label}</div>
                   <div className="text-xs" style={{ color: "var(--text-muted)" }}>{step.desc}</div>
                 </div>
                 {i < steps.length - 1 && (
@@ -496,12 +655,12 @@ export default function DisputeIQ() {
         <div className="grid grid-cols-3 gap-4">
           {[
             { label: "Active Issues", value: activeIssues.length, color: "#E05252", icon: AlertCircle },
-            { label: "In Progress", value: pending.length, color: "#E8A020", icon: Clock },
-            { label: "Resolved", value: resolved.length, color: "#2ECC8A", icon: CheckCircle },
+            { label: "In Progress",   value: pending.length,      color: "#E8A020", icon: Clock },
+            { label: "Resolved",      value: resolved.length,     color: "#2ECC8A", icon: CheckCircle },
           ].map(({ label, value, color, icon: Icon }) => (
-            <div key={label} className="ss-card !p-5 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${color}12` }}>
-                <Icon className="h-5 w-5" style={{ color }} />
+            <div key={label} className="ss-card !p-5 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${color}12` }}>
+                <Icon className="h-4 w-4" style={{ color }} />
               </div>
               <div>
                 <div className="text-2xl font-black" style={{ color }}>{value}</div>
@@ -518,7 +677,8 @@ export default function DisputeIQ() {
               <div className="ss-overline mb-1">Active</div>
               <h2 className="font-black text-lg" style={{ color: "var(--text-primary)" }}>Active Disputes</h2>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "rgba(232,160,32,0.12)", color: "#E8A020" }}>
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
+              style={{ background: "rgba(232,160,32,0.12)", color: "#E8A020" }}>
               {pending.length} pending
             </span>
           </div>
@@ -527,17 +687,18 @@ export default function DisputeIQ() {
             <div className="py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>Loading...</div>
           ) : pending.length === 0 ? (
             <div className="py-10 text-center">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: "rgba(201,168,76,0.08)" }}>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
+                style={{ background: "rgba(201,168,76,0.08)" }}>
                 <Gavel className="h-7 w-7" style={{ color: "var(--gold)" }} />
               </div>
               <div className="font-semibold mb-1" style={{ color: "var(--text-primary)" }}>No Active Disputes</div>
               <div className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
                 {activeIssues.length > 0
-                  ? `You have ${activeIssues.length} issue${activeIssues.length > 1 ? "s" : ""} ready to dispute.`
+                  ? `${activeIssues.length} credit issue${activeIssues.length > 1 ? "s" : ""} ready to dispute.`
                   : "No credit issues found to dispute."}
               </div>
               {canCreateDisputes && (
-                <button className="ss-btn-primary text-sm !py-2.5 !px-5" onClick={() => setShowWizard(true)}>
+                <button className="ss-btn-primary text-sm !py-2.5 !px-5" onClick={() => setWizardActive(true)}>
                   <Plus className="h-4 w-4" />
                   File Your First Dispute
                 </button>
@@ -546,16 +707,16 @@ export default function DisputeIQ() {
           ) : (
             <div className="space-y-3">
               {pending.map((dispute) => {
-                const issue = creditIssues.find((i) => i.id === dispute.issueId);
-                const bureauColor = BUREAU_COLORS[dispute.bureau as Bureau] || "var(--gold)";
+                const issue = creditIssues.find((x) => x.id === dispute.issueId);
+                const bc = BUREAU_COLORS[dispute.bureau as Bureau] ?? "var(--gold)";
                 return (
                   <div key={dispute.id} className="flex items-start gap-4 p-4 rounded-xl"
                     style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)" }}>
-                    <div className="w-3 h-3 rounded-full mt-1.5 animate-pulse shrink-0" style={{ background: bureauColor }} />
+                    <div className="w-3 h-3 rounded-full mt-1.5 animate-pulse shrink-0" style={{ background: bc }} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <div className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
-                          {dispute.bureau} — {issue?.title || "Dispute"}
+                          {dispute.bureau} — {issue?.title ?? "Dispute"}
                         </div>
                         <StatusBadge status={dispute.status} />
                       </div>
@@ -572,18 +733,19 @@ export default function DisputeIQ() {
 
         {/* ── Resolved ── */}
         {resolved.length > 0 && (
-          <div className="rounded-2xl p-6" style={{ background: "var(--bg-surface)", border: "1px solid rgba(46,204,138,0.2)" }}>
-            <div className="ss-overline mb-5">Wins</div>
+          <div className="rounded-2xl p-6"
+            style={{ background: "var(--bg-surface)", border: "1px solid rgba(46,204,138,0.2)" }}>
+            <div className="ss-overline mb-4">Wins</div>
             <div className="space-y-3">
               {resolved.map((dispute) => {
-                const issue = creditIssues.find((i) => i.id === dispute.issueId);
+                const issue = creditIssues.find((x) => x.id === dispute.issueId);
                 return (
                   <div key={dispute.id} className="flex items-start gap-4 p-4 rounded-xl"
                     style={{ background: "var(--bg-elevated)", border: "1px solid rgba(46,204,138,0.15)" }}>
                     <CheckCircle className="h-5 w-5 mt-0.5 shrink-0" style={{ color: "#2ECC8A" }} />
                     <div className="flex-1">
                       <div className="font-semibold text-sm mb-0.5" style={{ color: "var(--text-primary)" }}>
-                        {dispute.bureau} — {issue?.title || "Dispute"}
+                        {dispute.bureau} — {issue?.title ?? "Dispute"}
                       </div>
                       <div className="text-xs" style={{ color: "#2ECC8A" }}>Successfully resolved</div>
                     </div>
@@ -595,14 +757,14 @@ export default function DisputeIQ() {
           </div>
         )}
 
-        {/* ── FCRA Tips ── */}
+        {/* ── FCRA Rights ── */}
         <div className="rounded-2xl p-6" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
           <div className="ss-overline mb-5">Know Your Rights</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { icon: Shield, title: "30-Day Rule", body: "Bureaus must investigate within 30 days of receiving your dispute under FCRA § 1681i." },
-              { icon: FileText, title: "Free Corrections", body: "If an error is found, correction and removal are completely free — by law." },
-              { icon: Sparkles, title: "Escalate to CFPB", body: "If a bureau won't remove it, escalate to the CFPB for additional leverage." },
+              { icon: Shield,   title: "30-Day Rule",         body: "Bureaus must investigate within 30 days of receiving your dispute under FCRA § 1681i." },
+              { icon: FileText, title: "Free Corrections",    body: "If an error is found, correction and removal are completely free — by law." },
+              { icon: Sparkles, title: "Escalate to CFPB",    body: "If a bureau won't remove it, file a complaint with the CFPB for additional leverage." },
             ].map(({ icon: Icon, title, body }) => (
               <div key={title} className="p-4 rounded-xl" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)" }}>
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style={{ background: "rgba(201,168,76,0.1)" }}>
@@ -617,15 +779,6 @@ export default function DisputeIQ() {
 
         <div className="h-8" />
       </div>
-
-      {showWizard && (
-        <DisputeWizard
-          creditIssues={creditIssues}
-          tier={tier}
-          onClose={() => setShowWizard(false)}
-          onSuccess={() => setShowWizard(false)}
-        />
-      )}
     </div>
   );
 }

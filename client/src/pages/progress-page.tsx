@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useUserContext } from "@/hooks/use-user-context";
-import { CheckCircle, FileText, Activity, Calendar, Printer, TrendingUp } from "lucide-react";
+import { CheckCircle, FileText, Activity, Calendar, Printer, Mail, BookOpen, Shield } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { CreditScoreHistory, Dispute, CreditIssue } from "@shared/schema";
 
@@ -24,6 +24,25 @@ const BUREAU_COLORS: Record<string, string> = {
   Equifax: "#E12726",
   TransUnion: "#662D8C",
 };
+
+/* Infer dispute method from letter content */
+function inferMethod(letterContent: string | null): { label: string; icon: typeof Mail } {
+  const content = (letterContent ?? "").toLowerCase();
+  if (content.includes("goodwill")) return { label: "Goodwill Letter", icon: BookOpen };
+  if (content.includes("validat")) return { label: "Validation Request", icon: Shield };
+  return { label: "Dispute Letter", icon: Mail };
+}
+
+function DisputeMethodBadge({ letterContent }: { letterContent: string | null }) {
+  const { label, icon: Icon } = inferMethod(letterContent);
+  return (
+    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded"
+      style={{ background: "rgba(255,255,255,0.04)", color: "var(--text-muted)" }}>
+      <Icon className="h-3 w-3" />
+      {label}
+    </span>
+  );
+}
 
 export default function ProgressPage() {
   const { user } = useUserContext();
@@ -226,9 +245,7 @@ export default function ProgressPage() {
                             Removed {new Date(dispute.dateSent).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                           </span>
                         )}
-                        <span className="text-xs px-2 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.04)", color: "var(--text-muted)" }}>
-                          Certified Mail
-                        </span>
+                        <DisputeMethodBadge letterContent={dispute.letterContent} />
                       </div>
                     </div>
                     <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"

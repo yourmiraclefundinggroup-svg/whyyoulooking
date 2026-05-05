@@ -27,6 +27,16 @@ interface Invoice {
   hosted_invoice_url: string;
 }
 
+interface PaymentMethod {
+  id: string;
+  card: {
+    last4: string;
+    brand: string;
+    exp_month: number;
+    exp_year: number;
+  };
+}
+
 const PLAN_ICONS: Record<string, typeof Star> = {
   Starter: Zap,
   Pro: Star,
@@ -45,7 +55,7 @@ export default function Billing() {
     queryKey: ["/api/stripe/invoices"],
   });
 
-  const { data: paymentMethods = [], isLoading: paymentMethodsLoading } = useQuery({
+  const { data: paymentMethods = [], isLoading: paymentMethodsLoading } = useQuery<PaymentMethod[]>({
     queryKey: ["/api/stripe/payment-methods"],
   });
 
@@ -214,9 +224,9 @@ export default function Billing() {
               style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}
             >
               <div className="ss-overline mb-4">Payment Method</div>
-              {(paymentMethods as any[]).length > 0 ? (
+              {paymentMethods.length > 0 ? (
                 <div className="space-y-3 mb-4">
-                  {(paymentMethods as any[]).map((method: any) => (
+                  {paymentMethods.map((method) => (
                     <div
                       key={method.id}
                       className="flex items-center gap-3 p-3 rounded-xl"
