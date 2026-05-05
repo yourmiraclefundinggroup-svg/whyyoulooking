@@ -8795,7 +8795,23 @@ ${denialLetterText}`
         arrayUserId: enrollment?.arrayUserId || null,
         productCodes: enrollment?.productCodes || [],
         enrolledAt: enrollment?.enrolledAt || null,
+        welcomeShown: !!enrollment?.welcomeShownAt,
       });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/array/enrollment/welcome-shown — mark the post-enrollment welcome banner as seen
+  app.post("/api/array/enrollment/welcome-shown", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const { arrayEnrollments } = await import("@shared/schema");
+      await db
+        .update(arrayEnrollments)
+        .set({ welcomeShownAt: new Date() })
+        .where(eq(arrayEnrollments.userId, user.id));
+      res.json({ ok: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

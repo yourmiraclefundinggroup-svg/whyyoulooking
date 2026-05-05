@@ -1268,9 +1268,10 @@ export const arrayEnrollments = pgTable("array_enrollments", {
   enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
   productCodes: text("product_codes").array().notNull().default([]),
   lastTokenIssuedAt: timestamp("last_token_issued_at"),
+  welcomeShownAt: timestamp("welcome_shown_at"),
 });
 
-export const insertArrayEnrollmentSchema = createInsertSchema(arrayEnrollments).omit({ id: true, enrolledAt: true, lastTokenIssuedAt: true });
+export const insertArrayEnrollmentSchema = createInsertSchema(arrayEnrollments).omit({ id: true, enrolledAt: true, lastTokenIssuedAt: true, welcomeShownAt: true });
 export type ArrayEnrollment = typeof arrayEnrollments.$inferSelect;
 export type InsertArrayEnrollment = z.infer<typeof insertArrayEnrollmentSchema>;
 

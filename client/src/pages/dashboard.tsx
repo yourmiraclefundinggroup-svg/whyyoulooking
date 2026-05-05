@@ -32,6 +32,7 @@ import { CreditCoachAI } from "@/components/dashboard/credit-coach-ai";
 import { VictoryRoom } from "@/components/dashboard/victory-room";
 import { ScoreMap } from "@/components/dashboard/score-map";
 import { ReferralEngine } from "@/components/dashboard/referral-engine";
+import { ArrayWelcomeBanner } from "@/components/dashboard/array-welcome-banner";
 
 import type { ScoreData } from "@/components/dashboard/score-hero";
 import type { DisputeTrackerData } from "@/components/dashboard/dispute-tracker";
@@ -205,6 +206,7 @@ interface ArrayEnrollmentData {
   arrayUserId: string | null;
   productCodes: string[];
   enrolledAt: string | null;
+  welcomeShown: boolean;
 }
 
 // ─── Dashboard Component ────────────────────────────────────────────────────
@@ -346,6 +348,17 @@ export default function Dashboard() {
             </p>
           </div>
         </div>
+
+        {/* Array credit profile welcome banner — shown once after enrollment */}
+        {user && arrayEnrollment?.enrolled && (
+          <ArrayWelcomeBanner
+            userId={user.id}
+            firstName={user.firstName ?? ""}
+            productCodes={arrayEnrollment.productCodes}
+            enrolledAt={arrayEnrollment.enrolledAt}
+            welcomeShown={arrayEnrollment.welcomeShown ?? false}
+          />
+        )}
 
         {/* Sample data banner — shown until admin uploads real credit report */}
         {showMockData && (
