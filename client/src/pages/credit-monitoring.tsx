@@ -461,6 +461,72 @@ export default function CreditMonitoring() {
 
             {activeSection === "alerts" && (
               <div className="space-y-5">
+
+                {/* ── PII / Personal Information on File card ──────────────── */}
+                <div className="rounded-2xl overflow-hidden"
+                  style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
+                  <div className="flex items-center gap-3 px-5 py-3.5 border-b"
+                    style={{ borderColor: "var(--border-gold)" }}>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ background: "rgba(201,168,76,0.1)" }}>
+                      <Eye className="h-4 w-4" style={{ color: "var(--gold)" }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                        Personal Information on File
+                      </p>
+                      <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                        Name, address &amp; employer data reported to bureaus
+                      </p>
+                    </div>
+                    <span className="ml-auto text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
+                      Powered by ScoreShift
+                    </span>
+                  </div>
+                  <div className="p-5 space-y-3">
+                    <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                      Incorrect personal information (name variations, outdated addresses, wrong employers)
+                      can be disputed directly with the bureaus under{" "}
+                      <span className="font-semibold" style={{ color: "var(--text-primary)" }}>FCRA §1681i</span>.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {(["Experian", "Equifax", "TransUnion"] as const).map((bureau) => {
+                        const colors: Record<string, string> = {
+                          Experian: "#0062FF", Equifax: "#E12726", TransUnion: "#662D8C",
+                        };
+                        return (
+                          <div key={bureau} className="rounded-xl p-3 flex items-center gap-2.5"
+                            style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)" }}>
+                            <div className="w-2 h-2 rounded-full shrink-0"
+                              style={{ background: colors[bureau] }} />
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold truncate"
+                                style={{ color: colors[bureau] }}>{bureau}</div>
+                              <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                                {isEnrolled ? "Report loaded" : "Connect to view"}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {isEnrolled ? (
+                      <button
+                        className="ss-btn-ghost text-xs !py-2"
+                        onClick={() => setActiveSection("report")}
+                      >
+                        View full report for PII details
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </button>
+                    ) : (
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        Set up your credit profile above to view PII on file at each bureau.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* ── Identity Theft Protection ─────────────────────────── */}
                 {access.canAccess(FEATURES.CREDIT_ALERTS) && enrollment?.productCodes?.some((c) =>
                   ["exp3bStandardMonitoring", "creditScoreChangeAlertExp"].includes(c)
                 ) ? (

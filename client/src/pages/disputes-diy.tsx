@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useToast } from "@/hooks/use-toast";
@@ -8,9 +8,16 @@ import type { User } from "@shared/schema";
 import {
   Gavel, Plus, Clock, CheckCircle, FileText, Sparkles, Shield, AlertCircle,
   X, ArrowRight, ArrowLeft, Printer, Send, Copy, Check, ChevronRight,
-  ChevronDown, CreditCard,
+  ChevronDown, CreditCard, Brain, FileSearch,
 } from "lucide-react";
 import type { CreditIssue, Dispute } from "@shared/schema";
+import {
+  useArrayScript,
+  ARRAY_SANDBOX_APP_KEY,
+  ARRAY_SANDBOX_API_URL,
+  ARRAY_SANDBOX_TOKENS,
+} from "@/hooks/use-array-script";
+import { AICreditAnalysis } from "@/components/ai-credit-analysis";
 
 /* ── Constants ──────────────────────────────────────────────────────────── */
 
@@ -157,6 +164,44 @@ function freshSlot(i: number): LetterSlot {
   };
 }
 
+/* ── Inline Array credit-report panel (no Array branding) ─────────────── */
+
+function ArrayCreditReportPanel({
+  scriptReady,
+}: {
+  scriptReady: boolean;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || !ARRAY_SANDBOX_APP_KEY || !scriptReady) return;
+    containerRef.current.innerHTML = "";
+    const el = document.createElement("array-credit-report");
+    el.setAttribute("appKey", ARRAY_SANDBOX_APP_KEY);
+    el.setAttribute("apiUrl", ARRAY_SANDBOX_API_URL);
+    el.setAttribute("sandbox", "true");
+    el.setAttribute("userToken", ARRAY_SANDBOX_TOKENS.default ?? "");
+    el.setAttribute("defaultBureau", "all");
+    containerRef.current.appendChild(el);
+    return () => { if (containerRef.current) containerRef.current.innerHTML = ""; };
+  }, [scriptReady]);
+
+  if (!scriptReady) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin"
+          style={{ borderColor: "var(--gold)", borderTopColor: "transparent" }} />
+      </div>
+    );
+  }
+
+  return (
+    /* Suppress Array branding via CSS isolation */
+    <div className="diy-array-report-wrap" ref={containerRef}
+      style={{ minHeight: 200, maxHeight: 480, overflowY: "auto" }} />
+  );
+}
+
 /* ── Wizard (page-level) ────────────────────────────────────────────────── */
 
 function DisputeWizard({
@@ -174,6 +219,14 @@ function DisputeWizard({
   const queryClient = useQueryClient();
   const { user } = useUserContext();
   const userId = user?.id ?? 0;
+
+  const { loaded: scriptReady } = useArrayScript();
+
+  const { data: enrollment } = useQuery<{ enrolled: boolean }>({
+    queryKey: ["/api/array/enrollment"],
+    enabled: !!user,
+  });
+  const isEnrolled = enrollment?.enrolled ?? false;
 
   const monthlyCredits = TIER_MONTHLY_CREDITS[tier] ?? 1;
   const creditsLeft = monthlyCredits === null ? null : Math.max(0, monthlyCredits - creditsUsed);
@@ -436,6 +489,34 @@ function DisputeWizard({
 
         return (
           <div className="space-y-5">
+            {/* ── Live Credit Report (Array) — DIY AI Analysis ── */}
+            {isEnrolled && (
+              <div className="rounded-2xl overflow-hidden"
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
+                <div className="flex items-center gap-3 px-5 py-3.5 border-b"
+                  style={{ borderColor: "var(--border-gold)" }}>
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: "rgba(201,168,76,0.1)" }}>
+                    <FileSearch className="h-4 w-4" style={{ color: "var(--gold)" }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                      Live Credit Report — AI Analysis
+                    </p>
+                    <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                      Your full 3-bureau report, pulled directly for dispute targeting
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-medium shrink-0" style={{ color: "var(--text-muted)" }}>
+                    DIY only
+                  </span>
+                </div>
+                <div className="p-4">
+                  <ArrayCreditReportPanel scriptReady={scriptReady} />
+                </div>
+              </div>
+            )}
+
             {/* Flagged items analysis panel */}
             {activeIssues.length > 0 && (
               <div className="rounded-2xl p-5 space-y-4"
@@ -884,6 +965,33 @@ export default function DisputeIQ() {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* ── AI Credit Analysis (DIY only) ── */}
+        <div className="rounded-2xl overflow-hidden"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
+          <div className="flex items-center gap-3 px-5 py-3.5 border-b"
+            style={{ borderColor: "var(--border-gold)" }}>
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: "rgba(201,168,76,0.1)" }}>
+              <Brain className="h-4 w-4" style={{ color: "var(--gold)" }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                AI Credit Analysis
+              </p>
+              <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                Personalized dispute strategy powered by AI — available to DIY subscribers only
+              </p>
+            </div>
+            <span className="text-[10px] font-medium shrink-0 px-2 py-0.5 rounded-full"
+              style={{ background: "rgba(201,168,76,0.1)", color: "var(--gold)", border: "1px solid var(--border-gold)" }}>
+              DIY
+            </span>
+          </div>
+          <div className="p-4">
+            <AICreditAnalysis userId={userId} />
           </div>
         </div>
 

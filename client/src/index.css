@@ -533,6 +533,19 @@
 .bg-bureau-equifax { background-color: #E12726; }
 .bg-bureau-transunion { background-color: #662D8C; }
 
+/* ── Array branding suppression for DIY credit report panel ─────────────── */
+.diy-array-report-wrap array-credit-report::part(footer),
+.diy-array-report-wrap [class*="array-footer"],
+.diy-array-report-wrap [class*="array-logo"],
+.diy-array-report-wrap [class*="array-branding"],
+.diy-array-report-wrap [data-array-footer] {
+  display: none !important;
+}
+.diy-array-report-wrap {
+  /* Match luxury dark palette */
+  color-scheme: dark;
+}
+
 /* ── SecureChat luxury overrides (client context) ────────────────────────── */
 .ss-chat-wrap [data-radix-scroll-area-viewport],
 .ss-chat-wrap .overflow-y-auto {

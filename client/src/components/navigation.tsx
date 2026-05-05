@@ -12,10 +12,13 @@ export function Navigation() {
 
   const displayUser = user || { firstName: "Loading", lastName: "", accessLevel: "CLIENT_VIEWER" };
 
+  // DIY tab visible for any subscriber (subscriptionTier != none) or admin/beta
+  const isDIYUser = canCreateDisputes;
+
   const clientNavItems = [
     { href: "/credit-repair", label: "Dashboard" },
     { href: "/credit-monitoring", label: "Credit Monitoring" },
-    ...(canCreateDisputes ? [{ href: "/disputes-diy", label: "Disputes" }] : []),
+    ...(isDIYUser ? [{ href: "/disputes-diy", label: "Disputes" }] : []),
     { href: "/debt-navigator", label: "Debt Navigator" },
     { href: "/student-loans", label: "Student Loan Aid" },
     { href: "/progress", label: "Progress" },

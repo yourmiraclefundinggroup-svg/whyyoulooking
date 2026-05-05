@@ -46,11 +46,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const isBetaTester = user?.accessLevel === 'BETA_TESTER';
   const isClientViewer = user?.accessLevel === 'CLIENT_VIEWER';
 
-  // Permission checks
-  const canCreateDisputes = isAdmin || isBetaTester;
-  const canAccessAI = isAdmin || isBetaTester;
-  const canAccessCreditBuilding = isAdmin || isBetaTester;
-  const canAccessEducation = isAdmin || isBetaTester;
+  // DIY client: any paying subscriber with a subscriptionTier
+  const isDIYClient = !!(user?.subscriptionTier && user.subscriptionTier !== 'none');
+
+  // Permission checks — DIY clients (starter/pro/elite) can create disputes
+  const canCreateDisputes = isAdmin || isBetaTester || isDIYClient;
+  const canAccessAI = isAdmin || isBetaTester || isDIYClient;
+  const canAccessCreditBuilding = isAdmin || isBetaTester || isDIYClient;
+  const canAccessEducation = isAdmin || isBetaTester || isDIYClient;
 
   const value: UserContextType = {
     user: user || null,
