@@ -32,7 +32,7 @@ export function Navbar({ variant = 'light' }: NavbarProps) {
         {isPostLaunch ? (
           <>
             <span className="font-semibold">
-              🎉 Now live: <span className="text-gold-300 font-black">3-Bureau Credit Monitoring</span> powered by Array
+              🎉 Now live: <span className="text-gold-300 font-black">3-Bureau Credit Monitoring</span> powered by ScoreShift
             </span>
             <Link to="/pricing">
               <span className="hidden sm:inline ml-2 underline underline-offset-2 cursor-pointer hover:text-gold-200 transition-colors font-semibold">
