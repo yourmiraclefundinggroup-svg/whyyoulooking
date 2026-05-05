@@ -59,7 +59,6 @@ function WelcomeToast() {
 }
 
 function ArrayScriptLoader() {
-  const { appKey } = useArrayToken();
   useArrayScript();
   return null;
 }
@@ -75,11 +74,12 @@ function AuthenticatedArrayProvider({ children }: { children: React.ReactNode })
   );
 }
 
-/* Guard: only allow users with an active subscription tier (starter/pro/elite) or admins */
+/* Guard: matches nav's showDIYTab predicate exactly — admin, beta testers, or paying subscribers */
 function DIYGate({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin } = useUserContext();
+  const { user, isAdmin, isBetaTester, canCreateDisputes } = useUserContext();
   const tier = (user as (typeof user & { subscriptionTier?: string }) | null)?.subscriptionTier ?? "none";
-  const hasAccess = isAdmin || tier === "starter" || tier === "pro" || tier === "elite";
+  const hasAccess = isAdmin || isBetaTester || canCreateDisputes ||
+    tier === "starter" || tier === "pro" || tier === "elite";
   if (!hasAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--bg-primary)" }}>

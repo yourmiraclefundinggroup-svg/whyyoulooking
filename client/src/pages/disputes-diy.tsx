@@ -1059,29 +1059,42 @@ export default function DisputeIQ() {
               <p className="text-sm mb-3" style={{ color: "var(--text-secondary)" }}>
                 AI-generated dispute letters — up to 3 at a time — with USPS Certified Mail.
               </p>
-              {/* Credits tracker badge at page level */}
+              {/* Credits tracker badge — primary: free certified-mail sends; secondary: letter quota */}
               {(() => {
+                const freeSendsTotal = TIER_FREE_SENDS[tier] ?? 0;
                 const monthlyCredits = TIER_MONTHLY_CREDITS[tier] ?? 1;
-                const creditsLeft = monthlyCredits === null ? null : Math.max(0, monthlyCredits - creditsUsed);
-                const atLimit = monthlyCredits !== null && creditsLeft === 0;
+                const lettersLeft = monthlyCredits === null ? null : Math.max(0, monthlyCredits - creditsUsed);
+                const atLimit = monthlyCredits !== null && lettersLeft === 0;
+                const isElite = tier === "elite";
                 return (
                   <div className="flex items-center gap-2 flex-wrap">
+                    {/* Primary: free send credits */}
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full"
+                      style={{ background: "rgba(201,168,76,0.1)", color: "var(--gold)", border: "1px solid var(--border-gold)" }}>
+                      <Send className="h-3 w-3" />
+                      {freeSendsTotal === 0
+                        ? "No free sends · $29.99/letter"
+                        : `${freeSendsTotal} free certified send${freeSendsTotal !== 1 ? "s" : ""} / mo`}
+                    </span>
+                    {/* Secondary: letter-generation quota */}
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full"
                       style={{
-                        background: atLimit ? "rgba(224,82,82,0.1)" : "rgba(201,168,76,0.1)",
-                        color: atLimit ? "#E05252" : "var(--gold)",
-                        border: `1px solid ${atLimit ? "rgba(224,82,82,0.3)" : "var(--border-gold)"}`,
+                        background: atLimit ? "rgba(224,82,82,0.1)" : "rgba(255,255,255,0.04)",
+                        color: atLimit ? "#E05252" : "var(--text-secondary)",
+                        border: `1px solid ${atLimit ? "rgba(224,82,82,0.3)" : "rgba(255,255,255,0.08)"}`,
                       }}>
                       <CreditCard className="h-3 w-3" />
-                      {monthlyCredits === null
-                        ? "Unlimited letters this month"
-                        : `Credits remaining: ${creditsLeft} / ${monthlyCredits}`}
+                      {isElite
+                        ? "Unlimited AI letters"
+                        : atLimit
+                          ? "Letter limit reached"
+                          : `${lettersLeft} letter${lettersLeft !== 1 ? "s" : ""} left this month`}
                     </span>
                     {atLimit && (
                       <a href="/billing"
                         className="text-xs font-bold px-3 py-1.5 rounded-full transition-all"
                         style={{ background: "linear-gradient(135deg,var(--gold),var(--gold-light))", color: "var(--bg-primary)" }}>
-                        Upgrade for more →
+                        Upgrade →
                       </a>
                     )}
                   </div>
