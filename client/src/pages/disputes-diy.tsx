@@ -42,6 +42,39 @@ const TIER_MONTHLY_CREDITS: Record<string, number | null> = {
   elite:   null, // null = unlimited
 };
 
+/* Per-plan free send credits; additional sends cost $29.99 each */
+const TIER_FREE_SENDS: Record<string, number> = {
+  none:    0,
+  starter: 0, // pay-per-letter: $29.99 each
+  pro:     1, // first free, $29.99 after
+  elite:   2, // first 2 free, $29.99 after
+};
+
+const SEND_PRICE = 29.99;
+
+/* Infer letter method label from content */
+function letterMethodLabel(content: string): string {
+  const lc = content.toLowerCase();
+  if (lc.includes("goodwill")) return "Goodwill Letter";
+  if (lc.includes("validat")) return "Validation Request";
+  return "Dispute Letter";
+}
+
+/* Violation type display for credit issues */
+const ISSUE_TYPE_LABELS: Record<string, { label: string; severity: "HIGH" | "MED" | "LOW"; color: string }> = {
+  LATE_PAYMENT:       { label: "Late Payment",       severity: "HIGH", color: "#E05252" },
+  COLLECTION:         { label: "Collection Account",  severity: "HIGH", color: "#E05252" },
+  CHARGE_OFF:         { label: "Charge-Off",          severity: "HIGH", color: "#E05252" },
+  HARD_INQUIRY:       { label: "Hard Inquiry",         severity: "MED",  color: "#E8A020" },
+  HIGH_UTILIZATION:   { label: "High Utilization",    severity: "MED",  color: "#E8A020" },
+  WRONG_BALANCE:      { label: "Incorrect Balance",   severity: "MED",  color: "#E8A020" },
+  DUPLICATE:          { label: "Duplicate Account",   severity: "MED",  color: "#E8A020" },
+  NOT_MINE:           { label: "Account Not Mine",    severity: "HIGH", color: "#E05252" },
+  IDENTITY_THEFT:     { label: "Identity Theft",      severity: "HIGH", color: "#E05252" },
+  OLD_DEBT:           { label: "Outdated Debt (7yr+)", severity: "MED", color: "#E8A020" },
+  CLOSED_REPORTED_OPEN: { label: "Closed/Open Mismatch", severity: "LOW", color: "#60A5FA" },
+};
+
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 
 function buildLetter(bureau: Bureau, creditor: string, reason: string): string {
@@ -146,8 +179,12 @@ function DisputeWizard({
   const creditsLeft = monthlyCredits === null ? null : Math.max(0, monthlyCredits - creditsUsed);
   const MAX_LETTERS = monthlyCredits === null ? 3 : Math.min(3, creditsLeft ?? 3);
 
+  const freeSends = TIER_FREE_SENDS[tier] ?? 0;
+
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [slots, setSlots] = useState<LetterSlot[]>([freshSlot(0)]);
+  const [pendingConfirm, setPendingConfirm] = useState<number | null>(null);
+  const [sentCount, setSentCount] = useState(0); // lob sends this session
 
   const updateSlot = (i: number, patch: Partial<LetterSlot>) =>
     setSlots((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
@@ -176,9 +213,18 @@ function DisputeWizard({
     }
   };
 
-  /* Send slot via LOB */
+  /* Determine price for next LOB send */
+  const sendPrice = (sessionSentIdx: number) => {
+    return sessionSentIdx < freeSends ? 0 : SEND_PRICE;
+  };
+
+  /* Confirm modal trigger (shows pricing before sending) */
+  const confirmSendLOB = (i: number) => setPendingConfirm(i);
+
+  /* Actual LOB send — called after user confirms */
   const sendLOB = async (i: number) => {
     const s = slots[i];
+    setPendingConfirm(null);
     updateSlot(i, { generating: true });
     try {
       const res = await apiRequest("POST", "/api/lob/send-letter", {
@@ -186,24 +232,31 @@ function DisputeWizard({
         letterContent: s.generated,
         issueId: s.issue?.id,
       });
-      const data = await res.json().catch(() => ({}));
-      const tracking = data.trackingNumber || "USPS-" + Math.random().toString(36).slice(2, 10).toUpperCase();
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "Unknown error");
+        throw new Error(errText);
+      }
+      const data = await res.json();
+      const tracking: string | null = data.trackingNumber ?? null;
       const d = new Date(); d.setDate(d.getDate() + 10);
       const deliveryDate = d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
       updateSlot(i, { sent: "lob", tracking, deliveryDate, generating: false });
-    } catch {
-      const tracking = "USPS-" + Math.random().toString(36).slice(2, 10).toUpperCase();
-      const d = new Date(); d.setDate(d.getDate() + 10);
-      const deliveryDate = d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-      updateSlot(i, { sent: "lob", tracking, deliveryDate, generating: false });
+      setSentCount((c) => c + 1);
+      await apiRequest("POST", "/api/disputes", {
+        bureau: s.bureau,
+        letterContent: s.generated,
+        issueId: s.issue?.id ?? null,
+        userId,
+      }).catch(() => null);
+      queryClient.invalidateQueries({ queryKey: ["/api/disputes", userId] });
+    } catch (err) {
+      updateSlot(i, { generating: false });
+      toast({
+        title: "Send failed",
+        description: err instanceof Error ? err.message : "Could not send via certified mail. Please try again.",
+        variant: "destructive",
+      });
     }
-    apiRequest("POST", "/api/disputes", {
-      bureau: s.bureau,
-      letterContent: s.generated,
-      issueId: s.issue?.id ?? null,
-      userId,
-    }).catch(() => null);
-    queryClient.invalidateQueries({ queryKey: ["/api/disputes", userId] });
   };
 
   /* Print slot */
@@ -271,23 +324,83 @@ function DisputeWizard({
         ))}
       </div>
 
-      {/* Plan credit tracker */}
-      <div className="flex items-center gap-3 px-4 py-3 rounded-xl"
-        style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
-        <CreditCard className="h-4 w-4 shrink-0" style={{ color: "var(--gold)" }} />
-        <div className="flex-1 text-sm" style={{ color: "var(--text-secondary)" }}>
-          {monthlyCredits === null
-            ? <><span className="font-bold" style={{ color: "var(--gold)" }}>Unlimited</span> dispute letters this month (Elite)</>
-            : <><span className="font-bold" style={{ color: creditsLeft === 0 ? "#E05252" : "var(--gold)" }}>{creditsLeft}</span> of {monthlyCredits} letters remaining this month ({tier.charAt(0).toUpperCase() + tier.slice(1)} plan)</>
-          }
-        </div>
-        {monthlyCredits !== null && monthlyCredits > 0 && (
-          <div className="w-24 h-1.5 rounded-full" style={{ background: "var(--bg-elevated)" }}>
-            <div className="h-1.5 rounded-full"
-              style={{ width: `${Math.round(((creditsLeft ?? 0) / monthlyCredits) * 100)}%`, background: "linear-gradient(90deg,var(--gold),var(--gold-light))" }} />
+      {/* Plan credit tracker + pricing */}
+      <div className="rounded-xl p-4 space-y-2" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
+        <div className="flex items-center gap-3">
+          <CreditCard className="h-4 w-4 shrink-0" style={{ color: "var(--gold)" }} />
+          <div className="flex-1 text-sm" style={{ color: "var(--text-secondary)" }}>
+            {monthlyCredits === null
+              ? <><span className="font-bold" style={{ color: "var(--gold)" }}>Unlimited</span> dispute letters this month (Elite — {freeSends} free certified sends)</>
+              : <><span className="font-bold" style={{ color: creditsLeft === 0 ? "#E05252" : "var(--gold)" }}>{creditsLeft}</span> of {monthlyCredits} letters remaining this month ({tier.charAt(0).toUpperCase() + tier.slice(1)} plan)</>
+            }
           </div>
-        )}
+          {monthlyCredits !== null && monthlyCredits > 0 && (
+            <div className="w-20 h-1.5 rounded-full shrink-0" style={{ background: "var(--bg-elevated)" }}>
+              <div className="h-1.5 rounded-full"
+                style={{ width: `${Math.round(((creditsLeft ?? 0) / monthlyCredits) * 100)}%`, background: "linear-gradient(90deg,var(--gold),var(--gold-light))" }} />
+            </div>
+          )}
+        </div>
+        <div className="text-xs" style={{ color: "var(--text-muted)" }}>
+          {tier === "starter" && "Certified mail: $29.99/letter · Print & mail free"}
+          {tier === "pro" && "First certified send free · Additional: $29.99/letter · Print & mail free"}
+          {tier === "elite" && "First 2 certified sends free · Additional: $29.99/letter · Print & mail free"}
+          {tier === "none" && "Certified mail: $29.99/letter · Print & mail free"}
+        </div>
       </div>
+
+      {/* ── Confirm Send Modal ── */}
+      {pendingConfirm !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.7)" }}
+          onClick={() => setPendingConfirm(null)}>
+          <div className="w-full max-w-sm rounded-2xl p-6 space-y-4"
+            style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)" }}
+            onClick={(e) => e.stopPropagation()}>
+            <div>
+              <div className="ss-overline mb-1">Confirm Send</div>
+              <h3 className="font-black text-lg" style={{ color: "var(--text-primary)" }}>Send via Certified Mail?</h3>
+            </div>
+            {(() => {
+              const slot = slots[pendingConfirm];
+              const creditor = (slot.issue?.creditor ?? slot.creditor) || "the account";
+              const sessionLOBCount = slots.slice(0, pendingConfirm).filter((s) => s.sent === "lob").length;
+              const price = sendPrice(sentCount + sessionLOBCount);
+              return (
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: "var(--text-secondary)" }}>Bureau</span>
+                    <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{slot.bureau}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: "var(--text-secondary)" }}>Account</span>
+                    <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{creditor}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: "var(--text-secondary)" }}>Method</span>
+                    <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                      {letterMethodLabel(slot.generated)}
+                    </span>
+                  </div>
+                  <div className="h-px" style={{ background: "var(--border-gold)" }} />
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: "var(--text-secondary)" }}>Charge</span>
+                    <span className="font-black" style={{ color: price === 0 ? "#2ECC8A" : "var(--gold)" }}>
+                      {price === 0 ? "Free (plan benefit)" : `$${price.toFixed(2)}`}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setPendingConfirm(null)} className="ss-btn-ghost flex-1 justify-center !py-2.5">Cancel</button>
+              <button onClick={() => { if (pendingConfirm !== null) sendLOB(pendingConfirm); }} className="ss-btn-primary flex-1 justify-center !py-2.5">
+                <Send className="h-4 w-4" />Confirm Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── STEP 1: Select up to 3 issues ── */}
       {step === 1 && (
@@ -440,14 +553,18 @@ function DisputeWizard({
                         {/* Per-letter send options */}
                         {!slot.sent ? (
                           <div className="grid grid-cols-2 gap-3">
-                            <button onClick={() => sendLOB(i)} disabled={slot.generating}
+                            <button onClick={() => confirmSendLOB(i)} disabled={slot.generating}
                               className="p-3 rounded-xl text-left transition-all"
                               style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.3)" }}>
                               <Send className="h-4 w-4 mb-1.5" style={{ color: "var(--gold)" }} />
                               <div className="font-bold text-xs mb-0.5" style={{ color: "var(--text-primary)" }}>
                                 {slot.generating ? "Sending..." : "Certified Mail"}
                               </div>
-                              <div className="text-xs" style={{ color: "var(--text-muted)" }}>USPS tracking included</div>
+                              <div className="text-xs" style={{ color: "var(--text-muted)" }}>
+                                {sendPrice(sentCount + slots.slice(0, i).filter((s) => s.sent === "lob").length) === 0
+                                  ? "Free with your plan · USPS tracking"
+                                  : `$${SEND_PRICE.toFixed(2)} · USPS tracking included`}
+                              </div>
                             </button>
                             <button onClick={() => printSlot(i)}
                               className="p-3 rounded-xl text-left transition-all"

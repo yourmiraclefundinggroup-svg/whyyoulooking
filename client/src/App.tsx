@@ -60,7 +60,7 @@ function WelcomeToast() {
 
 function ArrayScriptLoader() {
   const { appKey } = useArrayToken();
-  useArrayScript(appKey || undefined);
+  useArrayScript();
   return null;
 }
 
@@ -73,6 +73,33 @@ function AuthenticatedArrayProvider({ children }: { children: React.ReactNode })
       {children}
     </ArrayTokenProvider>
   );
+}
+
+/* Guard: only allow users with an active subscription tier (starter/pro/elite) or admins */
+function DIYGate({ children }: { children: React.ReactNode }) {
+  const { user, isAdmin } = useUserContext();
+  const tier = (user as (typeof user & { subscriptionTier?: string }) | null)?.subscriptionTier ?? "none";
+  const hasAccess = isAdmin || tier === "starter" || tier === "pro" || tier === "elite";
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--bg-primary)" }}>
+        <div className="max-w-md text-center">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            style={{ background: "rgba(201,168,76,0.1)" }}>
+            <span className="text-3xl">🔒</span>
+          </div>
+          <h2 className="text-xl font-black mb-2" style={{ color: "var(--text-primary)" }}>
+            DIY Dispute Access Required
+          </h2>
+          <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
+            The Dispute IQ tool is available to Starter, Pro, and Elite subscribers.
+          </p>
+          <a href="/billing" className="ss-btn-primary inline-flex">Upgrade Your Plan</a>
+        </div>
+      </div>
+    );
+  }
+  return <>{children}</>;
 }
 
 function Router() {
@@ -143,7 +170,7 @@ function Router() {
             <Navigation /><Billing />
           </Route>
           <Route path="/disputes-diy">
-            <Navigation /><DisputeIQ />
+            <Navigation /><DIYGate><DisputeIQ /></DIYGate>
           </Route>
 
           {/* ── Legacy routes kept for backward compat ── */}

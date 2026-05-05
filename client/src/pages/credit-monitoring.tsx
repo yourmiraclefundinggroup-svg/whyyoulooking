@@ -541,11 +541,12 @@ export default function CreditMonitoring() {
 
             {activeSection === "tools" && (
               <div className="space-y-5">
+                {/* Score Simulator */}
                 {access.canAccess(FEATURES.SCORE_SIMULATOR) ? (
                   <ArrayCard
                     icon={Navigation}
                     title="Score Simulator"
-                    description="Model how financial decisions would impact your credit score"
+                    description="Model how paying debt, opening accounts, or closing cards would change your score"
                   >
                     <CreditComponent
                       tag="array-credit-score-simulator"
@@ -563,14 +564,30 @@ export default function CreditMonitoring() {
                   />
                 )}
 
-                {access.canAccess(FEATURES.DEBT_NAVIGATOR) && enrollment?.productCodes?.includes("debtNavPremium") ? (
+                {/* Score Tracker — mini trend across all 3 bureaus */}
+                <ArrayCard
+                  icon={TrendingUp}
+                  title="Score Tracker"
+                  description="Score trend history across Experian, Equifax, and TransUnion"
+                >
+                  <CreditComponent
+                    tag="array-credit-score"
+                    appKey={ARRAY_SANDBOX_APP_KEY}
+                    userToken={ARRAY_SANDBOX_TOKENS.default}
+                    scriptReady={scriptReady}
+                    attrs={{ bureau: "all", scoreTracker: "true" }}
+                  />
+                </ArrayCard>
+
+                {/* Debt Analysis table */}
+                {access.canAccess(FEATURES.DEBT_ANALYSIS) ? (
                   <ArrayCard
-                    icon={Zap}
-                    title="Debt Navigator"
-                    description="Premium debt payoff planning and strategy engine"
+                    icon={CreditCard}
+                    title="Debt Analysis"
+                    description="Credit utilization breakdown, balance summary, and debt-to-income ratios by account"
                   >
                     <CreditComponent
-                      tag="array-debt-navigator"
+                      tag="array-credit-debt-analysis"
                       appKey={ARRAY_SANDBOX_APP_KEY}
                       userToken={ARRAY_SANDBOX_TOKENS.default}
                       scriptReady={scriptReady}
@@ -578,65 +595,10 @@ export default function CreditMonitoring() {
                   </ArrayCard>
                 ) : (
                   <TierUpgradeCard
-                    label="Debt Navigator"
-                    icon={Navigation}
-                    description="Build a personalized debt payoff plan using avalanche or snowball strategies, with projected timelines and interest savings."
+                    label="Debt Analysis"
+                    icon={CreditCard}
+                    description="See a full breakdown of your debts, balances, and credit utilization by account."
                     requiredTier="pro"
-                  />
-                )}
-
-                {access.canAccess(FEATURES.STUDENT_LOAN_AID) && enrollment?.productCodes?.includes("pioStudentLoanAidSubmission") ? (
-                  <ArrayCard
-                    icon={GraduationCap}
-                    title="Student Loan Aid"
-                    description="Navigate your student loan options and enrollment"
-                  >
-                    <CreditComponent
-                      tag="array-student-loan-navigator"
-                      appKey={ARRAY_SANDBOX_APP_KEY}
-                      userToken={ARRAY_SANDBOX_TOKENS.default}
-                      scriptReady={scriptReady}
-                      attrs={{ autolaunch: "true" }}
-                    />
-                    <div className="mt-4">
-                      <CreditComponent
-                        tag="array-student-loan-aid"
-                        appKey={ARRAY_SANDBOX_APP_KEY}
-                        userToken={ARRAY_SANDBOX_TOKENS.studentLoanAid}
-                        scriptReady={scriptReady}
-                      />
-                    </div>
-                  </ArrayCard>
-                ) : (
-                  <TierUpgradeCard
-                    label="Student Loan Aid"
-                    icon={GraduationCap}
-                    description="Find income-driven repayment plans, forgiveness programs, and refinancing options tailored to your student loan situation."
-                    requiredTier="elite"
-                  />
-                )}
-
-                {access.canAccess(FEATURES.SUBSCRIPTION_MANAGER) && enrollment?.productCodes?.some((c) =>
-                  ["subscriptionManagerEnrichmentAndCancellation", "smTxnSrcFinLnk"].includes(c)
-                ) ? (
-                  <ArrayCard
-                    icon={CreditCard}
-                    title="Subscription Manager"
-                    description="View, manage, and cancel your credit product subscriptions"
-                  >
-                    <CreditComponent
-                      tag="array-subscription-manager"
-                      appKey={ARRAY_SANDBOX_APP_KEY}
-                      userToken={ARRAY_SANDBOX_TOKENS.subscriptionManager}
-                      scriptReady={scriptReady}
-                    />
-                  </ArrayCard>
-                ) : (
-                  <TierUpgradeCard
-                    label="Subscription Manager"
-                    icon={CreditCard}
-                    description="Get a full view of your recurring subscriptions with the ability to cancel unwanted services directly from your dashboard."
-                    requiredTier="elite"
                   />
                 )}
               </div>

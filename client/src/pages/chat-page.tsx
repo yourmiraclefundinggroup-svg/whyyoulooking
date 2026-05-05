@@ -1,6 +1,5 @@
 import { SecureChat } from "@/components/secure-chat";
 import { useUserContext } from "@/hooks/use-user-context";
-import { MessageSquare } from "lucide-react";
 
 export default function ChatPage() {
   const { user } = useUserContext();
@@ -17,7 +16,7 @@ export default function ChatPage() {
             Message your credit repair team securely. All messages are encrypted.
           </p>
         </div>
-        <SecureChat userId={user?.id} />
+        <SecureChat userId={user?.id ?? 0} userType="client" />
       </div>
     </div>
   );

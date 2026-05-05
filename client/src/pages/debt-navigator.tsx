@@ -356,7 +356,7 @@ function SubscriptionManager() {
   const totalMonthly = visible.reduce((acc, s) => acc + s.amount, 0);
   const flagged = visible.filter((s) => s.flag !== null);
 
-  const dismiss = (id: string) => setDismissed((prev) => new Set([...prev, id]));
+  const dismiss = (id: string) => setDismissed((prev) => new Set(Array.from(prev).concat(id)));
 
   return (
     <div className="rounded-2xl p-6" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
