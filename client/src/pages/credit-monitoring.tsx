@@ -193,16 +193,19 @@ function ArrayCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-white/[0.07] bg-white dark:bg-[#0F1E35] overflow-hidden shadow-sm">
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-white/[0.05]">
-        <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
-          <Icon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+    <div className="rounded-2xl overflow-hidden" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
+      <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: "rgba(201,168,76,0.12)" }}>
+          <span style={{ color: "var(--gold)", display: "contents" }}>
+            <Icon className="h-4 w-4" />
+          </span>
         </div>
         <div>
-          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{title}</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
+          <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{title}</p>
+          <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{description}</p>
         </div>
-        <span className="ml-auto text-[10px] text-slate-300 dark:text-slate-600 font-medium">
+        <span className="ml-auto text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
           Powered by ScoreShift
         </span>
       </div>
@@ -277,18 +280,19 @@ export default function CreditMonitoring() {
 
   if (enrollLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-primary)" }}>
         <div className="flex flex-col items-center gap-4">
           <ScoreShiftLogo size="lg" />
-          <div className="w-10 h-10 rounded-full border-2 border-amber-400 border-t-transparent ss-spinner" />
-          <p className="text-muted-foreground text-sm">Loading credit monitoring...</p>
+          <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: "var(--gold)", borderTopColor: "transparent" }} />
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Loading credit monitoring...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
 
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="bg-gradient-to-r from-[#0F172A] to-[#1E3A5F] dark:from-[#050A14] dark:to-[#0A1628]">
@@ -342,7 +346,7 @@ export default function CreditMonitoring() {
       </div>
 
       {/* ── Tab bar ──────────────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-[#0A1628] border-b border-slate-200 dark:border-white/[0.07]">
+      <div style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border-gold)" }}>
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex gap-0.5 overflow-x-auto scrollbar-hide">
             {TABS.map((tab) => {
@@ -352,16 +356,16 @@ export default function CreditMonitoring() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveSection(tab.id)}
-                  className={`group flex items-center gap-2 px-4 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors relative ${
-                    isActive
-                      ? "border-amber-500 text-amber-600 dark:text-amber-400"
-                      : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-white/20"
-                  }`}
+                  className="group flex items-center gap-2 px-4 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors relative"
+                  style={{
+                    borderBottomColor: isActive ? "var(--gold)" : "transparent",
+                    color: isActive ? "var(--gold)" : "var(--text-muted)",
+                  }}
                 >
-                  <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-amber-500" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300"}`} />
+                  <Icon className="h-4 w-4 shrink-0" style={{ color: isActive ? "var(--gold)" : "var(--text-muted)" }} />
                   <span className="flex flex-col items-start">
                     <span>{tab.label}</span>
-                    <span className={`text-[10px] font-normal hidden sm:block ${isActive ? "text-amber-500/70" : "text-slate-400 dark:text-slate-500"}`}>
+                    <span className="text-[10px] font-normal hidden sm:block" style={{ color: isActive ? "rgba(201,168,76,0.7)" : "var(--text-muted)" }}>
                       {tab.subtitle}
                     </span>
                   </span>
@@ -714,9 +718,7 @@ export default function CreditMonitoring() {
         {/* ── Not enrolled preview grid ─────────────────────────────────── */}
         {!isEnrolled && (
           <div className="mt-2">
-            <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">
-              Available after enrollment
-            </h3>
+            <div className="ss-overline mb-4">Available after enrollment</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {[
                 { id: "credit-overview",  label: "Credit Overview",       icon: BarChart3,      description: "Live 3-bureau credit scores and account summary" },
@@ -733,16 +735,18 @@ export default function CreditMonitoring() {
               ].map((comp) => (
                 <div
                   key={comp.id}
-                  className="rounded-xl border border-slate-200 dark:border-white/[0.06] bg-white dark:bg-[#0F1E35]/60 p-4 opacity-60 pointer-events-none"
+                  className="rounded-xl p-4 opacity-50 pointer-events-none"
+                  style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)" }}
                 >
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center">
-                      <comp.icon className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                      style={{ background: "rgba(255,255,255,0.04)" }}>
+                      <comp.icon className="h-3.5 w-3.5" style={{ color: "var(--text-muted)" }} />
                     </div>
-                    <span className="font-medium text-slate-600 dark:text-slate-400 text-sm">{comp.label}</span>
-                    <Lock className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600 ml-auto" />
+                    <span className="font-medium text-sm" style={{ color: "var(--text-secondary)" }}>{comp.label}</span>
+                    <Lock className="h-3.5 w-3.5 ml-auto" style={{ color: "var(--text-muted)" }} />
                   </div>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed">{comp.description}</p>
+                  <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>{comp.description}</p>
                 </div>
               ))}
             </div>

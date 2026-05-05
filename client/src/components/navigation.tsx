@@ -15,12 +15,12 @@ export function Navigation() {
   const clientNavItems = [
     { href: "/credit-repair", label: "Dashboard" },
     { href: "/credit-monitoring", label: "Credit Monitoring" },
+    ...(canCreateDisputes ? [{ href: "/disputes-diy", label: "Disputes" }] : []),
     { href: "/debt-navigator", label: "Debt Navigator" },
     { href: "/student-loans", label: "Student Loan Aid" },
     { href: "/progress", label: "Progress" },
     { href: "/chat", label: "Chat" },
     { href: "/billing", label: "Billing" },
-    ...(canCreateDisputes ? [{ href: "/disputes-diy", label: "Disputes" }] : []),
   ];
 
   const adminNavItems = [
