@@ -15,7 +15,7 @@ Preferred communication style: Simple, everyday language.
 - **State Management**: TanStack Query (React Query).
 - **Routing**: Wouter for lightweight client-side routing.
 - **Forms**: React Hook Form with Zod validation.
-- **UI/UX Decisions**: Animated credit score circles, gamified onboarding, mobile-optimized interfaces, professional layout with 8-tab navigation on `/credit-repair` dashboard.
+- **UI/UX Decisions**: Animated credit score circles, gamified onboarding, mobile-optimized interfaces. Task #76: `/credit-repair` redesigned to luxury dark palette — 4 sections only (Welcome Hero, Credit Overview with bureau pill selector + SVG gauge + sparkline, Credit Alerts, Active Disputes). Navigation restructured to: Dashboard | Credit Monitoring | Debt Navigator | Student Loan Aid | Progress | Chat | Billing (DIY users also see Disputes tab). New standalone pages: `/debt-navigator` (payoff calculator, avalanche/snowball, debt freedom score), `/disputes-diy` (Dispute IQ — AI letter generation, step tracker, FCRA tips), `/progress` (score history + dispute summary), `/chat` (secure chat wrapper). All client pages use CSS vars (`--bg-primary`, `--bg-surface`, `--gold`, `.ss-card`, `.ss-btn-primary`, `.ss-overline`).
 - **Admin Portal Design System**: Zinc near-black dark mode (zinc-950 base), white/smoke light mode, single gold accent (`--admin-accent: 38 90% 51%`), deep gold gradient stop (`--admin-accent-deep: 32 92% 38%`). Semantic-only color use: amber=warnings, red=danger/derogatory/collections, green=success/approval, blue=info/hard-inquiries, late-payment severity (30d=yellow/60d=orange). Bureau badges intentionally kept: Experian=blue-500, Equifax=red-500, TransUnion=purple-500.
 
 ### Backend Architecture

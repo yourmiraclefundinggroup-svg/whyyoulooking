@@ -33,10 +33,13 @@ import Terms from "@/pages/terms";
 import DenialDecoder from "@/pages/denial-decoder";
 import WhiteLabelOnboarding from "@/pages/white-label-onboarding";
 import CreditMonitoring from "@/pages/credit-monitoring";
+import DebtNavigator from "@/pages/debt-navigator";
+import DisputeIQ from "@/pages/disputes-diy";
+import ProgressPage from "@/pages/progress-page";
+import ChatPage from "@/pages/chat-page";
 import NotFound from "@/pages/not-found";
 import { TrialUpgradeWall } from "@/components/trial-upgrade-wall";
 
-// Shows a personalized welcome toast once after login
 function WelcomeToast() {
   const { toast } = useToast();
   useEffect(() => {
@@ -55,15 +58,12 @@ function WelcomeToast() {
   return null;
 }
 
-// Loads the Array SDK script globally once the shared token context has an appKey.
 function ArrayScriptLoader() {
   const { appKey } = useArrayToken();
   useArrayScript(appKey || undefined);
   return null;
 }
 
-// Wraps children with ArrayTokenProvider only when the user is authenticated,
-// so we avoid making unauthenticated token requests.
 function AuthenticatedArrayProvider({ children }: { children: React.ReactNode }) {
   const { user } = useUserContext();
   if (!user) return <>{children}</>;
@@ -79,43 +79,19 @@ function Router() {
   const { user } = useUserContext();
   const [location] = useLocation();
 
-  // Show landing page if no user is authenticated and on root path
-  if (!user && location === "/") {
-    return <LandingPage />;
-  }
+  if (!user && location === "/") return <LandingPage />;
+  if (!user && location === "/get-started") return <LeadForm />;
+  if (location === "/privacy-policy") return <PrivacyPolicy />;
+  if (location === "/terms") return <Terms />;
+  if (location === "/signup") return <Signup />;
+  if (location === "/denial-decoder") return <DenialDecoder />;
+  if (location === "/pricing") return <Pricing />;
+  if (!user) return <Login />;
 
-  // Allow access to lead form without authentication
-  if (!user && location === "/get-started") {
-    return <LeadForm />;
-  }
-
-  // Allow access to public pages without authentication
-  if (location === "/privacy-policy") {
-    return <PrivacyPolicy />;
-  }
-  if (location === "/terms") {
-    return <Terms />;
-  }
-  if (location === "/signup") {
-    return <Signup />;
-  }
-  if (location === "/denial-decoder") {
-    return <DenialDecoder />;
-  }
-  if (location === "/pricing") {
-    return <Pricing />;
-  }
-
-  // Show login if no user is authenticated and not on other allowed pages
-  if (!user) {
-    return <Login />;
-  }
-
-  // Auto-redirect users to their correct portal if they're on the root page
   if (user && location === "/") {
     if (user.accessLevel === "ADMIN") {
       return (
-        <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
+        <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
           <Navigation />
           <AdminPortal />
         </div>
@@ -123,7 +99,7 @@ function Router() {
     } else {
       return (
         <TrialUpgradeWall>
-          <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
+          <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
             <Navigation />
             <CreditRepair />
           </div>
@@ -134,72 +110,78 @@ function Router() {
 
   return (
     <TrialUpgradeWall>
-      <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
+      <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
         <Switch>
           <Route path="/" component={LandingPage} />
           <Route path="/get-started" component={LeadForm} />
           <Route path="/auth" component={Login} />
           <Route path="/admin/auth" component={Login} />
-          <Route path="/dashboard">
-            <Navigation />
-            <Dashboard />
-          </Route>
+
+          {/* ── Main client routes ── */}
           <Route path="/credit-repair">
-            <Navigation />
-            <CreditRepair />
+            <Navigation /><CreditRepair />
+          </Route>
+          <Route path="/dashboard">
+            <Navigation /><Dashboard />
+          </Route>
+          <Route path="/credit-monitoring">
+            <Navigation /><CreditMonitoring />
+          </Route>
+          <Route path="/debt-navigator">
+            <Navigation /><DebtNavigator />
           </Route>
           <Route path="/student-loans">
-            <Navigation />
-            <StudentLoans />
+            <Navigation /><StudentLoans />
           </Route>
-          <Route path="/credit-building">
-            <Navigation />
-            <CreditBuilding />
+          <Route path="/progress">
+            <Navigation /><ProgressPage />
           </Route>
-          <Route path="/education">
-            <Navigation />
-            <Education />
-          </Route>
-          <Route path="/experian">
-            <Navigation />
-            <ExperianConnect />
-          </Route>
-          <Route path="/admin">
-            <Navigation />
-            <AdminDashboard />
-          </Route>
-          <Route path="/admin-portal">
-            <Navigation />
-            <AdminPortal />
-          </Route>
-          <Route path="/admin-portal/:section">
-            <Navigation />
-            <AdminPortal />
-          </Route>
-          <Route path="/admin-portal/credit-reports/:id">
-            <Navigation />
-            <AdminPortal />
-          </Route>
-          <Route path="/support-admin">
-            <Navigation />
-            <SupportAdmin />
+          <Route path="/chat">
+            <Navigation /><ChatPage />
           </Route>
           <Route path="/billing">
-            <Navigation />
-            <Billing />
+            <Navigation /><Billing />
           </Route>
+          <Route path="/disputes-diy">
+            <Navigation /><DisputeIQ />
+          </Route>
+
+          {/* ── Legacy routes kept for backward compat ── */}
+          <Route path="/credit-building">
+            <Navigation /><CreditBuilding />
+          </Route>
+          <Route path="/credit-building-v2">
+            <Navigation /><CreditBuildingV2 />
+          </Route>
+          <Route path="/education">
+            <Navigation /><Education />
+          </Route>
+          <Route path="/experian">
+            <Navigation /><ExperianConnect />
+          </Route>
+
+          {/* ── Admin routes ── */}
+          <Route path="/admin">
+            <Navigation /><AdminDashboard />
+          </Route>
+          <Route path="/admin-portal">
+            <Navigation /><AdminPortal />
+          </Route>
+          <Route path="/admin-portal/:section">
+            <Navigation /><AdminPortal />
+          </Route>
+          <Route path="/admin-portal/credit-reports/:id">
+            <Navigation /><AdminPortal />
+          </Route>
+          <Route path="/support-admin">
+            <Navigation /><SupportAdmin />
+          </Route>
+
+          {/* ── Public ── */}
           <Route path="/checkout" component={SubscriptionCheckout} />
           <Route path="/pricing" component={Pricing} />
           <Route path="/denial-decoder" component={DenialDecoder} />
           <Route path="/white-label/onboarding" component={WhiteLabelOnboarding} />
-          <Route path="/credit-monitoring">
-            <Navigation />
-            <CreditMonitoring />
-          </Route>
-          <Route path="/credit-building-v2">
-            <Navigation />
-            <CreditBuildingV2 />
-          </Route>
           <Route path="/login" component={Login} />
           <Route component={NotFound} />
         </Switch>

@@ -8,23 +8,32 @@ import { useUserContext } from "@/hooks/use-user-context";
 export function Navigation() {
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, isClientViewer, isAdmin, canAccessCreditBuilding, canAccessEducation, logout } = useUserContext();
+  const { user, isClientViewer, isAdmin, canCreateDisputes, logout } = useUserContext();
 
   const displayUser = user || { firstName: "Loading", lastName: "", accessLevel: "CLIENT_VIEWER" };
 
-  const navItems = [
+  const clientNavItems = [
     { href: "/credit-repair", label: "Dashboard" },
     { href: "/credit-monitoring", label: "Credit Monitoring" },
-    { href: "/credit-building", label: "Credit Building" },
+    { href: "/debt-navigator", label: "Debt Navigator" },
+    { href: "/student-loans", label: "Student Loan Aid" },
+    { href: "/progress", label: "Progress" },
+    { href: "/chat", label: "Chat" },
     { href: "/billing", label: "Billing" },
-    ...(canAccessEducation ? [{ href: "/education", label: "Education" }] : []),
-    ...(isAdmin
-      ? [
-          { href: "/admin", label: "Admin" },
-          { href: "/support-admin", label: "Support" },
-        ]
-      : []),
+    ...(canCreateDisputes ? [{ href: "/disputes-diy", label: "Disputes" }] : []),
   ];
+
+  const adminNavItems = [
+    { href: "/admin-portal", label: "Admin Portal" },
+    { href: "/support-admin", label: "Support" },
+  ];
+
+  const navItems = isAdmin ? adminNavItems : clientNavItems;
+
+  const isActive = (href: string) => {
+    if (href === "/credit-repair") return location === "/" || location === "/credit-repair";
+    return location === href || location.startsWith(href + "/");
+  };
 
   return (
     <header
@@ -37,47 +46,52 @@ export function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/">
-            <div className="flex items-center gap-2 cursor-pointer">
+          <Link href={isAdmin ? "/admin-portal" : "/credit-repair"}>
+            <div className="flex items-center gap-2 cursor-pointer shrink-0">
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-black font-black text-sm"
                 style={{ background: "linear-gradient(135deg, var(--gold), var(--gold-light))" }}
               >
                 SS
               </div>
-              <span className="text-white font-bold text-lg tracking-tight">ScoreShift</span>
+              <span className="text-white font-bold text-lg tracking-tight hidden sm:block">ScoreShift</span>
             </div>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <span
-                  className={cn(
-                    "px-3 py-1.5 text-sm font-medium transition-all cursor-pointer relative",
-                    location === item.href
-                      ? "text-[#E8C96B]"
-                      : "text-[#8A9BB5] hover:text-[#E8C96B]"
-                  )}
-                  style={location === item.href ? {
-                    borderBottom: "2px solid #C9A84C",
-                    paddingBottom: 4,
-                  } : {}}
-                >
-                  {item.label}
-                </span>
-              </Link>
-            ))}
+          <nav className="hidden md:flex items-center gap-0.5 overflow-x-auto">
+            {navItems.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <Link key={item.href} href={item.href}>
+                  <span
+                    className="relative px-3 py-1.5 text-sm font-medium transition-all cursor-pointer whitespace-nowrap block"
+                    style={{
+                      color: active ? "#E8C96B" : "#8A9BB5",
+                    }}
+                    onMouseEnter={(e) => { if (!active) (e.target as HTMLElement).style.color = "#E8C96B"; }}
+                    onMouseLeave={(e) => { if (!active) (e.target as HTMLElement).style.color = "#8A9BB5"; }}
+                  >
+                    {item.label}
+                    {active && (
+                      <span
+                        className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                        style={{ background: "var(--gold)" }}
+                      />
+                    )}
+                  </span>
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Right side */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             {/* User info */}
             <div className="hidden sm:flex items-center gap-2">
-              <div className="text-slate-400 text-sm">
+              <span className="text-sm" style={{ color: "#8A9BB5" }}>
                 {displayUser.firstName} {displayUser.lastName}
-              </div>
+              </span>
               {isClientViewer && (
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: "rgba(201,168,76,0.12)", color: "#E8C96B", border: "1px solid rgba(201,168,76,0.25)" }}>
                   Client
@@ -92,8 +106,8 @@ export function Navigation() {
 
             {/* Avatar */}
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)" }}
+              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+              style={{ background: "linear-gradient(135deg, var(--gold), var(--gold-light))" }}
             >
               <User className="h-4 w-4 text-black" />
             </div>
@@ -103,7 +117,8 @@ export function Navigation() {
               variant="ghost"
               size="sm"
               onClick={logout}
-              className="hidden sm:flex text-slate-400 hover:text-white hover:bg-white/5 text-xs"
+              className="hidden sm:flex text-xs"
+              style={{ color: "#8A9BB5" }}
             >
               Sign Out
             </Button>
@@ -112,7 +127,8 @@ export function Navigation() {
             <Button
               variant="ghost"
               size="sm"
-              className="md:hidden text-slate-400 hover:text-white"
+              className="md:hidden"
+              style={{ color: "#8A9BB5" }}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -127,28 +143,31 @@ export function Navigation() {
             style={{ borderColor: "rgba(255,255,255,0.06)" }}
           >
             <div className="space-y-1">
-              {navItems.map((item) => (
-                <Link key={item.href} href={item.href}>
-                  <span
-                    className={cn(
-                      "block px-3 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-all",
-                      location === item.href
-                        ? "text-[#E8C96B] bg-[rgba(201,168,76,0.08)]"
-                        : "text-[#8A9BB5] hover:text-[#E8C96B] hover:bg-white/5"
-                    )}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {item.label}
-                  </span>
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <span
+                      className="block px-3 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-all"
+                      style={{
+                        color: active ? "#E8C96B" : "#8A9BB5",
+                        background: active ? "rgba(201,168,76,0.08)" : "transparent",
+                      }}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {item.label}
+                    </span>
+                  </Link>
+                );
+              })}
               <div className="pt-2 px-3">
-                <Button
-                  className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm"
+                <button
+                  className="w-full py-2.5 rounded-lg text-sm font-bold"
+                  style={{ background: "linear-gradient(135deg, var(--gold), var(--gold-light))", color: "var(--bg-primary)" }}
                   onClick={logout}
                 >
                   Sign Out
-                </Button>
+                </button>
               </div>
             </div>
           </div>
