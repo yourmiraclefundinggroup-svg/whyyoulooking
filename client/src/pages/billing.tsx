@@ -67,8 +67,9 @@ export default function Billing() {
     try {
       await apiRequest("DELETE", "/api/stripe/subscription");
       toast({ title: "Subscription Cancelled", description: "Your subscription will end at the current billing period." });
-    } catch (error: any) {
-      toast({ title: "Cancellation Error", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "An error occurred.";
+      toast({ title: "Cancellation Error", description: msg, variant: "destructive" });
     }
   };
 

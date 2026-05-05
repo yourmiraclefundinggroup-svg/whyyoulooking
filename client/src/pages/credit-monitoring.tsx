@@ -483,44 +483,107 @@ export default function CreditMonitoring() {
                       Powered by ScoreShift
                     </span>
                   </div>
-                  <div className="p-5 space-y-3">
+                  <div className="p-5 space-y-4">
                     <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
                       Incorrect personal information (name variations, outdated addresses, wrong employers)
                       can be disputed directly with the bureaus under{" "}
                       <span className="font-semibold" style={{ color: "var(--text-primary)" }}>FCRA §1681i</span>.
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+                    {/* PII field-level status indicators */}
+                    {(() => {
+                      const piiFields = [
+                        { label: "Legal Name",    icon: "👤", key: "name" },
+                        { label: "Address",        icon: "📍", key: "address" },
+                        { label: "SSN (last 4)",   icon: "🔒", key: "ssn" },
+                        { label: "Phone Number",   icon: "📞", key: "phone" },
+                        { label: "Email",          icon: "✉️",  key: "email" },
+                        { label: "Date of Birth",  icon: "🗓️", key: "dob" },
+                      ] as const;
+
+                      const bureauColors: Record<string, string> = {
+                        Experian: "#0062FF", Equifax: "#E12726", TransUnion: "#662D8C",
+                      };
+
+                      return (
+                        <div className="space-y-2">
+                          {/* Bureau column headers */}
+                          <div className="grid grid-cols-4 text-[10px] font-bold mb-1"
+                            style={{ color: "var(--text-muted)" }}>
+                            <span>Field</span>
+                            {(["Experian", "Equifax", "TransUnion"] as const).map((b) => (
+                              <span key={b} className="text-center" style={{ color: bureauColors[b] }}>{b.slice(0, 3)}</span>
+                            ))}
+                          </div>
+                          {piiFields.map(({ label, icon, key }) => {
+                            // Derive status from user profile data where available
+                            const userHas: Record<string, boolean> = {
+                              name:    !!(user?.firstName && user?.lastName),
+                              address: false, // requires intake data
+                              ssn:     false, // requires intake data
+                              phone:   false, // requires intake data
+                              email:   !!user?.email,
+                              dob:     false, // requires intake data
+                            };
+                            const hasData = userHas[key];
+                            return (
+                              <div key={key} className="grid grid-cols-4 items-center py-2 rounded-lg px-2"
+                                style={{ background: "var(--bg-elevated)" }}>
+                                <span className="text-xs flex items-center gap-1.5" style={{ color: "var(--text-secondary)" }}>
+                                  <span>{icon}</span>{label}
+                                </span>
+                                {(["Experian", "Equifax", "TransUnion"] as const).map((b) => (
+                                  <span key={b} className="text-center">
+                                    {isEnrolled ? (
+                                      hasData ? (
+                                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px]"
+                                          style={{ background: "rgba(46,204,138,0.15)", color: "#2ECC8A" }}>✓</span>
+                                      ) : (
+                                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px]"
+                                          style={{ background: "rgba(232,160,32,0.15)", color: "#E8A020" }}>!</span>
+                                      )
+                                    ) : (
+                                      <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>—</span>
+                                    )}
+                                  </span>
+                                ))}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Bureau connection status row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
                       {(["Experian", "Equifax", "TransUnion"] as const).map((bureau) => {
                         const colors: Record<string, string> = {
                           Experian: "#0062FF", Equifax: "#E12726", TransUnion: "#662D8C",
                         };
                         return (
-                          <div key={bureau} className="rounded-xl p-3 flex items-center gap-2.5"
-                            style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)" }}>
+                          <div key={bureau} className="rounded-xl p-2.5 flex items-center gap-2"
+                            style={{ background: "var(--bg-elevated)", border: `1px solid ${colors[bureau]}22` }}>
                             <div className="w-2 h-2 rounded-full shrink-0"
-                              style={{ background: colors[bureau] }} />
+                              style={{ background: isEnrolled ? "#2ECC8A" : colors[bureau], opacity: isEnrolled ? 1 : 0.5 }} />
                             <div className="min-w-0">
-                              <div className="text-xs font-bold truncate"
-                                style={{ color: colors[bureau] }}>{bureau}</div>
+                              <div className="text-xs font-bold truncate" style={{ color: colors[bureau] }}>{bureau}</div>
                               <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                                {isEnrolled ? "Report loaded" : "Connect to view"}
+                                {isEnrolled ? "Report on file" : "Not connected"}
                               </div>
                             </div>
                           </div>
                         );
                       })}
                     </div>
+
                     {isEnrolled ? (
-                      <button
-                        className="ss-btn-ghost text-xs !py-2"
-                        onClick={() => setActiveSection("report")}
-                      >
-                        View full report for PII details
+                      <button className="ss-btn-ghost text-xs !py-2" onClick={() => setActiveSection("report")}>
+                        View full report for all PII details
                         <ArrowRight className="h-3.5 w-3.5" />
                       </button>
                     ) : (
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                        Set up your credit profile above to view PII on file at each bureau.
+                        Connect your credit profile above to verify PII at each bureau.
                       </p>
                     )}
                   </div>

@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useToast } from "@/hooks/use-toast";
@@ -324,38 +325,86 @@ function DisputeWizard({
   };
 
   /* Print slot */
-  const downloadSlot = (i: number) => {
+  const downloadSlot = useCallback(async (i: number) => {
     const s = slots[i];
+
+    // Generate a real PDF using pdf-lib
+    const pdfDoc = await PDFDocument.create();
+    const font      = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+    const fontBold  = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+
+    const page = pdfDoc.addPage([612, 792]); // US Letter
+    const { width, height } = page.getSize();
+    const margin = 72; // 1 inch
+    const lineH  = 16;
+    let   y      = height - margin;
+
+    const black = rgb(0, 0, 0);
+    const grey  = rgb(0.4, 0.4, 0.4);
+
+    // Header bar
+    page.drawRectangle({ x: margin, y: y - 4, width: width - margin * 2, height: 1.5, color: grey });
+    y -= 20;
+    page.drawText("FCRA CREDIT DISPUTE LETTER", {
+      x: margin, y, size: 9, font: fontBold, color: grey,
+    });
+    page.drawText(new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }), {
+      x: width - margin - 120, y, size: 9, font, color: grey,
+    });
+    y -= lineH * 1.5;
+
+    // Draw letter body — word-wrap each line to 75 chars at 10pt
+    const maxWidth = width - margin * 2;
+    const lines = s.generated.split("\n");
+    for (const rawLine of lines) {
+      if (y < margin + lineH) {
+        // New page if needed
+        const np = pdfDoc.addPage([612, 792]);
+        y = np.getSize().height - margin;
+      }
+      // Simple line wrapping
+      const words = rawLine.split(" ");
+      let cur = "";
+      for (const w of words) {
+        const test = cur ? `${cur} ${w}` : w;
+        const tw = font.widthOfTextAtSize(test, 11);
+        if (tw > maxWidth && cur) {
+          page.drawText(cur, { x: margin, y, size: 11, font, color: black });
+          y -= lineH;
+          cur = w;
+        } else {
+          cur = test;
+        }
+      }
+      if (cur) {
+        page.drawText(cur, { x: margin, y, size: 11, font, color: black });
+      }
+      y -= lineH;
+    }
+
+    // Footer
+    y -= lineH;
+    page.drawRectangle({ x: margin, y: y + lineH - 2, width: width - margin * 2, height: 1, color: grey });
     const bureauAddresses: Record<string, string> = {
-      Experian:   "P.O. Box 4500, Allen, TX 75013",
-      Equifax:    "P.O. Box 740256, Atlanta, GA 30374",
-      TransUnion: "P.O. Box 2000, Chester, PA 19016",
+      Experian:   "Experian Dispute Dept · P.O. Box 4500 · Allen, TX 75013",
+      Equifax:    "Equifax Dispute Dept · P.O. Box 740256 · Atlanta, GA 30374",
+      TransUnion: "TransUnion Dispute Dept · P.O. Box 2000 · Chester, PA 19016",
     };
-    const html = `<!DOCTYPE html>
-<html lang="en"><head>
-  <meta charset="UTF-8">
-  <title>Dispute Letter — ${s.bureau}</title>
-  <style>
-    @page { margin: 1in; }
-    body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.7;
-           color: #000; max-width: 6.5in; margin: 0 auto; white-space: pre-wrap; }
-    h1 { font-size: 13pt; border-bottom: 1px solid #ccc; padding-bottom: 8px; margin-bottom: 24px; }
-    .footer { margin-top: 48px; font-size: 10pt; color: #555; border-top: 1px solid #eee; padding-top: 8px; }
-  </style>
-</head><body>
-<h1>FCRA Dispute Letter · ${s.bureau} · ${new Date().toLocaleDateString()}</h1>
-${s.generated}
-<p class="footer">Bureau mailing address: ${bureauAddresses[s.bureau] ?? s.bureau + " Dispute Department"}</p>
-</body></html>`;
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    page.drawText(`Mail to: ${bureauAddresses[s.bureau] ?? s.bureau}`, {
+      x: margin, y: y - 4, size: 9, font, color: grey,
+    });
+
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `dispute-letter-${s.bureau.toLowerCase()}-${Date.now()}.html`;
+    a.download = `dispute-letter-${s.bureau.toLowerCase()}-${Date.now()}.pdf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
     updateSlot(i, { sent: "print" });
     apiRequest("POST", "/api/disputes", {
       bureau: s.bureau,
@@ -364,7 +413,7 @@ ${s.generated}
       userId,
     }).catch(() => null);
     queryClient.invalidateQueries({ queryKey: ["/api/disputes", userId] });
-  };
+  }, [slots, userId, queryClient]);
 
   const allSent = slots.every((s) => s.sent !== null);
   const allGenerated = slots.every((s) => s.generated !== "");
@@ -482,9 +531,18 @@ ${s.generated}
               const price = sendPrice(sentCount + sessionLOBCount);
               return (
                 <div className="space-y-3">
+                  {/* Bureau + mailing address */}
                   <div className="flex justify-between text-sm">
                     <span style={{ color: "var(--text-secondary)" }}>Bureau</span>
                     <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{slot.bureau}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: "var(--text-secondary)" }}>Mailing address</span>
+                    <span className="font-semibold text-right text-xs" style={{ color: "var(--text-primary)", maxWidth: "55%" }}>
+                      {slot.bureau === "Experian"   && "P.O. Box 4500, Allen TX 75013"}
+                      {slot.bureau === "Equifax"    && "P.O. Box 740256, Atlanta GA 30374"}
+                      {slot.bureau === "TransUnion" && "P.O. Box 2000, Chester PA 19016"}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span style={{ color: "var(--text-secondary)" }}>Account</span>
@@ -497,6 +555,15 @@ ${s.generated}
                     </span>
                   </div>
                   <div className="h-px" style={{ background: "var(--border-gold)" }} />
+                  {/* Credit usage accounting */}
+                  {monthlyCredits !== null && (
+                    <div className="flex justify-between text-sm">
+                      <span style={{ color: "var(--text-secondary)" }}>Credits</span>
+                      <span className="font-semibold" style={{ color: creditsLeft === 0 ? "#E05252" : "var(--gold)" }}>
+                        1 credit used · {Math.max(0, (creditsLeft ?? 0) - 1)} remaining
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span style={{ color: "var(--text-secondary)" }}>Charge</span>
                     <span className="font-black" style={{ color: price === 0 ? "#2ECC8A" : "var(--gold)" }}>
