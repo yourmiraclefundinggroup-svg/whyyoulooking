@@ -1,0 +1,339 @@
+Complete redesign and restructure of the ScoreShift app. This covers the 
+landing page, navigation, all pages, both client views (Credit Repair clients 
+and DIY clients), branding, and layout organization. Do not skip any section.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GLOBAL DESIGN SYSTEM — apply to every page
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+COLOR TOKENS:
+  --bg-primary:    #080C14
+  --bg-surface:    #0F1520
+  --bg-elevated:   #161D2E
+  --gold:          #C9A84C
+  --gold-light:    #E8C96B
+  --gold-dim:      #7A6030
+  --text-primary:  #F0EDE8
+  --text-secondary:#8A9BB5
+  --text-muted:    #4A566A
+  --success:       #2ECC8A
+  --warning:       #E8A020
+  --danger:        #E05252
+  --border:        rgba(201,168,76,0.15)
+
+TYPOGRAPHY: Import 'DM Sans' from Google Fonts. Apply globally.
+  Page titles: 30px bold, --text-primary
+  Section headers: 18px semibold, --text-primary
+  Body: 14px, --text-secondary, line-height 1.6
+  Stat numbers: 36px bold
+  Letter-spacing: 0.02em on all headings
+
+CARDS — every card everywhere uses this:
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+
+BUTTONS:
+  Primary: gold gradient (#C9A84C → #E8C96B), dark text, bold, radius 10px
+  Ghost: transparent bg, gold border, gold text, radius 10px
+
+BODY: background var(--bg-primary), color var(--text-primary), min-height 100vh
+ZERO white or light backgrounds anywhere in the app.
+
+BRANDING RULE: Remove every instance of "Powered by Array" or "Array" branding.
+Replace with "Powered by ScoreShift" in var(--text-muted), 12px.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NAVIGATION BAR — identical across all logged-in pages
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Background: #080C14, 1px gold border bottom, sticky, height 64px, blur backdrop.
+Logo: Gold "SS" badge + "ScoreShift" in --text-primary, bold.
+Active link: --gold-light, 2px gold underline.
+Right side: Client name | role badge (gold pill) | profile icon | Sign Out ghost button.
+Nav links: color --text-secondary, hover --gold-light, smooth transition.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LANDING PAGE (unauthenticated home page)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This must look luxury, high-end, and new-wave. NOT generic AI-looking.
+Think editorial, bold, refined — like a luxury financial brand.
+
+SECTION 1 — HERO:
+  Full viewport height. Background: deep navy #080C14 with a very subtle 
+  radial gradient glow in gold behind the center content (low opacity, ~8%).
+  
+  Center-aligned content:
+  - Small overline text: "THE FUTURE OF CREDIT REPAIR" — gold, 
+    letter-spacing 0.2em, 11px uppercase
+  - Main headline (2-3 lines, large): 
+    "Your Credit. Restored." on line 1
+    "Protected. Elevated." on line 2
+    Each word with sharp, confident kerning. 56-64px bold.
+    "Restored." and "Elevated." in gold gradient text.
+  - Subtitle: "ScoreShift gives you private, expert-level credit repair and 
+    live 3-bureau monitoring — all in one exclusive platform." 
+    16px, --text-secondary, max-width 560px, centered.
+  - Two buttons side by side:
+    • "Get Started" — primary gold gradient button, large
+    • "See How It Works" — ghost button
+  - Below buttons: small trust line — 
+    "Experian · Equifax · TransUnion — Live Bureau Access"
+    in --text-muted, 13px, letter-spacing 0.1em
+
+SECTION 2 — LIVE BUREAU SCORE DISPLAY:
+  Dark section, --bg-surface background.
+  Section label: "REAL-TIME CREDIT INTELLIGENCE" — gold overline, uppercase
+  Headline: "All 3 Bureaus. One Dashboard." — 36px bold white
+  
+  Display three bureau cards side by side (equal width, 3-column grid):
+    Each card:
+      - Bureau logo text (styled, not actual logo — "Experian", "Equifax", 
+        "TransUnion") in their brand colors but on dark background
+      - A large circular score gauge graphic (use CSS or SVG arc)
+        Score shown as "---" for unauthenticated, with a lock icon overlay
+      - Label beneath: "Connect to view your live score"
+      - Bottom: ScoreShift branding — "Powered by ScoreShift" in gold, tiny
+    Card style: var(--bg-elevated), gold top border accent (3px), radius 16px
+  
+  Below the 3 cards: gold "Connect Your Credit" button centered
+
+SECTION 3 — SERVICES OVERVIEW (what ScoreShift offers):
+  Dark background. 3-column icon cards:
+    1. "Credit Repair" — shield icon, gold
+       "Expert dispute management with certified USPS mail tracking."
+    2. "Credit Monitoring" — eye icon, gold
+       "Live alerts, identity theft protection, and 3-bureau score tracking."
+    3. "Dispute IQ" — brain/bot icon, gold
+       "AI-powered Metro 2 and FCRA analysis. Letters built for you."
+  Cards: same global card style, icon in gold circle, heading bold white, 
+  body --text-secondary.
+
+SECTION 4 — PRICING TIERS:
+  Three plan cards centered:
+    Basic ($29.99/mo): Pay-per-letter through the app
+    Professional ($79.99/mo): 1 free letter credit/month, buy additional
+    Elite (custom): 2 letter credits/month, full platform unlocked
+  Active/featured card (Professional): gold border, slight scale up, 
+  "Most Popular" gold badge top right.
+  All cards: dark bg, clean list of features with gold checkmarks.
+
+SECTION 5 — FOOTER:
+  Dark, clean. Logo left. Links center. "© ScoreShift. All rights reserved." right.
+  Color: --text-muted throughout.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LOGIN PAGE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Split screen or centered card on dark background.
+After successful login → always show welcome message:
+"Welcome back, [First Name]." as a toast/banner at top OR as hero text 
+on the dashboard. This must appear on every login without exception.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CREDIT REPAIR CLIENT VIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Main navigation tabs for this view:
+  Dashboard | Credit Monitoring | Debt Navigator | Student Loan Aid | 
+  Progress | Chat | Billing
+
+DELETE COMPLETELY from this view:
+  - Credit Building tab
+  - AI Credit Analysis tab/section
+  - Issues tab (from inner tabs)
+  - Monitor tab (from inner tabs)
+  - Reports tab (from inner tabs)
+  - Any "Full Report" tab on Credit Monitoring
+
+--- DASHBOARD PAGE ---
+
+[A] WELCOME HERO HEADER
+  Dark navy gradient header, full width.
+  "Welcome back, [Client First Name]." — 30px bold, --text-primary
+  Subtitle: "Here's your credit snapshot for today." — --text-secondary
+  Right side: Elite Plan badge | Monitoring Active badge | 3 Bureau badges
+
+[B] CREDIT OVERVIEW — first thing client sees
+  Full-width card. Label: "Credit Overview" (ScoreShift branded, no Array mention).
+  Bureau pill selector: TransUnion | Equifax | Experian | All Bureaus
+  Layout inside: score gauge left (40%) + score history trend chart right (60%)
+  Score gauge: circular arc, score number 40px bold, rating label in --gold-light
+  Chart: dark bg, green trend line, subtle green fill. Clean axes in --text-muted.
+  Override ALL white backgrounds from the Array embed with:
+    background: transparent !important;
+    color: var(--text-primary) !important;
+
+[C] CREDIT ALERTS — immediately below overview
+  Card title: "Credit Alerts & Monitoring" with a bell icon in gold.
+  Shows active credit alerts from the monitoring integration.
+  Alert rows: icon | alert description | date | severity badge
+  Severity: High = --danger pill, Medium = --warning pill, Low = gold pill
+  Empty state: "No active alerts. Your credit is being monitored 24/7." 
+  with green checkmark icon.
+
+[D] ACTIVE DISPUTES WITH TRACKING — below alerts
+  Card title: "Active Disputes" with mail icon in gold.
+  For each dispute item, show a row with:
+    • Item name / account (e.g., "Collection — Midland Credit")
+    • Bureau(s) targeted: small pills — Experian | Equifax | TransUnion
+    • Status badge: Sent | In Transit | Delivered | Resolved
+    • USPS Certified Mail tracking number (from LOB integration) — 
+      monospace font, --gold-light color, copyable (click to copy icon)
+    • Date sent
+  Row style: dark elevated bg, 16px radius, gold left accent border (3px).
+  Each row has enough padding — nothing squished.
+  Empty state: "No disputes in progress." with a subtle message.
+
+THAT IS THE ENTIRE DASHBOARD. Nothing else added.
+
+--- CREDIT MONITORING PAGE ---
+
+Sub-navigation tabs: Alerts & Protection | Tools
+(Overview and Summary tabs removed — overview is on dashboard)
+
+[ALERTS & PROTECTION TAB]
+  Two sections only:
+  1. Identity Theft Protection
+     - Card with shield icon, gold accent
+     - Shows identity monitoring status, alerts, and flagged items
+  2. PII (Personal Identifying Information)
+     - Card showing personal info on file: name, address, SSN partial, 
+       phone, email — with status indicators
+     - Alert if anything looks suspicious
+
+[TOOLS TAB]
+  Three tool cards, full width each (stacked vertically, NOT side by side 
+  if content is dense — each card must have enough space):
+  
+  1. "Score Simulator" card
+     - Input controls to simulate credit changes
+     - Result display with projected score change
+     - Plenty of internal space, nothing cramped
+  
+  2. "Debt Analysis" card
+     - Table: Account | Balance | Monthly Payment | Payment History
+     - Rows: Credit Cards, Auto Loans, Other Loans, Collections
+     - Status in --success green "On Time" pill
+     - Totals row at bottom in bold
+  
+  3. "Score Tracker" card
+     - All 3 bureaus shown with mini trend charts
+     - Bureau name + score + change indicator (+/-)
+     - Charts have enough height to read clearly (min 120px per chart)
+
+--- DEBT NAVIGATOR PAGE (new main tab) ---
+  Page hero header: "Debt Navigator" — same dark hero style.
+  Subtitle: "Manage, negotiate, and eliminate your debt strategically."
+  
+  Section 1: "Debt Navigator" tool — full-width card
+    Debt overview, payoff calculator, strategy recommendations.
+  
+  Section 2: "Subscription Manager" — full-width card below
+    Card title: "Subscription Manager" with credit card icon.
+    List of tracked subscriptions with amount, renewal date, category.
+    Option to flag for cancellation or dispute.
+
+--- STUDENT LOAN AID PAGE (new main tab) ---
+  Page hero header: "Student Loan Aid"
+  Subtitle: "Expert guidance for federal and private student loan relief."
+  Full-width card containing the student loan aid service/tool.
+  Give it full space — do not squish content.
+
+--- PROGRESS PAGE ---
+  Page hero header: "Deletion Progress"
+  Subtitle: "Every item successfully removed from your credit reports."
+  
+  Each deleted item shows as a card row:
+    • Item description (e.g., "Collection — ABC Agency")
+    • Bureau(s) where it was deleted — pill badges:
+      Experian pill (green checkmark) | Equifax pill (green checkmark) | 
+      TransUnion pill (green checkmark) — only show bureaus where it was deleted
+    • Date removed
+    • Method (Dispute / Goodwill / Validation)
+  
+  Summary bar at top: "X items removed" in gold, across Experian (X) | 
+  Equifax (X) | TransUnion (X)
+  
+  Empty state: "No deletions recorded yet. Your journey starts now." 
+
+--- CHAT PAGE ---
+  Keep existing chat functionality.
+  Restyle: dark card, gold send button, --bg-elevated input area.
+
+--- BILLING PAGE ---
+  Keep all existing billing functionality.
+  Restyle: dark hero header "Billing & Membership", plan card with gold 
+  top border, invoice table with dark rows.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DIY CLIENT VIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Similar structure to Credit Repair view WITH these differences:
+
+Main navigation: Dashboard | Credit Monitoring | Disputes | Debt Navigator | 
+Student Loan Aid | Progress | Chat | Billing
+
+KEEP for DIY that was removed for repair clients:
+  - AI Credit Analysis (DIY clients only — keep this feature)
+
+ADD: DISPUTES main tab (DIY only)
+
+--- DISPUTES PAGE (DIY only) ---
+  Page hero: "Dispute IQ" — "Powered by ScoreShift"
+  
+  The Dispute IQ bot workflow inside this page:
+
+  STEP 1 — ANALYZE
+    Full credit report pulled via Array integration (no Array branding).
+    Bot card: "Dispute IQ is analyzing your credit report..."
+    Results card shows:
+      - List of flagged negative items
+      - For each item: violation type (Metro 2 | FCRA), severity, 
+        recommended action
+      - Bureau(s) affected shown as color pills
+
+  STEP 2 — BUILD LETTERS
+    For each flagged item, a dispute letter is auto-generated.
+    Letter preview card: shows letter content, client name/address pre-filled.
+    Up to 3 letters generated based on findings.
+    Status tracker: Letter 1 ✓ | Letter 2 ✓ | Letter 3 ✓
+
+  STEP 3 — SEND OR PRINT
+    Two options per letter:
+    
+    Option A — "Send via Certified Mail" (LOB integration)
+      Gold primary button: "Send via ScoreShift Mail — $X"
+      Pricing based on plan:
+        • $29.99 plan: pay per letter, shown price before confirming
+        • $79.99 plan: first letter free (credit applied), 
+          "1 credit used" shown, pay for additional
+        • Elite plan: 2 free letter credits, pay for additional
+      Confirmation modal: shows address, price, credit used — 
+      "Confirm & Send" gold button.
+      After send: tracking number from LOB displayed in --gold-light, copyable.
+    
+    Option B — "Print Letter"
+      Ghost button: "Download & Print"
+      Generates printable PDF version.
+    
+    Plan credit tracker at top of page:
+      "Credits remaining: X / X" — gold badge
+      "Upgrade for more credits" link if at 0.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FINAL CRITICAL RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. No white or light backgrounds anywhere — zero exceptions.
+2. Every "Powered by Array" or "Array" reference replaced with 
+   "Powered by ScoreShift" in --text-muted.
+3. Welcome back message with client first name shown on every login.
+4. Every card has minimum 28px internal padding — nothing squished.
+5. Grids collapse gracefully on smaller screens (2-col then 1-col).
+6. All tabs across the entire app use the same gold underline active style.
+7. No functionality removed unless explicitly listed above.
+8. Both client views (Credit Repair and DIY) share the same design system 
+   but show different navigation tabs and features as specified.
+9. The landing page must feel handcrafted luxury — not templated or AI-generic.
+10. Score gauges, trend charts, and bureau data always labeled 
+    "Powered by ScoreShift" — never "Array".
