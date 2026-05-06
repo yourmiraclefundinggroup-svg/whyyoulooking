@@ -193,19 +193,16 @@ function ArrayCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
-      <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-          style={{ background: "rgba(201,168,76,0.12)" }}>
-          <span style={{ color: "var(--gold)", display: "contents" }}>
-            <Icon className="h-4 w-4" />
-          </span>
+    <div className="rounded-xl border border-slate-200 dark:border-white/[0.07] bg-white dark:bg-[#0F1E35] overflow-hidden shadow-sm">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-white/[0.05]">
+        <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
+          <Icon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
         </div>
         <div>
-          <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{title}</p>
-          <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{description}</p>
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{title}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
         </div>
-        <span className="ml-auto text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
+        <span className="ml-auto text-[10px] text-slate-300 dark:text-slate-600 font-medium">
           Powered by ScoreShift
         </span>
       </div>
@@ -217,6 +214,18 @@ function ArrayCard({
 /* ── Tab definition ──────────────────────────────────────────────────────── */
 const TABS = [
   {
+    id: "overview",
+    label: "Overview",
+    subtitle: "Scores & summary",
+    icon: BarChart3,
+  },
+  {
+    id: "report",
+    label: "Full Report",
+    subtitle: "3-bureau detail",
+    icon: FileSearch,
+  },
+  {
     id: "alerts",
     label: "Alerts & Protection",
     subtitle: "Real-time monitoring",
@@ -225,14 +234,14 @@ const TABS = [
   {
     id: "tools",
     label: "Tools",
-    subtitle: "Simulators · analysis",
+    subtitle: "Simulators & planners",
     icon: Zap,
   },
   {
-    id: "report",
-    label: "Full Report",
-    subtitle: "3-bureau detail",
-    icon: FileSearch,
+    id: "premium",
+    label: "Premium Services",
+    subtitle: "Elite features",
+    icon: Star,
   },
 ] as const;
 
@@ -242,7 +251,7 @@ type TabId = typeof TABS[number]["id"];
 export default function CreditMonitoring() {
   const { user } = useUserContext();
   const queryClient = useQueryClient();
-  const [activeSection, setActiveSection] = useState<TabId>("alerts");
+  const [activeSection, setActiveSection] = useState<TabId>("overview");
   const access = useFeatureAccess();
 
   const { loaded: scriptReady } = useArrayScript();
@@ -268,19 +277,18 @@ export default function CreditMonitoring() {
 
   if (enrollLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-primary)" }}>
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <ScoreShiftLogo size="lg" />
-          <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: "var(--gold)", borderTopColor: "transparent" }} />
-          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Loading credit monitoring...</p>
+          <div className="w-10 h-10 rounded-full border-2 border-amber-400 border-t-transparent ss-spinner" />
+          <p className="text-muted-foreground text-sm">Loading credit monitoring...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
+    <div className="min-h-screen bg-background">
 
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="bg-gradient-to-r from-[#0F172A] to-[#1E3A5F] dark:from-[#050A14] dark:to-[#0A1628]">
@@ -334,7 +342,7 @@ export default function CreditMonitoring() {
       </div>
 
       {/* ── Tab bar ──────────────────────────────────────────────────────── */}
-      <div style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border-gold)" }}>
+      <div className="bg-white dark:bg-[#0A1628] border-b border-slate-200 dark:border-white/[0.07]">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex gap-0.5 overflow-x-auto scrollbar-hide">
             {TABS.map((tab) => {
@@ -344,16 +352,16 @@ export default function CreditMonitoring() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveSection(tab.id)}
-                  className="group flex items-center gap-2 px-4 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors relative"
-                  style={{
-                    borderBottomColor: isActive ? "var(--gold)" : "transparent",
-                    color: isActive ? "var(--gold)" : "var(--text-muted)",
-                  }}
+                  className={`group flex items-center gap-2 px-4 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors relative ${
+                    isActive
+                      ? "border-amber-500 text-amber-600 dark:text-amber-400"
+                      : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-white/20"
+                  }`}
                 >
-                  <Icon className="h-4 w-4 shrink-0" style={{ color: isActive ? "var(--gold)" : "var(--text-muted)" }} />
+                  <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-amber-500" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300"}`} />
                   <span className="flex flex-col items-start">
                     <span>{tab.label}</span>
-                    <span className="text-[10px] font-normal hidden sm:block" style={{ color: isActive ? "rgba(201,168,76,0.7)" : "var(--text-muted)" }}>
+                    <span className={`text-[10px] font-normal hidden sm:block ${isActive ? "text-amber-500/70" : "text-slate-400 dark:text-slate-500"}`}>
                       {tab.subtitle}
                     </span>
                   </span>
@@ -443,6 +451,61 @@ export default function CreditMonitoring() {
         {/* ── Enrolled content by tab ────────────────────────────────────── */}
         {isEnrolled ? (
           <>
+            {activeSection === "overview" && (
+              <div className="space-y-5">
+                <ArrayCard
+                  icon={BarChart3}
+                  title="Credit Overview"
+                  description="Live 3-bureau credit scores and account summary"
+                >
+                  <CreditComponent
+                    tag="array-credit-overview"
+                    appKey={ARRAY_SANDBOX_APP_KEY}
+                    userToken={ARRAY_SANDBOX_TOKENS.default}
+                    scriptReady={scriptReady}
+                  />
+                </ArrayCard>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                  <ArrayCard
+                    icon={TrendingUp}
+                    title="Score Tracker"
+                    description="Track your score history across all three bureaus"
+                  >
+                    <CreditComponent
+                      tag="array-credit-score"
+                      appKey={ARRAY_SANDBOX_APP_KEY}
+                      userToken={ARRAY_SANDBOX_TOKENS.default}
+                      scriptReady={scriptReady}
+                      attrs={{ bureau: "all", scoreTracker: "true" }}
+                    />
+                  </ArrayCard>
+
+                  {access.canAccess(FEATURES.DEBT_ANALYSIS) ? (
+                    <ArrayCard
+                      icon={CreditCard}
+                      title="Debt Analysis"
+                      description="Utilization breakdown and balance summary"
+                    >
+                      <CreditComponent
+                        tag="array-credit-debt-analysis"
+                        appKey={ARRAY_SANDBOX_APP_KEY}
+                        userToken={ARRAY_SANDBOX_TOKENS.default}
+                        scriptReady={scriptReady}
+                      />
+                    </ArrayCard>
+                  ) : (
+                    <TierUpgradeCard
+                      label="Debt Analysis"
+                      icon={CreditCard}
+                      description="See a full breakdown of your debts, balances, and credit utilization by account."
+                      requiredTier="pro"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
             {activeSection === "report" && (
               <ArrayCard
                 icon={FileSearch}
@@ -461,135 +524,6 @@ export default function CreditMonitoring() {
 
             {activeSection === "alerts" && (
               <div className="space-y-5">
-
-                {/* ── PII / Personal Information on File card ──────────────── */}
-                <div className="rounded-2xl overflow-hidden"
-                  style={{ background: "var(--bg-surface)", border: "1px solid var(--border-gold)" }}>
-                  <div className="flex items-center gap-3 px-5 py-3.5 border-b"
-                    style={{ borderColor: "var(--border-gold)" }}>
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ background: "rgba(201,168,76,0.1)" }}>
-                      <Eye className="h-4 w-4" style={{ color: "var(--gold)" }} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                        Personal Information on File
-                      </p>
-                      <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                        Name, address &amp; employer data reported to bureaus
-                      </p>
-                    </div>
-                    <span className="ml-auto text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>
-                      Powered by ScoreShift
-                    </span>
-                  </div>
-                  <div className="p-5 space-y-4">
-                    <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                      Incorrect personal information (name variations, outdated addresses, wrong employers)
-                      can be disputed directly with the bureaus under{" "}
-                      <span className="font-semibold" style={{ color: "var(--text-primary)" }}>FCRA §1681i</span>.
-                    </p>
-
-                    {/* PII field-level status indicators */}
-                    {(() => {
-                      const piiFields = [
-                        { label: "Legal Name",    icon: "👤", key: "name" },
-                        { label: "Address",        icon: "📍", key: "address" },
-                        { label: "SSN (last 4)",   icon: "🔒", key: "ssn" },
-                        { label: "Phone Number",   icon: "📞", key: "phone" },
-                        { label: "Email",          icon: "✉️",  key: "email" },
-                        { label: "Date of Birth",  icon: "🗓️", key: "dob" },
-                      ] as const;
-
-                      const bureauColors: Record<string, string> = {
-                        Experian: "#0062FF", Equifax: "#E12726", TransUnion: "#662D8C",
-                      };
-
-                      return (
-                        <div className="space-y-2">
-                          {/* Bureau column headers */}
-                          <div className="grid grid-cols-4 text-[10px] font-bold mb-1"
-                            style={{ color: "var(--text-muted)" }}>
-                            <span>Field</span>
-                            {(["Experian", "Equifax", "TransUnion"] as const).map((b) => (
-                              <span key={b} className="text-center" style={{ color: bureauColors[b] }}>{b.slice(0, 3)}</span>
-                            ))}
-                          </div>
-                          {piiFields.map(({ label, icon, key }) => {
-                            // Derive status from user profile data where available
-                            const userHas: Record<string, boolean> = {
-                              name:    !!(user?.firstName && user?.lastName),
-                              address: false, // requires intake data
-                              ssn:     false, // requires intake data
-                              phone:   false, // requires intake data
-                              email:   !!user?.email,
-                              dob:     false, // requires intake data
-                            };
-                            const hasData = userHas[key];
-                            return (
-                              <div key={key} className="grid grid-cols-4 items-center py-2 rounded-lg px-2"
-                                style={{ background: "var(--bg-elevated)" }}>
-                                <span className="text-xs flex items-center gap-1.5" style={{ color: "var(--text-secondary)" }}>
-                                  <span>{icon}</span>{label}
-                                </span>
-                                {(["Experian", "Equifax", "TransUnion"] as const).map((b) => (
-                                  <span key={b} className="text-center">
-                                    {isEnrolled ? (
-                                      hasData ? (
-                                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px]"
-                                          style={{ background: "rgba(46,204,138,0.15)", color: "#2ECC8A" }}>✓</span>
-                                      ) : (
-                                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px]"
-                                          style={{ background: "rgba(232,160,32,0.15)", color: "#E8A020" }}>!</span>
-                                      )
-                                    ) : (
-                                      <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>—</span>
-                                    )}
-                                  </span>
-                                ))}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
-
-                    {/* Bureau connection status row */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
-                      {(["Experian", "Equifax", "TransUnion"] as const).map((bureau) => {
-                        const colors: Record<string, string> = {
-                          Experian: "#0062FF", Equifax: "#E12726", TransUnion: "#662D8C",
-                        };
-                        return (
-                          <div key={bureau} className="rounded-xl p-2.5 flex items-center gap-2"
-                            style={{ background: "var(--bg-elevated)", border: `1px solid ${colors[bureau]}22` }}>
-                            <div className="w-2 h-2 rounded-full shrink-0"
-                              style={{ background: isEnrolled ? "#2ECC8A" : colors[bureau], opacity: isEnrolled ? 1 : 0.5 }} />
-                            <div className="min-w-0">
-                              <div className="text-xs font-bold truncate" style={{ color: colors[bureau] }}>{bureau}</div>
-                              <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                                {isEnrolled ? "Report on file" : "Not connected"}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {isEnrolled ? (
-                      <button className="ss-btn-ghost text-xs !py-2" onClick={() => setActiveSection("report")}>
-                        View full report for all PII details
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </button>
-                    ) : (
-                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                        Connect your credit profile above to verify PII at each bureau.
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* ── Identity Theft Protection ─────────────────────────── */}
                 {access.canAccess(FEATURES.CREDIT_ALERTS) && enrollment?.productCodes?.some((c) =>
                   ["exp3bStandardMonitoring", "creditScoreChangeAlertExp"].includes(c)
                 ) ? (
@@ -670,12 +604,11 @@ export default function CreditMonitoring() {
 
             {activeSection === "tools" && (
               <div className="space-y-5">
-                {/* Score Simulator */}
                 {access.canAccess(FEATURES.SCORE_SIMULATOR) ? (
                   <ArrayCard
                     icon={Navigation}
                     title="Score Simulator"
-                    description="Model how paying debt, opening accounts, or closing cards would change your score"
+                    description="Model how financial decisions would impact your credit score"
                   >
                     <CreditComponent
                       tag="array-credit-score-simulator"
@@ -693,30 +626,14 @@ export default function CreditMonitoring() {
                   />
                 )}
 
-                {/* Score Tracker — mini trend across all 3 bureaus */}
-                <ArrayCard
-                  icon={TrendingUp}
-                  title="Score Tracker"
-                  description="Score trend history across Experian, Equifax, and TransUnion"
-                >
-                  <CreditComponent
-                    tag="array-credit-score"
-                    appKey={ARRAY_SANDBOX_APP_KEY}
-                    userToken={ARRAY_SANDBOX_TOKENS.default}
-                    scriptReady={scriptReady}
-                    attrs={{ bureau: "all", scoreTracker: "true" }}
-                  />
-                </ArrayCard>
-
-                {/* Debt Analysis table */}
-                {access.canAccess(FEATURES.DEBT_ANALYSIS) ? (
+                {access.canAccess(FEATURES.DEBT_NAVIGATOR) && enrollment?.productCodes?.includes("debtNavPremium") ? (
                   <ArrayCard
-                    icon={CreditCard}
-                    title="Debt Analysis"
-                    description="Credit utilization breakdown, balance summary, and debt-to-income ratios by account"
+                    icon={Zap}
+                    title="Debt Navigator"
+                    description="Premium debt payoff planning and strategy engine"
                   >
                     <CreditComponent
-                      tag="array-credit-debt-analysis"
+                      tag="array-debt-navigator"
                       appKey={ARRAY_SANDBOX_APP_KEY}
                       userToken={ARRAY_SANDBOX_TOKENS.default}
                       scriptReady={scriptReady}
@@ -724,10 +641,69 @@ export default function CreditMonitoring() {
                   </ArrayCard>
                 ) : (
                   <TierUpgradeCard
-                    label="Debt Analysis"
-                    icon={CreditCard}
-                    description="See a full breakdown of your debts, balances, and credit utilization by account."
+                    label="Debt Navigator"
+                    icon={Navigation}
+                    description="Build a personalized debt payoff plan using avalanche or snowball strategies, with projected timelines and interest savings."
                     requiredTier="pro"
+                  />
+                )}
+              </div>
+            )}
+
+            {activeSection === "premium" && (
+              <div className="space-y-5">
+                {access.canAccess(FEATURES.STUDENT_LOAN_AID) && enrollment?.productCodes?.includes("pioStudentLoanAidSubmission") ? (
+                  <ArrayCard
+                    icon={GraduationCap}
+                    title="Student Loan Aid"
+                    description="Navigate your student loan options and enrollment"
+                  >
+                    <CreditComponent
+                      tag="array-student-loan-navigator"
+                      appKey={ARRAY_SANDBOX_APP_KEY}
+                      userToken={ARRAY_SANDBOX_TOKENS.default}
+                      scriptReady={scriptReady}
+                      attrs={{ autolaunch: "true" }}
+                    />
+                    <div className="mt-4">
+                      <CreditComponent
+                        tag="array-student-loan-aid"
+                        appKey={ARRAY_SANDBOX_APP_KEY}
+                        userToken={ARRAY_SANDBOX_TOKENS.studentLoanAid}
+                        scriptReady={scriptReady}
+                      />
+                    </div>
+                  </ArrayCard>
+                ) : (
+                  <TierUpgradeCard
+                    label="Student Loan Aid"
+                    icon={GraduationCap}
+                    description="Find income-driven repayment plans, forgiveness programs, and refinancing options tailored to your student loan situation."
+                    requiredTier="elite"
+                  />
+                )}
+
+                {access.canAccess(FEATURES.SUBSCRIPTION_MANAGER) && enrollment?.productCodes?.some((c) =>
+                  ["subscriptionManagerEnrichmentAndCancellation", "smTxnSrcFinLnk"].includes(c)
+                ) ? (
+                  <ArrayCard
+                    icon={CreditCard}
+                    title="Subscription Manager"
+                    description="View, manage, and cancel your credit product subscriptions"
+                  >
+                    <CreditComponent
+                      tag="array-subscription-manager"
+                      appKey={ARRAY_SANDBOX_APP_KEY}
+                      userToken={ARRAY_SANDBOX_TOKENS.subscriptionManager}
+                      scriptReady={scriptReady}
+                    />
+                  </ArrayCard>
+                ) : (
+                  <TierUpgradeCard
+                    label="Subscription Manager"
+                    icon={CreditCard}
+                    description="Get a full view of your recurring subscriptions with the ability to cancel unwanted services directly from your dashboard."
+                    requiredTier="elite"
                   />
                 )}
               </div>
@@ -738,7 +714,9 @@ export default function CreditMonitoring() {
         {/* ── Not enrolled preview grid ─────────────────────────────────── */}
         {!isEnrolled && (
           <div className="mt-2">
-            <div className="ss-overline mb-4">Available after enrollment</div>
+            <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">
+              Available after enrollment
+            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {[
                 { id: "credit-overview",  label: "Credit Overview",       icon: BarChart3,      description: "Live 3-bureau credit scores and account summary" },
@@ -755,18 +733,16 @@ export default function CreditMonitoring() {
               ].map((comp) => (
                 <div
                   key={comp.id}
-                  className="rounded-xl p-4 opacity-50 pointer-events-none"
-                  style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-gold)" }}
+                  className="rounded-xl border border-slate-200 dark:border-white/[0.06] bg-white dark:bg-[#0F1E35]/60 p-4 opacity-60 pointer-events-none"
                 >
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                      style={{ background: "rgba(255,255,255,0.04)" }}>
-                      <comp.icon className="h-3.5 w-3.5" style={{ color: "var(--text-muted)" }} />
+                    <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center">
+                      <comp.icon className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
                     </div>
-                    <span className="font-medium text-sm" style={{ color: "var(--text-secondary)" }}>{comp.label}</span>
-                    <Lock className="h-3.5 w-3.5 ml-auto" style={{ color: "var(--text-muted)" }} />
+                    <span className="font-medium text-slate-600 dark:text-slate-400 text-sm">{comp.label}</span>
+                    <Lock className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600 ml-auto" />
                   </div>
-                  <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>{comp.description}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed">{comp.description}</p>
                 </div>
               ))}
             </div>

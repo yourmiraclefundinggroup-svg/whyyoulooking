@@ -7,8 +7,6 @@ interface UserContextType {
   isAdmin: boolean;
   isBetaTester: boolean;
   isClientViewer: boolean;
-  /** True when user is a DIY subscriber (starter/pro/elite tier) — drives DIY tab visibility */
-  isDIYMode: boolean;
   canCreateDisputes: boolean;
   canAccessAI: boolean;
   canAccessCreditBuilding: boolean;
@@ -48,24 +46,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const isBetaTester = user?.accessLevel === 'BETA_TESTER';
   const isClientViewer = user?.accessLevel === 'CLIENT_VIEWER';
 
-  // DIY client: any paying subscriber with a subscriptionTier
-  const isDIYClient = !!(user?.subscriptionTier && user.subscriptionTier !== 'none');
-
-  // isDIYMode — explicit flag for Credit Repair vs DIY client-view routing
-  const isDIYMode = isDIYClient && !isAdmin;
-
-  // Permission checks — DIY clients (starter/pro/elite) can create disputes
-  const canCreateDisputes = isAdmin || isBetaTester || isDIYClient;
-  const canAccessAI = isAdmin || isBetaTester || isDIYClient;
-  const canAccessCreditBuilding = isAdmin || isBetaTester || isDIYClient;
-  const canAccessEducation = isAdmin || isBetaTester || isDIYClient;
+  // Permission checks
+  const canCreateDisputes = isAdmin || isBetaTester;
+  const canAccessAI = isAdmin || isBetaTester;
+  const canAccessCreditBuilding = isAdmin || isBetaTester;
+  const canAccessEducation = isAdmin || isBetaTester;
 
   const value: UserContextType = {
     user: user || null,
     isAdmin,
     isBetaTester,
     isClientViewer,
-    isDIYMode,
     canCreateDisputes,
     canAccessAI,
     canAccessCreditBuilding,
