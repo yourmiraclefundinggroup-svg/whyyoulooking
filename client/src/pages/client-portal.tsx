@@ -309,7 +309,8 @@ function DisputesPage() {
 /* ── Main component ─────────────────────────────────────────────── */
 export default function ClientPortal() {
   const { user, logout } = useUserContext();
-  const { appKey, token: userToken, isReady: tokenReady, error: tokenError } = useArrayToken();
+  const { appKey, token: userToken, apiUrl, sandboxMode, isReady: tokenReady, error: tokenError } = useArrayToken();
+  const sbx = sandboxMode ? { apiUrl, sandbox: "true" } : {};
   const { loaded: scriptReady } = useArrayScript(appKey || undefined);
   const featureAccess = useFeatureAccess();
   const [activePage, setActivePage] = useState<PageId>("dashboard");
@@ -705,7 +706,7 @@ export default function ClientPortal() {
                   loading={!scriptReady || (!tokenReady && !tokenError)}
                   locked={tokenError}
                 >
-                  <array-credit-overview appKey={appKey} userToken={userToken} />
+                  <array-credit-overview appKey={appKey} userToken={userToken} {...sbx} />
                 </ArrayWrapper>
               </div>
 
@@ -849,7 +850,7 @@ export default function ClientPortal() {
                 loading={!scriptReady || (!tokenReady && !tokenError)}
               locked={tokenError}
               >
-                <array-credit-score appKey={appKey} userToken={userToken} bureau="all" scoreTracker="true" />
+                <array-credit-score appKey={appKey} userToken={userToken} bureau="all" scoreTracker="true" {...sbx} />
               </ArrayWrapper>
             </div>
           )}
@@ -925,7 +926,7 @@ export default function ClientPortal() {
                   loading={!scriptReady || (!tokenReady && !tokenError)}
                 locked={tokenError}
                 >
-                  <array-credit-alerts appKey={appKey} userToken={userToken} />
+                  <array-credit-alerts appKey={appKey} userToken={userToken} {...sbx} />
                 </ArrayWrapper>
               </div>
             </div>
@@ -948,7 +949,7 @@ export default function ClientPortal() {
                 loading={!scriptReady || (!tokenReady && !tokenError)}
                 locked={tokenError}
               >
-                <array-identity-protect appKey={appKey} userToken={userToken} />
+                <array-identity-protect appKey={appKey} userToken={userToken} {...sbx} />
               </ArrayWrapper>
             </div>
           )}
@@ -969,7 +970,7 @@ export default function ClientPortal() {
                 loading={!scriptReady || (!tokenReady && !tokenError)}
                 locked={tokenError}
               >
-                <array-pip-dashboard appKey={appKey} userToken={userToken} />
+                <array-pip-dashboard appKey={appKey} userToken={userToken} {...sbx} />
               </ArrayWrapper>
             </div>
           )}
@@ -990,7 +991,7 @@ export default function ClientPortal() {
                 loading={!scriptReady || (!tokenReady && !tokenError)}
                 locked={tokenError}
               >
-                <array-pip-scan appKey={appKey} userToken={userToken} />
+                <array-pip-scan appKey={appKey} userToken={userToken} {...sbx} />
               </ArrayWrapper>
             </div>
           )}
@@ -1013,7 +1014,7 @@ export default function ClientPortal() {
                 loading={!scriptReady || (!tokenReady && !tokenError)}
                 locked={tokenError}
               >
-                <array-credit-alerts appKey={appKey} userToken={userToken} />
+                <array-credit-alerts appKey={appKey} userToken={userToken} {...sbx} />
               </ArrayWrapper>
             </div>
           )}
@@ -1034,7 +1035,7 @@ export default function ClientPortal() {
                 loading={!scriptReady || (!tokenReady && !tokenError)}
                 locked={tokenError}
               >
-                <array-credit-score-simulator appKey={appKey} userToken={userToken} />
+                <array-credit-score-simulator appKey={appKey} userToken={userToken} {...sbx} />
               </ArrayWrapper>
             </div>
           )}
@@ -1056,7 +1057,7 @@ export default function ClientPortal() {
                 loading={!scriptReady || (!tokenReady && !tokenError)}
                 locked={tokenError}
               >
-                <array-credit-report appKey={appKey} userToken={userToken} defaultBureau="all" />
+                <array-credit-report appKey={appKey} userToken={userToken} defaultBureau="all" {...sbx} />
               </ArrayWrapper>
             </div>
           )}
@@ -1078,7 +1079,7 @@ export default function ClientPortal() {
                 loading={!scriptReady || (!tokenReady && !tokenError)}
                 locked={tokenError}
               >
-                <array-credit-debt-analysis appKey={appKey} userToken={userToken} />
+                <array-credit-debt-analysis appKey={appKey} userToken={userToken} {...sbx} />
               </ArrayWrapper>
             </div>
           )}
@@ -1099,7 +1100,7 @@ export default function ClientPortal() {
                 loading={!scriptReady || (!tokenReady && !tokenError)}
                 locked={tokenError}
               >
-                <array-debt-navigator appKey={appKey} userToken={userToken} />
+                <array-debt-navigator appKey={appKey} userToken={userToken} {...sbx} />
               </ArrayWrapper>
             </div>
           )}
@@ -1120,7 +1121,7 @@ export default function ClientPortal() {
                 loading={!scriptReady || (!tokenReady && !tokenError)}
                 locked={tokenError}
               >
-                <array-student-loan-aid appKey={appKey} userToken={userToken} />
+                <array-student-loan-aid appKey={appKey} userToken={userToken} {...sbx} />
               </ArrayWrapper>
             </div>
           )}
@@ -1142,7 +1143,7 @@ export default function ClientPortal() {
                 loading={!scriptReady || (!tokenReady && !tokenError)}
                 locked={tokenError}
               >
-                <array-subscription-manager appKey={appKey} userToken={userToken} provider="plaid" mode="premium" />
+                <array-subscription-manager appKey={appKey} userToken={userToken} provider="plaid" mode="premium" {...sbx} />
               </ArrayWrapper>
             </div>
           )}

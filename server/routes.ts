@@ -8746,6 +8746,25 @@ ${denialLetterText}`
   app.get("/api/array/token", authenticateToken, requireClientAccess, requireFeature("credit_overview"), async (req, res) => {
     try {
       const user = (req as any).user;
+
+      // ── Sandbox mode for test users ───────────────────────────────────────
+      // Any account flagged as a test user gets Array sandbox credentials so
+      // the client portal points at mock.array.io instead of production Array.
+      if (user.isTestUser) {
+        const SANDBOX_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
+        const SANDBOX_API_URL = "https://mock.array.io";
+        const SANDBOX_TOKEN   = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
+        console.log(`[Array] Sandbox mode for test user ${user.id}`);
+        return res.json({
+          token: SANDBOX_TOKEN,
+          appKey: SANDBOX_APP_KEY,
+          apiUrl: SANDBOX_API_URL,
+          sandboxMode: true,
+          arrayUserId: `scoreshift_user_${user.id}`,
+          expiresAt: new Date(Date.now() + 55 * 60 * 1000).toISOString(),
+        });
+      }
+
       const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
       const ARRAY_API_SECRET = process.env.ARRAY_API_SECRET;
       const ARRAY_APP_KEY = process.env.ARRAY_APP_KEY;
@@ -8775,20 +8794,16 @@ ${denialLetterText}`
       const tokenData = await tokenResponse.json() as any;
       console.log(`[Array] Token generated for user ${user.id} (arrayUserId: ${arrayUserId})`);
 
-      // Record the time this token was issued (best-effort, non-blocking).
-      // We update only if the enrollment row exists; no row means no-op from WHERE clause.
       try {
         const { arrayEnrollments } = await import("@shared/schema");
         await db.update(arrayEnrollments)
           .set({ lastTokenIssuedAt: new Date() })
           .where(eq(arrayEnrollments.userId, user.id));
       } catch (dbErr: any) {
-        // Log so the issue is diagnosable without breaking token issuance
         console.warn(`[Array] Could not update lastTokenIssuedAt for user ${user.id}:`, dbErr?.message ?? dbErr);
       }
 
-      // Resolve expiry: Array may return expiresAt (ISO string) or exp (Unix seconds).
-      // Fall back to 55 minutes from now so the client always has a safe refresh window.
+      // Resolve expiry — fall back to 55 min if Array doesn't return one.
       let expiresAt: string;
       if (tokenData.expiresAt) {
         expiresAt = tokenData.expiresAt;
@@ -8801,6 +8816,8 @@ ${denialLetterText}`
       res.json({
         token: tokenData.token || tokenData.userToken || tokenData.access_token,
         appKey: ARRAY_APP_KEY,
+        apiUrl: "",
+        sandboxMode: false,
         arrayUserId,
         expiresAt,
       });
