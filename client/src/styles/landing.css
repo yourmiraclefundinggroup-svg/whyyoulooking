@@ -1243,7 +1243,7 @@
 }
 .lp-scoreshift-center .lp-integration-tagline { color: rgba(255,255,255,0.3); }
 
-.lp-integrations-lob-row {
+.lp-integrations-mail-row {
   max-width: 960px;
   margin: 0 auto;
   display: grid;
@@ -1252,19 +1252,19 @@
   align-items: start;
 }
 
-.lp-lob-connector {
+.lp-mail-connector {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.lp-lob-line {
+.lp-mail-line {
   width: 2px;
   height: 48px;
   background: linear-gradient(to bottom, var(--violet-400), var(--teal-400));
 }
 
-.lp-lob-dot {
+.lp-mail-dot {
   width: 40px; height: 40px;
   border-radius: 50%;
   background: var(--white);
@@ -1274,22 +1274,22 @@
   color: var(--teal-500);
 }
 
-.lp-lob-line-2 {
+.lp-mail-line-2 {
   width: 2px;
   height: 48px;
   background: linear-gradient(to bottom, var(--teal-400), transparent);
 }
 
-.lp-lob-card {
+.lp-mail-card {
   border-color: var(--teal-400) !important;
   background: linear-gradient(135deg, #f0fdfa, #ecfdf5) !important;
 }
 
-.lp-lob-card .lp-integration-logo-name { color: var(--gray-900); }
-.lp-lob-card .lp-integration-tagline { color: var(--teal-500); }
-.lp-lob-card .lp-integration-desc { color: var(--gray-600); }
-.lp-lob-card .lp-integration-features li { color: var(--gray-600); }
-.lp-lob-card .lp-check-icon {
+.lp-mail-card .lp-integration-logo-name { color: var(--gray-900); }
+.lp-mail-card .lp-integration-tagline { color: var(--teal-500); }
+.lp-mail-card .lp-integration-desc { color: var(--gray-600); }
+.lp-mail-card .lp-integration-features li { color: var(--gray-600); }
+.lp-mail-card .lp-check-icon {
   background: #d1fae5;
   border-color: #6ee7b7;
   color: #059669;

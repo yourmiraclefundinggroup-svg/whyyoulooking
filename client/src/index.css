@@ -75,8 +75,8 @@
   --primary-foreground: 0 0% 0%;
   --secondary: 218 35% 13%;
   --secondary-foreground: 37 28% 93%;
-  --accent: 218 35% 13%;
-  --accent-foreground: 37 28% 93%;
+  --accent: 239 84% 67%;  /* #6366f1 indigo-500 — brand primary (HSL for Tailwind compat) */
+  --accent-foreground: 0 0% 100%;
   --destructive: 0 70% 50%;
   --destructive-foreground: 0 0% 100%;
   --ring: 38 92% 50%;
@@ -144,6 +144,11 @@
 }
 
 .dark {
+  /* Restore admin-safe Shadcn --accent for dark mode (overrides brand indigo from :root).
+     Admin portal hover states need a dark neutral, not the bright brand indigo. */
+  --accent: 218 35% 13%;
+  --accent-foreground: 37 28% 93%;
+
   /* ScoreShift brand colors — dark mode */
   --gold-400: #F59E0B;
   --gold-500: #D97706;

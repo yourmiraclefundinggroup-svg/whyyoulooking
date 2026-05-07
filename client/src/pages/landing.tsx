@@ -509,14 +509,14 @@ function IntegrationsSection() {
         </div>
 
         {/* Mail Automation Row */}
-        <div className="lp-integrations-lob-row lp-fade-up lp-delay-3">
+        <div className="lp-integrations-mail-row lp-fade-up lp-delay-3">
           <div />
-          <div className="lp-lob-connector">
-            <div className="lp-lob-line" />
-            <div className="lp-lob-dot"><Icon d={ICONS.send} size={18} /></div>
-            <div className="lp-lob-line-2" />
+          <div className="lp-mail-connector">
+            <div className="lp-mail-line" />
+            <div className="lp-mail-dot"><Icon d={ICONS.send} size={18} /></div>
+            <div className="lp-mail-line-2" />
           </div>
-          <div className="lp-integration-card lp-lob-card">
+          <div className="lp-integration-card lp-mail-card">
             <div className="lp-integration-logo">
               <div className="lp-integration-logo-icon" style={{ background: "#d1fae5", color: "#059669" }}><Icon d={ICONS.truck} size={22} /></div>
               <div className="lp-integration-logo-name">Mail Automation</div>
