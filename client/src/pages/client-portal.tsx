@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useUserContext } from "@/hooks/use-user-context";
-import { useArrayScript, ARRAY_SANDBOX_APP_KEY, ARRAY_SANDBOX_API_URL, ARRAY_SANDBOX_TOKENS } from "@/hooks/use-array-script";
+import { useArrayScript, ARRAY_SANDBOX_API_URL, ARRAY_SANDBOX_TOKENS } from "@/hooks/use-array-script";
+import { useArrayToken } from "@/hooks/use-array-token";
 import { useFeatureAccess } from "@/hooks/use-feature-access";
 import "@/styles/portal.css";
 
@@ -32,7 +33,6 @@ type PageId =
   | "identity"
   | "privacy"
   | "pip-scan"
-  | "dispute-iq"
   | "simulator"
   | "report"
   | "debt-analysis"
@@ -40,11 +40,10 @@ type PageId =
   | "student-loan"
   | "subscription-manager"
   | "disputes"
-  | "letters"
-  | "mail"
   | "messages"
   | "documents"
   | "billing"
+  | "profile"
   | "settings";
 
 interface NavItem {
@@ -162,12 +161,12 @@ function ChatScreen() {
 export default function ClientPortal() {
   const { user, logout } = useUserContext();
   const { loaded: scriptReady } = useArrayScript();
+  const { appKey } = useArrayToken();
   const featureAccess = useFeatureAccess();
   const [activePage, setActivePage] = useState<PageId>("dashboard");
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifPrefs, setNotifPrefs] = useState({ scoreChanges: true, newAlerts: true, disputeUpdates: true, marketing: false });
 
-  const appKey = ARRAY_SANDBOX_APP_KEY;
   const apiUrl = ARRAY_SANDBOX_API_URL;
   const token = ARRAY_SANDBOX_TOKENS.default;
   const alertsToken = ARRAY_SANDBOX_TOKENS.creditAlerts;
@@ -197,7 +196,7 @@ export default function ClientPortal() {
       label: "Credit Repair",
       items: [
         {
-          id: "issues",
+          id: "issues" as PageId,
           label: "Credit Issues & Alerts",
           badge: "3",
           icon: (
@@ -207,35 +206,14 @@ export default function ClientPortal() {
           ),
         },
         {
-          id: "disputes",
+          id: "disputes" as PageId,
           label: "Disputes",
           badge: "2",
-          badgeColor: "amber",
+          badgeColor: "amber" as const,
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" /><line x1="9" y1="15" x2="15" y2="15" />
-            </svg>
-          ),
-        },
-        {
-          id: "letters",
-          label: "Letters",
-          icon: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-              <polyline points="22,6 12,13 2,6" />
-            </svg>
-          ),
-        },
-        {
-          id: "mail",
-          label: "Certified Mail",
-          icon: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="1" y="3" width="15" height="13" rx="1" />
-              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
-              <circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
             </svg>
           ),
         },
@@ -245,7 +223,7 @@ export default function ClientPortal() {
       label: "Monitoring",
       items: [
         {
-          id: "score-tracker",
+          id: "score-tracker" as PageId,
           label: "Score Tracker",
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -254,7 +232,7 @@ export default function ClientPortal() {
           ),
         },
         {
-          id: "identity",
+          id: "identity" as PageId,
           label: "Identity Protection",
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -263,7 +241,7 @@ export default function ClientPortal() {
           ),
         },
         {
-          id: "privacy",
+          id: "privacy" as PageId,
           label: "Privacy Protection",
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -273,7 +251,7 @@ export default function ClientPortal() {
           ),
         },
         {
-          id: "pip-scan",
+          id: "pip-scan" as PageId,
           label: "PIP Scan Results",
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -287,17 +265,7 @@ export default function ClientPortal() {
       label: "Tools",
       items: [
         {
-          id: "dispute-iq",
-          label: "Dispute IQ",
-          icon: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
-            </svg>
-          ),
-        },
-        {
-          id: "simulator",
+          id: "simulator" as PageId,
           label: "Score Simulator",
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -306,7 +274,7 @@ export default function ClientPortal() {
           ),
         },
         {
-          id: "report",
+          id: "report" as PageId,
           label: "Full Report",
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -317,7 +285,7 @@ export default function ClientPortal() {
           ),
         },
         {
-          id: "debt-analysis",
+          id: "debt-analysis" as PageId,
           label: "Debt Analysis",
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -327,7 +295,7 @@ export default function ClientPortal() {
           ),
         },
         {
-          id: "debt-navigator",
+          id: "debt-navigator" as PageId,
           label: "Debt Navigator",
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -336,7 +304,7 @@ export default function ClientPortal() {
           ),
         },
         {
-          id: "student-loan",
+          id: "student-loan" as PageId,
           label: "Student Loan Aid",
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -346,7 +314,7 @@ export default function ClientPortal() {
           ),
         },
         {
-          id: "subscription-manager",
+          id: "subscription-manager" as PageId,
           label: "Subscription Manager",
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -360,7 +328,7 @@ export default function ClientPortal() {
       label: "Communication",
       items: [
         {
-          id: "messages",
+          id: "messages" as PageId,
           label: "Messages",
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -369,8 +337,8 @@ export default function ClientPortal() {
           ),
         },
         {
-          id: "documents",
-          label: "Document Vault",
+          id: "documents" as PageId,
+          label: "Documents",
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
@@ -383,8 +351,8 @@ export default function ClientPortal() {
       label: "Account",
       items: [
         {
-          id: "billing",
-          label: "Billing & Plan",
+          id: "billing" as PageId,
+          label: "Billing",
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" />
@@ -392,7 +360,17 @@ export default function ClientPortal() {
           ),
         },
         {
-          id: "settings",
+          id: "profile" as PageId,
+          label: "Profile",
+          icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          ),
+        },
+        {
+          id: "settings" as PageId,
           label: "Settings",
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -413,7 +391,6 @@ export default function ClientPortal() {
     identity: "Identity Protection",
     privacy: "Privacy Protection",
     "pip-scan": "PIP Scan Results",
-    "dispute-iq": "Dispute IQ",
     simulator: "Score Simulator",
     report: "Full Credit Report",
     "debt-analysis": "Debt Analysis",
@@ -421,11 +398,10 @@ export default function ClientPortal() {
     "student-loan": "Student Loan Aid",
     "subscription-manager": "Subscription Manager",
     disputes: "Disputes",
-    letters: "Letters",
-    mail: "Certified Mail",
     messages: "Messages",
-    documents: "Document Vault",
+    documents: "Documents",
     billing: "Billing & Plan",
+    profile: "Profile",
     settings: "Settings",
   };
 
@@ -840,86 +816,6 @@ export default function ClientPortal() {
             </div>
           )}
 
-          {/* ══ DISPUTE IQ ══════════════════════════════════════ */}
-          {activePage === "dispute-iq" && (
-            <div>
-              <div className="cp-page-header">
-                <div>
-                  <span className="cp-page-eyebrow">Tools</span>
-                  <h1 className="cp-page-title">Dispute IQ</h1>
-                  <p className="cp-page-subtitle">AI-powered Metro 2 and FCRA analysis — built to find every disputable item.</p>
-                </div>
-              </div>
-
-              <div className="cp-hero-card cp-mb-24">
-                <div className="cp-flex-between">
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.7, marginBottom: 8 }}>AI Analysis Engine</div>
-                    <div className="cp-font-sora" style={{ fontSize: 22, fontWeight: 800, marginBottom: 8, letterSpacing: -0.5 }}>Run a full credit analysis</div>
-                    <div style={{ fontSize: 14, opacity: 0.85, maxWidth: 480, lineHeight: 1.6 }}>
-                      Get personalized dispute strategies based on your complete credit profile — Metro 2 compliant, FCRA-backed, and built to maximize removals.
-                    </div>
-                  </div>
-                  <button className="cp-btn" style={{ background: "white", color: "var(--cp-accent)", fontWeight: 700, flexShrink: 0, boxShadow: "0 4px 14px rgba(0,0,0,0.15)" }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}><polygon points="5 3 19 12 5 21 5 3" /></svg>
-                    Run Analysis
-                  </button>
-                </div>
-              </div>
-
-              <div className="cp-grid-2">
-                <div className="cp-card">
-                  <div className="cp-card-header">
-                    <div>
-                      <div className="cp-card-title">Metro 2 Violations</div>
-                      <div className="cp-card-subtitle">Field-level reporting errors found</div>
-                    </div>
-                    <span className="cp-badge warning">4 Found</span>
-                  </div>
-                  {[
-                    { field: "DA Field", issue: "Date of first delinquency missing", bureau: "Equifax" },
-                    { field: "K4 Payment Pattern", issue: "84-month history incomplete", bureau: "TransUnion" },
-                    { field: "ACCT_STATUS", issue: "Account status code conflict", bureau: "Experian" },
-                    { field: "FCRA §1681e(b)", issue: "Inaccurate reporting — max accuracy", bureau: "All Bureaus" },
-                  ].map((item, i) => (
-                    <div key={i} className="cp-alert-item">
-                      <div className="cp-alert-dot negative" />
-                      <div>
-                        <div className="cp-alert-text">{item.field}</div>
-                        <div className="cp-alert-meta">{item.issue} · {item.bureau}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="cp-card">
-                  <div className="cp-card-header">
-                    <div>
-                      <div className="cp-card-title">FCRA Rights Summary</div>
-                      <div className="cp-card-subtitle">Statutes applicable to your file</div>
-                    </div>
-                    <span className="cp-badge info">5 Active</span>
-                  </div>
-                  {[
-                    { statute: "§1681e(b)", desc: "Maximum possible accuracy requirement" },
-                    { statute: "§1681i", desc: "Dispute & reinvestigation rights" },
-                    { statute: "§1681s-2(b)", desc: "Furnisher duty to investigate" },
-                    { statute: "§1681b", desc: "Permissible purpose violations" },
-                    { statute: "§1681c-2", desc: "Block of information from identity theft" },
-                  ].map((item, i) => (
-                    <div key={i} className="cp-alert-item">
-                      <div className="cp-alert-dot neutral" />
-                      <div>
-                        <div className="cp-alert-text">{item.statute}</div>
-                        <div className="cp-alert-meta">{item.desc}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* ══ SCORE SIMULATOR ═════════════════════════════════ */}
           {activePage === "simulator" && (
             <div>
@@ -1104,50 +1000,6 @@ export default function ClientPortal() {
             </div>
           )}
 
-          {/* ══ LETTERS ═════════════════════════════════════════ */}
-          {activePage === "letters" && (
-            <div>
-              <div className="cp-page-header">
-                <div>
-                  <span className="cp-page-eyebrow">Credit Repair</span>
-                  <h1 className="cp-page-title">Letters</h1>
-                  <p className="cp-page-subtitle">Personalized dispute letters generated for your credit file.</p>
-                </div>
-              </div>
-              <div className="cp-card">
-                <div className="cp-empty-state">
-                  <div className="cp-empty-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-                  </div>
-                  <div className="cp-empty-title">Letters managed by your advisor</div>
-                  <div className="cp-empty-desc">Your advisor creates and sends dispute letters on your behalf. All letters will appear here once generated.</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ══ CERTIFIED MAIL ══════════════════════════════════ */}
-          {activePage === "mail" && (
-            <div>
-              <div className="cp-page-header">
-                <div>
-                  <span className="cp-page-eyebrow">Credit Repair</span>
-                  <h1 className="cp-page-title">Certified Mail</h1>
-                  <p className="cp-page-subtitle">USPS certified mail tracking for all dispute letters sent.</p>
-                </div>
-              </div>
-              <div className="cp-card">
-                <div className="cp-empty-state">
-                  <div className="cp-empty-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="1" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
-                  </div>
-                  <div className="cp-empty-title">No certified mail sent yet</div>
-                  <div className="cp-empty-desc">Once your advisor sends dispute letters via certified mail, USPS delivery tracking will appear here.</div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* ══ MESSAGES ════════════════════════════════════════ */}
           {activePage === "messages" && (
             <div>
@@ -1273,21 +1125,37 @@ export default function ClientPortal() {
             </div>
           )}
 
-          {/* ══ SETTINGS ════════════════════════════════════════ */}
-          {activePage === "settings" && (
+          {/* ══ PROFILE ═════════════════════════════════════════ */}
+          {activePage === "profile" && (
             <div>
               <div className="cp-page-header">
                 <div>
                   <span className="cp-page-eyebrow">Account</span>
-                  <h1 className="cp-page-title">Settings</h1>
-                  <p className="cp-page-subtitle">Manage your account, notifications, and security preferences.</p>
+                  <h1 className="cp-page-title">Profile</h1>
+                  <p className="cp-page-subtitle">Your personal information and contact details.</p>
                 </div>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                {/* Profile */}
                 <div className="cp-card">
-                  <div className="cp-card-title cp-mb-18">Profile Information</div>
+                  <div className="cp-card-header" style={{ marginBottom: 20 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                      <div style={{ width: 64, height: 64, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 800, color: "white", flexShrink: 0 }}>
+                        {((user?.firstName?.[0] ?? "") + (user?.lastName?.[0] ?? user?.username?.[0] ?? "")).toUpperCase() || "U"}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 17, fontWeight: 700, color: "var(--cp-text-primary)", marginBottom: 2 }}>
+                          {user?.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : user?.username}
+                        </div>
+                        <div className="cp-text-muted cp-text-sm">{user?.email ?? "No email on file"}</div>
+                        <span style={{ display: "inline-block", marginTop: 6, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "white", fontSize: 10, fontWeight: 700, padding: "2px 10px", borderRadius: 20, letterSpacing: "0.05em" }}>
+                          {tierLabel}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="cp-card-title cp-mb-18">Personal Information</div>
                   <div className="cp-grid-2" style={{ gap: 14, marginBottom: 14 }}>
                     <div>
                       <label className="cp-form-label">First Name</label>
@@ -1308,7 +1176,22 @@ export default function ClientPortal() {
                   </div>
                   <button className="cp-btn cp-btn-primary cp-btn-sm">Save Changes</button>
                 </div>
+              </div>
+            </div>
+          )}
 
+          {/* ══ SETTINGS ════════════════════════════════════════ */}
+          {activePage === "settings" && (
+            <div>
+              <div className="cp-page-header">
+                <div>
+                  <span className="cp-page-eyebrow">Account</span>
+                  <h1 className="cp-page-title">Settings</h1>
+                  <p className="cp-page-subtitle">Manage your notifications, security, and preferences.</p>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                 {/* Security */}
                 <div className="cp-card">
                   <div className="cp-card-title cp-mb-18">Security</div>
