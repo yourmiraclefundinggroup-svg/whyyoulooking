@@ -885,3 +885,52 @@
   padding: 24px;
   margin-bottom: 20px;
 }
+
+/* ── Welcome banner ──────────────────────────────────────────── */
+.cp-welcome-banner {
+  background: linear-gradient(135deg, #1e2050 0%, #2d2260 55%, #1a3a4a 100%);
+  border-radius: var(--cp-radius);
+  padding: 28px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  color: white;
+  box-shadow: 0 8px 32px rgba(99,102,241,0.22);
+  border: 1px solid rgba(99,102,241,0.2);
+}
+.cp-welcome-left { flex: 1; min-width: 0; }
+.cp-welcome-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(45,212,191,0.85);
+  margin-bottom: 6px;
+}
+.cp-welcome-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+.cp-welcome-sub { font-size: 13.5px; color: rgba(255,255,255,0.6); }
+.cp-welcome-stats {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-shrink: 0;
+}
+.cp-welcome-stat { text-align: center; }
+.cp-welcome-stat-value {
+  font-family: 'Sora', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.cp-welcome-stat-label { font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 500; }

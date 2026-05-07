@@ -95,7 +95,7 @@ export default function Signup() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   // Array script + enrollment state
-  const { loaded: scriptReady } = useArrayScript();
+  const { loaded: scriptReady } = useArrayScript(ARRAY_SANDBOX_APP_KEY);
   const [arrayEnrolled, setArrayEnrolled] = useState(false);
   const arrayEnrollRef = useRef<HTMLDivElement>(null);
 

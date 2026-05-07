@@ -511,90 +511,73 @@ export default function ClientPortal() {
           {/* ══ DASHBOARD ══════════════════════════════════════ */}
           {activePage === "dashboard" && (
             <div>
-              <div className="cp-page-header">
-                <div>
-                  <span className="cp-page-eyebrow">Overview</span>
-                  <h1 className="cp-page-title">Dashboard</h1>
-                  <p className="cp-page-subtitle">Your complete credit health snapshot, updated in real time.</p>
+              {/* Welcome Banner */}
+              <div className="cp-welcome-banner cp-mb-24">
+                <div className="cp-welcome-left">
+                  <div className="cp-welcome-eyebrow">WELCOME BACK</div>
+                  <div className="cp-welcome-name">Good morning, {user?.firstName || displayName}.</div>
+                  <div className="cp-welcome-sub">Your credit health is trending up. Here's your snapshot for {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}.</div>
                 </div>
-                <span className="cp-badge live">Live Monitoring</span>
-              </div>
-
-              {/* Score cards */}
-              <div className="cp-grid-3 cp-mb-24">
-                <div className="cp-score-card good">
-                  <div className="cp-score-bureau">Experian</div>
-                  <div className="cp-score-number good">712</div>
-                  <div className="cp-score-rating good">Good</div>
-                  <div className="cp-score-bar"><div className="cp-score-bar-fill" style={{ width: "71%" }} /></div>
-                  <div className="cp-score-change">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>
-                    +12 pts this month
+                <div className="cp-welcome-stats">
+                  <div className="cp-welcome-stat">
+                    <div className="cp-welcome-stat-value" style={{ color: "#2dd4bf" }}>+47</div>
+                    <div className="cp-welcome-stat-label">pts gained</div>
                   </div>
-                </div>
-                <div className="cp-score-card good">
-                  <div className="cp-score-bureau">Equifax</div>
-                  <div className="cp-score-number good">698</div>
-                  <div className="cp-score-rating good">Good</div>
-                  <div className="cp-score-bar"><div className="cp-score-bar-fill" style={{ width: "68%" }} /></div>
-                  <div className="cp-score-change">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>
-                    +22 pts this month
+                  <div className="cp-welcome-stat">
+                    <div className="cp-welcome-stat-value">7</div>
+                    <div className="cp-welcome-stat-label">items removed</div>
                   </div>
-                </div>
-                <div className="cp-score-card good">
-                  <div className="cp-score-bureau">TransUnion</div>
-                  <div className="cp-score-number good">724</div>
-                  <div className="cp-score-rating good">Good</div>
-                  <div className="cp-score-bar"><div className="cp-score-bar-fill" style={{ width: "72%" }} /></div>
-                  <div className="cp-score-change">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>
-                    +11 pts this month
+                  <div className="cp-welcome-stat">
+                    <div className="cp-welcome-stat-value" style={{ color: "#2dd4bf" }}>802</div>
+                    <div className="cp-welcome-stat-label">top score</div>
                   </div>
                 </div>
               </div>
 
-              {/* Stat cards */}
-              <div className="cp-grid-4 cp-mb-24">
-                <div className="cp-stat-card">
-                  <div className="cp-stat-icon indigo">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                  </div>
-                  <div><div className="cp-stat-value">2</div><div className="cp-stat-label">Active Disputes</div></div>
-                </div>
-                <div className="cp-stat-card">
-                  <div className="cp-stat-icon green">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                  </div>
-                  <div><div className="cp-stat-value">7</div><div className="cp-stat-label">Items Removed</div></div>
-                </div>
-                <div className="cp-stat-card">
-                  <div className="cp-stat-icon amber">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-                  </div>
-                  <div><div className="cp-stat-value">3</div><div className="cp-stat-label">Open Issues</div></div>
-                </div>
-                <div className="cp-stat-card">
-                  <div className="cp-stat-icon teal">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
-                  </div>
-                  <div><div className="cp-stat-value" style={{ fontSize: 20 }}>+45</div><div className="cp-stat-label">Pts Gained (90d)</div></div>
-                </div>
-              </div>
-
-              {/* Credit Overview Array + Pipeline */}
-              <div className="cp-grid-2 cp-mb-24">
+              {/* Array Credit Overview — full width */}
+              <div className="cp-mb-24">
                 <ArrayWrapper
                   title="Credit Overview"
                   sub="Live 3-bureau credit health summary"
                   badge={<span className="cp-badge live">Live</span>}
                   accentTop
                   loading={!scriptReady || (!tokenReady && !tokenError)}
-                locked={tokenError}
+                  locked={tokenError}
                 >
                   <array-credit-overview appKey={appKey} userToken={userToken} />
                 </ArrayWrapper>
+              </div>
 
+              {/* Stat cards */}
+              <div className="cp-grid-4 cp-mb-24">
+                <div className="cp-stat-card">
+                  <div className="cp-stat-icon amber">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                  </div>
+                  <div><div className="cp-stat-value">3</div><div className="cp-stat-label">Active Issues</div></div>
+                </div>
+                <div className="cp-stat-card">
+                  <div className="cp-stat-icon indigo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                  </div>
+                  <div><div className="cp-stat-value">2</div><div className="cp-stat-label">Disputes In Progress</div></div>
+                </div>
+                <div className="cp-stat-card">
+                  <div className="cp-stat-icon green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                  </div>
+                  <div><div className="cp-stat-value">7</div><div className="cp-stat-label">Items Resolved</div></div>
+                </div>
+                <div className="cp-stat-card">
+                  <div className="cp-stat-icon teal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                  </div>
+                  <div><div className="cp-stat-value" style={{ fontSize: 16, color: "#14b8a6" }}>Active</div><div className="cp-stat-label">Identity Protection</div></div>
+                </div>
+              </div>
+
+              {/* Pipeline + Recent Alerts side by side */}
+              <div className="cp-grid-2">
                 <div className="cp-card">
                   <div className="cp-card-header">
                     <div>
@@ -639,31 +622,31 @@ export default function ClientPortal() {
                     </button>
                   </div>
                 </div>
-              </div>
 
-              {/* Recent Alerts */}
-              <div className="cp-card">
-                <div className="cp-card-header">
-                  <div>
-                    <div className="cp-card-title">Recent Alerts</div>
-                    <div className="cp-card-subtitle">Changes detected across all 3 bureaus</div>
-                  </div>
-                  <span className="cp-badge live">Live</span>
-                </div>
-                {[
-                  { type: "positive", text: "Score increased by +22 points", meta: "Today, 8:14 AM · Equifax" },
-                  { type: "negative", text: "New inquiry detected — Capital One", meta: "Yesterday, 3:40 PM · TransUnion" },
-                  { type: "positive", text: "Collection account removed", meta: "May 4, 2026 · All Bureaus" },
-                  { type: "neutral", text: "Certified mail delivered", meta: "May 3, 2026 · Experian" },
-                ].map((alert, i) => (
-                  <div key={i} className="cp-alert-item">
-                    <div className={`cp-alert-dot ${alert.type}`} />
+                {/* Recent Alerts */}
+                <div className="cp-card">
+                  <div className="cp-card-header">
                     <div>
-                      <div className="cp-alert-text">{alert.text}</div>
-                      <div className="cp-alert-meta">{alert.meta}</div>
+                      <div className="cp-card-title">Recent Alerts</div>
+                      <div className="cp-card-subtitle">Changes detected across all 3 bureaus</div>
                     </div>
+                    <span className="cp-badge live">Live</span>
                   </div>
-                ))}
+                  {[
+                    { type: "positive", text: "Score increased by +22 points", meta: "Today, 8:14 AM · Equifax" },
+                    { type: "negative", text: "New inquiry detected — Capital One", meta: "Yesterday, 3:40 PM · TransUnion" },
+                    { type: "positive", text: "Collection account removed", meta: "May 4, 2026 · All Bureaus" },
+                    { type: "neutral", text: "Certified mail delivered", meta: "May 3, 2026 · Experian" },
+                  ].map((alert, i) => (
+                    <div key={i} className="cp-alert-item">
+                      <div className={`cp-alert-dot ${alert.type}`} />
+                      <div>
+                        <div className="cp-alert-text">{alert.text}</div>
+                        <div className="cp-alert-meta">{alert.meta}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
