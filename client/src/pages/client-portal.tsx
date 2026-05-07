@@ -979,52 +979,58 @@ export default function ClientPortal() {
                 </div>
               </div>
 
-              <div className="cp-card cp-mb-24">
-                <div className="cp-card-header">
-                  <div><div className="cp-card-title">Active Disputes</div></div>
-                  <span className="cp-badge warning">2 Pending</span>
+              <div className="cp-disputes-section">
+                <div className="cp-card" style={{ width: "100%" }}>
+                  <div className="cp-card-header">
+                    <div><div className="cp-card-title">Active Disputes</div></div>
+                    <span className="cp-badge warning">2 Pending</span>
+                  </div>
+                  <div className="cp-table-scroll">
+                    <table className="cp-table">
+                      <thead>
+                        <tr><th>Account</th><th>Bureau</th><th>Type</th><th>Sent</th><th>Status</th><th>Response Due</th></tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td><strong>Capital One — Late Payment</strong></td><td>Equifax</td><td>Late Payment</td>
+                          <td>Apr 28, 2026</td><td><span className="cp-pill pending">Pending</span></td><td>May 28, 2026</td>
+                        </tr>
+                        <tr>
+                          <td><strong>Midland Credit — Collection</strong></td><td>TransUnion</td><td>Collection</td>
+                          <td>Apr 15, 2026</td><td><span className="cp-pill pending">Pending</span></td><td>May 15, 2026</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <table className="cp-table">
-                  <thead>
-                    <tr><th>Account</th><th>Bureau</th><th>Type</th><th>Sent</th><th>Status</th><th>Response Due</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>Capital One — Late Payment</strong></td><td>Equifax</td><td>Late Payment</td>
-                      <td>Apr 28, 2026</td><td><span className="cp-pill pending">Pending</span></td><td>May 28, 2026</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Midland Credit — Collection</strong></td><td>TransUnion</td><td>Collection</td>
-                      <td>Apr 15, 2026</td><td><span className="cp-pill pending">Pending</span></td><td>May 15, 2026</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
 
-              <div className="cp-card">
-                <div className="cp-card-header">
-                  <div><div className="cp-card-title">Resolved</div></div>
-                  <span className="cp-badge success">7 Resolved</span>
+                <div className="cp-card" style={{ width: "100%" }}>
+                  <div className="cp-card-header">
+                    <div><div className="cp-card-title">Resolved</div></div>
+                    <span className="cp-badge success">7 Resolved</span>
+                  </div>
+                  <div className="cp-table-scroll">
+                    <table className="cp-table">
+                      <thead>
+                        <tr><th>Account</th><th>Bureau</th><th>Resolved</th><th>Outcome</th></tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td><strong>US Bankruptcy Court — Public Record</strong></td><td>All 3</td>
+                          <td>May 4, 2026</td><td><span className="cp-pill resolved">Removed</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Portfolio Recovery — Collection</strong></td><td>Experian</td>
+                          <td>Apr 10, 2026</td><td><span className="cp-pill resolved">Removed</span></td>
+                        </tr>
+                        <tr>
+                          <td><strong>Synchrony Bank — Late Payment</strong></td><td>TransUnion</td>
+                          <td>Mar 22, 2026</td><td><span className="cp-pill resolved">Corrected</span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <table className="cp-table">
-                  <thead>
-                    <tr><th>Account</th><th>Bureau</th><th>Resolved</th><th>Outcome</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>US Bankruptcy Court — Public Record</strong></td><td>All 3</td>
-                      <td>May 4, 2026</td><td><span className="cp-pill resolved">Removed</span></td>
-                    </tr>
-                    <tr>
-                      <td><strong>Portfolio Recovery — Collection</strong></td><td>Experian</td>
-                      <td>Apr 10, 2026</td><td><span className="cp-pill resolved">Removed</span></td>
-                    </tr>
-                    <tr>
-                      <td><strong>Synchrony Bank — Late Payment</strong></td><td>TransUnion</td>
-                      <td>Mar 22, 2026</td><td><span className="cp-pill resolved">Corrected</span></td>
-                    </tr>
-                  </tbody>
-                </table>
               </div>
             </div>
           )}
