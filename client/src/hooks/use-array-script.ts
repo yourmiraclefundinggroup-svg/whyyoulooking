@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 
+// Legacy sandbox constants — used only by pre-portal pages (credit-monitoring, credit-repair, signup, score-hero).
+// The portal and ArrayScriptLoader never use these; they always use the production appKey from useArrayToken.
 export const ARRAY_SANDBOX_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
 export const ARRAY_SANDBOX_API_URL = "https://mock.array.io";
-
 export const ARRAY_SANDBOX_TOKENS = {
   default: "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11",
   creditAlerts: "31B6FCB6-D137-4F69-871C-CDA3385EA5FB",
@@ -41,9 +42,13 @@ function isAllResolved() {
 }
 
 /**
- * Loads Array web component scripts. Pass the real production appKey (from
- * useArrayToken) for production loads. Falls back to sandbox key when no key
- * is provided (legacy pages / unauthenticated state).
+ * Loads Array web component scripts using the production appKey obtained from
+ * the backend session endpoint. Scripts are only injected when a non-empty
+ * appKey is provided — no sandbox fallback is used.
+ *
+ * Returns { loaded: false } until scripts are fully loaded. When called without
+ * an appKey (e.g. during an error state) it subscribes to the shared resolved
+ * state without attempting injection.
  */
 export function useArrayScript(appKey?: string) {
   const [loaded, setLoaded] = useState(isAllResolved);
@@ -59,16 +64,15 @@ export function useArrayScript(appKey?: string) {
     };
     listeners.push(listener);
 
-    if (!scriptsInjected) {
+    if (!scriptsInjected && appKey) {
       scriptsInjected = true;
-      const effectiveKey = appKey || ARRAY_SANDBOX_APP_KEY;
       ARRAY_COMPONENT_SCRIPTS.forEach((name) => {
         if (document.querySelector(`script[data-array-component="${name}"]`)) {
           resolvedCount++;
           return;
         }
         const script = document.createElement("script");
-        script.src = `https://embed.array.io/cms/${name}.js?appKey=${effectiveKey}`;
+        script.src = `https://embed.array.io/cms/${name}.js?appKey=${appKey}`;
         script.type = "text/javascript";
         script.dataset.arrayComponent = name;
         const settle = () => {
@@ -86,7 +90,7 @@ export function useArrayScript(appKey?: string) {
       const idx = listeners.indexOf(listener);
       if (idx !== -1) listeners.splice(idx, 1);
     };
-  }, []);
+  }, [appKey]);
 
   return { loaded };
 }

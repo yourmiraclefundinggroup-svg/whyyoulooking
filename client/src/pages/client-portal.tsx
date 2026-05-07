@@ -76,6 +76,7 @@ function ArrayWrapper({
   badge,
   accentTop,
   loading,
+  locked,
   children,
 }: {
   title: string;
@@ -83,6 +84,7 @@ function ArrayWrapper({
   badge?: React.ReactNode;
   accentTop?: boolean;
   loading: boolean;
+  locked?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -95,7 +97,16 @@ function ArrayWrapper({
         {badge}
       </div>
       <div className="cp-array-wrapper-body">
-        {loading ? (
+        {locked ? (
+          <div className="cp-array-locked">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <div className="cp-array-locked-title">Feature unavailable</div>
+            <div className="cp-array-locked-sub">This feature requires a subscription. Contact your credit advisor to upgrade your plan.</div>
+          </div>
+        ) : loading ? (
           <div className="cp-array-loading">
             <div className="cp-array-spinner" />
             Loading…
@@ -161,8 +172,8 @@ function ChatScreen() {
 /* ── Main component ─────────────────────────────────────────────── */
 export default function ClientPortal() {
   const { user, logout } = useUserContext();
-  const { loaded: scriptReady } = useArrayScript();
   const { appKey, token: userToken, isReady: tokenReady, error: tokenError } = useArrayToken();
+  const { loaded: scriptReady } = useArrayScript(appKey || undefined);
   const featureAccess = useFeatureAccess();
   const [activePage, setActivePage] = useState<PageId>("dashboard");
   const [notifOpen, setNotifOpen] = useState(false);
@@ -578,7 +589,8 @@ export default function ClientPortal() {
                   sub="Live 3-bureau credit health summary"
                   badge={<span className="cp-badge live">Live</span>}
                   accentTop
-                  loading={!scriptReady}
+                  loading={!scriptReady || (!tokenReady && !tokenError)}
+                locked={tokenError}
                 >
                   <array-credit-overview appKey={appKey} userToken={userToken} />
                 </ArrayWrapper>
@@ -672,7 +684,8 @@ export default function ClientPortal() {
                 sub="VantageScore 3.0 — updated with every report pull"
                 badge={<span className="cp-badge live">Live</span>}
                 accentTop
-                loading={!scriptReady}
+                loading={!scriptReady || (!tokenReady && !tokenError)}
+              locked={tokenError}
               >
                 <array-credit-score appKey={appKey} userToken={userToken} bureau="all" scoreTracker="true" />
               </ArrayWrapper>
@@ -747,7 +760,8 @@ export default function ClientPortal() {
                   sub="Real-time changes detected across all 3 bureaus"
                   badge={<span className="cp-badge live">Live</span>}
                   accentTop
-                  loading={!scriptReady}
+                  loading={!scriptReady || (!tokenReady && !tokenError)}
+                locked={tokenError}
                 >
                   <array-credit-alerts appKey={appKey} userToken={userToken} />
                 </ArrayWrapper>
@@ -769,7 +783,8 @@ export default function ClientPortal() {
                 title="Identity Protection Dashboard"
                 sub="Monitoring dark web, data breaches, and SSN usage"
                 badge={<span className="cp-badge live">Live</span>}
-                loading={!scriptReady}
+                loading={!scriptReady || (!tokenReady && !tokenError)}
+                locked={tokenError}
               >
                 <array-identity-protect appKey={appKey} userToken={userToken} />
               </ArrayWrapper>
@@ -789,7 +804,8 @@ export default function ClientPortal() {
               <ArrayWrapper
                 title="Privacy Protection Dashboard"
                 sub="Data broker removal — opt-out requests managed for you"
-                loading={!scriptReady}
+                loading={!scriptReady || (!tokenReady && !tokenError)}
+                locked={tokenError}
               >
                 <array-pip-dashboard appKey={appKey} userToken={userToken} />
               </ArrayWrapper>
@@ -809,7 +825,8 @@ export default function ClientPortal() {
               <ArrayWrapper
                 title="Data Broker Scan"
                 sub="Sites that have your personal information listed"
-                loading={!scriptReady}
+                loading={!scriptReady || (!tokenReady && !tokenError)}
+                locked={tokenError}
               >
                 <array-pip-scan appKey={appKey} userToken={userToken} />
               </ArrayWrapper>
@@ -831,7 +848,8 @@ export default function ClientPortal() {
                 sub="New inquiries, account openings, derogatory marks, and more — instant notifications"
                 badge={<span className="cp-badge live">Live</span>}
                 accentTop
-                loading={!scriptReady}
+                loading={!scriptReady || (!tokenReady && !tokenError)}
+                locked={tokenError}
               >
                 <array-credit-alerts appKey={appKey} userToken={userToken} />
               </ArrayWrapper>
@@ -851,7 +869,8 @@ export default function ClientPortal() {
               <ArrayWrapper
                 title="Score Impact Simulator"
                 sub="See the projected effect of paying down debt, removing items, and more"
-                loading={!scriptReady}
+                loading={!scriptReady || (!tokenReady && !tokenError)}
+                locked={tokenError}
               >
                 <array-credit-score-simulator appKey={appKey} userToken={userToken} />
               </ArrayWrapper>
@@ -872,7 +891,8 @@ export default function ClientPortal() {
                 title="3-Bureau Credit Report"
                 sub="Live data — all three bureaus in one view"
                 badge={<span className="cp-badge blue-bureaus">All Bureaus</span>}
-                loading={!scriptReady}
+                loading={!scriptReady || (!tokenReady && !tokenError)}
+                locked={tokenError}
               >
                 <array-credit-report appKey={appKey} userToken={userToken} defaultBureau="all" />
               </ArrayWrapper>
@@ -893,7 +913,8 @@ export default function ClientPortal() {
                 title="Debt & Utilization Breakdown"
                 sub="Live data from all open accounts across all bureaus"
                 badge={<span className="cp-badge live">Live</span>}
-                loading={!scriptReady}
+                loading={!scriptReady || (!tokenReady && !tokenError)}
+                locked={tokenError}
               >
                 <array-credit-debt-analysis appKey={appKey} userToken={userToken} />
               </ArrayWrapper>
@@ -913,7 +934,8 @@ export default function ClientPortal() {
               <ArrayWrapper
                 title="Debt Payoff Planner"
                 sub="Avalanche, snowball, and custom payoff strategies"
-                loading={!scriptReady}
+                loading={!scriptReady || (!tokenReady && !tokenError)}
+                locked={tokenError}
               >
                 <array-debt-navigator appKey={appKey} userToken={userToken} />
               </ArrayWrapper>
@@ -933,7 +955,8 @@ export default function ClientPortal() {
               <ArrayWrapper
                 title="Student Loan Management"
                 sub="Repayment options, IDR plans, and forgiveness eligibility"
-                loading={!scriptReady}
+                loading={!scriptReady || (!tokenReady && !tokenError)}
+                locked={tokenError}
               >
                 <array-student-loan-aid appKey={appKey} userToken={userToken} />
               </ArrayWrapper>
@@ -954,7 +977,8 @@ export default function ClientPortal() {
                 title="Subscription Manager"
                 sub="Update your plan, add a payment method, and view billing history"
                 badge={<span className="cp-badge live">Live</span>}
-                loading={!scriptReady}
+                loading={!scriptReady || (!tokenReady && !tokenError)}
+                locked={tokenError}
               >
                 <array-subscription-manager appKey={appKey} userToken={userToken} provider="plaid" mode="premium" />
               </ArrayWrapper>
