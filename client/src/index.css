@@ -87,6 +87,30 @@
   --success-green: 142 60% 38%;
   --warning-orange: 33 100% 50%;
   --slate-gray: 214 32% 91%;
+
+  /* ── ScoreShift Brand Color System (indigo/violet/teal) ──
+     Shared by the landing page and client portal.
+     Admin portal uses --admin-* vars and is unaffected by these. */
+  --ss-accent:       #6366f1;   /* indigo-500  — primary brand */
+  --ss-accent-2:     #8b5cf6;   /* violet-500  — secondary brand */
+  --ss-accent-3:     #2dd4bf;   /* teal-400    — tertiary / highlight */
+  --ss-accent-grad:  linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #2dd4bf 100%);
+  --ss-accent-grad-subtle: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 100%);
+
+  /* ── Shared radius scale ── */
+  --ss-radius-sm:    8px;
+  --ss-radius-md:    14px;
+  --ss-radius-lg:    20px;
+  --ss-radius-xl:    28px;
+
+  /* ── Shared elevation/shadow scale ── */
+  --ss-shadow-card:  0 2px 16px rgba(99,102,241,0.07), 0 1px 4px rgba(15,18,32,0.06);
+  --ss-shadow-hover: 0 8px 40px rgba(99,102,241,0.14), 0 2px 8px rgba(15,18,32,0.08);
+  --ss-shadow-xl:    0 24px 80px rgba(99,102,241,0.18), 0 8px 24px rgba(15,18,32,0.12);
+
+  /* ── Shared typography families ── */
+  --ss-font-sans:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --ss-font-display: 'Sora', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 /* .light — Shadcn compat overrides for admin portal light-mode components.

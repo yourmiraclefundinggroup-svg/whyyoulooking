@@ -33,17 +33,17 @@
   --teal-400:     #2dd4bf;
   --teal-500:     #14b8a6;
 
-  --accent-grad:  linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #2dd4bf 100%);
-  --card-shadow:  0 2px 16px rgba(99,102,241,0.07), 0 1px 4px rgba(15,18,32,0.06);
-  --card-shadow-hover: 0 8px 40px rgba(99,102,241,0.14), 0 2px 8px rgba(15,18,32,0.08);
+  --accent-grad:  var(--ss-accent-grad, linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #2dd4bf 100%));
+  --card-shadow:  var(--ss-shadow-card, 0 2px 16px rgba(99,102,241,0.07), 0 1px 4px rgba(15,18,32,0.06));
+  --card-shadow-hover: var(--ss-shadow-hover, 0 8px 40px rgba(99,102,241,0.14), 0 2px 8px rgba(15,18,32,0.08));
 
-  --radius-sm:    8px;
-  --radius-md:    14px;
-  --radius-lg:    20px;
-  --radius-xl:    28px;
+  --radius-sm:    var(--ss-radius-sm, 8px);
+  --radius-md:    var(--ss-radius-md, 14px);
+  --radius-lg:    var(--ss-radius-lg, 20px);
+  --radius-xl:    var(--ss-radius-xl, 28px);
 
-  --font-sans:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-display: 'Sora', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-sans:    var(--ss-font-sans, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif);
+  --font-display: var(--ss-font-display, 'Sora', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif);
 
   font-family: var(--font-sans);
   background: var(--white);
