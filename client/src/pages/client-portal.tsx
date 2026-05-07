@@ -30,6 +30,7 @@ type PageId =
   | "dashboard"
   | "score-tracker"
   | "issues"
+  | "credit-alerts"
   | "identity"
   | "privacy"
   | "pip-scan"
@@ -161,13 +162,11 @@ function ChatScreen() {
 export default function ClientPortal() {
   const { user, logout } = useUserContext();
   const { loaded: scriptReady } = useArrayScript();
-  const { appKey, token: userToken, isSandbox } = useArrayToken();
+  const { appKey, token: userToken, isReady: tokenReady, error: tokenError } = useArrayToken();
   const featureAccess = useFeatureAccess();
   const [activePage, setActivePage] = useState<PageId>("dashboard");
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifPrefs, setNotifPrefs] = useState({ scoreChanges: true, newAlerts: true, disputeUpdates: true, marketing: false });
-
-  const sandboxProps = isSandbox ? { sandbox: "true", apiUrl: "https://mock.array.io" } : {};
 
   const tierLabel = featureAccess.tier === "none" ? "Free" : featureAccess.tier.charAt(0).toUpperCase() + featureAccess.tier.slice(1) + " Plan";
 
@@ -252,6 +251,16 @@ export default function ClientPortal() {
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          ),
+        },
+        {
+          id: "credit-alerts" as PageId,
+          label: "Credit Alerts",
+          icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
           ),
         },
@@ -384,6 +393,7 @@ export default function ClientPortal() {
     dashboard: "Dashboard",
     "score-tracker": "Score Tracker",
     issues: "Credit Issues & Alerts",
+    "credit-alerts": "Credit Alerts",
     identity: "Identity Protection",
     privacy: "Privacy Protection",
     "pip-scan": "PIP Scan Results",
@@ -475,11 +485,10 @@ export default function ClientPortal() {
               </svg>
               <span className="cp-notif-dot" />
             </button>
-            <button className="cp-icon-btn" title="Help">
+            <button className="cp-icon-btn" title="Settings" onClick={() => setActivePage("settings")}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
             </button>
           </div>
@@ -571,7 +580,7 @@ export default function ClientPortal() {
                   accentTop
                   loading={!scriptReady}
                 >
-                  <array-credit-overview appKey={appKey} userToken={userToken} {...sandboxProps} />
+                  <array-credit-overview appKey={appKey} userToken={userToken} />
                 </ArrayWrapper>
 
                 <div className="cp-card">
@@ -665,7 +674,7 @@ export default function ClientPortal() {
                 accentTop
                 loading={!scriptReady}
               >
-                <array-credit-score appKey={appKey} userToken={userToken} bureau="all" scoreTracker="true" {...sandboxProps} />
+                <array-credit-score appKey={appKey} userToken={userToken} bureau="all" scoreTracker="true" />
               </ArrayWrapper>
             </div>
           )}
@@ -740,7 +749,7 @@ export default function ClientPortal() {
                   accentTop
                   loading={!scriptReady}
                 >
-                  <array-credit-alerts appKey={appKey} userToken={userToken} {...sandboxProps} />
+                  <array-credit-alerts appKey={appKey} userToken={userToken} />
                 </ArrayWrapper>
               </div>
             </div>
@@ -762,7 +771,7 @@ export default function ClientPortal() {
                 badge={<span className="cp-badge live">Live</span>}
                 loading={!scriptReady}
               >
-                <array-identity-protect appKey={appKey} userToken={userToken} {...sandboxProps} />
+                <array-identity-protect appKey={appKey} userToken={userToken} />
               </ArrayWrapper>
             </div>
           )}
@@ -782,7 +791,7 @@ export default function ClientPortal() {
                 sub="Data broker removal — opt-out requests managed for you"
                 loading={!scriptReady}
               >
-                <array-pip-dashboard appKey={appKey} userToken={userToken} {...sandboxProps} />
+                <array-pip-dashboard appKey={appKey} userToken={userToken} />
               </ArrayWrapper>
             </div>
           )}
@@ -802,7 +811,29 @@ export default function ClientPortal() {
                 sub="Sites that have your personal information listed"
                 loading={!scriptReady}
               >
-                <array-pip-scan appKey={appKey} userToken={userToken} {...sandboxProps} />
+                <array-pip-scan appKey={appKey} userToken={userToken} />
+              </ArrayWrapper>
+            </div>
+          )}
+
+          {/* ══ CREDIT ALERTS ════════════════════════════════════ */}
+          {activePage === "credit-alerts" && (
+            <div>
+              <div className="cp-page-header">
+                <div>
+                  <span className="cp-page-eyebrow">Monitoring</span>
+                  <h1 className="cp-page-title">Credit Alerts</h1>
+                  <p className="cp-page-subtitle">Real-time alerts for any change detected across all three credit bureaus.</p>
+                </div>
+              </div>
+              <ArrayWrapper
+                title="Live Credit Alerts"
+                sub="New inquiries, account openings, derogatory marks, and more — instant notifications"
+                badge={<span className="cp-badge live">Live</span>}
+                accentTop
+                loading={!scriptReady}
+              >
+                <array-credit-alerts appKey={appKey} userToken={userToken} />
               </ArrayWrapper>
             </div>
           )}
@@ -822,7 +853,7 @@ export default function ClientPortal() {
                 sub="See the projected effect of paying down debt, removing items, and more"
                 loading={!scriptReady}
               >
-                <array-credit-score-simulator appKey={appKey} userToken={userToken} {...sandboxProps} />
+                <array-credit-score-simulator appKey={appKey} userToken={userToken} />
               </ArrayWrapper>
             </div>
           )}
@@ -843,7 +874,7 @@ export default function ClientPortal() {
                 badge={<span className="cp-badge blue-bureaus">All Bureaus</span>}
                 loading={!scriptReady}
               >
-                <array-credit-report appKey={appKey} userToken={userToken} defaultBureau="all" {...sandboxProps} />
+                <array-credit-report appKey={appKey} userToken={userToken} defaultBureau="all" />
               </ArrayWrapper>
             </div>
           )}
@@ -864,7 +895,7 @@ export default function ClientPortal() {
                 badge={<span className="cp-badge live">Live</span>}
                 loading={!scriptReady}
               >
-                <array-credit-debt-analysis appKey={appKey} userToken={userToken} {...sandboxProps} />
+                <array-credit-debt-analysis appKey={appKey} userToken={userToken} />
               </ArrayWrapper>
             </div>
           )}
@@ -884,7 +915,7 @@ export default function ClientPortal() {
                 sub="Avalanche, snowball, and custom payoff strategies"
                 loading={!scriptReady}
               >
-                <array-debt-navigator appKey={appKey} userToken={userToken} {...sandboxProps} />
+                <array-debt-navigator appKey={appKey} userToken={userToken} />
               </ArrayWrapper>
             </div>
           )}
@@ -904,7 +935,7 @@ export default function ClientPortal() {
                 sub="Repayment options, IDR plans, and forgiveness eligibility"
                 loading={!scriptReady}
               >
-                <array-student-loan-aid appKey={appKey} userToken={userToken} {...sandboxProps} />
+                <array-student-loan-aid appKey={appKey} userToken={userToken} />
               </ArrayWrapper>
             </div>
           )}
@@ -925,7 +956,7 @@ export default function ClientPortal() {
                 badge={<span className="cp-badge live">Live</span>}
                 loading={!scriptReady}
               >
-                <array-subscription-manager appKey={appKey} userToken={userToken} provider="plaid" mode="premium" {...sandboxProps} />
+                <array-subscription-manager appKey={appKey} userToken={userToken} provider="plaid" mode="premium" />
               </ArrayWrapper>
             </div>
           )}

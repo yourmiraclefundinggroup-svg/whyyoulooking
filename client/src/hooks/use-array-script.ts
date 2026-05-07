@@ -10,7 +10,6 @@ export const ARRAY_SANDBOX_TOKENS = {
   studentLoanAid: "DFD90F1A-BB8F-4310-B921-8EC7A4BF7649",
 };
 
-// One script per Array component — all confirmed from Array docs/user-provided examples
 const ARRAY_COMPONENT_SCRIPTS = [
   "array-account-enroll",
   "array-credit-overview",
@@ -28,7 +27,6 @@ const ARRAY_COMPONENT_SCRIPTS = [
   "array-debt-navigator",
 ];
 
-// Module-level state so scripts are injected and tracked once per page load
 let resolvedCount = 0;
 let scriptsInjected = false;
 const TOTAL = ARRAY_COMPONENT_SCRIPTS.length;
@@ -42,7 +40,12 @@ function isAllResolved() {
   return resolvedCount >= TOTAL;
 }
 
-export function useArrayScript() {
+/**
+ * Loads Array web component scripts. Pass the real production appKey (from
+ * useArrayToken) for production loads. Falls back to sandbox key when no key
+ * is provided (legacy pages / unauthenticated state).
+ */
+export function useArrayScript(appKey?: string) {
   const [loaded, setLoaded] = useState(isAllResolved);
 
   useEffect(() => {
@@ -58,13 +61,14 @@ export function useArrayScript() {
 
     if (!scriptsInjected) {
       scriptsInjected = true;
+      const effectiveKey = appKey || ARRAY_SANDBOX_APP_KEY;
       ARRAY_COMPONENT_SCRIPTS.forEach((name) => {
         if (document.querySelector(`script[data-array-component="${name}"]`)) {
           resolvedCount++;
           return;
         }
         const script = document.createElement("script");
-        script.src = `https://embed.array.io/cms/${name}.js?appKey=${ARRAY_SANDBOX_APP_KEY}`;
+        script.src = `https://embed.array.io/cms/${name}.js?appKey=${effectiveKey}`;
         script.type = "text/javascript";
         script.dataset.arrayComponent = name;
         const settle = () => {
@@ -75,7 +79,6 @@ export function useArrayScript() {
         script.onerror = settle;
         document.head.appendChild(script);
       });
-      // If all were already in DOM, trigger now
       if (isAllResolved()) notifyListeners();
     }
 
