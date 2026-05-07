@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useUserContext } from "@/hooks/use-user-context";
-import { useArrayScript, ARRAY_SANDBOX_API_URL, ARRAY_SANDBOX_TOKENS } from "@/hooks/use-array-script";
+import { useArrayScript } from "@/hooks/use-array-script";
 import { useArrayToken } from "@/hooks/use-array-token";
 import { useFeatureAccess } from "@/hooks/use-feature-access";
 import "@/styles/portal.css";
@@ -161,17 +161,13 @@ function ChatScreen() {
 export default function ClientPortal() {
   const { user, logout } = useUserContext();
   const { loaded: scriptReady } = useArrayScript();
-  const { appKey } = useArrayToken();
+  const { appKey, token: userToken, isSandbox } = useArrayToken();
   const featureAccess = useFeatureAccess();
   const [activePage, setActivePage] = useState<PageId>("dashboard");
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifPrefs, setNotifPrefs] = useState({ scoreChanges: true, newAlerts: true, disputeUpdates: true, marketing: false });
 
-  const apiUrl = ARRAY_SANDBOX_API_URL;
-  const token = ARRAY_SANDBOX_TOKENS.default;
-  const alertsToken = ARRAY_SANDBOX_TOKENS.creditAlerts;
-  const subToken = ARRAY_SANDBOX_TOKENS.subscriptionManager;
-  const loanToken = ARRAY_SANDBOX_TOKENS.studentLoanAid;
+  const sandboxProps = isSandbox ? { sandbox: "true", apiUrl: "https://mock.array.io" } : {};
 
   const tierLabel = featureAccess.tier === "none" ? "Free" : featureAccess.tier.charAt(0).toUpperCase() + featureAccess.tier.slice(1) + " Plan";
 
@@ -575,12 +571,7 @@ export default function ClientPortal() {
                   accentTop
                   loading={!scriptReady}
                 >
-                  <array-credit-overview
-                    appKey={appKey}
-                    userToken={token}
-                    apiUrl={apiUrl}
-                    sandbox="true"
-                  />
+                  <array-credit-overview appKey={appKey} userToken={userToken} {...sandboxProps} />
                 </ArrayWrapper>
 
                 <div className="cp-card">
@@ -621,7 +612,7 @@ export default function ClientPortal() {
                   <div className="cp-divider" />
                   <div className="cp-flex-between">
                     <span style={{ fontSize: 12.5, color: "var(--cp-text-muted)" }}>Next: Send certified mail to Equifax</span>
-                    <button className="cp-btn cp-btn-primary cp-btn-sm" onClick={() => setActivePage("mail")}>
+                    <button className="cp-btn cp-btn-primary cp-btn-sm" onClick={() => setActivePage("disputes")}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14 }}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
                       Continue
                     </button>
@@ -674,7 +665,7 @@ export default function ClientPortal() {
                 accentTop
                 loading={!scriptReady}
               >
-                <array-credit-score appKey={appKey} userToken={token} apiUrl={apiUrl} sandbox="true" bureau="all" scoreTracker="true" />
+                <array-credit-score appKey={appKey} userToken={userToken} bureau="all" scoreTracker="true" {...sandboxProps} />
               </ArrayWrapper>
             </div>
           )}
@@ -749,7 +740,7 @@ export default function ClientPortal() {
                   accentTop
                   loading={!scriptReady}
                 >
-                  <array-credit-alerts appKey={appKey} userToken={alertsToken} apiUrl={apiUrl} sandbox="true" />
+                  <array-credit-alerts appKey={appKey} userToken={userToken} {...sandboxProps} />
                 </ArrayWrapper>
               </div>
             </div>
@@ -771,7 +762,7 @@ export default function ClientPortal() {
                 badge={<span className="cp-badge live">Live</span>}
                 loading={!scriptReady}
               >
-                <array-identity-protect appKey={appKey} userToken={token} apiUrl={apiUrl} sandbox="true" />
+                <array-identity-protect appKey={appKey} userToken={userToken} {...sandboxProps} />
               </ArrayWrapper>
             </div>
           )}
@@ -791,7 +782,7 @@ export default function ClientPortal() {
                 sub="Data broker removal — opt-out requests managed for you"
                 loading={!scriptReady}
               >
-                <array-pip-dashboard appKey={appKey} userToken={token} apiUrl={apiUrl} sandbox="true" />
+                <array-pip-dashboard appKey={appKey} userToken={userToken} {...sandboxProps} />
               </ArrayWrapper>
             </div>
           )}
@@ -811,7 +802,7 @@ export default function ClientPortal() {
                 sub="Sites that have your personal information listed"
                 loading={!scriptReady}
               >
-                <array-pip-scan appKey={appKey} userToken={token} apiUrl={apiUrl} sandbox="true" />
+                <array-pip-scan appKey={appKey} userToken={userToken} {...sandboxProps} />
               </ArrayWrapper>
             </div>
           )}
@@ -831,7 +822,7 @@ export default function ClientPortal() {
                 sub="See the projected effect of paying down debt, removing items, and more"
                 loading={!scriptReady}
               >
-                <array-credit-score-simulator appKey={appKey} userToken={token} apiUrl={apiUrl} sandbox="true" />
+                <array-credit-score-simulator appKey={appKey} userToken={userToken} {...sandboxProps} />
               </ArrayWrapper>
             </div>
           )}
@@ -852,7 +843,7 @@ export default function ClientPortal() {
                 badge={<span className="cp-badge blue-bureaus">All Bureaus</span>}
                 loading={!scriptReady}
               >
-                <array-credit-report appKey={appKey} userToken={token} apiUrl={apiUrl} sandbox="true" defaultBureau="all" />
+                <array-credit-report appKey={appKey} userToken={userToken} defaultBureau="all" {...sandboxProps} />
               </ArrayWrapper>
             </div>
           )}
@@ -873,7 +864,7 @@ export default function ClientPortal() {
                 badge={<span className="cp-badge live">Live</span>}
                 loading={!scriptReady}
               >
-                <array-credit-debt-analysis appKey={appKey} userToken={token} apiUrl={apiUrl} sandbox="true" />
+                <array-credit-debt-analysis appKey={appKey} userToken={userToken} {...sandboxProps} />
               </ArrayWrapper>
             </div>
           )}
@@ -893,7 +884,7 @@ export default function ClientPortal() {
                 sub="Avalanche, snowball, and custom payoff strategies"
                 loading={!scriptReady}
               >
-                <array-debt-navigator appKey={appKey} userToken={token} apiUrl={apiUrl} sandbox="true" />
+                <array-debt-navigator appKey={appKey} userToken={userToken} {...sandboxProps} />
               </ArrayWrapper>
             </div>
           )}
@@ -913,7 +904,7 @@ export default function ClientPortal() {
                 sub="Repayment options, IDR plans, and forgiveness eligibility"
                 loading={!scriptReady}
               >
-                <array-student-loan-aid appKey={appKey} userToken={loanToken} apiUrl={apiUrl} sandbox="true" />
+                <array-student-loan-aid appKey={appKey} userToken={userToken} {...sandboxProps} />
               </ArrayWrapper>
             </div>
           )}
@@ -934,7 +925,7 @@ export default function ClientPortal() {
                 badge={<span className="cp-badge live">Live</span>}
                 loading={!scriptReady}
               >
-                <array-subscription-manager appKey={appKey} userToken={subToken} apiUrl={apiUrl} sandbox="true" provider="plaid" mode="premium" />
+                <array-subscription-manager appKey={appKey} userToken={userToken} provider="plaid" mode="premium" {...sandboxProps} />
               </ArrayWrapper>
             </div>
           )}
