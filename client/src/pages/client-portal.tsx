@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useArrayScript } from "@/hooks/use-array-script";
 import { useArrayToken } from "@/hooks/use-array-token";
@@ -164,6 +165,142 @@ function ChatScreen() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 15, height: 15 }}><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
           Send
         </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Disputes page ──────────────────────────────────────────────── */
+type EnrichedDispute = {
+  id: number;
+  bureau: string;
+  status: string;
+  dateSent: string;
+  expectedResponse: string;
+  actualResponse: string | null;
+  creditor: string;
+  issueType: string;
+  issueTitle: string;
+  outcome: string | null;
+};
+
+function fmtDate(val: string | null | undefined): string {
+  if (!val) return "—";
+  const d = new Date(val);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function DisputesPage() {
+  const { data: activeRaw, isLoading: loadingActive } = useQuery<EnrichedDispute[]>({
+    queryKey: ["/api/client/disputes?status=active"],
+  });
+  const active: EnrichedDispute[] = Array.isArray(activeRaw) ? activeRaw : [];
+
+  const { data: resolvedRaw, isLoading: loadingResolved } = useQuery<EnrichedDispute[]>({
+    queryKey: ["/api/client/disputes?status=resolved"],
+  });
+  const resolved: EnrichedDispute[] = Array.isArray(resolvedRaw) ? resolvedRaw : [];
+
+  const statusPillClass = (s: string) => {
+    if (s === "PENDING") return "cp-pill pending";
+    if (s === "SENT" || s === "DELIVERED") return "cp-pill sent";
+    if (s === "FOLLOW_UP_REQUIRED") return "cp-pill warning";
+    if (s === "RESOLVED") return "cp-pill resolved";
+    if (s === "REJECTED") return "cp-pill error";
+    return "cp-pill";
+  };
+
+  const statusLabel = (s: string) => {
+    if (s === "FOLLOW_UP_REQUIRED") return "Follow-Up";
+    return s.charAt(0) + s.slice(1).toLowerCase();
+  };
+
+  const bureauLabel = (b: string) =>
+    b.charAt(0) + b.slice(1).toLowerCase();
+
+  const typeLabel = (t: string) =>
+    t.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+  return (
+    <div>
+      <div className="cp-page-header">
+        <div>
+          <span className="cp-page-eyebrow">Credit Repair</span>
+          <h1 className="cp-page-title">Disputes</h1>
+          <p className="cp-page-subtitle">Track every dispute filed with the bureaus — in real time.</p>
+        </div>
+      </div>
+
+      <div className="cp-disputes-section">
+        <div className="cp-card" style={{ width: "100%" }}>
+          <div className="cp-card-header">
+            <div><div className="cp-card-title">Active Disputes</div></div>
+            {!loadingActive && (
+              <span className="cp-badge warning">{active.length} Pending</span>
+            )}
+          </div>
+          {loadingActive ? (
+            <div style={{ padding: "2rem", textAlign: "center", opacity: 0.5 }}>Loading…</div>
+          ) : active.length === 0 ? (
+            <div style={{ padding: "2rem", textAlign: "center", opacity: 0.5 }}>
+              No active disputes found.
+            </div>
+          ) : (
+            <div className="cp-table-scroll">
+              <table className="cp-table">
+                <thead>
+                  <tr><th>Account</th><th>Bureau</th><th>Type</th><th>Sent</th><th>Status</th><th>Response Due</th></tr>
+                </thead>
+                <tbody>
+                  {active.map(d => (
+                    <tr key={d.id}>
+                      <td><strong>{d.creditor}{d.issueType ? ` — ${typeLabel(d.issueType)}` : ""}</strong></td>
+                      <td>{bureauLabel(d.bureau)}</td>
+                      <td>{typeLabel(d.issueType)}</td>
+                      <td>{fmtDate(d.dateSent)}</td>
+                      <td><span className={statusPillClass(d.status)}>{statusLabel(d.status)}</span></td>
+                      <td>{fmtDate(d.expectedResponse)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div className="cp-card" style={{ width: "100%" }}>
+          <div className="cp-card-header">
+            <div><div className="cp-card-title">Resolved</div></div>
+            {!loadingResolved && (
+              <span className="cp-badge success">{resolved.length} Resolved</span>
+            )}
+          </div>
+          {loadingResolved ? (
+            <div style={{ padding: "2rem", textAlign: "center", opacity: 0.5 }}>Loading…</div>
+          ) : resolved.length === 0 ? (
+            <div style={{ padding: "2rem", textAlign: "center", opacity: 0.5 }}>
+              No resolved disputes yet.
+            </div>
+          ) : (
+            <div className="cp-table-scroll">
+              <table className="cp-table">
+                <thead>
+                  <tr><th>Account</th><th>Bureau</th><th>Resolved</th><th>Outcome</th></tr>
+                </thead>
+                <tbody>
+                  {resolved.map(d => (
+                    <tr key={d.id}>
+                      <td><strong>{d.creditor}{d.issueType ? ` — ${typeLabel(d.issueType)}` : ""}</strong></td>
+                      <td>{bureauLabel(d.bureau)}</td>
+                      <td>{fmtDate(d.actualResponse ?? d.dateSent)}</td>
+                      <td><span className="cp-pill resolved">{d.outcome ?? statusLabel(d.status)}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -969,71 +1106,7 @@ export default function ClientPortal() {
           )}
 
           {/* ══ DISPUTES ════════════════════════════════════════ */}
-          {activePage === "disputes" && (
-            <div>
-              <div className="cp-page-header">
-                <div>
-                  <span className="cp-page-eyebrow">Credit Repair</span>
-                  <h1 className="cp-page-title">Disputes</h1>
-                  <p className="cp-page-subtitle">Track every dispute filed with the bureaus — in real time.</p>
-                </div>
-              </div>
-
-              <div className="cp-disputes-section">
-                <div className="cp-card" style={{ width: "100%" }}>
-                  <div className="cp-card-header">
-                    <div><div className="cp-card-title">Active Disputes</div></div>
-                    <span className="cp-badge warning">2 Pending</span>
-                  </div>
-                  <div className="cp-table-scroll">
-                    <table className="cp-table">
-                      <thead>
-                        <tr><th>Account</th><th>Bureau</th><th>Type</th><th>Sent</th><th>Status</th><th>Response Due</th></tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td><strong>Capital One — Late Payment</strong></td><td>Equifax</td><td>Late Payment</td>
-                          <td>Apr 28, 2026</td><td><span className="cp-pill pending">Pending</span></td><td>May 28, 2026</td>
-                        </tr>
-                        <tr>
-                          <td><strong>Midland Credit — Collection</strong></td><td>TransUnion</td><td>Collection</td>
-                          <td>Apr 15, 2026</td><td><span className="cp-pill pending">Pending</span></td><td>May 15, 2026</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <div className="cp-card" style={{ width: "100%" }}>
-                  <div className="cp-card-header">
-                    <div><div className="cp-card-title">Resolved</div></div>
-                    <span className="cp-badge success">7 Resolved</span>
-                  </div>
-                  <div className="cp-table-scroll">
-                    <table className="cp-table">
-                      <thead>
-                        <tr><th>Account</th><th>Bureau</th><th>Resolved</th><th>Outcome</th></tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td><strong>US Bankruptcy Court — Public Record</strong></td><td>All 3</td>
-                          <td>May 4, 2026</td><td><span className="cp-pill resolved">Removed</span></td>
-                        </tr>
-                        <tr>
-                          <td><strong>Portfolio Recovery — Collection</strong></td><td>Experian</td>
-                          <td>Apr 10, 2026</td><td><span className="cp-pill resolved">Removed</span></td>
-                        </tr>
-                        <tr>
-                          <td><strong>Synchrony Bank — Late Payment</strong></td><td>TransUnion</td>
-                          <td>Mar 22, 2026</td><td><span className="cp-pill resolved">Corrected</span></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {activePage === "disputes" && <DisputesPage />}
 
           {/* ══ MESSAGES ════════════════════════════════════════ */}
           {activePage === "messages" && (

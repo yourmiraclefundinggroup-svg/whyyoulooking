@@ -623,6 +623,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Client-scoped dispute endpoint with status filtering and joined issue data
+  app.get("/api/client/disputes", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      const userId = requestingUser.id;
+      const statusFilter = req.query.status as string | undefined;
+
+      const ACTIVE_STATUSES = ["PENDING", "SENT", "DELIVERED", "FOLLOW_UP_REQUIRED"];
+      const RESOLVED_STATUSES = ["RESOLVED", "REJECTED"];
+
+      const allDisputes = await storage.getDisputes(userId);
+
+      const filtered = allDisputes.filter((d) => {
+        if (statusFilter === "active") return ACTIVE_STATUSES.includes(d.status);
+        if (statusFilter === "resolved") return RESOLVED_STATUSES.includes(d.status);
+        return true;
+      });
+
+      const enriched = await Promise.all(
+        filtered.map(async (d) => {
+          const issue = await storage.getCreditIssue(d.issueId);
+          return {
+            ...d,
+            creditor: issue?.creditor ?? "Unknown",
+            issueType: issue?.type ?? "",
+            issueTitle: issue?.title ?? "",
+            outcome: d.status === "RESOLVED" ? "Removed" : d.status === "REJECTED" ? "Rejected" : null,
+          };
+        })
+      );
+
+      res.json(enriched);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch disputes" });
+    }
+  });
+
   // Disputes (Authenticated users only)
   app.get("/api/disputes", authenticateToken, requireClientAccess, async (req, res) => {
     try {
