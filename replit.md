@@ -15,7 +15,7 @@ Preferred communication style: Simple, everyday language.
 - **State Management**: TanStack Query (React Query).
 - **Routing**: Wouter for lightweight client-side routing.
 - **Forms**: React Hook Form with Zod validation.
-- **UI/UX Decisions**: Animated credit score circles, gamified onboarding, mobile-optimized interfaces, professional layout with 8-tab navigation on `/credit-repair` dashboard.
+- **UI/UX Decisions**: Animated credit score circles, gamified onboarding, mobile-optimized interfaces, professional layout with 8-tab navigation on `/credit-repair` dashboard. New **Client Portal** at `/portal` (and default for non-admin authenticated users at `/`) — fixed 252px sidebar with 20 nav items across 6 sections, frosted-glass topbar, Mercury dot-grid background, 12 Array web component screens. CSS scoped under `.cp-portal`. Key files: `client/src/pages/client-portal.tsx`, `client/src/styles/portal.css`.
 - **Admin Portal Design System**: Zinc near-black dark mode (zinc-950 base), white/smoke light mode, single gold accent (`--admin-accent: 38 90% 51%`), deep gold gradient stop (`--admin-accent-deep: 32 92% 38%`). Semantic-only color use: amber=warnings, red=danger/derogatory/collections, green=success/approval, blue=info/hard-inquiries, late-payment severity (30d=yellow/60d=orange). Bureau badges intentionally kept: Experian=blue-500, Equifax=red-500, TransUnion=purple-500.
 
 ### Backend Architecture

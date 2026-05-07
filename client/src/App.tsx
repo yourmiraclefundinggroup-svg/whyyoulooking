@@ -33,6 +33,7 @@ import Terms from "@/pages/terms";
 import DenialDecoder from "@/pages/denial-decoder";
 import WhiteLabelOnboarding from "@/pages/white-label-onboarding";
 import CreditMonitoring from "@/pages/credit-monitoring";
+import ClientPortal from "@/pages/client-portal";
 import NotFound from "@/pages/not-found";
 import { TrialUpgradeWall } from "@/components/trial-upgrade-wall";
 
@@ -121,14 +122,7 @@ function Router() {
         </div>
       );
     } else {
-      return (
-        <TrialUpgradeWall>
-          <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
-            <Navigation />
-            <CreditRepair />
-          </div>
-        </TrialUpgradeWall>
-      );
+      return <ClientPortal />;
     }
   }
 
@@ -196,6 +190,7 @@ function Router() {
             <Navigation />
             <CreditMonitoring />
           </Route>
+          <Route path="/portal" component={ClientPortal} />
           <Route path="/credit-building-v2">
             <Navigation />
             <CreditBuildingV2 />
