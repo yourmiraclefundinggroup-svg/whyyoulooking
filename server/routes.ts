@@ -8750,17 +8750,58 @@ ${denialLetterText}`
       // ── Sandbox mode for test users ───────────────────────────────────────
       // Any account flagged as a test user gets Array sandbox credentials so
       // the client portal points at mock.array.io instead of production Array.
+      // If the user has a real sandbox arrayUserId stored (e.g. Thomas Devos),
+      // we call the sandbox token API dynamically; otherwise fall back to the
+      // generic static sandbox token.
       if (user.isTestUser) {
         const SANDBOX_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
         const SANDBOX_API_URL = "https://mock.array.io";
-        const SANDBOX_TOKEN   = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
-        console.log(`[Array] Sandbox mode for test user ${user.id}`);
+        const SANDBOX_FALLBACK_TOKEN = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
+        const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
+        const ARRAY_API_SECRET = process.env.ARRAY_API_SECRET;
+
+        // Look up any stored sandbox arrayUserId for this user
+        const { arrayEnrollments } = await import("@shared/schema");
+        const [enrollment] = await db.select().from(arrayEnrollments).where(eq(arrayEnrollments.userId, user.id));
+        const sandboxArrayUserId = enrollment?.arrayUserId;
+
+        let sandboxToken = SANDBOX_FALLBACK_TOKEN;
+
+        // If we have real credentials + a stored sandbox userId, get a real sandbox token
+        // sandboxArrayUserId must be a real Array-side UUID (not the fake "scoreshift_user_N")
+        const isRealArrayId = sandboxArrayUserId &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sandboxArrayUserId);
+
+        if (ARRAY_API_KEY && ARRAY_API_SECRET && isRealArrayId) {
+          try {
+            const creds = Buffer.from(`${ARRAY_API_KEY}:${ARRAY_API_SECRET}`).toString("base64");
+            const tokResp = await fetch(`${SANDBOX_API_URL}/v2/user/token`, {
+              method: "POST",
+              headers: { Authorization: `Basic ${creds}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ userId: sandboxArrayUserId }),
+            });
+            const tokRaw = await tokResp.text();
+            if (tokResp.ok) {
+              let tokData: any = {};
+              try { tokData = JSON.parse(tokRaw); } catch { /* non-JSON, ignore */ }
+              const fetched = tokData.token || tokData.userToken || tokData.access_token;
+              if (fetched) sandboxToken = fetched;
+              else console.warn(`[Array] Sandbox token response had no token field:`, tokRaw.slice(0, 200));
+            } else {
+              console.warn(`[Array] Sandbox token fetch failed (${tokResp.status}) for ${sandboxArrayUserId}:`, tokRaw.slice(0, 200));
+            }
+          } catch (e) {
+            console.warn("[Array] Sandbox token fetch error, using fallback:", e);
+          }
+        }
+
+        console.log(`[Array] Sandbox mode for test user ${user.id} (arrayUserId: ${sandboxArrayUserId || "fallback"})`);
         return res.json({
-          token: SANDBOX_TOKEN,
+          token: sandboxToken,
           appKey: SANDBOX_APP_KEY,
           apiUrl: SANDBOX_API_URL,
           sandboxMode: true,
-          arrayUserId: `scoreshift_user_${user.id}`,
+          arrayUserId: sandboxArrayUserId || `scoreshift_user_${user.id}`,
           expiresAt: new Date(Date.now() + 55 * 60 * 1000).toISOString(),
         });
       }
@@ -8891,6 +8932,100 @@ ${denialLetterText}`
         .where(eq(arrayEnrollments.userId, user.id));
       res.json({ ok: true });
     } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/admin/array/sandbox/link-user — link a test user to a pre-seeded Array sandbox userId
+  // and verify the sandbox token endpoint works with that UUID.
+  // mock.array.io does NOT support dynamic user creation (POST /v2/user returns 404).
+  // Instead, Array pre-seeds Thomas Devos test data under a known UUID. We store that UUID
+  // so /api/array/token can request fresh dynamic tokens from mock.array.io.
+  app.post("/api/admin/array/sandbox/create-user", authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const SANDBOX_API_URL = "https://mock.array.io";
+      // Thomas Devos pre-seeded sandbox userId in Array's mock environment
+      const THOMAS_DEVOS_SANDBOX_ID = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
+
+      const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
+      const ARRAY_API_SECRET = process.env.ARRAY_API_SECRET;
+
+      const { targetUserId } = req.body;
+      if (!targetUserId) {
+        return res.status(400).json({ error: "targetUserId is required" });
+      }
+
+      const creds = ARRAY_API_KEY && ARRAY_API_SECRET
+        ? Buffer.from(`${ARRAY_API_KEY}:${ARRAY_API_SECRET}`).toString("base64")
+        : null;
+
+      // Step 1 — probe the sandbox token endpoint with the known Devos UUID
+      let sandboxToken: string | null = null;
+      let tokenStatus = "not_tested";
+
+      if (creds) {
+        try {
+          const tokResp = await fetch(`${SANDBOX_API_URL}/v2/user/token`, {
+            method: "POST",
+            headers: { Authorization: `Basic ${creds}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: THOMAS_DEVOS_SANDBOX_ID }),
+          });
+          const tokRaw = await tokResp.text();
+          console.log(`[Array] Sandbox token probe (${tokResp.status}):`, tokRaw.slice(0, 300));
+
+          if (tokResp.ok) {
+            let tokData: any = {};
+            try { tokData = JSON.parse(tokRaw); } catch { /* plain-text token */ }
+            const fetched = tokData.token || tokData.userToken || tokData.access_token;
+            if (fetched) {
+              sandboxToken = fetched;
+              tokenStatus = "dynamic";
+            } else if (tokRaw.trim().length > 0 && tokRaw.trim().length < 200) {
+              // plain-text token
+              sandboxToken = tokRaw.trim();
+              tokenStatus = "dynamic_plaintext";
+            } else {
+              tokenStatus = "ok_but_no_token_field";
+            }
+          } else {
+            tokenStatus = `token_endpoint_${tokResp.status}`;
+          }
+        } catch (e: any) {
+          tokenStatus = `error_${e.message}`;
+          console.warn("[Array] Sandbox token probe error:", e);
+        }
+      } else {
+        tokenStatus = "no_credentials";
+      }
+
+      // Step 2 — persist the Devos sandbox UUID into arrayEnrollments for targetUserId
+      const { arrayEnrollments } = await import("@shared/schema");
+      const [existing] = await db.select().from(arrayEnrollments).where(eq(arrayEnrollments.userId, targetUserId));
+      if (existing) {
+        await db.update(arrayEnrollments)
+          .set({ arrayUserId: THOMAS_DEVOS_SANDBOX_ID, lastTokenIssuedAt: new Date() })
+          .where(eq(arrayEnrollments.userId, targetUserId));
+      } else {
+        await db.insert(arrayEnrollments).values({
+          userId: targetUserId,
+          arrayUserId: THOMAS_DEVOS_SANDBOX_ID,
+          productCodes: [],
+        });
+      }
+
+      console.log(`[Array] Linked app user ${targetUserId} → sandbox UUID ${THOMAS_DEVOS_SANDBOX_ID} (tokenStatus: ${tokenStatus})`);
+
+      res.json({
+        success: true,
+        sandboxArrayUserId: THOMAS_DEVOS_SANDBOX_ID,
+        token: sandboxToken,
+        tokenStatus,
+        message: tokenStatus.startsWith("dynamic")
+          ? `Sandbox user linked. Token endpoint is working — tokens will now refresh dynamically from mock.array.io.`
+          : `Sandbox user linked. Token probe returned status: ${tokenStatus}. Fallback token will be used for portal sessions.`,
+      });
+    } catch (error: any) {
+      console.error("[Array] Sandbox create-user error:", error);
       res.status(500).json({ error: error.message });
     }
   });
