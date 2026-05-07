@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ScoreShift — Client Portal</title>
+
+  <!-- Array Components -->
+  <script src="https://embed.array.io/cms/array-credit-overview.js?appKey=3F03D20E-5311-43D8-8A76-E4B5D77793BD"></script>
+  <script src="https://embed.array.io/cms/array-credit-debt-analysis.js?appKey=3F03D20E-5311-43D8-8A76-E4B5D77793BD"></script>
+  <script src="https://embed.array.io/cms/array-credit-report.js?appKey=3F03D20E-5311-43D8-8A76-E4B5D77793BD"></script>
+  <script src="https://embed.array.io/cms/array-credit-score.js?appKey=3F03D20E-5311-43D8-8A76-E4B5D77793BD"></script>
+  <script src="https://embed.array.io/cms/array-credit-score-simulator.js?appKey=3F03D20E-5311-43D8-8A76-E4B5D77793BD"></script>
+  <script src="https://embed.array.io/cms/array-credit-alerts.js?appKey=3F03D20E-5311-43D8-8A76-E4B5D77793BD"></script>
+  <script src="https://embed.array.io/cms/array-identity-protect.js?appKey=3F03D20E-5311-43D8-8A76-E4B5D77793BD"></script>
+  <script src="https://embed.array.io/cms/array-pip-dashboard.js?appKey=3F03D20E-5311-43D8-8A76-E4B5D77793BD"></script>
+  <script src="https://embed.array.io/cms/array-pip-scan.js?appKey=3F03D20E-5311-43D8-8A76-E4B5D77793BD"></script>
+  <script src="https://embed.array.io/cms/array-subscription-manager.js?appKey=3F03D20E-5311-43D8-8A76-E4B5D77793BD"></script>
+  <script src="https://embed.array.io/cms/array-student-loan-aid.js?appKey=3F03D20E-5311-43D8-8A76-E4B5D77793BD"></script>
+  <script src="https://embed.array.io/cms/array-debt-navigator.js?appKey=3F03D20E-5311-43D8-8A76-E4B5D77793BD"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet"/>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f5f6fa;
+      --surface: #ffffff;
+      --surface-2: #f0f2f8;
+      --border: #e4e8f2;
+      --border-light: #eef0f8;
+      --text-primary: #0d1117;
+      --text-secondary: #4a5270;
+      --text-muted: #8e95b0;
+      --accent: #6366f1;
+      --accent-2: #8b5cf6;
+      --accent-3: #2dd4bf;
+      --accent-light: #eef0ff;
+      --accent-mid: #c7d2fe;
+      --green: #22c55e;
+      --green-light: #dcfce7;
+      --amber: #f59e0b;
+      --amber-light: #fef3c7;
+      --red: #ef4444;
+      --red-light: #fee2e2;
+      --teal: #14b8a6;
+      --teal-light: #ccfbf1;
+      --sidebar-w: 252px;
+      --topbar-h: 62px;
+      --radius: 14px;
+      --radius-sm: 9px;
+      --shadow-sm: 0 1px 3px rgba(15,18,40,0.06);
+      --shadow: 0 2px 8px rgba(15,18,40,0.07), 0 1px 3px rgba(15,18,40,0.05);
+      --shadow-md: 0 8px 24px rgba(15,18,40,0.09), 0 2px 6px rgba(15,18,40,0.05);
+      --shadow-glow: 0 0 0 1px rgba(99,102,241,0.12), 0 8px 24px rgba(99,102,241,0.12);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      /* Mercury-style background: gradient washes + dot grid baked into body */
+      background-color: #f5f6fa;
+      background-image:
+        /* Fine dot grid */
+        radial-gradient(circle, rgba(99,102,241,0.13) 1px, transparent 1px),
+        /* Indigo wash — top left */
+        radial-gradient(ellipse 70% 50% at -5% 0%, rgba(99,102,241,0.12) 0%, transparent 60%),
+        /* Violet wash — top right */
+        radial-gradient(ellipse 55% 45% at 105% 5%, rgba(139,92,246,0.10) 0%, transparent 55%),
+        /* Teal wash — bottom right */
+        radial-gradient(ellipse 60% 50% at 105% 100%, rgba(45,212,191,0.09) 0%, transparent 55%),
+        /* Indigo wash — bottom left */
+        radial-gradient(ellipse 50% 40% at -5% 100%, rgba(99,102,241,0.08) 0%, transparent 50%);
+      background-size: 28px 28px, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+      background-attachment: fixed;
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── LANDING PAGE DESIGN INFRASTRUCTURE ─────────────────── */
+    /* Orb / radial glow backgrounds — same as landing hero */
+    .orb-bg {
+      position: relative;
+      overflow: hidden;
+    }
+    .orb-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 60% at 70% -10%, rgba(99,102,241,0.09) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 95% 80%, rgba(139,92,246,0.07) 0%, transparent 50%),
+        radial-gradient(ellipse 40% 30% at 5% 90%, rgba(45,212,191,0.06) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    /* Subtle grid texture — same as landing hero */
+    .grid-texture::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb-bg > *, .grid-texture > * { position: relative; z-index: 1; }
+
+    /* Gradient glow card — elevated version of standard card */
+    .card-glow {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 16px rgba(99,102,241,0.07), 0 1px 4px rgba(15,18,32,0.06);
+      transition: box-shadow 0.25s, border-color 0.25s, transform 0.25s;
+    }
+    .card-glow:hover {
+      box-shadow: 0 8px 40px rgba(99,102,241,0.14), 0 2px 8px rgba(15,18,32,0.08);
+      border-color: var(--accent-mid);
+      transform: translateY(-2px);
+    }
+
+    /* Gradient border top accent — same as landing feature cards */
+    .card-accent-top { position: relative; }
+    .card-accent-top::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6, #2dd4bf);
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    /* Shimmer progress bar — identical to landing */
+    .shimmer-bar { height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+    .shimmer-fill {
+      height: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6, #2dd4bf);
+      position: relative; overflow: hidden;
+    }
+    .shimmer-fill::after {
+      content: '';
+      position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      animation: shimmer-anim 2.2s ease-in-out infinite;
+    }
+    @keyframes shimmer-anim { 0% { left: -100%; } 100% { left: 100%; } }
+
+    /* Icon container — tinted gradient bg, same as landing feature grid */
+    .icon-container {
+      width: 46px; height: 46px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .icon-container svg { width: 22px; height: 22px; }
+    .ic-indigo { background: linear-gradient(135deg, rgba(99,102,241,0.13), rgba(139,92,246,0.08)); color: #6366f1; }
+    .ic-green  { background: linear-gradient(135deg, rgba(34,197,94,0.13), rgba(20,184,166,0.08)); color: #22c55e; }
+    .ic-amber  { background: linear-gradient(135deg, rgba(245,158,11,0.13), rgba(239,68,68,0.07)); color: #f59e0b; }
+    .ic-teal   { background: linear-gradient(135deg, rgba(20,184,166,0.13), rgba(99,102,241,0.07)); color: #14b8a6; }
+    .ic-red    { background: linear-gradient(135deg, rgba(239,68,68,0.11), rgba(245,158,11,0.06)); color: #ef4444; }
+    .ic-violet { background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(99,102,241,0.08)); color: #8b5cf6; }
+
+    /* Frosted glass topbar — matches landing nav exactly */
+    .topbar {
+      background: rgba(255,255,255,0.88) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+    }
+
+    /* Section eyebrow — gradient text label, same as landing */
+    .eyebrow-grad {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 6px; display: block;
+    }
+
+    /* Dark panel — same dark section treatment as landing */
+    .dark-panel {
+      background: linear-gradient(135deg, #0d1117 0%, #151c2e 60%, #1a1535 100%);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,0.06);
+      position: relative; overflow: hidden;
+    }
+    .dark-panel::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: 60px;
+      width: 280px; height: 280px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,0.18), transparent 70%);
+      pointer-events: none;
+    }
+    .dark-panel::after {
+      content: '';
+      position: absolute;
+      bottom: -100px; right: -60px;
+      width: 320px; height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(45,212,191,0.1), transparent 70%);
+      pointer-events: none;
+    }
+    .dark-panel > * { position: relative; z-index: 1; }
+
+    /* ── SIDEBAR ─────────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 100;
+      overflow: hidden;
+      box-shadow: 2px 0 20px rgba(15,18,40,0.04);
+    }
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 260px;
+      background:
+        radial-gradient(ellipse 120% 60% at 50% 0%, rgba(99,102,241,0.07) 0%, transparent 70%),
+        linear-gradient(180deg, rgba(99,102,241,0.04) 0%, transparent 100%);
+      pointer-events: none;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 22px 20px 18px;
+      border-bottom: 1px solid var(--border-light);
+      text-decoration: none;
+      position: relative;
+    }
+    .logo-mark {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #2dd4bf 100%);
+      border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(99,102,241,0.38), 0 0 0 1px rgba(99,102,241,0.15);
+      position: relative;
+    }
+    .logo-mark::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 11px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .logo-mark svg { width: 18px; height: 18px; }
+    .logo-text {
+      font-family: 'Sora', sans-serif;
+      font-size: 17px; font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.5px;
+    }
+    .sidebar-nav {
+      flex: 1;
+      padding: 14px 12px 10px;
+      display: flex; flex-direction: column; gap: 1px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      /* Thin scrollbar */
+      scrollbar-width: thin;
+      scrollbar-color: rgba(99,102,241,0.25) transparent;
+    }
+    .sidebar-nav::-webkit-scrollbar { width: 4px; }
+    .sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.25); border-radius: 4px; }
+    .sidebar-nav::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.45); }
+    .nav-section-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 14px 10px 5px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 11px;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-size: 13.5px; font-weight: 500;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      border: none; background: none;
+      width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: var(--bg); color: var(--text-primary); }
+    .nav-item.active {
+      background: linear-gradient(135deg, rgba(99,102,241,0.11), rgba(139,92,246,0.07));
+      color: var(--accent); font-weight: 600;
+      box-shadow: inset 0 0 0 1px rgba(99,102,241,0.18), 0 1px 4px rgba(99,102,241,0.08);
+    }
+    .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.65; transition: opacity 0.15s; }
+    .nav-item.active svg, .nav-item:hover svg { opacity: 1; }
+    .nav-badge {
+      margin-left: auto;
+      background: var(--red); color: white;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 6px; border-radius: 20px;
+      min-width: 18px; text-align: center; line-height: 1.4;
+    }
+    .nav-badge.amber { background: var(--amber); }
+    .nav-badge.indigo { background: var(--accent); }
+    .nav-badge.green { background: var(--green); }
+    .sidebar-user {
+      padding: 14px 16px;
+      border-top: 1px solid var(--border-light);
+      display: flex; align-items: center; gap: 10px;
+      background: linear-gradient(180deg, transparent, rgba(99,102,241,0.03));
+      flex-shrink: 0;
+    }
+    .user-avatar {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: white;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+    }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-plan {
+      font-size: 11px; font-weight: 700;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6, #2dd4bf);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .sign-out-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-muted); padding: 5px;
+      border-radius: 6px; transition: all 0.15s;
+    }
+    .sign-out-btn:hover { color: var(--red); background: var(--red-light); }
+
+    /* ── BACKGROUND TEXTURE (Mercury-style) ────────────────── */
+    /* Background pseudo-elements removed — baked into body above */
+    /* Ensure sidebar stays on top */
+    .sidebar { z-index: 100; }
+
+    /* ── MAIN ────────────────────────────────────────────────── */
+    .main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
+    .topbar {
+      height: var(--topbar-h);
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 30px;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .topbar-title { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.3px; }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .plan-chip {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white; font-size: 11px; font-weight: 700;
+      padding: 4px 12px; border-radius: 20px;
+      letter-spacing: 0.03em;
+      box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+    }
+    .icon-btn {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text-secondary);
+      transition: all 0.15s; position: relative;
+    }
+    .icon-btn:hover { background: var(--accent-light); border-color: var(--accent-mid); color: var(--accent); }
+    .icon-btn svg { width: 15px; height: 15px; }
+    .notif-dot { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; background: var(--red); border-radius: 50%; border: 1.5px solid white; }
+
+    /* ── PAGES ───────────────────────────────────────────────── */
+    .page { padding: 0; display: none; animation: fadeIn 0.22s ease; }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .page-inner { padding: 28px 30px 36px; }
+
+    /* ── PAGE HEADER ─────────────────────────────────────────── */
+    .page-header {
+      margin-bottom: 24px;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      padding: 28px 30px 0;
+    }
+    .page-eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6, #2dd4bf);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 6px; display: block;
+    }
+    .page-title {
+      font-family: 'Sora', sans-serif; font-size: 26px; font-weight: 800;
+      color: var(--text-primary); letter-spacing: -0.7px; line-height: 1.1;
+    }
+    .page-subtitle { font-size: 14px; color: var(--text-secondary); margin-top: 6px; line-height: 1.55; }
+
+    /* ── CARDS ───────────────────────────────────────────────── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 16px rgba(99,102,241,0.06), 0 1px 4px rgba(15,18,32,0.05);
+      padding: 24px; transition: box-shadow 0.25s, border-color 0.25s, transform 0.25s;
+    }
+    .card:hover {
+      box-shadow: 0 8px 32px rgba(99,102,241,0.11), 0 2px 8px rgba(15,18,32,0.07);
+      border-color: var(--accent-mid);
+      transform: translateY(-1px);
+    }
+    .card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+    .card-title { font-size: 14px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.2px; }
+    .card-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── ARRAY COMPONENT WRAPPER ─────────────────────────────── */
+    /* Wraps each Array embed in a ScoreShift-branded card shell */
+    .array-wrapper {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 16px rgba(99,102,241,0.07), 0 1px 4px rgba(15,18,32,0.06);
+      overflow: hidden;
+      transition: box-shadow 0.25s, border-color 0.25s;
+    }
+    .array-wrapper:hover {
+      box-shadow: 0 8px 40px rgba(99,102,241,0.12), 0 2px 8px rgba(15,18,32,0.07);
+      border-color: var(--accent-mid);
+    }
+    .array-wrapper-header {
+      padding: 18px 24px 14px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .array-wrapper-title { font-size: 14px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.2px; }
+    .array-wrapper-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .array-wrapper-body { padding: 0; overflow: hidden; }
+    /* Dashboard credit overview — constrained height so stat cards stay visible */
+    #page-dashboard .array-wrapper-body {
+      max-height: 520px;
+      overflow-y: auto;
+    }
+    /* Override Array default fonts to match ScoreShift */
+    .array-wrapper array-credit-overview,
+    .array-wrapper array-credit-debt-analysis,
+    .array-wrapper array-credit-report,
+    .array-wrapper array-credit-score,
+    .array-wrapper array-credit-score-simulator,
+    .array-wrapper array-credit-alerts,
+    .array-wrapper array-identity-protect,
+    .array-wrapper array-pip-dashboard,
+    .array-wrapper array-pip-scan,
+    .array-wrapper array-subscription-manager,
+    .array-wrapper array-student-loan-aid,
+    .array-wrapper array-debt-navigator {
+      display: block;
+      width: 100%;
+    }
+
+    /* ── GRID ────────────────────────────────────────────────── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+    .mb-20 { margin-bottom: 20px; }
+    .mb-24 { margin-bottom: 24px; }
+    .mt-16 { margin-top: 16px; }
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-8 { gap: 8px; }
+    .gap-12 { gap: 12px; }
+    .gap-16 { gap: 16px; }
+    .text-muted { color: var(--text-muted); font-size: 12px; }
+    .text-sm { font-size: 13px; }
+    .font-semibold { font-weight: 600; }
+
+    /* ── SCORE CARDS ─────────────────────────────────────────── */
+    .score-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 22px; }
+    .score-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 24px 20px 20px;
+      position: relative; overflow: hidden;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .score-card:hover { box-shadow: var(--shadow-glow); transform: translateY(-2px); }
+    .score-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 3px; border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .score-card.excellent::before { background: linear-gradient(90deg, #22c55e, #14b8a6); }
+    .score-card.good::before { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+    .score-bureau { font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px; }
+    .score-number { font-family: 'Sora', sans-serif; font-size: 52px; font-weight: 800; letter-spacing: -3px; line-height: 1; margin-bottom: 6px; }
+    .score-number.excellent { color: var(--green); }
+    .score-number.good { background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .score-rating { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 14px; }
+    .score-rating.excellent { color: var(--green); }
+    .score-rating.good { color: var(--accent); }
+    .score-bar { height: 5px; background: var(--surface-2); border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .score-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #ef4444 0%, #f59e0b 40%, #22c55e 100%); }
+    .score-change { font-size: 12px; font-weight: 600; color: var(--green); display: flex; align-items: center; gap: 4px; }
+    .score-change svg { width: 12px; height: 12px; }
+
+    /* ── STAT CARDS ──────────────────────────────────────────── */
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 20px; display: flex; align-items: center; gap: 14px;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .stat-icon { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .stat-icon svg { width: 20px; height: 20px; }
+    .stat-icon.indigo { background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08)); color: var(--accent); }
+    .stat-icon.green { background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(20,184,166,0.08)); color: var(--green); }
+    .stat-icon.amber { background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(239,68,68,0.06)); color: var(--amber); }
+    .stat-icon.teal { background: linear-gradient(135deg, rgba(20,184,166,0.12), rgba(99,102,241,0.06)); color: var(--teal); }
+    .stat-icon.red { background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(245,158,11,0.06)); color: var(--red); }
+    .stat-value { font-family: 'Sora', sans-serif; font-size: 28px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.8px; line-height: 1; }
+    .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 3px; font-weight: 500; }
+
+    /* ── PIPELINE ────────────────────────────────────────────── */
+    .pipeline { display: flex; align-items: flex-start; position: relative; padding: 10px 0; }
+    .pipeline::before { content: ''; position: absolute; top: 26px; left: 16px; right: 16px; height: 2px; background: var(--border); z-index: 0; }
+    .pipeline-progress { position: absolute; top: 26px; left: 16px; height: 2px; background: linear-gradient(90deg, #6366f1, #8b5cf6); z-index: 0; width: 55%; }
+    .pipeline-step { flex: 1; text-align: center; position: relative; z-index: 1; }
+    .pipeline-dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; transition: all 0.2s; }
+    .pipeline-dot svg { width: 13px; height: 13px; color: var(--text-muted); }
+    .pipeline-step.done .pipeline-dot { background: linear-gradient(135deg, #6366f1, #8b5cf6); border-color: transparent; box-shadow: 0 2px 8px rgba(99,102,241,0.35); }
+    .pipeline-step.done .pipeline-dot svg { color: white; }
+    .pipeline-step.active .pipeline-dot { background: var(--accent-light); border-color: var(--accent); box-shadow: 0 0 0 4px rgba(99,102,241,0.1); }
+    .pipeline-step.active .pipeline-dot svg { color: var(--accent); }
+    .pipeline-label { font-size: 11px; font-weight: 500; color: var(--text-muted); line-height: 1.3; }
+    .pipeline-step.done .pipeline-label, .pipeline-step.active .pipeline-label { color: var(--text-primary); font-weight: 600; }
+
+    /* ── ALERTS ──────────────────────────────────────────────── */
+    .alert-item { display: flex; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--border-light); }
+    .alert-item:last-child { border-bottom: none; }
+    .alert-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .alert-dot.positive { background: var(--green); box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
+    .alert-dot.negative { background: var(--red); box-shadow: 0 0 0 3px rgba(239,68,68,0.15); }
+    .alert-dot.neutral { background: var(--amber); box-shadow: 0 0 0 3px rgba(245,158,11,0.15); }
+    .alert-text { font-size: 13.5px; color: var(--text-primary); line-height: 1.4; font-weight: 500; }
+    .alert-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+
+    /* ── BADGES ──────────────────────────────────────────────── */
+    .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+    .badge.live { background: var(--teal-light); color: var(--teal); }
+    .badge.live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--teal); animation: pulse-dot 2s infinite; }
+    .badge.success { background: var(--green-light); color: #16a34a; }
+    .badge.warning { background: var(--amber-light); color: #b45309; }
+    .badge.info { background: var(--accent-light); color: var(--accent); }
+    @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* ── PILLS ───────────────────────────────────────────────── */
+    .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+    .pill::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .pill.active { background: var(--green-light); color: #16a34a; }
+    .pill.pending { background: var(--amber-light); color: #b45309; }
+    .pill.resolved { background: var(--teal-light); color: #0d9488; }
+    .pill.negative { background: var(--red-light); color: #dc2626; }
+    .pill.info { background: var(--accent-light); color: var(--accent); }
+
+    /* ── BUTTONS ─────────────────────────────────────────────── */
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px; border-radius: var(--radius-sm); font-size: 13.5px; font-weight: 600; cursor: pointer; border: none; transition: all 0.18s ease; text-decoration: none; font-family: inherit; }
+    .btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; box-shadow: 0 3px 10px rgba(99,102,241,0.3); }
+    .btn-primary:hover { box-shadow: 0 6px 20px rgba(99,102,241,0.4); transform: translateY(-1px); }
+    .btn-secondary { background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+    .btn-secondary:hover { background: var(--bg); border-color: var(--accent-mid); }
+    .btn-sm { padding: 7px 14px; font-size: 12.5px; }
+
+    /* ── TABLES ──────────────────────────────────────────────── */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--border); background: var(--bg); }
+    .data-table td { padding: 13px 16px; font-size: 13.5px; color: var(--text-primary); border-bottom: 1px solid var(--border-light); }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tbody tr:hover td { background: rgba(99,102,241,0.02); }
+
+    /* ── PROGRESS ────────────────────────────────────────────── */
+    .progress-bar { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #6366f1, #8b5cf6, #2dd4bf); position: relative; overflow: hidden; }
+    .progress-fill::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.38), transparent); animation: shimmer 2.2s ease-in-out infinite; }
+    @keyframes shimmer { 0% { left: -100%; } 100% { left: 100%; } }
+
+    /* ── DIVIDER ─────────────────────────────────────────────── */
+    .divider { height: 1px; background: var(--border-light); margin: 20px 0; }
+
+    /* ── GRAD TEXT ───────────────────────────────────────────── */
+    .grad-text { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #2dd4bf 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    /* ── CHAT ────────────────────────────────────────────────── */
+    .chat-container { display: flex; flex-direction: column; height: 500px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+    .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; background: var(--bg); }
+    .chat-msg { max-width: 70%; padding: 11px 15px; border-radius: 14px; font-size: 13.5px; line-height: 1.55; }
+    .chat-msg.advisor { background: var(--surface); border: 1px solid var(--border); color: var(--text-primary); align-self: flex-start; border-radius: 4px 14px 14px 14px; box-shadow: var(--shadow-sm); }
+    .chat-msg.client { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; align-self: flex-end; border-radius: 14px 4px 14px 14px; box-shadow: 0 3px 10px rgba(99,102,241,0.25); }
+    .chat-input-row { display: flex; gap: 10px; padding: 14px 16px; background: var(--surface); border-top: 1px solid var(--border-light); }
+    .chat-input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13.5px; font-family: inherit; color: var(--text-primary); background: var(--bg); outline: none; transition: border-color 0.15s; }
+    .chat-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+    /* ── SETTINGS ────────────────────────────────────────────── */
+    .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px; }
+    .form-input { width: 100%; padding: 10px 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13.5px; font-family: inherit; color: var(--text-primary); background: var(--bg); outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+    .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+    .toggle { width: 42px; height: 24px; background: var(--accent); border-radius: 12px; position: relative; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
+    .toggle.off { background: var(--surface-2); }
+    .toggle-thumb { width: 18px; height: 18px; background: white; border-radius: 50%; position: absolute; top: 3px; right: 3px; box-shadow: 0 1px 4px rgba(0,0,0,0.2); transition: right 0.2s; }
+    .toggle.off .toggle-thumb { right: auto; left: 3px; }
+
+    /* ── EMPTY STATE ─────────────────────────────────────────── */
+    .empty-state { text-align: center; padding: 56px 24px; }
+    .empty-icon { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.07)); display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; }
+    .empty-icon svg { width: 24px; height: 24px; color: var(--accent); }
+    .empty-title { font-family: 'Sora', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 7px; letter-spacing: -0.3px; }
+    .empty-desc { font-size: 13.5px; color: var(--text-muted); max-width: 340px; margin: 0 auto; line-height: 1.6; }
+
+    /* ── SECTION DIVIDER ─────────────────────────────────────── */
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 28px 0;
+    }
+
+    /* ── ALERT FEED PANEL ────────────────────────────────────── */
+    .alert-feed-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .alert-feed-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+    .alert-feed-body { padding: 4px 20px 8px; }
+
+    /* ── ANNOTATION ──────────────────────────────────────────── */
+    .annotation-REMOVED {
+      position: fixed; bottom: 20px; right: 20px;
+      background: linear-gradient(135deg, #0d1117, #151c2e);
+      color: white; border-radius: var(--radius);
+      padding: 16px 20px; font-size: 12px; max-width: 300px;
+      box-shadow: var(--shadow-md), 0 0 0 1px rgba(255,255,255,0.06);
+      z-index: 1000; border: 1px solid rgba(99,102,241,0.2);
+    }
+    .annotation-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 13px; margin-bottom: 8px; color: #a5b4fc; }
+    .annotation-item { color: #8e95b0; margin-bottom: 4px; line-height: 1.5; }
+    .annotation-item strong { color: white; }
+    .annotation-cta { margin-top: 10px; font-size: 11px; color: #6366f1; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <a class="sidebar-logo" href="#">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    </div>
+    <span class="logo-text">ScoreShift</span>
+  </a>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Overview</div>
+    <button class="nav-item active" onclick="showPage('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </button>
+
+    <div class="nav-section-label">Credit Repair</div>
+    <button class="nav-item" onclick="showPage('issues')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Credit Issues &amp; Alerts
+      <span class="nav-badge">3</span>
+    </button>
+    <button class="nav-item" onclick="showPage('disputes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      Disputes
+      <span class="nav-badge amber">2</span>
+    </button>
+    <button class="nav-item" onclick="showPage('letters')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Letters
+    </button>
+    <button class="nav-item" onclick="showPage('mail')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      Certified Mail
+    </button>
+
+    <div class="nav-section-label">Monitoring</div>
+    <button class="nav-item" onclick="showPage('score-tracker')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Score Tracker
+    </button>
+    <!-- Credit Alerts merged into Credit Issues & Alerts page -->
+    <button class="nav-item" onclick="showPage('identity')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Identity Protection
+    </button>
+    <button class="nav-item" onclick="showPage('privacy')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Privacy Protection
+    </button>
+    <button class="nav-item" onclick="showPage('pip-scan')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      PIP Scan Results
+    </button>
+
+    <div class="nav-section-label">Tools</div>
+    <button class="nav-item" onclick="showPage('dispute-iq')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      Dispute IQ
+    </button>
+    <button class="nav-item" onclick="showPage('simulator')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Score Simulator
+    </button>
+    <button class="nav-item" onclick="showPage('report')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Full Report
+    </button>
+    <button class="nav-item" onclick="showPage('debt-analysis')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Debt Analysis
+    </button>
+    <button class="nav-item" onclick="showPage('debt-navigator')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+      Debt Navigator
+    </button>
+    <button class="nav-item" onclick="showPage('student-loan')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+      Student Loan Aid
+    </button>
+    <button class="nav-item" onclick="showPage('subscription-manager')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      Subscription Manager
+    </button>
+
+    <div class="nav-section-label">Communication</div>
+    <button class="nav-item" onclick="showPage('messages')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Messages
+    </button>
+    <button class="nav-item" onclick="showPage('documents')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Document Vault
+    </button>
+
+    <div class="nav-section-label">Account</div>
+    <button class="nav-item" onclick="showPage('billing')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      Billing & Plan
+    </button>
+    <button class="nav-item" onclick="showPage('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
+  </nav>
+
+  <div class="sidebar-user">
+    <div class="user-avatar">AT</div>
+    <div class="user-info">
+      <div class="user-name">Array Tester</div>
+      <div class="user-plan">Elite Plan</div>
+    </div>
+    <button class="sign-out-btn" title="Sign out">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MAIN
+════════════════════════════════════════════════════════════════ -->
+<div class="main">
+  <header class="topbar">
+    <span class="topbar-title" id="page-title">Dashboard</span>
+    <div class="topbar-right">
+      <span class="plan-chip">Elite Plan</span>
+      <button class="icon-btn" title="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </button>
+      <button class="icon-btn" title="Help">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══ DASHBOARD ════════════════════════════════════════════ -->
+  <div class="page active" id="page-dashboard">
+    <!-- Dark hero banner with orbs -->
+    <div class="dark-panel" style="margin:28px 30px 0;padding:28px 32px;">
+      <div style="position:absolute;top:-60px;right:80px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.18),transparent 70%);pointer-events:none;"></div>
+      <div style="position:absolute;bottom:-80px;right:-40px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(45,212,191,0.1),transparent 70%);pointer-events:none;"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;background:linear-gradient(90deg,#6366f1,#8b5cf6,#2dd4bf);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;">Welcome back</div>
+          <div style="font-family:'Sora',sans-serif;font-size:26px;font-weight:800;color:white;letter-spacing:-0.8px;margin-bottom:6px;">Good morning, Array.</div>
+          <div style="font-size:14px;color:rgba(255,255,255,0.55);line-height:1.5;">Your credit health is trending up. Here's your snapshot for May 6, 2026.</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-shrink:0;">
+          <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:14px 18px;text-align:center;"><div style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:#22c55e;letter-spacing:-1px;">+47</div><div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;font-weight:500;">pts gained</div></div>
+          <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:14px 18px;text-align:center;"><div style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:#a5b4fc;letter-spacing:-1px;">7</div><div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;font-weight:500;">items removed</div></div>
+          <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:14px 18px;text-align:center;"><div style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:#2dd4bf;letter-spacing:-1px;">802</div><div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;font-weight:500;">top score</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-inner" style="padding-top:22px;">
+      <!-- Array Credit Overview — the primary dashboard widget -->
+      <div class="array-wrapper card-accent-top mb-24">
+        <div class="array-wrapper-header">
+          <div>
+            <div class="array-wrapper-title">Credit Overview</div>
+            <div class="array-wrapper-sub">Live 3-bureau snapshot — updated in real time</div>
+          </div>
+          <span class="badge live">Live</span>
+        </div>
+        <div class="array-wrapper-body">
+          <array-credit-overview
+            appKey="3F03D20E-5311-43D8-8A76-E4B5D77793BD"
+            userToken="AD45C4BF-5C0A-40B3-8A53-ED29D091FA11"
+            apiUrl="https://mock.array.io"
+            sandbox="true"
+          ></array-credit-overview>
+        </div>
+      </div>
+
+      <!-- Stat row -->
+      <div class="grid-4 mb-24">
+        <div class="stat-card card-glow"><div class="stat-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div><div class="stat-value">3</div><div class="stat-label">Active Issues</div></div></div>
+        <div class="stat-card card-glow"><div class="stat-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="stat-value">2</div><div class="stat-label">Disputes In Progress</div></div></div>
+        <div class="stat-card card-glow"><div class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div><div class="stat-value">7</div><div class="stat-label">Items Resolved</div></div></div>
+        <div class="stat-card card-glow"><div class="stat-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div><div class="stat-value" style="font-size:20px;color:var(--teal);">Active</div><div class="stat-label">Identity Protection</div></div></div>
+      </div>
+
+      <!-- Pipeline + Alerts -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div><div class="card-title">Dispute Pipeline</div><div class="card-subtitle">Your current repair workflow</div></div><span class="badge info">2 Active</span></div>
+          <div class="pipeline">
+            <div class="pipeline-progress"></div>
+            <div class="pipeline-step done"><div class="pipeline-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="pipeline-label">Pull Report</div></div>
+            <div class="pipeline-step done"><div class="pipeline-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="pipeline-label">Analyze</div></div>
+            <div class="pipeline-step done"><div class="pipeline-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="pipeline-label">Strategy</div></div>
+            <div class="pipeline-step active"><div class="pipeline-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div><div class="pipeline-label">Letters</div></div>
+            <div class="pipeline-step"><div class="pipeline-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/></svg></div><div class="pipeline-label">Mail</div></div>
+            <div class="pipeline-step"><div class="pipeline-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="pipeline-label">Track</div></div>
+          </div>
+          <div class="divider"></div>
+          <div class="flex items-center justify-between">
+            <span style="font-size:12.5px;color:var(--text-muted);">Next: Send certified mail to Equifax</span>
+            <button class="btn btn-primary btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>Continue</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div><div class="card-title">Recent Alerts</div><div class="card-subtitle">Changes detected across all 3 bureaus</div></div><span class="badge live">Live</span></div>
+          <div class="alert-item"><div class="alert-dot positive"></div><div><div class="alert-text">Score increased by +22 points</div><div class="alert-meta">Today, 8:14 AM · Equifax</div></div></div>
+          <div class="alert-item"><div class="alert-dot negative"></div><div><div class="alert-text">New inquiry detected — Capital One</div><div class="alert-meta">Yesterday, 3:40 PM · TransUnion</div></div></div>
+          <div class="alert-item"><div class="alert-dot positive"></div><div><div class="alert-text">Collection account removed</div><div class="alert-meta">May 4, 2026 · All Bureaus</div></div></div>
+          <div class="alert-item"><div class="alert-dot neutral"></div><div><div class="alert-text">Certified mail delivered</div><div class="alert-meta">May 3, 2026 · Experian</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCORE TRACKER — array-credit-score ═══════════════════ -->
+  <div class="page" id="page-score-tracker">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Monitoring</span><h1 class="page-title">Score Tracker</h1><p class="page-subtitle">Live 3-bureau score history and trend analysis.</p></div><span class="badge live">Live Monitoring</span></div>
+    <div class="page-inner">
+      <div class="array-wrapper card-accent-top">
+        <div class="array-wrapper-header"><div><div class="array-wrapper-title">3-Bureau Score History</div><div class="array-wrapper-sub">VantageScore 3.0 — updated with every report pull</div></div><span class="badge live">Live</span></div>
+        <div class="array-wrapper-body">
+          <array-credit-score appKey="3F03D20E-5311-43D8-8A76-E4B5D77793BD" userToken="AD45C4BF-5C0A-40B3-8A53-ED29D091FA11" apiUrl="https://mock.array.io" sandbox="true" bureau="all" scoreTracker="true"></array-credit-score>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Credit Alerts is now merged into Credit Issues — no standalone page -->
+
+  <!-- ═══ IDENTITY PROTECTION — array-identity-protect ════════ -->
+  <div class="page" id="page-identity">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Monitoring</span><h1 class="page-title">Identity Protection</h1><p class="page-subtitle">Dark web monitoring, SSN alerts, and fraud protection — active 24/7.</p></div></div>
+    <div class="page-inner">
+      <div class="array-wrapper">
+        <div class="array-wrapper-header"><div><div class="array-wrapper-title">Identity Protection Dashboard</div><div class="array-wrapper-sub">Monitoring dark web, data breaches, and SSN usage</div></div><span class="badge live">Live</span></div>
+        <div class="array-wrapper-body">
+          <array-identity-protect appKey="3F03D20E-5311-43D8-8A76-E4B5D77793BD" userToken="AD45C4BF-5C0A-40B3-8A53-ED29D091FA11" apiUrl="https://mock.array.io" sandbox="true"></array-identity-protect>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PRIVACY PROTECTION — array-pip-dashboard ════════════ -->
+  <div class="page" id="page-privacy">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Monitoring</span><h1 class="page-title">Privacy Protection</h1><p class="page-subtitle">Remove your personal information from data broker sites automatically.</p></div></div>
+    <div class="page-inner">
+      <div class="array-wrapper">
+        <div class="array-wrapper-header"><div><div class="array-wrapper-title">Privacy Protection Dashboard</div><div class="array-wrapper-sub">Data broker removal — opt-out requests managed for you</div></div></div>
+        <div class="array-wrapper-body">
+          <array-pip-dashboard appKey="3F03D20E-5311-43D8-8A76-E4B5D77793BD" userToken="AD45C4BF-5C0A-40B3-8A53-ED29D091FA11" apiUrl="https://mock.array.io" sandbox="true"></array-pip-dashboard>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PIP SCAN — array-pip-scan ═══════════════════════════ -->
+  <div class="page" id="page-pip-scan">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Monitoring</span><h1 class="page-title">PIP Scan Results</h1><p class="page-subtitle">See exactly where your personal information has been found online.</p></div></div>
+    <div class="page-inner">
+      <div class="array-wrapper">
+        <div class="array-wrapper-header"><div><div class="array-wrapper-title">Data Broker Scan</div><div class="array-wrapper-sub">Sites that have your personal information listed</div></div></div>
+        <div class="array-wrapper-body">
+          <array-pip-scan appKey="3F03D20E-5311-43D8-8A76-E4B5D77793BD" userToken="AD45C4BF-5C0A-40B3-8A53-ED29D091FA11" apiUrl="https://mock.array.io" sandbox="true"></array-pip-scan>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCORE SIMULATOR — array-credit-score-simulator ══════ -->
+  <div class="page" id="page-simulator">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Tools</span><h1 class="page-title">Score Simulator</h1><p class="page-subtitle">Model how credit actions would impact your score before you take them.</p></div></div>
+    <div class="page-inner">
+      <div class="array-wrapper">
+        <div class="array-wrapper-header"><div><div class="array-wrapper-title">Score Impact Simulator</div><div class="array-wrapper-sub">See the projected effect of paying down debt, removing items, and more</div></div></div>
+        <div class="array-wrapper-body">
+          <array-credit-score-simulator appKey="3F03D20E-5311-43D8-8A76-E4B5D77793BD" userToken="AD45C4BF-5C0A-40B3-8A53-ED29D091FA11" apiUrl="https://mock.array.io" sandbox="true"></array-credit-score-simulator>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ FULL REPORT — array-credit-report ═══════════════════ -->
+  <div class="page" id="page-report">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Tools</span><h1 class="page-title">Full Credit Report</h1><p class="page-subtitle">Complete 3-bureau credit report — all accounts, inquiries, and history.</p></div></div>
+    <div class="page-inner">
+      <div class="array-wrapper">
+        <div class="array-wrapper-header"><div><div class="array-wrapper-title">3-Bureau Credit Report</div><div class="array-wrapper-sub">Live data — all three bureaus in one view</div></div><span class="badge info">All Bureaus</span></div>
+        <div class="array-wrapper-body">
+          <array-credit-report appKey="3F03D20E-5311-43D8-8A76-E4B5D77793BD" userToken="AD45C4BF-5C0A-40B3-8A53-ED29D091FA11" apiUrl="https://mock.array.io" sandbox="true" defaultBureau="all"></array-credit-report>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DEBT ANALYSIS — array-credit-debt-analysis ══════════ -->
+  <div class="page" id="page-debt-analysis">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Tools</span><h1 class="page-title">Debt Analysis</h1><p class="page-subtitle">Full breakdown of your balances, utilization, and monthly obligations.</p></div></div>
+    <div class="page-inner">
+      <div class="array-wrapper">
+        <div class="array-wrapper-header"><div><div class="array-wrapper-title">Debt & Utilization Breakdown</div><div class="array-wrapper-sub">Live data from all open accounts across all bureaus</div></div><span class="badge live">Live</span></div>
+        <div class="array-wrapper-body">
+          <array-credit-debt-analysis appKey="3F03D20E-5311-43D8-8A76-E4B5D77793BD" userToken="AD45C4BF-5C0A-40B3-8A53-ED29D091FA11" apiUrl="https://mock.array.io" sandbox="true"></array-credit-debt-analysis>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DEBT NAVIGATOR — array-debt-navigator ═══════════════ -->
+  <div class="page" id="page-debt-navigator">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Tools</span><h1 class="page-title">Debt Navigator</h1><p class="page-subtitle">Personalized payoff strategies to eliminate debt faster and boost your score.</p></div></div>
+    <div class="page-inner">
+      <div class="array-wrapper">
+        <div class="array-wrapper-header"><div><div class="array-wrapper-title">Debt Payoff Planner</div><div class="array-wrapper-sub">Avalanche, snowball, and custom payoff strategies</div></div></div>
+        <div class="array-wrapper-body">
+          <array-debt-navigator appKey="3F03D20E-5311-43D8-8A76-E4B5D77793BD" userToken="AD45C4BF-5C0A-40B3-8A53-ED29D091FA11" apiUrl="https://mock.array.io" sandbox="true"></array-debt-navigator>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STUDENT LOAN AID — array-student-loan-aid ═══════════ -->
+  <div class="page" id="page-student-loan">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Tools</span><h1 class="page-title">Student Loan Aid</h1><p class="page-subtitle">Find repayment plans, forgiveness programs, and refinancing options.</p></div></div>
+    <div class="page-inner">
+      <div class="array-wrapper">
+        <div class="array-wrapper-header"><div><div class="array-wrapper-title">Student Loan Management</div><div class="array-wrapper-sub">Repayment options, IDR plans, and forgiveness eligibility</div></div></div>
+        <div class="array-wrapper-body">
+          <array-student-loan-aid appKey="3F03D20E-5311-43D8-8A76-E4B5D77793BD" userToken="DFD90F1A-BB8F-4310-B921-8EC7A4BF7649" apiUrl="https://mock.array.io" sandbox="true"></array-student-loan-aid>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ BILLING — array-subscription-manager ════════════════ -->
+  <div class="page" id="page-billing">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Account</span><h1 class="page-title">Billing & Plan</h1><p class="page-subtitle">Manage your ScoreShift subscription and payment method.</p></div></div>
+    <div class="page-inner">
+      <!-- Current plan summary card -->
+      <div class="card mb-24">
+        <div class="card-header">
+          <div><div class="card-title">Current Plan</div><div class="card-subtitle">Your active ScoreShift subscription</div></div>
+          <span style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;box-shadow:0 2px 8px rgba(99,102,241,0.3);">Elite</span>
+        </div>
+        <div style="font-family:'Sora',sans-serif;font-size:36px;font-weight:800;letter-spacing:-2px;margin-bottom:4px;"><span class="grad-text">$79</span><span style="font-size:16px;font-weight:400;color:var(--text-muted);letter-spacing:0;">/month</span></div>
+        <div class="text-muted">Next billing date: <strong style="color:var(--text-primary);">June 6, 2026</strong></div>
+      </div>    </div>
+  </div>
+
+  <!-- ═══ SUBSCRIPTION MANAGER (own Tools tab) ═══════════════════ -->
+  <div class="page" id="page-subscription-manager">
+    <div class="page-header">
+      <div class="page-header-left">
+        <span class="page-eyebrow">Tools</span>
+        <h1 class="page-title">Subscription Manager</h1>
+        <p class="page-subtitle">Manage your plan, payment method, and billing history — powered by ScoreShift.</p>
+      </div>
+    </div>
+    <div class="page-inner">
+      <div class="array-wrapper">
+        <div class="array-wrapper-header">
+          <div>
+            <div class="array-wrapper-title">Subscription Manager</div>
+            <div class="array-wrapper-sub">Update your plan, add a payment method, and view billing history</div>
+          </div>
+          <span class="badge live">Live</span>
+        </div>
+        <div class="array-wrapper-body">
+          <array-subscription-manager appKey="3F03D20E-5311-43D8-8A76-E4B5D77793BD" userToken="57F4F530-0D64-463B-B997-B9A8309CACA6" apiUrl="https://mock.array.io" sandbox="true" provider="plaid" mode="premium"></array-subscription-manager>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREDIT ISSUES + CREDIT ALERTS (merged) -->
+  <div class="page" id="page-issues">
+    <div class="page-header">
+      <div class="page-header-left">
+        <span class="page-eyebrow">Credit Repair</span>
+        <h1 class="page-title">Credit Issues</h1>
+        <p class="page-subtitle">Active negative items and live credit alerts — everything that's changed on your report.</p>
+      </div>
+      <span class="badge live">Live Monitoring</span>
+    </div>
+    <div class="page-inner">
+      <!-- Info banner -->
+      <div style="background:var(--accent-light);border:1px solid var(--accent-mid);border-radius:var(--radius-sm);padding:12px 16px;font-size:13px;color:var(--accent);display:flex;align-items:center;gap:10px;margin-bottom:22px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span><strong>Read-only view</strong> — your advisor manages all dispute submissions on your behalf.</span>
+      </div>
+
+      <!-- Stacked vertical layout: Issues table full-width, then Live Alerts full-width below -->
+      <div style="display:flex;flex-direction:column;gap:24px;">
+
+        <!-- TOP: Active Issues table (full-width) -->
+        <div class="card card-accent-top">
+          <div class="card-header">
+            <div><div class="card-title">Active Negative Items</div><div class="card-subtitle">3 items identified across all bureaus</div></div>
+            <span class="badge warning">3 Items</span>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Account</th><th>Bureau</th><th>Impact</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><strong>Capital One — Late Payment</strong></td><td>Equifax</td><td><span class="pill negative">High</span></td><td><span class="pill pending">In Dispute</span></td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+              <tr><td><strong>Midland Credit — Collection</strong></td><td>TransUnion</td><td><span class="pill negative">High</span></td><td><span class="pill pending">In Dispute</span></td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+              <tr><td><strong>Chase — Hard Inquiry</strong></td><td>Experian</td><td><span class="pill info">Low</span></td><td><span class="pill info">Identified</span></td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+            </tbody>
+          </table>
+          <div class="divider"></div>
+          <!-- Shimmer progress bar showing repair progress -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:12px;font-weight:600;color:var(--text-secondary);">Repair Progress</span>
+            <span style="font-size:12px;font-weight:700;" class="grad-text">70%</span>
+          </div>
+          <div class="shimmer-bar"><div class="shimmer-fill" style="width:70%;"></div></div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:8px;">7 of 10 items resolved — 3 remaining</div>
+        </div>
+
+        <!-- BOTTOM: Live Credit Alerts (array-credit-alerts) full-width -->
+        <div class="array-wrapper card-accent-top">
+          <div class="alert-feed-header">
+            <div>
+              <div class="alert-feed-title">Live Credit Alerts</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Real-time changes detected across all 3 bureaus</div>
+            </div>
+            <span class="badge live">Live</span>
+          </div>
+          <div class="alert-feed-body">
+            <array-credit-alerts
+              appKey="3F03D20E-5311-43D8-8A76-E4B5D77793BD"
+              userToken="31B6FCB6-D137-4F69-871C-CDA3385EA5FB"
+              apiUrl="https://mock.array.io"
+              sandbox="true"
+            ></array-credit-alerts>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DISPUTES ══════════════════════════════════════════════ -->
+  <div class="page" id="page-disputes">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Credit Repair</span><h1 class="page-title">Disputes</h1><p class="page-subtitle">Track every dispute filed with the bureaus — in real time.</p></div></div>
+    <div class="page-inner">
+      <div class="card mb-24">
+        <div class="card-header"><div><div class="card-title">Active Disputes</div></div><span class="badge warning">2 Pending</span></div>
+        <table class="data-table"><thead><tr><th>Account</th><th>Bureau</th><th>Type</th><th>Sent</th><th>Status</th><th>Response Due</th></tr></thead><tbody>
+          <tr><td><strong>Capital One — Late Payment</strong></td><td>Equifax</td><td>Late Payment</td><td>Apr 28, 2026</td><td><span class="pill pending">Pending</span></td><td>May 28, 2026</td></tr>
+          <tr><td><strong>Midland Credit — Collection</strong></td><td>TransUnion</td><td>Collection</td><td>Apr 15, 2026</td><td><span class="pill pending">Pending</span></td><td>May 15, 2026</td></tr>
+        </tbody></table>
+      </div>
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">Resolved</div></div><span class="badge success">7 Resolved</span></div>
+        <table class="data-table"><thead><tr><th>Account</th><th>Bureau</th><th>Resolved</th><th>Outcome</th></tr></thead><tbody>
+          <tr><td><strong>US Bankruptcy Court — Public Record</strong></td><td>All 3</td><td>May 4, 2026</td><td><span class="pill resolved">Removed</span></td></tr>
+          <tr><td><strong>Portfolio Recovery — Collection</strong></td><td>Experian</td><td>Apr 10, 2026</td><td><span class="pill resolved">Removed</span></td></tr>
+          <tr><td><strong>Synchrony Bank — Late Payment</strong></td><td>TransUnion</td><td>Mar 22, 2026</td><td><span class="pill resolved">Corrected</span></td></tr>
+        </tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ LETTERS ═══════════════════════════════════════════════ -->
+  <div class="page" id="page-letters">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Credit Repair</span><h1 class="page-title">Letters</h1><p class="page-subtitle">Personalized dispute letters generated for your credit file.</p></div></div>
+    <div class="page-inner"><div class="card"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div><div class="empty-title">Letters managed by your advisor</div><div class="empty-desc">Your advisor creates and sends dispute letters on your behalf. All letters will appear here once generated.</div></div></div></div>
+  </div>
+
+  <!-- ═══ CERTIFIED MAIL ═════════════════════════════════════════ -->
+  <div class="page" id="page-mail">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Credit Repair</span><h1 class="page-title">Certified Mail</h1><p class="page-subtitle">USPS certified mail tracking for all dispute letters sent.</p></div></div>
+    <div class="page-inner"><div class="card"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div class="empty-title">No certified mail sent yet</div><div class="empty-desc">Once your advisor sends dispute letters via certified mail, USPS delivery tracking will appear here.</div></div></div></div>
+  </div>
+
+  <!-- ═══ DISPUTE IQ ═════════════════════════════════════════════ -->
+  <div class="page" id="page-dispute-iq">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Tools</span><h1 class="page-title">Dispute IQ</h1><p class="page-subtitle">AI-powered Metro 2 and FCRA analysis — built to find every disputable item.</p></div></div>
+    <div class="page-inner">
+      <div class="card" style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 60%,#2dd4bf 100%);border:none;color:white;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;opacity:0.7;margin-bottom:8px;">AI Analysis Engine</div>
+            <div style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;margin-bottom:8px;letter-spacing:-0.5px;">Run a full credit analysis</div>
+            <div style="font-size:14px;opacity:0.85;max-width:480px;line-height:1.6;">Get personalized dispute strategies based on your complete credit profile — Metro 2 compliant, FCRA-backed, and built to maximize removals.</div>
+          </div>
+          <button class="btn" style="background:white;color:var(--accent);font-weight:700;flex-shrink:0;box-shadow:0 4px 14px rgba(0,0,0,0.15);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+            Run Analysis
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MESSAGES ══════════════════════════════════════════════ -->
+  <div class="page" id="page-messages">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Communication</span><h1 class="page-title">Messages</h1><p class="page-subtitle">Secure, encrypted communication with your credit advisor.</p></div></div>
+    <div class="page-inner">
+      <div class="chat-container">
+        <div class="chat-messages">
+          <div class="chat-msg advisor">Hi Array! Your Equifax dispute letter has been sent via certified mail. You should see a response within 30 days.</div>
+          <div class="chat-msg client">Thanks! Any updates on the TransUnion collection account?</div>
+          <div class="chat-msg advisor">Yes — we're in the 30-day window. The letter was delivered on April 15th. If they don't respond by May 15th, we escalate with a follow-up dispute. Your score should reflect the removal within 5–7 business days after that.</div>
+          <div class="chat-msg client">Perfect. What should I be doing in the meantime?</div>
+          <div class="chat-msg advisor">Keep your utilization below 10% if possible, and don't open any new credit lines for the next 60 days. You're already at 802 on TransUnion — great progress!</div>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" type="text" placeholder="Type a message to your advisor..."/>
+          <button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DOCUMENT VAULT ════════════════════════════════════════ -->
+  <div class="page" id="page-documents">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Communication</span><h1 class="page-title">Document Vault</h1><p class="page-subtitle">Securely store and share documents with your advisor.</p></div></div>
+    <div class="page-inner"><div class="card"><div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div><div class="empty-title">No documents uploaded yet</div><div class="empty-desc">Upload IDs, credit reports, or any supporting documents for your advisor to review.</div><button class="btn btn-primary" style="margin-top:18px;">Upload Document</button></div></div></div>
+  </div>
+
+  <!-- ═══ SETTINGS ══════════════════════════════════════════════ -->
+  <div class="page" id="page-settings">
+    <div class="page-header"><div class="page-header-left"><span class="page-eyebrow">Account</span><h1 class="page-title">Settings</h1><p class="page-subtitle">Manage your profile, notifications, and account security.</p></div></div>
+    <div class="page-inner">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Profile</div></div>
+          <div class="flex items-center gap-12" style="margin-bottom:22px;">
+            <div style="width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:white;box-shadow:0 4px 14px rgba(99,102,241,0.35);flex-shrink:0;">AT</div>
+            <div><div style="font-size:17px;font-weight:700;color:var(--text-primary);letter-spacing:-0.3px;">Array Tester</div><div class="text-muted">arraytest@scoreshift.com</div><div style="margin-top:5px;"><span class="badge info">Elite Plan</span></div></div>
+          </div>
+          <div class="divider"></div>
+          <div style="display:flex;flex-direction:column;gap:14px;margin-top:16px;">
+            <div><label class="form-label">Full Name</label><input class="form-input" value="Array Tester"/></div>
+            <div><label class="form-label">Email Address</label><input class="form-input" value="arraytest@scoreshift.com"/></div>
+            <div><label class="form-label">Phone Number</label><input class="form-input" placeholder="(555) 000-0000"/></div>
+            <button class="btn btn-primary" style="align-self:flex-start;">Save Changes</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:18px;">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Security</div></div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div><label class="form-label">Current Password</label><input type="password" class="form-input" placeholder="••••••••"/></div>
+              <div><label class="form-label">New Password</label><input type="password" class="form-input" placeholder="••••••••"/></div>
+              <button class="btn btn-secondary" style="align-self:flex-start;">Update Password</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Notifications</div></div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div class="flex items-center justify-between"><div><div class="text-sm font-semibold">Score Changes</div><div class="text-muted">Get notified when your score moves</div></div><div class="toggle"><div class="toggle-thumb"></div></div></div>
+              <div class="flex items-center justify-between"><div><div class="text-sm font-semibold">Dispute Updates</div><div class="text-muted">Status changes on active disputes</div></div><div class="toggle"><div class="toggle-thumb"></div></div></div>
+              <div class="flex items-center justify-between"><div><div class="text-sm font-semibold">New Alerts</div><div class="text-muted">Credit inquiries and account changes</div></div><div class="toggle off"><div class="toggle-thumb"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- Annotation -->
+
+
+<script>
+  const pageTitles = {
+    dashboard:'Dashboard', issues:'Credit Issues & Alerts', disputes:'Disputes',
+    letters:'Letters', mail:'Certified Mail', 'score-tracker':'Score Tracker',
+    identity:'Identity Protection',
+    privacy:'Privacy Protection', 'pip-scan':'PIP Scan Results',
+    'dispute-iq':'Dispute IQ', simulator:'Score Simulator',
+    report:'Full Report', 'debt-analysis':'Debt Analysis',
+    'debt-navigator':'Debt Navigator', 'student-loan':'Student Loan Aid',
+    messages:'Messages', documents:'Document Vault',
+      billing:'Billing & Plan', settings:'Settings',
+      'subscription-manager':'Subscription Manager'
+  };
+
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const target = document.getElementById('page-' + id);
+    if (target) target.classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(item => {
+      if (item.getAttribute('onclick') === "showPage('" + id + "')") item.classList.add('active');
+    });
+    document.getElementById('page-title').textContent = pageTitles[id] || id;
+    window.scrollTo(0, 0);
+  }
+</script>
+</body>
+</html>

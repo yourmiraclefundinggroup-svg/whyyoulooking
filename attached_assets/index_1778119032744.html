@@ -1,0 +1,2841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScoreShift — The Operating System for Credit Repair Professionals</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- ============================================================
+       SVG ICON SYSTEM — all icons defined once as symbols
+  ============================================================ -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none;">
+    <!-- Chart / Credit Reports -->
+    <symbol id="icon-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="3"/>
+      <path d="M7 16l3-4 3 3 3-5"/>
+    </symbol>
+    <!-- Brain / AI / Dispute IQ -->
+    <symbol id="icon-brain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+      <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+      <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+      <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/>
+      <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/>
+      <path d="M3.477 10.896a4 4 0 0 1 .585-.396"/>
+      <path d="M19.938 10.5a4 4 0 0 1 .585.396"/>
+      <path d="M6 18a4 4 0 0 1-1.967-.516"/>
+      <path d="M19.967 17.484A4 4 0 0 1 18 18"/>
+    </symbol>
+    <!-- Letter / Mail -->
+    <symbol id="icon-letter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="4" width="20" height="16" rx="2"/>
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+    </symbol>
+    <!-- Certified Mail / Send -->
+    <symbol id="icon-mail-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 2 11 13"/>
+      <path d="M22 2 15 22 11 13 2 9l20-7z"/>
+    </symbol>
+    <!-- Bell / Monitoring -->
+    <symbol id="icon-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+    </symbol>
+    <!-- Shield / Identity Protection -->
+    <symbol id="icon-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      <path d="m9 12 2 2 4-4"/>
+    </symbol>
+    <!-- User / Client Portal -->
+    <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="8" r="4"/>
+      <path d="M20 21a8 8 0 1 0-16 0"/>
+    </symbol>
+    <!-- Credit Card / Billing -->
+    <symbol id="icon-card" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="5" width="20" height="14" rx="2"/>
+      <line x1="2" y1="10" x2="22" y2="10"/>
+    </symbol>
+    <!-- File / Pull Report -->
+    <symbol id="icon-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="8" y1="13" x2="16" y2="13"/>
+      <line x1="8" y1="17" x2="12" y2="17"/>
+    </symbol>
+    <!-- Search / Analyze -->
+    <symbol id="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </symbol>
+    <!-- Lightbulb / Strategy -->
+    <symbol id="icon-strategy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
+      <path d="M9 18h6"/>
+      <path d="M10 22h4"/>
+    </symbol>
+    <!-- Trending Up / Track Results -->
+    <symbol id="icon-trending" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+      <polyline points="16 7 22 7 22 13"/>
+    </symbol>
+    <!-- Database / Array -->
+    <symbol id="icon-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="12" cy="5" rx="9" ry="3"/>
+      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+    </symbol>
+    <!-- Layers / Platform -->
+    <symbol id="icon-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+      <polyline points="2 17 12 22 22 17"/>
+      <polyline points="2 12 12 17 22 12"/>
+    </symbol>
+    <!-- Truck / Lob delivery -->
+    <symbol id="icon-truck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="1" y="3" width="15" height="13" rx="1"/>
+      <path d="M16 8h4l3 5v3h-7V8z"/>
+      <circle cx="5.5" cy="18.5" r="2.5"/>
+      <circle cx="18.5" cy="18.5" r="2.5"/>
+    </symbol>
+    <!-- Check -->
+    <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </symbol>
+    <!-- X / Close -->
+    <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </symbol>
+    <!-- Zap / Lightning -->
+    <symbol id="icon-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </symbol>
+    <!-- Link / Connect -->
+    <symbol id="icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+    </symbol>
+    <!-- Arrow right -->
+    <symbol id="icon-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="5" y1="12" x2="19" y2="12"/>
+      <polyline points="12 5 19 12 12 19"/>
+    </symbol>
+    <!-- Score / gauge -->
+    <symbol id="icon-gauge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2a10 10 0 1 0 10 10"/>
+      <path d="M12 6v6l4 2"/>
+    </symbol>
+    <!-- Lock -->
+    <symbol id="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </symbol>
+    <!-- Grid / Platform modules -->
+    <symbol id="icon-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1"/>
+      <rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <rect x="14" y="14" width="7" height="7" rx="1"/>
+    </symbol>
+    <!-- Rocket -->
+    <symbol id="icon-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+      <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+    </symbol>
+    <!-- Twitter/X -->
+    <symbol id="icon-twitter" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </symbol>
+    <!-- LinkedIn -->
+    <symbol id="icon-linkedin" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+      <rect x="2" y="9" width="4" height="12"/>
+      <circle cx="4" cy="4" r="2"/>
+    </symbol>
+    <!-- YouTube -->
+    <symbol id="icon-youtube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
+      <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/>
+    </symbol>
+    <!-- Eye / Monitoring -->
+    <symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </symbol>
+    <!-- Settings / Workflow -->
+    <symbol id="icon-workflow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="3" width="6" height="6" rx="1"/>
+      <rect x="16" y="3" width="6" height="6" rx="1"/>
+      <rect x="9" y="15" width="6" height="6" rx="1"/>
+      <path d="M5 9v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/>
+      <path d="M12 12v3"/>
+    </symbol>
+    <!-- Star / SOC2 -->
+    <symbol id="icon-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </symbol>
+  </svg>
+
+  <style>
+    /* ============================================================
+       DESIGN TOKENS
+    ============================================================ */
+    :root {
+      --white:        #ffffff;
+      --gray-50:      #f8f9fb;
+      --gray-100:     #f1f3f7;
+      --gray-200:     #e4e8f0;
+      --gray-300:     #cdd3df;
+      --gray-400:     #9aa3b5;
+      --gray-500:     #6b7385;
+      --gray-600:     #4a5165;
+      --gray-700:     #2e3347;
+      --gray-900:     #0f1220;
+
+      --indigo-50:    #eef1ff;
+      --indigo-100:   #dde3ff;
+      --indigo-200:   #c7d0ff;
+      --indigo-400:   #818cf8;
+      --indigo-500:   #6366f1;
+      --indigo-600:   #4f46e5;
+      --indigo-700:   #4338ca;
+
+      --violet-400:   #a78bfa;
+      --violet-500:   #8b5cf6;
+
+      --teal-200:     #99f6e4;
+      --teal-400:     #2dd4bf;
+      --teal-500:     #14b8a6;
+
+      --accent-grad:  linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #2dd4bf 100%);
+      --card-shadow:  0 2px 16px rgba(99,102,241,0.07), 0 1px 4px rgba(15,18,32,0.06);
+      --card-shadow-hover: 0 8px 40px rgba(99,102,241,0.14), 0 2px 8px rgba(15,18,32,0.08);
+
+      --radius-sm:    8px;
+      --radius-md:    14px;
+      --radius-lg:    20px;
+      --radius-xl:    28px;
+
+      --font-sans:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-display: 'Sora', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    }
+
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--white);
+      color: var(--gray-700);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    img { display: block; max-width: 100%; }
+    a { text-decoration: none; color: inherit; }
+
+    /* ============================================================
+       SVG ICON HELPER
+    ============================================================ */
+    .icon {
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .icon svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ============================================================
+       UTILITY
+    ============================================================ */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--indigo-600);
+      background: var(--indigo-50);
+      border: 1px solid var(--indigo-100);
+      border-radius: 100px;
+      padding: 5px 14px;
+    }
+
+    .badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--indigo-500);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+      margin-bottom: 16px;
+    }
+
+    .gradient-text {
+      background: var(--accent-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ============================================================
+       ANNOUNCEMENT BAR
+    ============================================================ */
+    .announcement-bar {
+      background: var(--gray-900);
+      color: var(--white);
+      text-align: center;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .announcement-bar .ann-icon {
+      width: 16px; height: 16px;
+      color: var(--teal-400);
+    }
+
+    .announcement-bar a {
+      color: var(--teal-400);
+      font-weight: 600;
+      margin-left: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .announcement-bar a:hover { text-decoration: underline; }
+
+    /* ============================================================
+       NAVIGATION
+    ============================================================ */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--gray-900);
+      letter-spacing: -0.02em;
+    }
+
+    .nav-logo-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: var(--accent-grad);
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-size: 13px;
+      font-weight: 900;
+      font-family: var(--font-display);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--gray-600);
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--gray-900); }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      padding: 10px 20px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--gray-600);
+    }
+    .btn-ghost:hover {
+      background: var(--gray-100);
+      color: var(--gray-900);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--indigo-600);
+      border: 1.5px solid var(--indigo-200);
+    }
+    .btn-outline:hover {
+      background: var(--indigo-50);
+      border-color: var(--indigo-400);
+    }
+
+    .btn-primary {
+      background: var(--gray-900);
+      color: var(--white);
+      box-shadow: 0 1px 3px rgba(15,18,32,0.2);
+    }
+    .btn-primary:hover {
+      background: var(--gray-700);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(15,18,32,0.2);
+    }
+
+    .btn-accent {
+      background: var(--accent-grad);
+      color: var(--white);
+      box-shadow: 0 2px 12px rgba(99,102,241,0.3);
+    }
+    .btn-accent:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(99,102,241,0.4);
+    }
+
+    .btn-lg {
+      font-size: 15px;
+      padding: 14px 28px;
+      border-radius: var(--radius-md);
+    }
+
+    .btn-icon {
+      width: 16px; height: 16px;
+    }
+
+    /* ============================================================
+       HERO SECTION
+    ============================================================ */
+    .hero {
+      position: relative;
+      padding: 100px 0 80px;
+      overflow: hidden;
+      background: var(--white);
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 60% -10%, rgba(99,102,241,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 90% 80%, rgba(139,92,246,0.06) 0%, transparent 50%),
+        radial-gradient(ellipse 40% 30% at 10% 90%, rgba(45,212,191,0.05) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--gray-100) 1px, transparent 1px),
+        linear-gradient(90deg, var(--gray-100) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+
+    .hero-content { max-width: 560px; }
+
+    .hero-eyebrow { margin-bottom: 24px; }
+
+    .hero-headline {
+      font-family: var(--font-display);
+      font-size: clamp(40px, 5vw, 60px);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      color: var(--gray-900);
+      margin-bottom: 24px;
+    }
+
+    .hero-subheadline {
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--gray-500);
+      line-height: 1.65;
+      margin-bottom: 40px;
+      max-width: 480px;
+    }
+
+    .hero-ctas {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 48px;
+    }
+
+    .hero-social-proof {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .hero-avatars { display: flex; }
+
+    .hero-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--white);
+      background: var(--accent-grad);
+      margin-left: -8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: white;
+      font-family: var(--font-display);
+    }
+    .hero-avatar:first-child { margin-left: 0; }
+
+    .hero-proof-text { font-size: 13px; color: var(--gray-500); }
+    .hero-proof-text strong { color: var(--gray-700); font-weight: 600; }
+
+    /* ---- Dashboard Mockup ---- */
+    .hero-visual { position: relative; }
+
+    .dashboard-mockup {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-xl);
+      box-shadow:
+        0 0 0 1px rgba(99,102,241,0.06),
+        0 24px 80px rgba(15,18,32,0.12),
+        0 8px 24px rgba(99,102,241,0.08);
+      overflow: hidden;
+      transform: perspective(1200px) rotateY(-4deg) rotateX(2deg);
+      transition: transform 0.4s ease;
+    }
+    .dashboard-mockup:hover {
+      transform: perspective(1200px) rotateY(-2deg) rotateX(1deg);
+    }
+
+    .dash-topbar {
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .dash-dots { display: flex; gap: 6px; }
+    .dash-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dash-dot-red   { background: #ff5f57; }
+    .dash-dot-yellow{ background: #febc2e; }
+    .dash-dot-green { background: #28c840; }
+
+    .dash-url-bar {
+      flex: 1;
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 11px;
+      color: var(--gray-400);
+    }
+
+    .dash-body {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      height: 420px;
+    }
+
+    .dash-sidebar {
+      background: var(--gray-50);
+      border-right: 1px solid var(--gray-200);
+      padding: 20px 0;
+    }
+
+    .dash-sidebar-logo {
+      padding: 0 16px 20px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--gray-900);
+      letter-spacing: -0.02em;
+      border-bottom: 1px solid var(--gray-200);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dash-sidebar-logo-dot {
+      width: 20px; height: 20px;
+      border-radius: 5px;
+      background: var(--accent-grad);
+    }
+
+    .dash-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--gray-500);
+      cursor: pointer;
+    }
+
+    .dash-nav-item.active {
+      background: var(--white);
+      color: var(--indigo-600);
+      font-weight: 600;
+      border-right: 2px solid var(--indigo-500);
+    }
+
+    .dash-nav-icon {
+      width: 14px; height: 14px;
+      color: var(--gray-400);
+    }
+    .dash-nav-item.active .dash-nav-icon { color: var(--indigo-500); }
+
+    .dash-main {
+      padding: 20px;
+      overflow: hidden;
+      background: var(--white);
+    }
+
+    .dash-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .dash-title {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+
+    .dash-tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 100px;
+      background: var(--indigo-50);
+      color: var(--indigo-600);
+    }
+
+    .dash-score-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .dash-score-card {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      text-align: center;
+    }
+
+    .dash-bureau-name {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+      margin-bottom: 6px;
+    }
+
+    .dash-score-num {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--gray-900);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .dash-score-num.exp { color: #4f46e5; }
+    .dash-score-num.eqf { color: #059669; }
+    .dash-score-num.tru { color: #d97706; }
+
+    .dash-score-delta { font-size: 10px; font-weight: 600; color: #059669; }
+
+    .dash-pipeline-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .dash-pipeline {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .dash-pipe-step {
+      flex: 1;
+      background: var(--gray-100);
+      border-radius: 6px;
+      padding: 8px 6px;
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--gray-500);
+      text-align: center;
+    }
+    .dash-pipe-step.done { background: var(--indigo-50); color: var(--indigo-600); }
+    .dash-pipe-step.active { background: var(--indigo-500); color: white; }
+
+    .dash-client-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+    }
+
+    .dash-client-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--accent-grad);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+      font-family: var(--font-display);
+    }
+
+    .dash-client-name { font-size: 12px; font-weight: 600; color: var(--gray-700); flex: 1; }
+    .dash-client-score { font-size: 11px; font-weight: 700; color: var(--indigo-600); }
+
+    .dash-client-status {
+      font-size: 9px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 100px;
+    }
+    .status-active { background: #d1fae5; color: #065f46; }
+    .status-pending { background: #fef3c7; color: #92400e; }
+
+    /* Floating badges */
+    .float-badge {
+      position: absolute;
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray-700);
+      white-space: nowrap;
+    }
+
+    .float-badge-icon {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .float-badge.top-right {
+      top: -20px; right: -24px;
+      animation: float-up 3s ease-in-out infinite;
+      animation-delay: 0.5s;
+    }
+    .float-badge.bottom-left {
+      bottom: 20px; left: -32px;
+      animation: float-up 3s ease-in-out infinite;
+      animation-delay: 1.2s;
+    }
+
+    @keyframes float-up {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+
+    /* ============================================================
+       TRUST BAR
+    ============================================================ */
+    .trust-bar {
+      padding: 28px 0;
+      border-top: 1px solid var(--gray-200);
+      border-bottom: 1px solid var(--gray-200);
+      background: var(--gray-50);
+    }
+
+    .trust-bar-inner {
+      display: flex;
+      align-items: center;
+      gap: 40px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .trust-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+    }
+
+    .trust-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gray-400);
+      letter-spacing: 0.04em;
+    }
+
+    .trust-logo-icon {
+      width: 20px; height: 20px;
+      color: var(--gray-400);
+    }
+
+    /* ============================================================
+       PROBLEM SECTION
+    ============================================================ */
+    .problem {
+      padding: 120px 0;
+      background: var(--gray-900);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .problem::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 50%, rgba(99,102,241,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 80% 20%, rgba(139,92,246,0.08) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .problem-inner {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .problem-content .section-label { color: var(--indigo-400); }
+
+    .problem-headline {
+      font-family: var(--font-display);
+      font-size: clamp(32px, 4vw, 48px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--white);
+      margin-bottom: 24px;
+    }
+
+    .problem-body {
+      font-size: 17px;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+
+    .problem-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .problem-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 15px;
+      color: rgba(255,255,255,0.65);
+    }
+
+    .problem-x-icon {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.3);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+      color: #f87171;
+    }
+
+    .problem-x-icon svg { width: 10px; height: 10px; }
+
+    .problem-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .pain-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      transition: all 0.3s ease;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .pain-card:hover {
+      background: rgba(255,255,255,0.07);
+      border-color: rgba(99,102,241,0.3);
+    }
+
+    .pain-card-icon-wrap {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .pain-card-icon-wrap svg { width: 20px; height: 20px; }
+
+    .pain-card-content {}
+
+    .pain-card-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 6px;
+    }
+
+    .pain-card-body {
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.6;
+    }
+
+    /* ============================================================
+       SOLUTION SECTION
+    ============================================================ */
+    .solution {
+      padding: 120px 0;
+      background: var(--white);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .solution::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--indigo-200), transparent);
+    }
+
+    .solution-header {
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto 72px;
+    }
+
+    .solution-headline {
+      font-family: var(--font-display);
+      font-size: clamp(32px, 4vw, 48px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--gray-900);
+      margin-bottom: 20px;
+    }
+
+    .solution-body {
+      font-size: 17px;
+      color: var(--gray-500);
+      line-height: 1.7;
+    }
+
+    .solution-platform {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .solution-platform::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(99,102,241,0.04) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .platform-module {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.25s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .platform-module:hover {
+      border-color: var(--indigo-300);
+      box-shadow: var(--card-shadow-hover);
+      transform: translateY(-2px);
+    }
+
+    .platform-module-icon {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 4px;
+    }
+
+    .platform-module-icon svg { width: 18px; height: 18px; }
+
+    .platform-module-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gray-800);
+    }
+
+    .platform-module-desc {
+      font-size: 11px;
+      color: var(--gray-400);
+      line-height: 1.5;
+    }
+
+    /* ============================================================
+       FEATURE GRID
+    ============================================================ */
+    .features {
+      padding: 120px 0;
+      background: var(--gray-50);
+    }
+
+    .features-header {
+      text-align: center;
+      max-width: 600px;
+      margin: 0 auto 64px;
+    }
+
+    .features-headline {
+      font-family: var(--font-display);
+      font-size: clamp(30px, 3.5vw, 44px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--gray-900);
+      margin-bottom: 16px;
+    }
+
+    .features-subhead {
+      font-size: 16px;
+      color: var(--gray-500);
+      line-height: 1.65;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .feature-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent-grad);
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .feature-card:hover {
+      border-color: var(--indigo-200);
+      box-shadow: var(--card-shadow-hover);
+      transform: translateY(-3px);
+    }
+
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-card.span-2 { grid-column: span 2; }
+
+    .feature-icon-wrap {
+      width: 44px; height: 44px;
+      border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .feature-icon-wrap svg { width: 22px; height: 22px; }
+
+    .feature-name {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 8px;
+    }
+
+    .feature-desc {
+      font-size: 13px;
+      color: var(--gray-500);
+      line-height: 1.6;
+    }
+
+    /* ============================================================
+       WORKFLOW SECTION
+    ============================================================ */
+    .workflow {
+      padding: 120px 0;
+      background: var(--white);
+    }
+
+    .workflow-header {
+      text-align: center;
+      max-width: 600px;
+      margin: 0 auto 72px;
+    }
+
+    .workflow-headline {
+      font-family: var(--font-display);
+      font-size: clamp(30px, 3.5vw, 44px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--gray-900);
+      margin-bottom: 16px;
+    }
+
+    .workflow-steps {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0;
+      position: relative;
+    }
+
+    .workflow-steps::before {
+      content: '';
+      position: absolute;
+      top: 27px;
+      left: calc(100% / 12);
+      right: calc(100% / 12);
+      height: 2px;
+      background: linear-gradient(90deg, var(--indigo-200), var(--violet-400), var(--teal-400));
+      z-index: 0;
+    }
+
+    .workflow-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 0 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .workflow-step-num {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--white);
+      border: 2px solid var(--gray-200);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 20px;
+      transition: all 0.25s;
+      box-shadow: 0 2px 8px rgba(15,18,32,0.06);
+      color: var(--gray-500);
+    }
+
+    .workflow-step-num svg { width: 22px; height: 22px; }
+
+    .workflow-step:hover .workflow-step-num {
+      border-color: var(--indigo-400);
+      box-shadow: 0 0 0 4px var(--indigo-50);
+      color: var(--indigo-600);
+    }
+
+    .workflow-step-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gray-800);
+      margin-bottom: 6px;
+    }
+
+    .workflow-step-desc {
+      font-size: 11px;
+      color: var(--gray-400);
+      line-height: 1.5;
+    }
+
+    /* ============================================================
+       INTEGRATIONS SECTION
+    ============================================================ */
+    .integrations {
+      padding: 100px 0;
+      background: var(--gray-50);
+      border-top: 1px solid var(--gray-200);
+    }
+
+    .integrations-header {
+      text-align: center;
+      max-width: 640px;
+      margin: 0 auto 64px;
+    }
+
+    .integrations-headline {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3vw, 40px);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      color: var(--gray-900);
+      margin-bottom: 16px;
+    }
+
+    .integrations-body {
+      font-size: 16px;
+      color: var(--gray-500);
+      line-height: 1.65;
+    }
+
+    .integrations-layout {
+      max-width: 960px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 64px 1fr;
+      gap: 0;
+      align-items: start;
+    }
+
+    .integration-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-xl);
+      padding: 36px 32px;
+      box-shadow: var(--card-shadow);
+      transition: all 0.3s ease;
+    }
+
+    .integration-card:hover {
+      box-shadow: var(--card-shadow-hover);
+      transform: translateY(-4px);
+    }
+
+    .integration-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .integration-logo-icon {
+      width: 44px; height: 44px;
+      border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .integration-logo-icon svg { width: 22px; height: 22px; }
+
+    .integration-logo-name {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--gray-900);
+    }
+
+    .integration-tagline {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+
+    .integration-desc {
+      font-size: 14px;
+      color: var(--gray-500);
+      line-height: 1.65;
+    }
+
+    .integration-features {
+      list-style: none;
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .integration-features li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--gray-600);
+    }
+
+    .check-icon {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--indigo-50);
+      border: 1px solid var(--indigo-200);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      color: var(--indigo-600);
+    }
+
+    .check-icon svg { width: 8px; height: 8px; }
+
+    .integration-connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 60px;
+      gap: 0;
+    }
+
+    .connector-line {
+      width: 2px;
+      height: 48px;
+      background: linear-gradient(to bottom, var(--indigo-200), var(--violet-400));
+    }
+
+    .connector-center {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--white);
+      border: 2px solid var(--indigo-200);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(99,102,241,0.15);
+      color: var(--indigo-500);
+    }
+
+    .connector-center svg { width: 18px; height: 18px; }
+
+    .connector-line-2 {
+      width: 2px;
+      height: 48px;
+      background: linear-gradient(to bottom, var(--violet-400), var(--teal-400));
+    }
+
+    /* ScoreShift center card */
+    .scoreshift-center {
+      background: var(--gray-900);
+      border-color: transparent;
+      color: white;
+    }
+
+    .scoreshift-center .integration-logo-name { color: var(--white); }
+    .scoreshift-center .integration-desc { color: rgba(255,255,255,0.55); }
+    .scoreshift-center .integration-features li { color: rgba(255,255,255,0.65); }
+    .scoreshift-center .check-icon {
+      background: rgba(99,102,241,0.2);
+      border-color: rgba(99,102,241,0.4);
+      color: var(--indigo-400);
+    }
+    .scoreshift-center .integration-tagline { color: rgba(255,255,255,0.3); }
+
+    /* Lob row below */
+    .integrations-lob-row {
+      max-width: 960px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 64px 1fr;
+      gap: 0;
+      align-items: start;
+      margin-top: 0;
+    }
+
+    .lob-connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .lob-line {
+      width: 2px;
+      height: 48px;
+      background: linear-gradient(to bottom, var(--violet-400), var(--teal-400));
+    }
+
+    .lob-dot {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--white);
+      border: 2px solid var(--teal-400);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(45,212,191,0.2);
+      color: var(--teal-500);
+    }
+
+    .lob-dot svg { width: 18px; height: 18px; }
+
+    .lob-line-2 {
+      width: 2px;
+      height: 48px;
+      background: linear-gradient(to bottom, var(--teal-400), transparent);
+    }
+
+    .lob-card {
+      border-color: var(--teal-400);
+      background: linear-gradient(135deg, #f0fdfa, #ecfdf5);
+    }
+
+    .lob-card .integration-logo-name { color: var(--gray-900); }
+    .lob-card .integration-tagline { color: var(--teal-500); }
+    .lob-card .integration-desc { color: var(--gray-600); }
+    .lob-card .integration-features li { color: var(--gray-600); }
+    .lob-card .check-icon {
+      background: #d1fae5;
+      border-color: #6ee7b7;
+      color: #059669;
+    }
+
+    /* ============================================================
+       PRICING SECTION
+    ============================================================ */
+    .pricing {
+      padding: 120px 0;
+      background: var(--white);
+    }
+
+    .pricing-header {
+      text-align: center;
+      max-width: 560px;
+      margin: 0 auto 64px;
+    }
+
+    .pricing-headline {
+      font-family: var(--font-display);
+      font-size: clamp(30px, 3.5vw, 44px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--gray-900);
+      margin-bottom: 16px;
+    }
+
+    .pricing-subhead {
+      font-size: 16px;
+      color: var(--gray-500);
+      line-height: 1.65;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .pricing-card {
+      background: var(--white);
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-xl);
+      padding: 36px 32px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .pricing-card:hover {
+      box-shadow: var(--card-shadow-hover);
+      transform: translateY(-4px);
+    }
+
+    .pricing-card.featured {
+      background: var(--gray-900);
+      border-color: transparent;
+      box-shadow: 0 8px 40px rgba(15,18,32,0.2);
+    }
+
+    .pricing-card.featured:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 60px rgba(15,18,32,0.25);
+    }
+
+    .pricing-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent-grad);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 100px;
+      white-space: nowrap;
+    }
+
+    .pricing-tier {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+      margin-bottom: 8px;
+    }
+    .pricing-card.featured .pricing-tier { color: rgba(255,255,255,0.4); }
+
+    .pricing-price {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--gray-900);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .pricing-card.featured .pricing-price { color: var(--white); }
+
+    .pricing-price sup {
+      font-size: 22px;
+      font-weight: 700;
+      vertical-align: super;
+      letter-spacing: 0;
+    }
+
+    .pricing-period { font-size: 13px; color: var(--gray-400); margin-bottom: 6px; }
+    .pricing-card.featured .pricing-period { color: rgba(255,255,255,0.4); }
+
+    .pricing-note { font-size: 12px; color: var(--indigo-500); font-weight: 600; margin-bottom: 28px; }
+    .pricing-card.featured .pricing-note { color: var(--teal-400); }
+
+    .pricing-divider { height: 1px; background: var(--gray-200); margin-bottom: 24px; }
+    .pricing-card.featured .pricing-divider { background: rgba(255,255,255,0.1); }
+
+    .pricing-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .pricing-features li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--gray-600);
+    }
+    .pricing-card.featured .pricing-features li { color: rgba(255,255,255,0.7); }
+
+    .pricing-check {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--indigo-50);
+      border: 1px solid var(--indigo-200);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      color: var(--indigo-600);
+    }
+    .pricing-check svg { width: 9px; height: 9px; }
+
+    .pricing-card.featured .pricing-check {
+      background: rgba(99,102,241,0.2);
+      border-color: rgba(99,102,241,0.4);
+      color: var(--indigo-400);
+    }
+
+    /* ============================================================
+       FINAL CTA SECTION
+    ============================================================ */
+    .final-cta {
+      padding: 120px 0;
+      background: var(--gray-900);
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .final-cta::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 60% at 50% 0%, rgba(99,102,241,0.2) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 20% 100%, rgba(45,212,191,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 40% 40% at 80% 100%, rgba(139,92,246,0.08) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .final-cta::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    .final-cta-inner {
+      position: relative;
+      z-index: 2;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .final-cta-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--indigo-400);
+      margin-bottom: 24px;
+    }
+
+    .final-cta-headline {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 5vw, 60px);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      color: var(--white);
+      margin-bottom: 24px;
+    }
+
+    .final-cta-body {
+      font-size: 18px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.65;
+      margin-bottom: 48px;
+    }
+
+    .final-cta-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    .btn-white {
+      background: var(--white);
+      color: var(--gray-900);
+      font-weight: 700;
+    }
+    .btn-white:hover {
+      background: var(--gray-100);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(255,255,255,0.15);
+    }
+
+    .btn-ghost-white {
+      background: transparent;
+      color: rgba(255,255,255,0.7);
+      border: 1.5px solid rgba(255,255,255,0.15);
+    }
+    .btn-ghost-white:hover {
+      background: rgba(255,255,255,0.06);
+      color: var(--white);
+      border-color: rgba(255,255,255,0.3);
+    }
+
+    .final-cta-note { font-size: 13px; color: rgba(255,255,255,0.3); }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    .footer {
+      background: var(--gray-900);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 48px 0 32px;
+    }
+
+    .footer-inner {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 48px;
+      margin-bottom: 48px;
+    }
+
+    .footer-brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    .footer-brand-logo-icon {
+      width: 30px; height: 30px;
+      border-radius: 7px;
+      background: var(--accent-grad);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      font-weight: 900;
+      color: white;
+      font-family: var(--font-display);
+    }
+
+    .footer-tagline {
+      font-size: 13px;
+      color: rgba(255,255,255,0.35);
+      line-height: 1.6;
+      max-width: 260px;
+      margin-bottom: 24px;
+    }
+
+    .footer-socials {
+      display: flex;
+      gap: 10px;
+    }
+
+    .footer-social-btn {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.4);
+      transition: all 0.2s;
+    }
+
+    .footer-social-btn svg { width: 15px; height: 15px; }
+
+    .footer-social-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: var(--white);
+    }
+
+    .footer-col-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 16px;
+    }
+
+    .footer-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .footer-links a {
+      font-size: 14px;
+      color: rgba(255,255,255,0.5);
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--white); }
+
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-copy { font-size: 12px; color: rgba(255,255,255,0.25); }
+
+    .footer-legal { display: flex; gap: 24px; }
+
+    .footer-legal a {
+      font-size: 12px;
+      color: rgba(255,255,255,0.25);
+      transition: color 0.2s;
+    }
+    .footer-legal a:hover { color: rgba(255,255,255,0.5); }
+
+    /* ============================================================
+       SCROLL ANIMATIONS
+    ============================================================ */
+    .fade-up {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-up.will-animate {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    .fade-up.will-animate.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .delay-1 { transition-delay: 0.1s; }
+    .delay-2 { transition-delay: 0.2s; }
+    .delay-3 { transition-delay: 0.3s; }
+    .delay-4 { transition-delay: 0.4s; }
+    .delay-5 { transition-delay: 0.5s; }
+    .delay-6 { transition-delay: 0.6s; }
+    .delay-7 { transition-delay: 0.7s; }
+    .delay-8 { transition-delay: 0.8s; }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       ANNOUNCEMENT BAR
+  ============================================================ -->
+  <div class="announcement-bar">
+    <svg class="ann-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
+    Live 3-Bureau Credit Monitoring now available on ScoreShift
+    <a href="#">
+      See what's included
+      <svg style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </a>
+  </div>
+
+  <!-- ============================================================
+       NAVIGATION
+  ============================================================ -->
+  <nav class="nav">
+    <div class="container">
+      <div class="nav-inner">
+        <a href="#" class="nav-logo">
+          <div class="nav-logo-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6,#14b8a6);display:flex;align-items:center;justify-content:center;border-radius:10px;width:36px;height:36px;flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
+          ScoreShift
+        </a>
+        <ul class="nav-links">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#workflow">How It Works</a></li>
+          <li><a href="#integrations">Integrations</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#">For Business</a></li>
+        </ul>
+        <div class="nav-actions">
+          <a href="#" class="btn btn-ghost">Sign In</a>
+          <a href="#" class="btn btn-primary">
+            Start Free
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============================================================
+       HERO SECTION
+  ============================================================ -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-inner">
+
+        <div class="hero-content">
+          <div class="hero-eyebrow fade-up">
+            <span class="badge">
+              <span class="badge-dot"></span>
+              The OS for Credit Repair Professionals
+            </span>
+          </div>
+
+          <h1 class="hero-headline fade-up delay-1">
+            Credit Repair.<br />
+            <span class="gradient-text">Rebuilt for the</span><br />
+            Modern Pro.
+          </h1>
+
+          <p class="hero-subheadline fade-up delay-2">
+            Pull credit reports, analyze negative items, generate personalized dispute strategies, send certified mail, and monitor client progress — all from one clean, unified platform.
+          </p>
+
+          <div class="hero-ctas fade-up delay-3">
+            <a href="#" class="btn btn-primary btn-lg">
+              Start Free
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+            <a href="#" class="btn btn-outline btn-lg">Book a Demo</a>
+          </div>
+
+          <div class="hero-social-proof fade-up delay-4">
+            <div class="hero-avatars">
+              <div class="hero-avatar">JM</div>
+              <div class="hero-avatar">KR</div>
+              <div class="hero-avatar">TS</div>
+              <div class="hero-avatar">AL</div>
+            </div>
+            <p class="hero-proof-text">
+              Trusted by <strong>1,200+ credit professionals</strong> nationwide
+            </p>
+          </div>
+        </div>
+
+        <!-- Dashboard Mockup -->
+        <div class="hero-visual fade-up delay-2">
+
+          <div class="float-badge top-right">
+            <div class="float-badge-icon" style="background:#d1fae5;color:#059669;">
+              <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--gray-400);font-weight:500;">Score Change</div>
+              <div style="color:#059669;">+47 pts this month</div>
+            </div>
+          </div>
+
+          <div class="float-badge bottom-left">
+            <div class="float-badge-icon" style="background:#ede9fe;color:var(--indigo-600);">
+              <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--gray-400);font-weight:500;">Certified Mail</div>
+              <div>3 letters delivered</div>
+            </div>
+          </div>
+
+          <div class="dashboard-mockup">
+            <div class="dash-topbar">
+              <div class="dash-dots">
+                <div class="dash-dot dash-dot-red"></div>
+                <div class="dash-dot dash-dot-yellow"></div>
+                <div class="dash-dot dash-dot-green"></div>
+              </div>
+              <div class="dash-url-bar">app.scoreshiftapp.com/dashboard</div>
+            </div>
+
+            <div class="dash-body">
+              <div class="dash-sidebar">
+                <div class="dash-sidebar-logo">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                  ScoreShift
+                </div>
+                <div class="dash-nav-item active">
+                  <svg class="dash-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                  Dashboard
+                </div>
+                <div class="dash-nav-item">
+                  <svg class="dash-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+                  Clients
+                </div>
+                <div class="dash-nav-item">
+                  <svg class="dash-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Disputes
+                </div>
+                <div class="dash-nav-item">
+                  <svg class="dash-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                  Letters
+                </div>
+                <div class="dash-nav-item">
+                  <svg class="dash-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg>
+                  Certified Mail
+                </div>
+                <div class="dash-nav-item">
+                  <svg class="dash-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                  Monitoring
+                </div>
+                <div class="dash-nav-item">
+                  <svg class="dash-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                  Billing
+                </div>
+              </div>
+
+              <div class="dash-main">
+                <div class="dash-header-row">
+                  <div class="dash-title">Dashboard</div>
+                  <div class="dash-tag" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;">Live</div>
+                </div>
+
+                <div style="background:linear-gradient(135deg,#0f1220,#1e1b4b);border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+                  <div style="font-size:9px;font-weight:700;letter-spacing:0.08em;color:#818cf8;text-transform:uppercase;margin-bottom:4px;">WELCOME BACK</div>
+                  <div style="font-size:13px;font-weight:700;color:white;margin-bottom:8px;">Good morning, Marcus.</div>
+                  <div style="display:flex;gap:10px;">
+                    <div style="text-align:center;">
+                      <div style="font-size:14px;font-weight:800;color:#34d399;">+47</div>
+                      <div style="font-size:8px;color:#6b7280;">pts gained</div>
+                    </div>
+                    <div style="text-align:center;">
+                      <div style="font-size:14px;font-weight:800;color:#818cf8;">7</div>
+                      <div style="font-size:8px;color:#6b7280;">removed</div>
+                    </div>
+                    <div style="text-align:center;">
+                      <div style="font-size:14px;font-weight:800;color:#2dd4bf;">802</div>
+                      <div style="font-size:8px;color:#6b7280;">top score</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="dash-score-row">
+                  <div class="dash-score-card" style="border-top:2px solid #22c55e;">
+                    <div class="dash-bureau-name" style="color:#6b7280;">Bureau 1</div>
+                    <div class="dash-score-num exp">786</div>
+                    <div class="dash-score-delta">↑ +18</div>
+                  </div>
+                  <div class="dash-score-card" style="border-top:2px solid #6366f1;">
+                    <div class="dash-bureau-name" style="color:#6b7280;">Bureau 2</div>
+                    <div class="dash-score-num eqf">729</div>
+                    <div class="dash-score-delta">↑ +22</div>
+                  </div>
+                  <div class="dash-score-card" style="border-top:2px solid #14b8a6;">
+                    <div class="dash-bureau-name" style="color:#6b7280;">Bureau 3</div>
+                    <div class="dash-score-num tru">802</div>
+                    <div class="dash-score-delta">↑ +7</div>
+                  </div>
+                </div>
+
+                <div class="dash-pipeline-label">Dispute Pipeline</div>
+                <div class="dash-pipeline">
+                  <div class="dash-pipe-step done">Pull Report</div>
+                  <div class="dash-pipe-step done">Analyze</div>
+                  <div class="dash-pipe-step active">Strategy</div>
+                  <div class="dash-pipe-step">Letters</div>
+                  <div class="dash-pipe-step">Mail</div>
+                  <div class="dash-pipe-step">Track</div>
+                </div>
+
+                <div class="dash-client-row">
+                  <div class="dash-client-avatar">MJ</div>
+                  <div class="dash-client-name">Marcus Johnson</div>
+                  <div class="dash-client-score">712</div>
+                  <div class="dash-client-status status-active">Active</div>
+                </div>
+                <div class="dash-client-row">
+                  <div class="dash-client-avatar">SR</div>
+                  <div class="dash-client-name">Simone Rivera</div>
+                  <div class="dash-client-score">658</div>
+                  <div class="dash-client-status status-pending">In Progress</div>
+                </div>
+                <div class="dash-client-row">
+                  <div class="dash-client-avatar">DT</div>
+                  <div class="dash-client-name">David Thompson</div>
+                  <div class="dash-client-score">741</div>
+                  <div class="dash-client-status status-active">Active</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TRUST BAR
+  ============================================================ -->
+  <div class="trust-bar">
+    <div class="container">
+      <div class="trust-bar-inner">
+        <span class="trust-label">Trusted by professionals</span>
+        <div class="trust-logo">
+          <svg class="trust-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          SOC 2 Ready
+        </div>
+        <div class="trust-logo">
+          <svg class="trust-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          FCRA Compliant
+        </div>
+        <div class="trust-logo">
+          <svg class="trust-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16l3-4 3 3 3-5"/></svg>
+          3-Bureau Live Data
+        </div>
+        <div class="trust-logo">
+          <svg class="trust-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg>
+          USPS Certified Mail
+        </div>
+        <div class="trust-logo">
+          <svg class="trust-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+          1,200+ Professionals
+        </div>
+        <div class="trust-logo">
+          <svg class="trust-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+          Dispute IQ Engine
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       PROBLEM SECTION
+  ============================================================ -->
+  <section class="problem" id="problem">
+    <div class="container">
+      <div class="problem-inner">
+
+        <div class="problem-content">
+          <div class="section-label fade-up">The Problem</div>
+          <h2 class="problem-headline fade-up delay-1">
+            Old software is<br />holding your<br />business back.
+          </h2>
+          <p class="problem-body fade-up delay-2">
+            Most credit repair platforms were built a decade ago. They're clunky, template-driven, and disconnected — forcing you to juggle spreadsheets, third-party tools, and manual mail runs just to serve one client.
+          </p>
+          <ul class="problem-list fade-up delay-3">
+            <li>
+              <div class="problem-x-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </div>
+              Outdated interfaces that slow down your workflow
+            </li>
+            <li>
+              <div class="problem-x-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </div>
+              Generic dispute letters that don't move the needle
+            </li>
+            <li>
+              <div class="problem-x-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </div>
+              No real-time credit data — just static PDFs
+            </li>
+            <li>
+              <div class="problem-x-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </div>
+              Scattered tools with no unified client view
+            </li>
+            <li>
+              <div class="problem-x-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </div>
+              Manual certified mail with zero tracking
+            </li>
+          </ul>
+        </div>
+
+        <div class="problem-cards fade-up delay-2">
+          <div class="pain-card">
+            <div class="pain-card-icon-wrap" style="background:rgba(99,102,241,0.12);">
+              <svg style="width:20px;height:20px;color:#818cf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="9" y="15" width="6" height="6" rx="1"/><path d="M5 9v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><path d="M12 12v3"/></svg>
+            </div>
+            <div class="pain-card-content">
+              <div class="pain-card-title">Scattered Workflows</div>
+              <div class="pain-card-body">Switching between 5+ tools to manage one client. Credit reports here, letters there, billing somewhere else entirely.</div>
+            </div>
+          </div>
+          <div class="pain-card">
+            <div class="pain-card-icon-wrap" style="background:rgba(251,191,36,0.12);">
+              <svg style="width:20px;height:20px;color:#fbbf24;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
+            </div>
+            <div class="pain-card-content">
+              <div class="pain-card-title">Template-Based Disputes</div>
+              <div class="pain-card-body">Cookie-cutter letters that bureaus have seen a thousand times. No personalization, no Metro 2 compliance, no strategy.</div>
+            </div>
+          </div>
+          <div class="pain-card">
+            <div class="pain-card-icon-wrap" style="background:rgba(239,68,68,0.12);">
+              <svg style="width:20px;height:20px;color:#f87171;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            </div>
+            <div class="pain-card-content">
+              <div class="pain-card-title">Manual Mail Runs</div>
+              <div class="pain-card-body">Printing, stuffing envelopes, driving to the post office. Hours lost every week on a process that should be automated.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SOLUTION SECTION
+  ============================================================ -->
+  <section class="solution" id="solution">
+    <div class="container">
+      <div class="solution-header">
+        <div class="section-label fade-up">The Solution</div>
+        <h2 class="solution-headline fade-up delay-1">
+          One platform.<br />
+          <span class="gradient-text">Every tool you need.</span>
+        </h2>
+        <p class="solution-body fade-up delay-2">
+          ScoreShift brings reports, disputes, letters, certified mail, monitoring, billing, and client management into one unified, intelligent workflow — purpose-built for credit repair professionals.
+        </p>
+      </div>
+
+      <div class="solution-platform fade-up delay-2">
+        <div class="platform-module">
+          <div class="platform-module-icon" style="background:#ede9fe;color:var(--indigo-600);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16l3-4 3 3 3-5"/></svg>
+          </div>
+          <div class="platform-module-name">Credit Reports</div>
+          <div class="platform-module-desc">Live tri-bureau data — not stale PDFs. Real-time and ready to dispute.</div>
+        </div>
+        <div class="platform-module">
+          <div class="platform-module-icon" style="background:#fef3c7;color:#d97706;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/></svg>
+          </div>
+          <div class="platform-module-name">Dispute IQ</div>
+          <div class="platform-module-desc">AI-powered Metro 2 & FCRA analysis engine.</div>
+        </div>
+        <div class="platform-module">
+          <div class="platform-module-icon" style="background:#d1fae5;color:#059669;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          </div>
+          <div class="platform-module-name">Smart Letters</div>
+          <div class="platform-module-desc">Personalized dispute letters built for results.</div>
+        </div>
+        <div class="platform-module">
+          <div class="platform-module-icon" style="background:#fee2e2;color:#dc2626;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg>
+          </div>
+          <div class="platform-module-name">Certified Mail</div>
+          <div class="platform-module-desc">Automated USPS certified mail — no printing, no post office trips.</div>
+        </div>
+        <div class="platform-module">
+          <div class="platform-module-icon" style="background:#dbeafe;color:#2563eb;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          </div>
+          <div class="platform-module-name">Monitoring</div>
+          <div class="platform-module-desc">Live 3-bureau alerts and score tracking.</div>
+        </div>
+        <div class="platform-module">
+          <div class="platform-module-icon" style="background:#fce7f3;color:#db2777;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+          <div class="platform-module-name">Identity Protect</div>
+          <div class="platform-module-desc">Dark web monitoring and fraud alerts.</div>
+        </div>
+        <div class="platform-module">
+          <div class="platform-module-icon" style="background:#ecfdf5;color:#059669;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+          </div>
+          <div class="platform-module-name">Client Portal</div>
+          <div class="platform-module-desc">White-label portal for your clients.</div>
+        </div>
+        <div class="platform-module">
+          <div class="platform-module-icon" style="background:#f0fdf4;color:#16a34a;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          </div>
+          <div class="platform-module-name">Billing</div>
+          <div class="platform-module-desc">Active client management and payments.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FEATURE GRID
+  ============================================================ -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="features-header">
+        <div class="section-label fade-up">Platform Features</div>
+        <h2 class="features-headline fade-up delay-1">Everything a credit professional needs</h2>
+        <p class="features-subhead fade-up delay-2">
+          Built from the ground up for the modern credit repair business. Not retrofitted. Not generic. Purpose-built.
+        </p>
+      </div>
+
+      <div class="feature-grid">
+
+        <div class="feature-card span-2 fade-up">
+          <div class="feature-icon-wrap" style="background:#ede9fe;color:var(--indigo-600);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16l3-4 3 3 3-5"/></svg>
+          </div>
+          <div class="feature-name">Tri-Bureau Credit Reports</div>
+          <div class="feature-desc">Pull live tri-bureau credit reports directly inside ScoreShift. Real-time data — not stale PDFs — so you can analyze, dispute, and track with precision. Every negative item is surfaced, categorized, and ready for action.</div>
+        </div>
+
+        <div class="feature-card fade-up delay-1">
+          <div class="feature-icon-wrap" style="background:#fef3c7;color:#d97706;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/></svg>
+          </div>
+          <div class="feature-name">Dispute IQ</div>
+          <div class="feature-desc">AI-powered Metro 2 compliance and FCRA analysis. Automatically identifies disputable items and builds the strongest possible strategy for each client.</div>
+        </div>
+
+        <div class="feature-card fade-up delay-2">
+          <div class="feature-icon-wrap" style="background:#d1fae5;color:#059669;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          </div>
+          <div class="feature-name">Personalized Letters</div>
+          <div class="feature-desc">No more templates. Every dispute letter is generated from the client's actual credit data — specific, compliant, and built to get results.</div>
+        </div>
+
+        <div class="feature-card fade-up delay-1">
+          <div class="feature-icon-wrap" style="background:#fee2e2;color:#dc2626;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg>
+          </div>
+          <div class="feature-name">Certified Mail Automation</div>
+          <div class="feature-desc">Send USPS certified mail directly from the platform — no printing, no post office runs. Full delivery tracking and confirmation included automatically.</div>
+        </div>
+
+        <div class="feature-card fade-up delay-2">
+          <div class="feature-icon-wrap" style="background:#dbeafe;color:#2563eb;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          </div>
+          <div class="feature-name">Credit Monitoring</div>
+          <div class="feature-desc">Live 3-bureau score tracking with real-time alerts. Know the moment a client's score changes — and why.</div>
+        </div>
+
+        <div class="feature-card fade-up delay-3">
+          <div class="feature-icon-wrap" style="background:#fce7f3;color:#db2777;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+          <div class="feature-name">Identity Protection</div>
+          <div class="feature-desc">Dark web monitoring, SSN alerts, and identity theft protection built into every client account.</div>
+        </div>
+
+        <div class="feature-card span-2 fade-up delay-1">
+          <div class="feature-icon-wrap" style="background:#ecfdf5;color:#059669;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+          </div>
+          <div class="feature-name">Client Portal & Billing</div>
+          <div class="feature-desc">A white-label client portal where your clients can track their progress, view dispute status, and access their credit data — all under your brand. Paired with active client management and integrated billing so you can run your entire business from one place.</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       WORKFLOW SECTION
+  ============================================================ -->
+  <section class="workflow" id="workflow">
+    <div class="container">
+      <div class="workflow-header">
+        <div class="section-label fade-up">How It Works</div>
+        <h2 class="workflow-headline fade-up delay-1">Six steps. One platform. Zero chaos.</h2>
+        <p style="font-size:16px;color:var(--gray-500);line-height:1.65;" class="fade-up delay-2">
+          ScoreShift guides you through the entire credit repair process — from the first report pull to the final result — without ever leaving the platform.
+        </p>
+      </div>
+
+      <div class="workflow-steps">
+        <div class="workflow-step fade-up">
+          <div class="workflow-step-num">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
+          </div>
+          <div class="workflow-step-title">Pull Report</div>
+          <div class="workflow-step-desc">Live tri-bureau data, instant</div>
+        </div>
+        <div class="workflow-step fade-up delay-1">
+          <div class="workflow-step-num">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+          <div class="workflow-step-title">Analyze Items</div>
+          <div class="workflow-step-desc">AI surfaces every disputable negative</div>
+        </div>
+        <div class="workflow-step fade-up delay-2">
+          <div class="workflow-step-num">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+          </div>
+          <div class="workflow-step-title">Generate Strategy</div>
+          <div class="workflow-step-desc">Metro 2 & FCRA-based dispute plan</div>
+        </div>
+        <div class="workflow-step fade-up delay-3">
+          <div class="workflow-step-num">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          </div>
+          <div class="workflow-step-title">Create Letters</div>
+          <div class="workflow-step-desc">Personalized, compliant dispute letters</div>
+        </div>
+        <div class="workflow-step fade-up delay-4">
+          <div class="workflow-step-num">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg>
+          </div>
+          <div class="workflow-step-title">Send Certified Mail</div>
+          <div class="workflow-step-desc">USPS certified mail — automated</div>
+        </div>
+        <div class="workflow-step fade-up delay-5">
+          <div class="workflow-step-num">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+          </div>
+          <div class="workflow-step-title">Track Results</div>
+          <div class="workflow-step-desc">Live monitoring and score updates</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       INTEGRATIONS SECTION
+  ============================================================ -->
+  <section class="integrations" id="integrations">
+    <div class="container">
+      <div class="integrations-header">
+        <div class="section-label fade-up">Platform Capabilities</div>
+        <h2 class="integrations-headline fade-up delay-1">
+          Enterprise infrastructure.<br />
+          <span class="gradient-text">Beautifully unified.</span>
+        </h2>
+        <p class="integrations-body fade-up delay-2">
+          ScoreShift is built on enterprise-grade credit, mail, and identity infrastructure — delivering the reliability of institutional fintech with the simplicity of modern SaaS.
+        </p>
+      </div>
+
+      <div class="integrations-layout fade-up delay-2">
+
+        <!-- Credit Intelligence Card -->
+        <div class="integration-card">
+          <div class="integration-logo">
+            <div class="integration-logo-icon" style="background:#ede9fe;color:var(--indigo-600);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16l3-4 3 3 3-5"/></svg>
+            </div>
+            <div class="integration-logo-name">Credit Intelligence</div>
+          </div>
+          <div class="integration-tagline">Live Data & Score Monitoring</div>
+          <p class="integration-desc">ScoreShift delivers live tri-bureau credit data, real-time score tracking, and identity protection — all surfaced inside your branded platform.</p>
+          <ul class="integration-features">
+            <li>
+              <div class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Live tri-bureau credit reports
+            </li>
+            <li>
+              <div class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Real-time score monitoring
+            </li>
+            <li>
+              <div class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Identity theft protection
+            </li>
+            <li>
+              <div class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Dark web surveillance
+            </li>
+          </ul>
+        </div>
+
+        <!-- Connector -->
+        <div class="integration-connector">
+          <div class="connector-line"></div>
+          <div class="connector-center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-li
+nejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </div>
+          <div class="connector-line-2"></div>
+        </div>
+
+        <!-- ScoreShift Center Card -->
+        <div class="integration-card scoreshift-center">
+          <div class="integration-logo">
+            <div class="integration-logo-icon" style="background:rgba(99,102,241,0.2);color:#818cf8;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+            </div>
+            <div class="integration-logo-name">ScoreShift</div>
+          </div>
+          <div class="integration-tagline">Your Branded Platform</div>
+          <p class="integration-desc">ScoreShift is the intelligence layer — combining data, automation, and workflow into one cohesive experience under your brand.</p>
+          <ul class="integration-features">
+            <li>
+              <div class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Dispute IQ engine
+            </li>
+            <li>
+              <div class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Client portal &amp; billing
+            </li>
+            <li>
+              <div class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Workflow automation
+            </li>
+            <li>
+              <div class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              White-label ready
+            </li>
+          </ul>
+        </div>
+      </div>
+
+        <!-- Mail Automation Row -->
+      <div class="integrations-lob-row fade-up delay-3">
+        <div></div>
+        <div class="lob-connector">
+          <div class="lob-line"></div>
+          <div class="lob-dot">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg>
+          </div>
+          <div class="lob-line-2"></div>
+        </div>
+        <div class="integration-card lob-card">
+          <div class="integration-logo">
+            <div class="integration-logo-icon" style="background:#d1fae5;color:#059669;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            </div>
+            <div class="integration-logo-name">Mail Automation</div>
+          </div>
+          <div class="integration-tagline">Certified Mail — Built In</div>
+          <p class="integration-desc">ScoreShift automatically sends USPS certified mail the moment a dispute letter is ready — no printing, no trips to the post office, no manual steps.</p>
+          <ul class="integration-features">
+            <li>
+              <div class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Automated USPS delivery
+            </li>
+            <li>
+              <div class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Certified mail tracking
+            </li>
+            <li>
+              <div class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              No post office trips
+            </li>
+            <li>
+              <div class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Delivery confirmation
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================
+       PRICING SECTION
+  ============================================================ -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="pricing-header">
+        <div class="section-label fade-up">Pricing</div>
+        <h2 class="pricing-headline fade-up delay-1">Start free.<br />Scale with your clients.</h2>
+        <p class="pricing-subhead fade-up delay-2">No bloated monthly fees. Pay for what you use. Grow without limits.</p>
+      </div>
+
+      <div class="pricing-grid fade-up delay-2">
+
+        <!-- Starter -->
+        <div class="pricing-card">
+          <div class="pricing-tier">Starter</div>
+          <div class="pricing-price"><sup>$</sup>0</div>
+          <div class="pricing-period">per month base</div>
+          <div class="pricing-note">Pay per active client</div>
+          <div class="pricing-divider"></div>
+          <ul class="pricing-features">
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Up to 5 active clients
+            </li>
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Dispute letter generation
+            </li>
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Client portal access
+            </li>
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Basic credit report viewer
+            </li>
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Certified mail (pay per send)
+            </li>
+          </ul>
+          <a href="#" class="btn btn-outline" style="width:100%;justify-content:center;">Get Started Free</a>
+        </div>
+
+        <!-- Professional (Featured) -->
+        <div class="pricing-card featured">
+          <div class="pricing-badge">Most Popular</div>
+          <div class="pricing-tier">Professional</div>
+          <div class="pricing-price"><sup>$</sup>49</div>
+          <div class="pricing-period">per month</div>
+          <div class="pricing-note">Unlimited active clients</div>
+          <div class="pricing-divider"></div>
+          <ul class="pricing-features">
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Unlimited active clients
+            </li>
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Tri-bureau credit reports
+            </li>
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Dispute IQ — AI analysis
+            </li>
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Personalized dispute letters
+            </li>
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Certified mail automation
+            </li>
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Real-time credit monitoring
+            </li>
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              White-label client portal
+            </li>
+          </ul>
+          <a href="#" class="btn btn-accent" style="width:100%;justify-content:center;">
+            Start Free Trial
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+        </div>
+
+        <!-- Enterprise -->
+        <div class="pricing-card">
+          <div class="pricing-tier">Enterprise</div>
+          <div class="pricing-price" style="font-size:36px;letter-spacing:-0.02em;">Custom</div>
+          <div class="pricing-period">volume pricing</div>
+          <div class="pricing-note">Everything + white-glove setup</div>
+          <div class="pricing-divider"></div>
+          <ul class="pricing-features">
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Everything in Professional
+            </li>
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Identity protection add-on
+            </li>
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Dedicated account manager
+            </li>
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Custom integrations
+            </li>
+            <li>
+              <div class="pricing-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              Priority support
+            </li>
+          </ul>
+          <a href="#" class="btn btn-primary" style="width:100%;justify-content:center;">Contact Sales</a>
+        </div>
+
+      </div>
+
+      <p style="text-align:center;font-size:13px;color:var(--gray-400);margin-top:32px;" class="fade-up delay-3">
+        Tri-bureau credit report access available as an add-on. Certified mail billed per send via Lob. No hidden fees.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FINAL CTA SECTION
+  ============================================================ -->
+  <section class="final-cta">
+    <div class="container">
+      <div class="final-cta-inner">
+        <div class="final-cta-eyebrow fade-up">Ready to Launch?</div>
+        <h2 class="final-cta-headline fade-up delay-1">
+          Launch your credit repair<br />platform without the<br />
+          <span class="gradient-text">old software headache.</span>
+        </h2>
+        <p class="final-cta-body fade-up delay-2">
+          ScoreShift is the operating system your credit repair business has been waiting for. Modern, intelligent, and built to scale with you.
+        </p>
+        <div class="final-cta-actions fade-up delay-3">
+          <a href="#" class="btn btn-white btn-lg">
+            Start Free Today
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+          <a href="#" class="btn btn-ghost-white btn-lg">Book a Demo</a>
+        </div>
+        <p class="final-cta-note fade-up delay-4">No credit card required &nbsp;·&nbsp; Free to start &nbsp;·&nbsp; Cancel anytime</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FOOTER
+  ============================================================ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+
+        <div>
+          <div class="footer-brand-logo">
+            <div class="footer-brand-logo-icon">SS</div>
+            ScoreShift
+          </div>
+          <p class="footer-tagline">
+            The operating system for credit repair professionals. Pull reports, dispute smarter, send certified mail, and grow your business — all in one place.
+          </p>
+          <div class="footer-socials">
+            <a href="#" class="footer-social-btn">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+            <a href="#" class="footer-social-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            </a>
+            <a href="#" class="footer-social-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Product</div>
+          <ul class="footer-links">
+            <li><a href="#">Features</a></li>
+            <li><a href="#">Pricing</a></li>
+            <li><a href="#">Integrations</a></li>
+            <li><a href="#">Changelog</a></li>
+            <li><a href="#">Roadmap</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">For Business</div>
+          <ul class="footer-links">
+            <li><a href="#">Credit Professionals</a></li>
+            <li><a href="#">White-Label</a></li>
+            <li><a href="#">Enterprise</a></li>
+            <li><a href="#">Book a Demo</a></li>
+            <li><a href="#">Affiliate Program</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Company</div>
+          <ul class="footer-links">
+            <li><a href="#">About</a></li>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Support</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="footer-bottom">
+        <p class="footer-copy">© 2026 ScoreShift. All rights reserved.</p>
+        <div class="footer-legal">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">FCRA Compliance</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================================
+       SCROLL ANIMATION SCRIPT
+  ============================================================ -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Only animate elements that are NOT in the hero section (below the fold)
+      const heroSection = document.querySelector('.hero');
+      document.querySelectorAll('.fade-up').forEach(el => {
+        if (!heroSection || !heroSection.contains(el)) {
+          el.classList.add('will-animate');
+        }
+      });
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+
+      document.querySelectorAll('.fade-up.will-animate').forEach(el => observer.observe(el));
+    });
+  </script>
+
+</body>
+</html>
