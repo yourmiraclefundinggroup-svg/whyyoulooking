@@ -90,12 +90,22 @@
 
   /* ── ScoreShift Brand Color System (indigo/violet/teal) ──
      Shared by the landing page and client portal.
-     Admin portal uses --admin-* vars and is unaffected by these. */
-  --ss-accent:       #6366f1;   /* indigo-500  — primary brand */
-  --ss-accent-2:     #8b5cf6;   /* violet-500  — secondary brand */
-  --ss-accent-3:     #2dd4bf;   /* teal-400    — tertiary / highlight */
-  --ss-accent-grad:  linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #2dd4bf 100%);
-  --ss-accent-grad-subtle: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 100%);
+     Admin portal uses --admin-* vars and is unaffected by these.
+     NOTE: --accent is reserved by Shadcn as an HSL fragment (used as hsl(var(--accent))
+     in admin/UI components). The brand primary is exposed as --accent-brand (hex) to avoid
+     breaking admin component styles. --accent-2 and --accent-3 have no Shadcn conflict. */
+  --accent-brand:    #6366f1;   /* indigo-500  — primary brand (spec: --accent) */
+  --accent-2:        #8b5cf6;   /* violet-500  — secondary brand */
+  --accent-3:        #2dd4bf;   /* teal-400    — tertiary / highlight */
+  --accent-grad:     linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #2dd4bf 100%);
+  --accent-grad-subtle: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 100%);
+
+  /* Namespaced aliases (kept for backward compat with landing.css) */
+  --ss-accent:       var(--accent-brand);
+  --ss-accent-2:     var(--accent-2);
+  --ss-accent-3:     var(--accent-3);
+  --ss-accent-grad:  var(--accent-grad);
+  --ss-accent-grad-subtle: var(--accent-grad-subtle);
 
   /* ── Shared radius scale ── */
   --ss-radius-sm:    8px;

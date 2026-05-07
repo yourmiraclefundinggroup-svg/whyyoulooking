@@ -53,6 +53,30 @@
   overflow-x: hidden;
 }
 
+/* ── PAGE-LEVEL DOT-GRID + RADIAL WASH ──
+   Mercury-style background applied to the full page body, not just the hero.
+   Sections with colored backgrounds (features, pricing, etc.) overlay on top. */
+.landing-page {
+  position: relative;
+  background-image:
+    linear-gradient(var(--gray-100) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gray-100) 1px, transparent 1px);
+  background-size: 60px 60px;
+  background-color: var(--white);
+}
+
+.landing-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 60% -5%, rgba(99,102,241,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(139,92,246,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 30% at 10% 90%, rgba(45,212,191,0.04) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
 .landing-page *, .landing-page *::before, .landing-page *::after {
   box-sizing: border-box;
   margin: 0;
@@ -313,18 +337,6 @@
     radial-gradient(ellipse 80% 60% at 60% -10%, rgba(99,102,241,0.08) 0%, transparent 60%),
     radial-gradient(ellipse 50% 40% at 90% 80%, rgba(139,92,246,0.06) 0%, transparent 50%),
     radial-gradient(ellipse 40% 30% at 10% 90%, rgba(45,212,191,0.05) 0%, transparent 50%);
-  pointer-events: none;
-}
-
-.lp-hero::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(var(--gray-100) 1px, transparent 1px),
-    linear-gradient(90deg, var(--gray-100) 1px, transparent 1px);
-  background-size: 60px 60px;
-  opacity: 0.4;
   pointer-events: none;
 }
 
