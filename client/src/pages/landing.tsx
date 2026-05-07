@@ -1,299 +1,680 @@
-import { Link } from 'wouter'
-import { Shield, Eye, Bot, Lock, ArrowRight, Check } from 'lucide-react'
-import { Navbar } from '../components/layout/Navbar'
+import { useEffect } from "react";
+import { Link } from "wouter";
+import "../styles/landing.css";
 
-function LockedScoreGauge() {
+// ── SVG icon helpers ─────────────────────────────────────
+const TrendingUpIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
+    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+    <polyline points="16 7 22 7 22 13" />
+  </svg>
+);
+
+const ArrowRightIcon = ({ size = 16 }: { size?: number }) => (
+  <svg style={{ width: size, height: size }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12" />
+    <polyline points="12 5 19 12 12 19" />
+  </svg>
+);
+
+const CheckIcon = ({ size = 9 }: { size?: number }) => (
+  <svg style={{ width: size, height: size }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const XIcon = ({ size = 10 }: { size?: number }) => (
+  <svg style={{ width: size, height: size }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+const LinkIcon = ({ size = 18 }: { size?: number }) => (
+  <svg style={{ width: size, height: size }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+  </svg>
+);
+
+function Icon({ d, size = 20 }: { d: string | string[]; size?: number }) {
+  const paths = Array.isArray(d) ? d : [d];
   return (
-    <div style={{ position: 'relative', width: 128, height: 128, margin: '0 auto' }}>
-      <svg width="128" height="128" viewBox="0 0 128 128">
-        <circle cx="64" cy="64" r="50" fill="none" stroke="rgba(201,168,76,0.1)" strokeWidth="8" />
-        <circle cx="64" cy="64" r="50" fill="none" stroke="rgba(201,168,76,0.3)" strokeWidth="8"
-          strokeDasharray="94 314" strokeLinecap="round" transform="rotate(-90 64 64)" />
-      </svg>
-      <div style={{
-        position: 'absolute', inset: 0, display: 'flex',
-        flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
-      }}>
-        <Lock size={18} color="rgba(201,168,76,0.55)" />
-        <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--gold-light)', letterSpacing: '-0.02em' }}>---</span>
-      </div>
-    </div>
-  )
+    <svg style={{ width: size, height: size }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      {paths.map((p, i) => <path key={i} d={p} />)}
+    </svg>
+  );
 }
 
-const bureaus = [
-  { name: 'Experian', color: '#0062FF' },
-  { name: 'Equifax', color: '#E12726' },
-  { name: 'TransUnion', color: '#662D8C' },
-]
+// ── Icon path definitions ────────────────────────────────
+const ICONS = {
+  chart:    ["M3 3h18v18H3z", "M7 16l3-4 3 3 3-5"],
+  brain:    ["M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z","M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z","M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"],
+  letter:   ["M2 4h20a2 2 0 0 1 0 4v8a2 2 0 0 1-2 2H2V4z","m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"],
+  send:     ["M22 2 11 13","M22 2 15 22 11 13 2 9l20-7z"],
+  bell:     ["M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9","M10.3 21a1.94 1.94 0 0 0 3.4 0"],
+  shield:   ["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z","m9 12 2 2 4-4"],
+  user:     ["M12 8a4 4 0 1 0 0-8 4 4 0 0 0 0 8z","M20 21a8 8 0 1 0-16 0"],
+  card:     ["M2 5h20a2 2 0 0 1 0 14H2z","M2 10h20"],
+  file:     ["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z","M14 2v6h6","M8 13h8","M8 17h4"],
+  search:   ["M11 11m-8 0a8 8 0 1 0 16 0 8 8 0 0 0-16 0","M21 21l-4.35-4.35"],
+  strategy: ["M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5","M9 18h6","M10 22h4"],
+  layers:   ["M12 2 2 7l10 5 10-5-10-5z","M2 17l10 5 10-5","M2 12l10 5 10-5"],
+  truck:    ["M1 3h15a1 1 0 0 1 1 1v13","M16 8h4l3 5v3h-7V8z","M5.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z","M18.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"],
+  workflow: ["M2 3h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2V3z","M16 3h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-6V3z","M9 15h6a1 1 0 0 1 1 1v6h-8v-6a1 1 0 0 1 1-1z","M5 9v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9","M12 12v3"],
+  lock:     ["M3 11h18v11H3z","M7 11V7a5 5 0 0 1 10 0v4"],
+};
 
-const services = [
-  { icon: Shield, title: 'Credit Repair', desc: 'Expert dispute management with certified USPS mail tracking.' },
-  { icon: Eye, title: 'Credit Monitoring', desc: 'Live alerts, identity theft protection, and 3-bureau score tracking.' },
-  { icon: Bot, title: 'Dispute IQ', desc: 'AI-powered Metro 2 and FCRA analysis. Letters built for you.' },
-]
+// ── Scroll animation hook ────────────────────────────────
+function useScrollAnimations() {
+  useEffect(() => {
+    const els = document.querySelectorAll(".lp-fade-up");
+    els.forEach(el => el.classList.add("will-animate"));
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) { e.target.classList.add("visible"); observer.unobserve(e.target); }
+        });
+      },
+      { threshold: 0.12 }
+    );
+    els.forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+}
 
-const plans = [
-  {
-    name: 'Basic', price: '$29.99', period: '/mo',
-    desc: 'Pay-per-letter through the app',
-    features: ['Credit score tracker', 'Pay-per-letter disputes', 'Credit report viewer', 'ScoreMap™ roadmap'],
-    popular: false,
-  },
-  {
-    name: 'Professional', price: '$79.99', period: '/mo',
-    desc: '1 free letter credit/month, buy additional',
-    features: ['Everything in Basic', '1 free letter credit/month', 'Real-Time Alerts', 'Debt Navigator'],
-    popular: true,
-  },
-  {
-    name: 'Elite', price: 'Custom', period: '',
-    desc: '2 letter credits/month, full platform unlocked',
-    features: ['Everything in Professional', '2 free letter credits/month', 'Identity Protect', 'Dedicated account manager'],
-    popular: false,
-  },
-]
-
-const ssFont = '"DM Sans", -apple-system, BlinkMacSystemFont, sans-serif'
-
-export default function LandingPage() {
+// ── Announcement Bar ─────────────────────────────────────
+function AnnouncementBar() {
   return (
-    <div style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', minHeight: '100vh', fontFamily: ssFont }}>
-      <Navbar variant="dark" />
-
-      {/* ─── SECTION 1: HERO ─── */}
-      <section style={{
-        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        position: 'relative', overflow: 'hidden', paddingTop: 120, paddingBottom: 80,
-      }}>
-        <div style={{
-          position: 'absolute', top: '50%', left: '50%',
-          transform: 'translate(-50%, -60%)', width: 900, height: 650,
-          background: 'radial-gradient(ellipse, rgba(201,168,76,0.08) 0%, transparent 68%)',
-          pointerEvents: 'none',
-        }} />
-
-        <div style={{ textAlign: 'center', maxWidth: 700, padding: '0 24px', position: 'relative', zIndex: 1 }}>
-          <p className="ss-overline" style={{ marginBottom: 28 }}>The Future of Credit Repair</p>
-
-          <h1 style={{
-            fontSize: 'clamp(46px, 8vw, 64px)', fontWeight: 800, lineHeight: 1.08,
-            letterSpacing: '-0.02em', marginBottom: 28, color: 'var(--text-primary)',
-          }}>
-            Your Credit.{' '}
-            <span style={{
-              background: 'linear-gradient(135deg, var(--gold), var(--gold-light))',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            }}>Restored.</span>
-            <br />
-            Protected.{' '}
-            <span style={{
-              background: 'linear-gradient(135deg, var(--gold), var(--gold-light))',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            }}>Elevated.</span>
-          </h1>
-
-          <p style={{
-            color: 'var(--text-secondary)', fontSize: 16, maxWidth: 560,
-            margin: '0 auto 36px', lineHeight: 1.7,
-          }}>
-            ScoreShift gives you private, expert-level credit repair and live 3-bureau monitoring — all in one exclusive platform.
-          </p>
-
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
-            <Link href="/signup">
-              <button className="ss-btn-primary">Get Started <ArrowRight size={16} /></button>
-            </Link>
-            <a href="#how-it-works" className="ss-btn-ghost">See How It Works</a>
-          </div>
-
-          <p style={{ color: 'var(--text-muted)', fontSize: 13, letterSpacing: '0.1em' }}>
-            Experian · Equifax · TransUnion — Live Bureau Access
-          </p>
-        </div>
-      </section>
-
-      {/* ─── SECTION 2: BUREAU SCORE DISPLAY ─── */}
-      <section style={{ background: 'var(--bg-surface)', padding: '88px 24px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <p className="ss-overline" style={{ marginBottom: 16 }}>Real-Time Credit Intelligence</p>
-            <h2 style={{
-              fontSize: 'clamp(28px, 5vw, 36px)', fontWeight: 800,
-              color: 'var(--text-primary)', letterSpacing: '-0.02em',
-            }}>
-              All 3 Bureaus. One Dashboard.
-            </h2>
-          </div>
-
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: 24, marginBottom: 44,
-          }}>
-            {bureaus.map((bureau) => (
-              <div key={bureau.name} className="ss-card-elevated" style={{ textAlign: 'center', borderTop: '3px solid var(--gold)', padding: 36 }}>
-                <h3 style={{ color: bureau.color, fontSize: 20, fontWeight: 700, marginBottom: 28, letterSpacing: '0.02em' }}>
-                  {bureau.name}
-                </h3>
-                <LockedScoreGauge />
-                <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 20, marginBottom: 16 }}>
-                  Connect to view your live score
-                </p>
-                <p style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 400 }}>
-                  Powered by ScoreShift
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ textAlign: 'center' }}>
-            <Link href="/signup">
-              <button className="ss-btn-primary">Connect Your Credit</button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── SECTION 3: SERVICES ─── */}
-      <section id="how-it-works" style={{ background: 'var(--bg-primary)', padding: '88px 24px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <h2 style={{
-              fontSize: 'clamp(28px, 5vw, 36px)', fontWeight: 800,
-              color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: 12,
-            }}>
-              Everything You Need to Win
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 16, maxWidth: 480, margin: '0 auto' }}>
-              One platform. Three core tools. Complete credit transformation.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
-            {services.map((s) => (
-              <div key={s.title} className="ss-card">
-                <div style={{
-                  width: 52, height: 52, borderRadius: '50%',
-                  background: 'rgba(201,168,76,0.1)',
-                  border: '1px solid rgba(201,168,76,0.2)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20,
-                }}>
-                  <s.icon size={24} color="var(--gold)" />
-                </div>
-                <h3 style={{ color: 'var(--text-primary)', fontSize: 18, fontWeight: 700, letterSpacing: '0.02em', marginBottom: 10 }}>
-                  {s.title}
-                </h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.65 }}>
-                  {s.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── SECTION 4: PRICING ─── */}
-      <section style={{ background: 'var(--bg-surface)', padding: '88px 24px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <h2 style={{
-              fontSize: 'clamp(28px, 5vw, 36px)', fontWeight: 800,
-              color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: 12,
-            }}>
-              Simple, Transparent Pricing
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 16 }}>
-              Choose the plan that matches your goals.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, alignItems: 'center' }}>
-            {plans.map((plan) => (
-              <div key={plan.name} className="ss-card-elevated" style={{
-                border: plan.popular ? '2px solid var(--gold)' : '1px solid var(--border)',
-                transform: plan.popular ? 'scale(1.04)' : 'scale(1)',
-                boxShadow: plan.popular ? '0 8px 36px rgba(201,168,76,0.12)' : undefined,
-                position: 'relative',
-              }}>
-                {plan.popular && (
-                  <div style={{
-                    position: 'absolute', top: -14, right: 20,
-                    background: 'linear-gradient(135deg, var(--gold), var(--gold-light))',
-                    color: 'var(--bg-primary)', fontSize: 11, fontWeight: 800,
-                    padding: '4px 14px', borderRadius: 20, letterSpacing: '0.06em',
-                  }}>
-                    MOST POPULAR
-                  </div>
-                )}
-
-                <h3 style={{ color: 'var(--text-primary)', fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
-                  {plan.name}
-                </h3>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 8 }}>
-                  <span style={{ fontSize: 36, fontWeight: 800, color: plan.popular ? 'var(--gold-light)' : 'var(--text-primary)' }}>
-                    {plan.price}
-                  </span>
-                  {plan.period && <span style={{ color: 'var(--text-secondary)', fontSize: 14 }}>{plan.period}</span>}
-                </div>
-                <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 24, lineHeight: 1.55 }}>
-                  {plan.desc}
-                </p>
-                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {plan.features.map((f) => (
-                    <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Check size={15} color="var(--gold)" />
-                      <span style={{ color: 'var(--text-secondary)', fontSize: 14 }}>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/signup">
-                  <button className={plan.popular ? 'ss-btn-primary' : 'ss-btn-ghost'} style={{ width: '100%', justifyContent: 'center' }}>
-                    Get Started
-                  </button>
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── SECTION 5: FOOTER ─── */}
-      <footer style={{
-        background: 'var(--bg-primary)',
-        borderTop: '1px solid var(--border)',
-        padding: '48px 24px',
-      }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{
-              width: 38, height: 38, borderRadius: 10,
-              background: 'linear-gradient(135deg, var(--gold), var(--gold-light))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--bg-primary)', fontWeight: 900, fontSize: 14,
-            }}>
-              SS
-            </div>
-            <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: 18 }}>ScoreShift</span>
-          </div>
-
-          <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {[
-              { label: 'Privacy Policy', href: '/privacy-policy' },
-              { label: 'Terms of Service', href: '/terms' },
-              { label: 'Pricing', href: '/pricing' },
-              { label: 'Sign In', href: '/login' },
-            ].map((link) => (
-              <Link key={link.label} href={link.href}>
-                <span style={{ color: 'var(--text-muted)', fontSize: 14, cursor: 'pointer' }}>{link.label}</span>
-              </Link>
-            ))}
-          </div>
-
-          <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-            © ScoreShift. All rights reserved.
-          </p>
-        </div>
-      </footer>
+    <div className="lp-announcement">
+      <svg className="lp-ann-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+        <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+      </svg>
+      Live 3-Bureau Credit Monitoring now available on ScoreShift
+      <Link href="/credit-monitoring">See what's included <ArrowRightIcon size={12} /></Link>
     </div>
-  )
+  );
+}
+
+// ── Navigation ───────────────────────────────────────────
+function Nav() {
+  return (
+    <nav className="lp-nav">
+      <div className="lp-container">
+        <div className="lp-nav-inner">
+          <Link href="/" className="lp-nav-logo">
+            <div className="lp-nav-logo-icon"><TrendingUpIcon /></div>
+            ScoreShift
+          </Link>
+          <ul className="lp-nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#workflow">How It Works</a></li>
+            <li><a href="#integrations">Integrations</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><Link href="/pricing">For Business</Link></li>
+          </ul>
+          <div className="lp-nav-actions">
+            <Link href="/auth" className="lp-btn lp-btn-ghost">Sign In</Link>
+            <Link href="/auth" className="lp-btn lp-btn-primary">Start Free <ArrowRightIcon /></Link>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+// ── Hero ─────────────────────────────────────────────────
+function HeroSection() {
+  const navItems = [
+    { label: "Dashboard", active: true,  icon: ["M3 3h7v7H3z","M14 3h7v7h-7z","M3 14h7v7H3z","M14 14h7v7h-7z"] },
+    { label: "Clients",   active: false, icon: ["M12 8a4 4 0 1 0 0-8 4 4 0 0 0 0 8z","M20 21a8 8 0 1 0-16 0"] },
+    { label: "Disputes",  active: false, icon: ["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z","M14 2v6h6"] },
+    { label: "Letters",   active: false, icon: ["M2 4h20v16H2z","m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"] },
+    { label: "Certified Mail", active: false, icon: ["M22 2 11 13","M22 2 15 22 11 13 2 9l20-7z"] },
+    { label: "Monitoring",active: false, icon: ["M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9","M10.3 21a1.94 1.94 0 0 0 3.4 0"] },
+    { label: "Billing",   active: false, icon: ["M2 5h20v14H2z","M2 10h20"] },
+  ];
+  const scores = [
+    { bureau: "Bureau 1", num: "786", delta: "+18", color: "#22c55e" },
+    { bureau: "Bureau 2", num: "729", delta: "+22", color: "#6366f1" },
+    { bureau: "Bureau 3", num: "802", delta: "+7",  color: "#14b8a6" },
+  ];
+  const clients = [
+    { init: "MJ", name: "Marcus Johnson",  score: "712", status: "Active",      cls: "lp-status-active"  },
+    { init: "SR", name: "Simone Rivera",   score: "658", status: "In Progress", cls: "lp-status-pending" },
+    { init: "DT", name: "David Thompson",  score: "741", status: "Active",      cls: "lp-status-active"  },
+  ];
+  const pipeline = [["done","Pull Report"],["done","Analyze"],["active","Strategy"],["","Letters"],["","Mail"],["","Track"]];
+
+  return (
+    <section className="lp-hero">
+      <div className="lp-container">
+        <div className="lp-hero-inner">
+          {/* Left: content */}
+          <div className="lp-hero-content">
+            <div className="lp-hero-eyebrow lp-fade-up">
+              <span className="lp-badge"><span className="lp-badge-dot" />The OS for Credit Repair Professionals</span>
+            </div>
+            <h1 className="lp-hero-headline lp-fade-up lp-delay-1">
+              Credit Repair.<br />
+              <span className="lp-gradient-text">Rebuilt for the</span><br />
+              Modern Pro.
+            </h1>
+            <p className="lp-hero-subheadline lp-fade-up lp-delay-2">
+              Pull credit reports, analyze negative items, generate personalized dispute strategies, send certified mail, and monitor client progress — all from one clean, unified platform.
+            </p>
+            <div className="lp-hero-ctas lp-fade-up lp-delay-3">
+              <Link href="/auth" className="lp-btn lp-btn-primary lp-btn-lg">Start Free <ArrowRightIcon /></Link>
+              <Link href="/pricing" className="lp-btn lp-btn-outline lp-btn-lg">Book a Demo</Link>
+            </div>
+            <div className="lp-hero-social-proof lp-fade-up lp-delay-4">
+              <div className="lp-hero-avatars">
+                {["JM","KR","TS","AL"].map(i => <div key={i} className="lp-hero-avatar">{i}</div>)}
+              </div>
+              <p className="lp-hero-proof-text">Trusted by <strong>1,200+ credit professionals</strong> nationwide</p>
+            </div>
+          </div>
+
+          {/* Right: dashboard mockup */}
+          <div className="lp-hero-visual lp-fade-up lp-delay-2">
+            <div className="lp-float-badge top-right">
+              <div className="lp-float-badge-icon" style={{ background: "#d1fae5", color: "#059669" }}>
+                <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /><polyline points="16 7 22 7 22 13" />
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#9aa3b5", fontWeight: 500 }}>Score Change</div>
+                <div style={{ color: "#059669" }}>+47 pts this month</div>
+              </div>
+            </div>
+
+            <div className="lp-float-badge bottom-left">
+              <div className="lp-float-badge-icon" style={{ background: "#ede9fe", color: "#4f46e5" }}>
+                <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 2 11 13" /><path d="M22 2 15 22 11 13 2 9l20-7z" />
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#9aa3b5", fontWeight: 500 }}>Certified Mail</div>
+                <div>3 letters delivered</div>
+              </div>
+            </div>
+
+            <div className="lp-dashboard-mockup">
+              <div className="lp-dash-topbar">
+                <div className="lp-dash-dots">
+                  <div className="lp-dash-dot" style={{ background: "#ff5f57" }} />
+                  <div className="lp-dash-dot" style={{ background: "#febc2e" }} />
+                  <div className="lp-dash-dot" style={{ background: "#28c840" }} />
+                </div>
+                <div className="lp-dash-url-bar">app.scoreshiftapp.com/dashboard</div>
+              </div>
+              <div className="lp-dash-body">
+                <div className="lp-dash-sidebar">
+                  <div className="lp-dash-sidebar-logo">
+                    <div className="lp-dash-sidebar-logo-dot" />ScoreShift
+                  </div>
+                  {navItems.map(item => (
+                    <div key={item.label} className={`lp-dash-nav-item${item.active ? " active" : ""}`}>
+                      <svg className="lp-dash-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                        {item.icon.map((p, i) => <path key={i} d={p} />)}
+                      </svg>
+                      {item.label}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="lp-dash-main">
+                  <div className="lp-dash-header-row">
+                    <div className="lp-dash-title">Dashboard</div>
+                    <div className="lp-dash-tag" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "white" }}>Live</div>
+                  </div>
+
+                  <div style={{ background: "linear-gradient(135deg,#0f1220,#1e1b4b)", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: "#818cf8", textTransform: "uppercase", marginBottom: 4 }}>WELCOME BACK</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "white", marginBottom: 8 }}>Good morning, Marcus.</div>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      {[{val:"+47",label:"pts gained",color:"#34d399"},{val:"7",label:"removed",color:"#818cf8"},{val:"802",label:"top score",color:"#2dd4bf"}].map(s=>(
+                        <div key={s.label} style={{ textAlign: "center" }}>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: s.color }}>{s.val}</div>
+                          <div style={{ fontSize: 8, color: "#6b7280" }}>{s.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="lp-dash-score-row">
+                    {scores.map(s => (
+                      <div key={s.bureau} className="lp-dash-score-card" style={{ borderTop: `2px solid ${s.color}` }}>
+                        <div className="lp-dash-bureau-name">{s.bureau}</div>
+                        <div className="lp-dash-score-num" style={{ color: s.color }}>{s.num}</div>
+                        <div className="lp-dash-score-delta">↑ {s.delta}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="lp-dash-pipeline-label">Dispute Pipeline</div>
+                  <div className="lp-dash-pipeline">
+                    {pipeline.map(([cls,label]) => (
+                      <div key={label} className={`lp-dash-pipe-step${cls ? " "+cls : ""}`}>{label}</div>
+                    ))}
+                  </div>
+
+                  {clients.map(c => (
+                    <div key={c.name} className="lp-dash-client-row">
+                      <div className="lp-dash-client-avatar">{c.init}</div>
+                      <div className="lp-dash-client-name">{c.name}</div>
+                      <div className="lp-dash-client-score">{c.score}</div>
+                      <div className={`lp-dash-client-status ${c.cls}`}>{c.status}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Trust Bar ────────────────────────────────────────────
+function TrustBar() {
+  const items = [
+    { label: "SOC 2 Ready", icon: ICONS.lock },
+    { label: "FCRA Compliant", icon: ICONS.shield },
+    { label: "3-Bureau Live Data", icon: ICONS.chart },
+    { label: "USPS Certified Mail", icon: ICONS.send },
+    { label: "1,200+ Professionals", icon: ICONS.user },
+    { label: "Dispute IQ Engine", icon: ICONS.brain },
+  ];
+  return (
+    <div className="lp-trust-bar">
+      <div className="lp-container">
+        <div className="lp-trust-bar-inner">
+          <span className="lp-trust-label">Trusted by professionals</span>
+          {items.map(item => (
+            <div key={item.label} className="lp-trust-logo">
+              <Icon d={item.icon} size={20} />
+              {item.label}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Problem Section ──────────────────────────────────────
+function ProblemSection() {
+  const problems = [
+    "Managing 5+ disconnected tools per client",
+    "Generic dispute templates with no real strategy",
+    "No Metro 2 compliance or FCRA analysis",
+    "Manual certified mail with zero tracking",
+  ];
+  const cards = [
+    { bg: "rgba(99,102,241,0.12)",  color: "#818cf8", icon: ICONS.workflow, title: "Scattered Workflows",    body: "Switching between 5+ tools to manage one client. Credit reports here, letters there, billing somewhere else entirely." },
+    { bg: "rgba(251,191,36,0.12)",  color: "#fbbf24", icon: ICONS.file,     title: "Template-Based Disputes",body: "Cookie-cutter letters that bureaus have seen a thousand times. No personalization, no Metro 2 compliance, no strategy." },
+    { bg: "rgba(239,68,68,0.12)",   color: "#f87171", icon: ICONS.truck,    title: "Manual Mail Runs",       body: "Printing, stuffing envelopes, driving to the post office. Hours lost every week on a process that should be automated." },
+  ];
+  return (
+    <section className="lp-problem">
+      <div className="lp-container">
+        <div className="lp-problem-inner">
+          <div className="lp-fade-up">
+            <div className="lp-section-label" style={{ color: "#818cf8" }}>The Problem</div>
+            <h2 className="lp-problem-headline">Credit repair is broken.<br /><span className="lp-gradient-text">We fixed it.</span></h2>
+            <p className="lp-problem-body">The old way of running a credit repair business is a patchwork of disconnected tools, manual processes, and generic templates. There's a better way.</p>
+            <ul className="lp-problem-list">
+              {problems.map(p => (
+                <li key={p}>
+                  <div className="lp-problem-x-icon"><XIcon /></div>
+                  {p}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="lp-pain-cards lp-fade-up lp-delay-2">
+            {cards.map(c => (
+              <div key={c.title} className="lp-pain-card">
+                <div className="lp-pain-card-icon" style={{ background: c.bg, color: c.color }}>
+                  <Icon d={c.icon} size={20} />
+                </div>
+                <div>
+                  <div className="lp-pain-card-title">{c.title}</div>
+                  <div className="lp-pain-card-body">{c.body}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Solution Section ─────────────────────────────────────
+function SolutionSection() {
+  const modules = [
+    { bg: "#ede9fe", color: "#4f46e5", icon: ICONS.chart,  name: "Credit Reports",   desc: "Live tri-bureau data — not stale PDFs. Real-time and ready to dispute." },
+    { bg: "#fef3c7", color: "#d97706", icon: ICONS.brain,  name: "Dispute IQ",       desc: "AI-powered Metro 2 & FCRA analysis engine." },
+    { bg: "#d1fae5", color: "#059669", icon: ICONS.letter, name: "Smart Letters",    desc: "Personalized dispute letters built for results." },
+    { bg: "#fee2e2", color: "#dc2626", icon: ICONS.send,   name: "Certified Mail",   desc: "Automated USPS certified mail — no printing, no post office trips." },
+    { bg: "#dbeafe", color: "#2563eb", icon: ICONS.bell,   name: "Monitoring",       desc: "Live 3-bureau alerts and score tracking." },
+    { bg: "#fce7f3", color: "#db2777", icon: ICONS.shield, name: "Identity Protect", desc: "Dark web monitoring and fraud alerts." },
+    { bg: "#ecfdf5", color: "#059669", icon: ICONS.user,   name: "Client Portal",    desc: "White-label portal for your clients." },
+    { bg: "#f0fdf4", color: "#16a34a", icon: ICONS.card,   name: "Billing",          desc: "Active client management and payments." },
+  ];
+  return (
+    <section className="lp-solution" id="solution">
+      <div className="lp-container">
+        <div className="lp-solution-header">
+          <div className="lp-section-label lp-fade-up">The Solution</div>
+          <h2 className="lp-solution-headline lp-fade-up lp-delay-1">One platform.<br /><span className="lp-gradient-text">Every tool you need.</span></h2>
+          <p className="lp-solution-body lp-fade-up lp-delay-2">
+            ScoreShift brings reports, disputes, letters, certified mail, monitoring, billing, and client management into one unified, intelligent workflow — purpose-built for credit repair professionals.
+          </p>
+        </div>
+        <div className="lp-solution-platform lp-fade-up lp-delay-2">
+          {modules.map(m => (
+            <div key={m.name} className="lp-platform-module">
+              <div className="lp-platform-module-icon" style={{ background: m.bg, color: m.color }}>
+                <Icon d={m.icon} size={18} />
+              </div>
+              <div className="lp-platform-module-name">{m.name}</div>
+              <div className="lp-platform-module-desc">{m.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Features Section ─────────────────────────────────────
+function FeaturesSection() {
+  const features = [
+    { span2: true,  delay: 0, bg: "#ede9fe", color: "#4f46e5", icon: ICONS.chart,  name: "Tri-Bureau Credit Reports",  desc: "Pull live tri-bureau credit reports directly inside ScoreShift. Real-time data — not stale PDFs — so you can analyze, dispute, and track with precision. Every negative item is surfaced, categorized, and ready for action." },
+    { span2: false, delay: 1, bg: "#fef3c7", color: "#d97706", icon: ICONS.brain,  name: "Dispute IQ",                 desc: "AI-powered Metro 2 compliance and FCRA analysis. Automatically identifies disputable items and builds the strongest possible strategy for each client." },
+    { span2: false, delay: 2, bg: "#d1fae5", color: "#059669", icon: ICONS.letter, name: "Personalized Letters",       desc: "No more templates. Every dispute letter is generated from the client's actual credit data — specific, compliant, and built to get results." },
+    { span2: false, delay: 1, bg: "#fee2e2", color: "#dc2626", icon: ICONS.send,   name: "Certified Mail Automation",  desc: "Send USPS certified mail directly from the platform — no printing, no post office runs. Full delivery tracking and confirmation included automatically." },
+    { span2: false, delay: 2, bg: "#dbeafe", color: "#2563eb", icon: ICONS.bell,   name: "Credit Monitoring",          desc: "Live 3-bureau score tracking with real-time alerts. Know the moment a client's score changes — and why." },
+    { span2: false, delay: 3, bg: "#fce7f3", color: "#db2777", icon: ICONS.shield, name: "Identity Protection",        desc: "Dark web monitoring, SSN alerts, and identity theft protection built into every client account." },
+    { span2: true,  delay: 1, bg: "#ecfdf5", color: "#059669", icon: ICONS.user,   name: "Client Portal & Billing",    desc: "A white-label client portal where your clients can track their progress, view dispute status, and access their credit data — all under your brand. Paired with active client management and integrated billing so you can run your entire business from one place." },
+  ];
+  return (
+    <section className="lp-features" id="features">
+      <div className="lp-container">
+        <div className="lp-features-header">
+          <div className="lp-section-label lp-fade-up">Platform Features</div>
+          <h2 className="lp-features-headline lp-fade-up lp-delay-1">Everything a credit professional needs</h2>
+          <p className="lp-features-subhead lp-fade-up lp-delay-2">Built from the ground up for the modern credit repair business. Not retrofitted. Not generic. Purpose-built.</p>
+        </div>
+        <div className="lp-feature-grid">
+          {features.map(f => (
+            <div key={f.name} className={`lp-feature-card lp-fade-up${f.span2 ? " span-2" : ""}${f.delay ? ` lp-delay-${f.delay}` : ""}`}>
+              <div className="lp-feature-icon-wrap" style={{ background: f.bg, color: f.color }}>
+                <Icon d={f.icon} size={22} />
+              </div>
+              <div className="lp-feature-name">{f.name}</div>
+              <div className="lp-feature-desc">{f.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Workflow Section ─────────────────────────────────────
+function WorkflowSection() {
+  const steps = [
+    { icon: ICONS.file,     title: "Pull Report",       desc: "Live tri-bureau data, instant" },
+    { icon: ICONS.search,   title: "Analyze Items",     desc: "AI surfaces every disputable negative" },
+    { icon: ICONS.strategy, title: "Generate Strategy", desc: "Metro 2 & FCRA-based dispute plan" },
+    { icon: ICONS.letter,   title: "Create Letters",    desc: "Personalized, compliant dispute letters" },
+    { icon: ICONS.send,     title: "Send Certified Mail", desc: "USPS certified mail — automated" },
+    { icon: ICONS.layers,   title: "Track Results",     desc: "Live monitoring and score updates" },
+  ];
+  return (
+    <section className="lp-workflow" id="workflow">
+      <div className="lp-container">
+        <div className="lp-workflow-header">
+          <div className="lp-section-label lp-fade-up">How It Works</div>
+          <h2 className="lp-workflow-headline lp-fade-up lp-delay-1">Six steps. One platform. Zero chaos.</h2>
+          <p className="lp-workflow-body lp-fade-up lp-delay-2">ScoreShift guides you through the entire credit repair process — from the first report pull to the final result — without ever leaving the platform.</p>
+        </div>
+        <div className="lp-workflow-steps">
+          {steps.map((s, i) => (
+            <div key={s.title} className={`lp-workflow-step lp-fade-up${i > 0 ? ` lp-delay-${i}` : ""}`}>
+              <div className="lp-workflow-step-num"><Icon d={s.icon} size={22} /></div>
+              <div className="lp-workflow-step-title">{s.title}</div>
+              <div className="lp-workflow-step-desc">{s.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Integrations Section ─────────────────────────────────
+function IntegrationsSection() {
+  const check = <div className="lp-check-icon"><CheckIcon size={8} /></div>;
+  return (
+    <section className="lp-integrations" id="integrations">
+      <div className="lp-container">
+        <div className="lp-integrations-header">
+          <div className="lp-section-label lp-fade-up">Platform Capabilities</div>
+          <h2 className="lp-integrations-headline lp-fade-up lp-delay-1">Enterprise infrastructure.<br /><span className="lp-gradient-text">Beautifully unified.</span></h2>
+          <p className="lp-integrations-body lp-fade-up lp-delay-2">ScoreShift is built on enterprise-grade credit, mail, and identity infrastructure — delivering the reliability of institutional fintech with the simplicity of modern SaaS.</p>
+        </div>
+
+        <div className="lp-integrations-layout lp-fade-up lp-delay-2">
+          {/* Credit Intelligence Card */}
+          <div className="lp-integration-card">
+            <div className="lp-integration-logo">
+              <div className="lp-integration-logo-icon" style={{ background: "#ede9fe", color: "#4f46e5" }}><Icon d={ICONS.chart} size={22} /></div>
+              <div className="lp-integration-logo-name">Credit Intelligence</div>
+            </div>
+            <div className="lp-integration-tagline">Live Data & Score Monitoring</div>
+            <p className="lp-integration-desc">ScoreShift delivers live tri-bureau credit data, real-time score tracking, and identity protection — all surfaced inside your branded platform.</p>
+            <ul className="lp-integration-features">
+              {["Live tri-bureau credit reports","Real-time score monitoring","Identity theft protection","Dark web surveillance"].map(f=><li key={f}>{check}{f}</li>)}
+            </ul>
+          </div>
+
+          {/* Connector */}
+          <div className="lp-integration-connector">
+            <div className="lp-connector-line" />
+            <div className="lp-connector-center"><LinkIcon size={18} /></div>
+            <div className="lp-connector-line-2" />
+          </div>
+
+          {/* ScoreShift Center Card */}
+          <div className="lp-integration-card lp-scoreshift-center">
+            <div className="lp-integration-logo">
+              <div className="lp-integration-logo-icon" style={{ background: "rgba(99,102,241,0.2)", color: "#818cf8" }}><Icon d={ICONS.layers} size={22} /></div>
+              <div className="lp-integration-logo-name">ScoreShift</div>
+            </div>
+            <div className="lp-integration-tagline">Your Branded Platform</div>
+            <p className="lp-integration-desc">ScoreShift is the intelligence layer — combining data, automation, and workflow into one cohesive experience under your brand.</p>
+            <ul className="lp-integration-features">
+              {["Dispute IQ engine","Client portal & billing","Workflow automation","White-label ready"].map(f=><li key={f}>{check}{f}</li>)}
+            </ul>
+          </div>
+        </div>
+
+        {/* Mail Automation Row */}
+        <div className="lp-integrations-lob-row lp-fade-up lp-delay-3">
+          <div />
+          <div className="lp-lob-connector">
+            <div className="lp-lob-line" />
+            <div className="lp-lob-dot"><Icon d={ICONS.send} size={18} /></div>
+            <div className="lp-lob-line-2" />
+          </div>
+          <div className="lp-integration-card lp-lob-card">
+            <div className="lp-integration-logo">
+              <div className="lp-integration-logo-icon" style={{ background: "#d1fae5", color: "#059669" }}><Icon d={ICONS.truck} size={22} /></div>
+              <div className="lp-integration-logo-name">Mail Automation</div>
+            </div>
+            <div className="lp-integration-tagline">Certified Mail — Built In</div>
+            <p className="lp-integration-desc">ScoreShift automatically sends USPS certified mail the moment a dispute letter is ready — no printing, no trips to the post office, no manual steps.</p>
+            <ul className="lp-integration-features">
+              {["Automated USPS delivery","Real-time tracking numbers","14-day follow-up alerts","Delivery confirmation"].map(f=><li key={f}>{check}{f}</li>)}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Pricing Section ──────────────────────────────────────
+function PricingSection() {
+  const plans = [
+    {
+      tier: "Starter", price: "29", period: "per month",
+      note: "Perfect to get started", featured: false,
+      features: ["Credit report import","3 dispute letters/month","Basic AI analysis","Email support"],
+    },
+    {
+      tier: "Pro", price: "79", period: "per month",
+      note: "Most popular for professionals", featured: true,
+      features: ["Unlimited dispute letters","Live 3-bureau monitoring","Score simulator","Certified mail automation","Priority support"],
+    },
+    {
+      tier: "Elite", price: "149", period: "per month",
+      note: "Full-featured business suite", featured: false,
+      features: ["Everything in Pro","Identity protection","Debt navigator","White-label portal","Dedicated account manager"],
+    },
+  ];
+  return (
+    <section className="lp-pricing" id="pricing">
+      <div className="lp-container">
+        <div className="lp-pricing-header">
+          <div className="lp-section-label lp-fade-up">Simple Pricing</div>
+          <h2 className="lp-pricing-headline lp-fade-up lp-delay-1">Plans for every professional</h2>
+          <p className="lp-pricing-subhead lp-fade-up lp-delay-2">Start free. Scale when you're ready. No hidden fees, no long-term contracts.</p>
+        </div>
+        <div className="lp-pricing-grid">
+          {plans.map((p, i) => (
+            <div key={p.tier} className={`lp-pricing-card lp-fade-up${p.featured ? " featured" : ""}${i > 0 ? ` lp-delay-${i}` : ""}`}>
+              {p.featured && <div className="lp-pricing-badge">Most Popular</div>}
+              <div className="lp-pricing-tier">{p.tier}</div>
+              <div className="lp-pricing-price"><sup>$</sup>{p.price}</div>
+              <div className="lp-pricing-period">{p.period}</div>
+              <div className="lp-pricing-note">{p.note}</div>
+              <div className="lp-pricing-divider" />
+              <ul className="lp-pricing-features">
+                {p.features.map(f => (
+                  <li key={f}><div className="lp-pricing-check"><CheckIcon size={9} /></div>{f}</li>
+                ))}
+              </ul>
+              <Link href="/auth" className={`lp-btn lp-btn-lg ${p.featured ? "lp-btn-accent" : "lp-btn-outline"}`} style={{ width: "100%", justifyContent: "center" }}>
+                Get Started <ArrowRightIcon />
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Final CTA ────────────────────────────────────────────
+function FinalCTA() {
+  return (
+    <section className="lp-final-cta">
+      <div className="lp-container">
+        <div className="lp-final-cta-inner">
+          <div className="lp-final-cta-eyebrow">Join 1,200+ Credit Professionals</div>
+          <h2 className="lp-final-cta-headline">The platform your clients deserve.</h2>
+          <p className="lp-final-cta-body">Stop stitching together tools. ScoreShift brings your entire credit repair workflow into one intelligent, branded platform — so you can focus on what matters: results.</p>
+          <div className="lp-final-cta-actions">
+            <Link href="/auth" className="lp-btn lp-btn-white lp-btn-lg">Start Free <ArrowRightIcon /></Link>
+            <a href="#pricing" className="lp-btn lp-btn-ghost-white lp-btn-lg">See Pricing</a>
+          </div>
+          <p className="lp-final-cta-note">No credit card required · Cancel anytime</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Footer ───────────────────────────────────────────────
+function Footer() {
+  return (
+    <footer className="lp-footer">
+      <div className="lp-container">
+        <div className="lp-footer-inner">
+          <div>
+            <div className="lp-footer-brand-logo">
+              <div className="lp-footer-brand-logo-icon"><TrendingUpIcon /></div>
+              ScoreShift
+            </div>
+            <p className="lp-footer-tagline">The operating system for modern credit repair professionals. Built for results, designed for scale.</p>
+            <div className="lp-footer-socials">
+              <div className="lp-footer-social-btn">
+                <svg style={{ width: 15, height: 15 }} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+              </div>
+              <div className="lp-footer-social-btn">
+                <svg style={{ width: 15, height: 15 }} viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></svg>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div className="lp-footer-col-title">Product</div>
+            <ul className="lp-footer-links">
+              {["Features","Pricing","How It Works","Credit Monitoring","Identity Protection"].map(l => <li key={l}><a href="#">{l}</a></li>)}
+            </ul>
+          </div>
+          <div>
+            <div className="lp-footer-col-title">Company</div>
+            <ul className="lp-footer-links">
+              {["About","Blog","Careers","Press"].map(l => <li key={l}><a href="#">{l}</a></li>)}
+            </ul>
+          </div>
+          <div>
+            <div className="lp-footer-col-title">Legal</div>
+            <ul className="lp-footer-links">
+              <li><Link href="/privacy-policy">Privacy Policy</Link></li>
+              <li><Link href="/terms">Terms of Service</Link></li>
+            </ul>
+          </div>
+        </div>
+        <div className="lp-footer-bottom">
+          <div className="lp-footer-copy">© {new Date().getFullYear()} ScoreShift. All rights reserved.</div>
+          <div className="lp-footer-legal">
+            <Link href="/privacy-policy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+// ── Main Export ──────────────────────────────────────────
+export default function LandingPage() {
+  useScrollAnimations();
+  return (
+    <div className="landing-page">
+      <AnnouncementBar />
+      <Nav />
+      <HeroSection />
+      <TrustBar />
+      <ProblemSection />
+      <SolutionSection />
+      <FeaturesSection />
+      <WorkflowSection />
+      <IntegrationsSection />
+      <PricingSection />
+      <FinalCTA />
+      <Footer />
+    </div>
+  );
 }
