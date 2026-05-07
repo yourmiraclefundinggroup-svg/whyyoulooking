@@ -330,6 +330,17 @@ export interface IStorage {
   // Credit Score History
   createCreditScoreHistory(entry: InsertCreditScoreHistory): Promise<CreditScoreHistory>;
   getCreditScoreHistory(userId: number): Promise<CreditScoreHistory[]>;
+
+  // Client dashboard stats
+  getClientStats(userId: number, subscriptionTier: string): Promise<{
+    ptsGained: number | null;
+    itemsRemoved: number;
+    topScore: number | null;
+    activeIssues: number;
+    disputesInProgress: number;
+    itemsResolved: number;
+    identityProtectionActive: boolean;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1045,6 +1056,29 @@ export class DatabaseStorage implements IStorage {
 
   async getCreditScoreHistory(userId: number): Promise<CreditScoreHistory[]> {
     return await db.select().from(creditScoreHistory).where(eq(creditScoreHistory.userId, userId)).orderBy(creditScoreHistory.recordedAt);
+  }
+
+  async getClientStats(userId: number, subscriptionTier: string) {
+    const ACTIVE_DISPUTE_STATUSES = ["PENDING", "SENT", "DELIVERED", "FOLLOW_UP_REQUIRED"];
+
+    const [issues, allDisputes, scoreHistory] = await Promise.all([
+      this.getCreditIssues(userId),
+      this.getDisputes(userId),
+      this.getCreditScoreHistory(userId),
+    ]);
+
+    const activeIssues = issues.filter((i) => i.status === "ACTIVE").length;
+    const resolvedIssues = issues.filter((i) => i.status === "RESOLVED").length;
+    const disputesInProgress = allDisputes.filter((d) => ACTIVE_DISPUTE_STATUSES.includes(d.status)).length;
+    const itemsResolved = resolvedIssues + allDisputes.filter((d) => d.status === "RESOLVED").length;
+
+    const scores = scoreHistory.map((h) => h.score);
+    const topScore = scores.length > 0 ? Math.max(...scores) : null;
+    const ptsGained = scores.length >= 2 ? scores[scores.length - 1] - scores[0] : null;
+
+    const identityProtectionActive = subscriptionTier === "pro" || subscriptionTier === "elite";
+
+    return { ptsGained, itemsRemoved: resolvedIssues, topScore, activeIssues, disputesInProgress, itemsResolved, identityProtectionActive };
   }
 }
 
@@ -2528,6 +2562,29 @@ export class MemStorage implements IStorage {
 
   async getCreditScoreHistory(userId: number): Promise<CreditScoreHistory[]> {
     return await db.select().from(creditScoreHistory).where(eq(creditScoreHistory.userId, userId)).orderBy(creditScoreHistory.recordedAt);
+  }
+
+  async getClientStats(userId: number, subscriptionTier: string) {
+    const ACTIVE_DISPUTE_STATUSES = ["PENDING", "SENT", "DELIVERED", "FOLLOW_UP_REQUIRED"];
+
+    const [issues, allDisputes, scoreHistory] = await Promise.all([
+      this.getCreditIssues(userId),
+      this.getDisputes(userId),
+      this.getCreditScoreHistory(userId),
+    ]);
+
+    const activeIssues = issues.filter((i) => i.status === "ACTIVE").length;
+    const resolvedIssues = issues.filter((i) => i.status === "RESOLVED").length;
+    const disputesInProgress = allDisputes.filter((d) => ACTIVE_DISPUTE_STATUSES.includes(d.status)).length;
+    const itemsResolved = resolvedIssues + allDisputes.filter((d) => d.status === "RESOLVED").length;
+
+    const scores = scoreHistory.map((h) => h.score);
+    const topScore = scores.length > 0 ? Math.max(...scores) : null;
+    const ptsGained = scores.length >= 2 ? scores[scores.length - 1] - scores[0] : null;
+
+    const identityProtectionActive = subscriptionTier === "pro" || subscriptionTier === "elite";
+
+    return { ptsGained, itemsRemoved: resolvedIssues, topScore, activeIssues, disputesInProgress, itemsResolved, identityProtectionActive };
   }
 }
 

@@ -623,6 +623,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Client dashboard summary stats
+  app.get("/api/client/stats", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      const tier = (requestingUser.subscriptionTier || "none") as string;
+      const stats = await storage.getClientStats(requestingUser.id, tier);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch client stats" });
+    }
+  });
+
   // Client-scoped dispute endpoint with status filtering and joined issue data
   app.get("/api/client/disputes", authenticateToken, requireClientAccess, async (req, res) => {
     try {

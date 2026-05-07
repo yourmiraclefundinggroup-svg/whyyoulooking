@@ -318,6 +318,16 @@ export default function ClientPortal() {
 
   const tierLabel = featureAccess.tier === "none" ? "Free" : featureAccess.tier.charAt(0).toUpperCase() + featureAccess.tier.slice(1) + " Plan";
 
+  const { data: clientStats } = useQuery<{
+    ptsGained: number | null;
+    itemsRemoved: number;
+    topScore: number | null;
+    activeIssues: number;
+    disputesInProgress: number;
+    itemsResolved: number;
+    identityProtectionActive: boolean;
+  }>({ queryKey: ["/api/client/stats"] });
+
   /* ── Nav sections ───────────────────────────────────────────── */
   const NAV_SECTIONS: NavSection[] = [
     {
@@ -657,15 +667,29 @@ export default function ClientPortal() {
                 </div>
                 <div className="cp-welcome-stats">
                   <div className="cp-welcome-stat">
-                    <div className="cp-welcome-stat-value" style={{ color: "#2dd4bf" }}>+47</div>
+                    <div className="cp-welcome-stat-value" style={{ color: "#2dd4bf" }}>
+                      {clientStats
+                        ? clientStats.ptsGained !== null
+                          ? (clientStats.ptsGained >= 0 ? "+" : "") + clientStats.ptsGained
+                          : "—"
+                        : "—"}
+                    </div>
                     <div className="cp-welcome-stat-label">pts gained</div>
                   </div>
                   <div className="cp-welcome-stat">
-                    <div className="cp-welcome-stat-value">7</div>
+                    <div className="cp-welcome-stat-value">
+                      {clientStats ? clientStats.itemsRemoved : "—"}
+                    </div>
                     <div className="cp-welcome-stat-label">items removed</div>
                   </div>
                   <div className="cp-welcome-stat">
-                    <div className="cp-welcome-stat-value" style={{ color: "#2dd4bf" }}>802</div>
+                    <div className="cp-welcome-stat-value" style={{ color: "#2dd4bf" }}>
+                      {clientStats
+                        ? clientStats.topScore !== null
+                          ? clientStats.topScore
+                          : "—"
+                        : "—"}
+                    </div>
                     <div className="cp-welcome-stat-label">top score</div>
                   </div>
                 </div>
@@ -691,25 +715,43 @@ export default function ClientPortal() {
                   <div className="cp-stat-icon amber">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                   </div>
-                  <div><div className="cp-stat-value">3</div><div className="cp-stat-label">Active Issues</div></div>
+                  <div>
+                    <div className="cp-stat-value">{clientStats ? clientStats.activeIssues : "—"}</div>
+                    <div className="cp-stat-label">Active Issues</div>
+                  </div>
                 </div>
                 <div className="cp-stat-card">
                   <div className="cp-stat-icon indigo">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
                   </div>
-                  <div><div className="cp-stat-value">2</div><div className="cp-stat-label">Disputes In Progress</div></div>
+                  <div>
+                    <div className="cp-stat-value">{clientStats ? clientStats.disputesInProgress : "—"}</div>
+                    <div className="cp-stat-label">Disputes In Progress</div>
+                  </div>
                 </div>
                 <div className="cp-stat-card">
                   <div className="cp-stat-icon green">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                   </div>
-                  <div><div className="cp-stat-value">7</div><div className="cp-stat-label">Items Resolved</div></div>
+                  <div>
+                    <div className="cp-stat-value">{clientStats ? clientStats.itemsResolved : "—"}</div>
+                    <div className="cp-stat-label">Items Resolved</div>
+                  </div>
                 </div>
                 <div className="cp-stat-card">
                   <div className="cp-stat-icon teal">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                   </div>
-                  <div><div className="cp-stat-value" style={{ fontSize: 16, color: "#14b8a6" }}>Active</div><div className="cp-stat-label">Identity Protection</div></div>
+                  <div>
+                    <div className="cp-stat-value" style={{ fontSize: 16, color: clientStats?.identityProtectionActive ? "#14b8a6" : undefined }}>
+                      {clientStats
+                        ? clientStats.identityProtectionActive
+                          ? "Active"
+                          : "Inactive"
+                        : "—"}
+                    </div>
+                    <div className="cp-stat-label">Identity Protection</div>
+                  </div>
                 </div>
               </div>
 
