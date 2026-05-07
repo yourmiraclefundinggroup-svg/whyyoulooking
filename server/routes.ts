@@ -8787,10 +8787,22 @@ ${denialLetterText}`
         console.warn(`[Array] Could not update lastTokenIssuedAt for user ${user.id}:`, dbErr?.message ?? dbErr);
       }
 
+      // Resolve expiry: Array may return expiresAt (ISO string) or exp (Unix seconds).
+      // Fall back to 55 minutes from now so the client always has a safe refresh window.
+      let expiresAt: string;
+      if (tokenData.expiresAt) {
+        expiresAt = tokenData.expiresAt;
+      } else if (tokenData.exp) {
+        expiresAt = new Date(tokenData.exp * 1000).toISOString();
+      } else {
+        expiresAt = new Date(Date.now() + 55 * 60 * 1000).toISOString();
+      }
+
       res.json({
         token: tokenData.token || tokenData.userToken || tokenData.access_token,
         appKey: ARRAY_APP_KEY,
         arrayUserId,
+        expiresAt,
       });
     } catch (error: any) {
       console.error("[Array] Token error:", error);
