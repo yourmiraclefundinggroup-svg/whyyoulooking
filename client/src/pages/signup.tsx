@@ -100,6 +100,7 @@ export default function Signup() {
   // Start with empty string so useArrayScript waits for the real key from the server
   // before injecting scripts — prevents script injection with the wrong/sandbox key.
   const [enrollAppKey, setEnrollAppKey] = useState<string>("");
+  const [enrollSandboxMode, setEnrollSandboxMode] = useState<boolean>(true);
   const { loaded: scriptReady } = useArrayScript(enrollAppKey);
   const [arrayEnrolled, setArrayEnrolled] = useState(false);
   const arrayEnrollRef = useRef<HTMLDivElement>(null);
@@ -152,11 +153,15 @@ export default function Signup() {
   useEffect(() => {
     fetch("/api/array/enroll-config")
       .then(r => r.json())
-      .then(data => { if (data.appKey) setEnrollAppKey(data.appKey); })
+      .then(data => {
+        if (data.appKey) setEnrollAppKey(data.appKey);
+        // sandboxMode defaults to true on the server; only false when ARRAY_PRODUCTION_MODE=true
+        setEnrollSandboxMode(data.sandboxMode !== false);
+      })
       .catch(() => {
-        // Fall back to the sandbox constant so enrollment isn't blocked if the
-        // server call fails (e.g. network error during development).
+        // Fall back to sandbox mode with the constant so enrollment isn't blocked
         setEnrollAppKey(ARRAY_SANDBOX_APP_KEY);
+        setEnrollSandboxMode(true);
       });
   }, []);
 
@@ -166,9 +171,13 @@ export default function Signup() {
     arrayEnrollRef.current.innerHTML = "";
 
     const el = document.createElement("array-account-enroll");
-    // Only set appKey — do NOT set userToken, apiUrl, or sandbox.
+    // Only set appKey (and sandbox when required) — do NOT set userToken or apiUrl.
     // Passing userToken blocks new-user enrollment; Array must create the user fresh.
     el.setAttribute("appKey", enrollAppKey);
+    // sandbox="true" tells the component to use Array's sandbox infrastructure.
+    // Required whenever credentials target sandbox.array.io (which they always do
+    // until ARRAY_PRODUCTION_MODE=true is explicitly set).
+    if (enrollSandboxMode) el.setAttribute("sandbox", "true");
 
     const handleEvent = (e: Event) => {
       const detail = (e as CustomEvent).detail;
@@ -207,7 +216,7 @@ export default function Signup() {
     return () => {
       if (arrayEnrollRef.current) arrayEnrollRef.current.innerHTML = "";
     };
-  }, [step, scriptReady, enrollAppKey]);
+  }, [step, scriptReady, enrollAppKey, enrollSandboxMode]);
 
   const handleCroaCheck = (checked: boolean) => {
     setCroaAccepted(checked);

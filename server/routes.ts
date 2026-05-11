@@ -8870,7 +8870,11 @@ ${denialLetterText}`
   app.get("/api/array/enroll-config", (_req, res) => {
     const appKey = process.env.ARRAY_APP_KEY;
     if (!appKey) return res.status(500).json({ error: "Array not configured" });
-    res.json({ appKey });
+    // sandboxMode is true unless ARRAY_PRODUCTION_MODE=true is explicitly set.
+    // All current credentials target sandbox.array.io, so the web component must
+    // also run in sandbox mode or Array will reject the identity submission.
+    const sandboxMode = process.env.ARRAY_PRODUCTION_MODE !== "true";
+    res.json({ appKey, sandboxMode });
   });
 
   // POST /api/array/enroll — record enrollment locally (sandbox mode: Array web component handles auth)
