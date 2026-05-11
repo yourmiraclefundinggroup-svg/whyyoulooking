@@ -93,7 +93,9 @@ export default function Signup() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   // Array script + enrollment state
-  const [enrollAppKey, setEnrollAppKey] = useState<string>(ARRAY_SANDBOX_APP_KEY);
+  // Start with empty string so useArrayScript waits for the real key from the server
+  // before injecting scripts — prevents script injection with the wrong/sandbox key.
+  const [enrollAppKey, setEnrollAppKey] = useState<string>("");
   const { loaded: scriptReady } = useArrayScript(enrollAppKey);
   const [arrayEnrolled, setArrayEnrolled] = useState(false);
   const arrayEnrollRef = useRef<HTMLDivElement>(null);
@@ -122,6 +124,18 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [smsOptIn, setSmsOptIn] = useState(false);
 
+  // Refs that always reflect the latest contact field values.
+  // Used inside the Array event handler closure so we don't read stale state
+  // and accidentally overwrite something the user has already typed.
+  const firstNameRef = useRef(firstName);
+  const lastNameRef = useRef(lastName);
+  const emailRef = useRef(email);
+  const phoneRef = useRef(phone);
+  useEffect(() => { firstNameRef.current = firstName; }, [firstName]);
+  useEffect(() => { lastNameRef.current = lastName; }, [lastName]);
+  useEffect(() => { emailRef.current = email; }, [email]);
+  useEffect(() => { phoneRef.current = phone; }, [phone]);
+
   // Step 3 — Password
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -129,12 +143,17 @@ export default function Signup() {
   // Step 4 — Plan
   const [selectedPlan, setSelectedPlan] = useState("free");
 
-  // Fetch the real appKey from the server on mount (public endpoint, no auth needed)
+  // Fetch the real appKey from the server on mount (public endpoint, no auth needed).
+  // Scripts won't be injected until this resolves because enrollAppKey starts as "".
   useEffect(() => {
     fetch("/api/array/enroll-config")
       .then(r => r.json())
       .then(data => { if (data.appKey) setEnrollAppKey(data.appKey); })
-      .catch(() => { /* fall back to hardcoded sandbox constant */ });
+      .catch(() => {
+        // Fall back to the sandbox constant so enrollment isn't blocked if the
+        // server call fails (e.g. network error during development).
+        setEnrollAppKey(ARRAY_SANDBOX_APP_KEY);
+      });
   }, []);
 
   // Mount array-account-enroll when on step 2 and script is ready
@@ -154,8 +173,10 @@ export default function Signup() {
 
     const handleEvent = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      // Always log Array events so we can diagnose enrollment issues
-      console.log("[Array signup] array-event:", JSON.stringify(detail));
+      // Log event type and non-sensitive fields only — redact SSN and full DOB
+      const safeLog = { type: detail?.type, userId: detail?.userId ?? detail?.data?.userId };
+      console.log("[Array signup] array-event:", JSON.stringify(safeLog));
+
       const type: string = detail?.type ?? "";
 
       if (COMPLETION_TYPES.has(type)) {
@@ -176,15 +197,17 @@ export default function Signup() {
         const zip = d.zipCode || d.zip || d.postalCode || "";
         if (line1 || city || state || zip) setCapturedAddress({ line1, city, state, zip });
 
-        // Auto-populate contact fields from the event if they're still empty
+        // Auto-populate contact fields from the event ONLY if the user hasn't
+        // already typed into them — read refs to get the latest values, not
+        // the stale closure values from when the effect first ran.
         const eventFirst = d.firstName || "";
         const eventLast = d.lastName || "";
         const eventEmail = d.email || "";
         const eventPhone = d.phone || d.phoneNumber || "";
-        if (!firstName && eventFirst) setFirstName(eventFirst);
-        if (!lastName && eventLast) setLastName(eventLast);
-        if (!email && eventEmail) setEmail(eventEmail);
-        if (!phone && eventPhone) setPhone(eventPhone);
+        if (!firstNameRef.current && eventFirst) setFirstName(eventFirst);
+        if (!lastNameRef.current && eventLast) setLastName(eventLast);
+        if (!emailRef.current && eventEmail) setEmail(eventEmail);
+        if (!phoneRef.current && eventPhone) setPhone(eventPhone);
 
         setArrayEnrolled(true);
         // Do NOT auto-advance — user must still confirm their info fields
