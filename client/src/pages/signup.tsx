@@ -17,6 +17,10 @@ import {
   useArrayScript,
   ARRAY_SANDBOX_APP_KEY,
 } from "@/hooks/use-array-script";
+import {
+  extractArrayEventPII,
+  ARRAY_COMPLETION_TYPES,
+} from "@/lib/array-enrollment-event";
 
 const STEPS = [
   { label: "Your Rights", icon: Shield },
@@ -166,11 +170,6 @@ export default function Signup() {
     // Passing userToken blocks new-user enrollment; Array must create the user fresh.
     el.setAttribute("appKey", enrollAppKey);
 
-    const COMPLETION_TYPES = new Set([
-      "complete", "success", "enrolled", "enroll-success",
-      "userRegistrationCreated", "userCreated", "onUserCreated",
-    ]);
-
     const handleEvent = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       // Log event type and non-sensitive fields only — redact SSN and full DOB
@@ -179,35 +178,22 @@ export default function Signup() {
 
       const type: string = detail?.type ?? "";
 
-      if (COMPLETION_TYPES.has(type)) {
+      if (ARRAY_COMPLETION_TYPES.has(type)) {
         // Extract PII from the event payload so we can save it on account creation
-        const d = detail?.data ?? detail ?? {};
-        const rawUserId = d.userId || d.arrayUserId || d.userToken || detail?.userId || null;
-        if (rawUserId) setCapturedArrayUserId(rawUserId);
+        const pii = extractArrayEventPII(detail as Record<string, unknown>);
 
-        const rawDob = d.dateOfBirth || d.dob || null;
-        if (rawDob) setCapturedDob(rawDob);
-
-        const rawSsn: string = d.ssn || d.ssnNumber || "";
-        if (rawSsn.length >= 4) setCapturedSsnLast4(rawSsn.slice(-4));
-
-        const line1 = d.addressLine1 || d.address1 || d.streetAddress || "";
-        const city = d.city || "";
-        const state = d.state || "";
-        const zip = d.zipCode || d.zip || d.postalCode || "";
-        if (line1 || city || state || zip) setCapturedAddress({ line1, city, state, zip });
+        if (pii.rawUserId) setCapturedArrayUserId(pii.rawUserId);
+        if (pii.rawDob) setCapturedDob(pii.rawDob);
+        if (pii.ssnLast4) setCapturedSsnLast4(pii.ssnLast4);
+        if (pii.address) setCapturedAddress(pii.address);
 
         // Auto-populate contact fields from the event ONLY if the user hasn't
         // already typed into them — read refs to get the latest values, not
         // the stale closure values from when the effect first ran.
-        const eventFirst = d.firstName || "";
-        const eventLast = d.lastName || "";
-        const eventEmail = d.email || "";
-        const eventPhone = d.phone || d.phoneNumber || "";
-        if (!firstNameRef.current && eventFirst) setFirstName(eventFirst);
-        if (!lastNameRef.current && eventLast) setLastName(eventLast);
-        if (!emailRef.current && eventEmail) setEmail(eventEmail);
-        if (!phoneRef.current && eventPhone) setPhone(eventPhone);
+        if (!firstNameRef.current && pii.firstName) setFirstName(pii.firstName);
+        if (!lastNameRef.current && pii.lastName) setLastName(pii.lastName);
+        if (!emailRef.current && pii.email) setEmail(pii.email);
+        if (!phoneRef.current && pii.phone) setPhone(pii.phone);
 
         setArrayEnrolled(true);
         // Do NOT auto-advance — user must still confirm their info fields
