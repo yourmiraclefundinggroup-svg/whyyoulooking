@@ -8772,12 +8772,11 @@ ${denialLetterText}`
         const isRealArrayId = sandboxArrayUserId &&
           /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sandboxArrayUserId);
 
-        if (ARRAY_API_KEY && ARRAY_API_SECRET && isRealArrayId) {
+        if (ARRAY_API_KEY && isRealArrayId) {
           try {
-            const creds = Buffer.from(`${ARRAY_API_KEY}:${ARRAY_API_SECRET}`).toString("base64");
-            const tokResp = await fetch(`${SANDBOX_API_URL}/v2/user/token`, {
+            const tokResp = await fetch(`https://sandbox.array.io/api/authenticate/v2/usertoken`, {
               method: "POST",
-              headers: { Authorization: `Basic ${creds}`, "Content-Type": "application/json" },
+              headers: { "x-array-server-token": ARRAY_API_KEY, "Content-Type": "application/json" },
               body: JSON.stringify({ userId: sandboxArrayUserId }),
             });
             const tokRaw = await tokResp.text();
@@ -8807,20 +8806,18 @@ ${denialLetterText}`
       }
 
       const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
-      const ARRAY_API_SECRET = process.env.ARRAY_API_SECRET;
       const ARRAY_APP_KEY = process.env.ARRAY_APP_KEY;
 
-      if (!ARRAY_API_KEY || !ARRAY_API_SECRET || !ARRAY_APP_KEY) {
+      if (!ARRAY_API_KEY || !ARRAY_APP_KEY) {
         return res.status(500).json({ error: "Array credentials not configured" });
       }
 
       const arrayUserId = `scoreshift_user_${user.id}`;
-      const credentials = Buffer.from(`${ARRAY_API_KEY}:${ARRAY_API_SECRET}`).toString("base64");
 
-      const tokenResponse = await fetch("https://api.array.io/v2/user/token", {
+      const tokenResponse = await fetch("https://api.array.io/api/authenticate/v2/usertoken", {
         method: "POST",
         headers: {
-          "Authorization": `Basic ${credentials}`,
+          "x-array-server-token": ARRAY_API_KEY,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ userId: arrayUserId }),
@@ -8868,13 +8865,23 @@ ${denialLetterText}`
     }
   });
 
+  // GET /api/array/enroll-config — public endpoint returning the client-side appKey for web components
+  // No auth required — the appKey is safe to expose publicly (it's not a server secret)
+  app.get("/api/array/enroll-config", (_req, res) => {
+    const appKey = process.env.ARRAY_APP_KEY;
+    if (!appKey) return res.status(500).json({ error: "Array not configured" });
+    res.json({ appKey });
+  });
+
   // POST /api/array/enroll — record enrollment locally (sandbox mode: Array web component handles auth)
   app.post("/api/array/enroll", authenticateToken, requireClientAccess, async (req, res) => {
     try {
       const user = (req as any).user;
-      const { productCode } = req.body;
+      const { productCode, arrayUserId: providedArrayUserId } = req.body;
 
-      const arrayUserId = `scoreshift_user_${user.id}`;
+      // Use the real Array userId from the enrollment event if provided,
+      // otherwise fall back to the generic placeholder
+      const arrayUserId = providedArrayUserId || `scoreshift_user_${user.id}`;
 
       // Persist enrollment in DB
       const { arrayEnrollments } = await import("@shared/schema");
@@ -8888,14 +8895,18 @@ ${denialLetterText}`
         });
       } else {
         const codes = existing[0].productCodes || [];
-        if (productCode && !codes.includes(productCode)) {
+        const updateFields: Record<string, any> = {};
+        // Always update to the real Array UUID if one was provided
+        if (providedArrayUserId) updateFields.arrayUserId = providedArrayUserId;
+        if (productCode && !codes.includes(productCode)) updateFields.productCodes = [...codes, productCode];
+        if (Object.keys(updateFields).length > 0) {
           await db.update(arrayEnrollments)
-            .set({ productCodes: [...codes, productCode] })
+            .set(updateFields)
             .where(eq(arrayEnrollments.userId, user.id));
         }
       }
 
-      console.log(`[Array] Recorded enrollment for user ${user.id}${productCode ? ` (product: ${productCode})` : ''}`);
+      console.log(`[Array] Recorded enrollment for user ${user.id}${productCode ? ` (product: ${productCode})` : ''}${providedArrayUserId ? ` (arrayUserId: ${providedArrayUserId})` : ''}`);
       res.json({ success: true, arrayUserId, productCode });
     } catch (error: any) {
       console.error("[Array] Enroll error:", error);
@@ -8955,19 +8966,15 @@ ${denialLetterText}`
         return res.status(400).json({ error: "targetUserId is required" });
       }
 
-      const creds = ARRAY_API_KEY && ARRAY_API_SECRET
-        ? Buffer.from(`${ARRAY_API_KEY}:${ARRAY_API_SECRET}`).toString("base64")
-        : null;
-
       // Step 1 — probe the sandbox token endpoint with the known Devos UUID
       let sandboxToken: string | null = null;
       let tokenStatus = "not_tested";
 
-      if (creds) {
+      if (ARRAY_API_KEY) {
         try {
-          const tokResp = await fetch(`${SANDBOX_API_URL}/v2/user/token`, {
+          const tokResp = await fetch(`https://sandbox.array.io/api/authenticate/v2/usertoken`, {
             method: "POST",
-            headers: { Authorization: `Basic ${creds}`, "Content-Type": "application/json" },
+            headers: { "x-array-server-token": ARRAY_API_KEY, "Content-Type": "application/json" },
             body: JSON.stringify({ userId: THOMAS_DEVOS_SANDBOX_ID }),
           });
           const tokRaw = await tokResp.text();
@@ -9142,8 +9149,7 @@ ${denialLetterText}`
       if (isNaN(clientId)) return res.status(400).json({ error: "Invalid clientId" });
 
       const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
-      const ARRAY_API_SECRET = process.env.ARRAY_API_SECRET;
-      if (!ARRAY_API_KEY || !ARRAY_API_SECRET) {
+      if (!ARRAY_API_KEY) {
         return res.status(500).json({ error: "Array credentials not configured" });
       }
 
@@ -9157,14 +9163,13 @@ ${denialLetterText}`
         return res.status(404).json({ error: "Client is not enrolled in Array credit monitoring", enrolled: false });
       }
 
-      const credentials = Buffer.from(`${ARRAY_API_KEY}:${ARRAY_API_SECRET}`).toString("base64");
       const arrayUserId = enrollment.arrayUserId;
 
       // Step 1: Generate a server-side user token for this client
-      const tokenResponse = await fetch("https://api.array.io/v2/user/token", {
+      const tokenResponse = await fetch("https://api.array.io/api/authenticate/v2/usertoken", {
         method: "POST",
         headers: {
-          "Authorization": `Basic ${credentials}`,
+          "x-array-server-token": ARRAY_API_KEY,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ userId: arrayUserId }),

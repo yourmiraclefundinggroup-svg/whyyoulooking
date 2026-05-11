@@ -16,8 +16,6 @@ import {
 import {
   useArrayScript,
   ARRAY_SANDBOX_APP_KEY,
-  ARRAY_SANDBOX_API_URL,
-  ARRAY_SANDBOX_TOKENS,
 } from "@/hooks/use-array-script";
 
 const STEPS = [
@@ -95,9 +93,16 @@ export default function Signup() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   // Array script + enrollment state
-  const { loaded: scriptReady } = useArrayScript(ARRAY_SANDBOX_APP_KEY);
+  const [enrollAppKey, setEnrollAppKey] = useState<string>(ARRAY_SANDBOX_APP_KEY);
+  const { loaded: scriptReady } = useArrayScript(enrollAppKey);
   const [arrayEnrolled, setArrayEnrolled] = useState(false);
   const arrayEnrollRef = useRef<HTMLDivElement>(null);
+
+  // PII captured from the Array enrollment event
+  const [capturedArrayUserId, setCapturedArrayUserId] = useState<string | null>(null);
+  const [capturedDob, setCapturedDob] = useState<string | null>(null);
+  const [capturedSsnLast4, setCapturedSsnLast4] = useState<string | null>(null);
+  const [capturedAddress, setCapturedAddress] = useState<{ line1: string; city: string; state: string; zip: string } | null>(null);
 
   // Step 0 — CROA
   const [croaAccepted, setCroaAccepted] = useState(false);
@@ -124,27 +129,63 @@ export default function Signup() {
   // Step 4 — Plan
   const [selectedPlan, setSelectedPlan] = useState("free");
 
+  // Fetch the real appKey from the server on mount (public endpoint, no auth needed)
+  useEffect(() => {
+    fetch("/api/array/enroll-config")
+      .then(r => r.json())
+      .then(data => { if (data.appKey) setEnrollAppKey(data.appKey); })
+      .catch(() => { /* fall back to hardcoded sandbox constant */ });
+  }, []);
+
   // Mount array-account-enroll when on step 2 and script is ready
   useEffect(() => {
     if (step !== 2 || !arrayEnrollRef.current || !scriptReady) return;
     arrayEnrollRef.current.innerHTML = "";
 
     const el = document.createElement("array-account-enroll");
-    el.setAttribute("appKey", ARRAY_SANDBOX_APP_KEY);
-    el.setAttribute("apiUrl", ARRAY_SANDBOX_API_URL);
-    el.setAttribute("sandbox", "true");
-    el.setAttribute("userToken", ARRAY_SANDBOX_TOKENS.default);
-    el.setAttribute("showQuickView", "true");
+    // Only set appKey — do NOT set userToken, apiUrl, or sandbox.
+    // Passing userToken blocks new-user enrollment; Array must create the user fresh.
+    el.setAttribute("appKey", enrollAppKey);
 
-    const COMPLETION_TYPES = new Set(["complete", "success", "enrolled", "enroll-success", "userRegistrationCreated"]);
+    const COMPLETION_TYPES = new Set([
+      "complete", "success", "enrolled", "enroll-success",
+      "userRegistrationCreated", "userCreated", "onUserCreated",
+    ]);
 
     const handleEvent = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      if (import.meta.env.DEV) {
-        console.log("[Array signup] array-event detail:", JSON.stringify(detail));
-      }
+      // Always log Array events so we can diagnose enrollment issues
+      console.log("[Array signup] array-event:", JSON.stringify(detail));
       const type: string = detail?.type ?? "";
+
       if (COMPLETION_TYPES.has(type)) {
+        // Extract PII from the event payload so we can save it on account creation
+        const d = detail?.data ?? detail ?? {};
+        const rawUserId = d.userId || d.arrayUserId || d.userToken || detail?.userId || null;
+        if (rawUserId) setCapturedArrayUserId(rawUserId);
+
+        const rawDob = d.dateOfBirth || d.dob || null;
+        if (rawDob) setCapturedDob(rawDob);
+
+        const rawSsn: string = d.ssn || d.ssnNumber || "";
+        if (rawSsn.length >= 4) setCapturedSsnLast4(rawSsn.slice(-4));
+
+        const line1 = d.addressLine1 || d.address1 || d.streetAddress || "";
+        const city = d.city || "";
+        const state = d.state || "";
+        const zip = d.zipCode || d.zip || d.postalCode || "";
+        if (line1 || city || state || zip) setCapturedAddress({ line1, city, state, zip });
+
+        // Auto-populate contact fields from the event if they're still empty
+        const eventFirst = d.firstName || "";
+        const eventLast = d.lastName || "";
+        const eventEmail = d.email || "";
+        const eventPhone = d.phone || d.phoneNumber || "";
+        if (!firstName && eventFirst) setFirstName(eventFirst);
+        if (!lastName && eventLast) setLastName(eventLast);
+        if (!email && eventEmail) setEmail(eventEmail);
+        if (!phone && eventPhone) setPhone(eventPhone);
+
         setArrayEnrolled(true);
         // Do NOT auto-advance — user must still confirm their info fields
         // and click Continue (validateStep will confirm arrayEnrolled is true)
@@ -157,7 +198,7 @@ export default function Signup() {
     return () => {
       if (arrayEnrollRef.current) arrayEnrollRef.current.innerHTML = "";
     };
-  }, [step, scriptReady]);
+  }, [step, scriptReady, enrollAppKey]);
 
   const handleCroaCheck = (checked: boolean) => {
     setCroaAccepted(checked);
@@ -234,6 +275,13 @@ export default function Signup() {
         croaAcceptedAt,
         aiConsentAcceptedAt,
         source: "signup",
+        // PII captured from the Array enrollment event
+        ...(capturedDob ? { dateOfBirth: capturedDob } : {}),
+        ...(capturedSsnLast4 ? { ssnLast4: capturedSsnLast4 } : {}),
+        ...(capturedAddress?.line1 ? { addressLine1: capturedAddress.line1 } : {}),
+        ...(capturedAddress?.city ? { city: capturedAddress.city } : {}),
+        ...(capturedAddress?.state ? { state: capturedAddress.state } : {}),
+        ...(capturedAddress?.zip ? { zipCode: capturedAddress.zip } : {}),
       });
 
       if (!createRes.ok) {
@@ -255,9 +303,13 @@ export default function Signup() {
       setCurrentUserId(loginData.user.id);
 
       // Record Array enrollment in DB now that we have a valid auth token
+      // Pass the real arrayUserId from the enrollment event so the DB row
+      // stores the genuine Array UUID instead of a placeholder
       if (arrayEnrolled) {
         try {
-          await apiRequest("POST", "/api/array/enroll", {});
+          await apiRequest("POST", "/api/array/enroll", {
+            ...(capturedArrayUserId ? { arrayUserId: capturedArrayUserId } : {}),
+          });
         } catch (e) {
           console.warn("[Array] Failed to record enrollment after signup:", e);
         }
@@ -478,92 +530,11 @@ export default function Signup() {
             {step === 2 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Let's get started</h2>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">Tell us a bit about yourself to personalize your credit repair plan.</p>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Verify Your Identity</h2>
+                  <p className="text-gray-500 dark:text-gray-400 mt-1">Complete your credit profile first, then confirm your contact details below.</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="firstName"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        placeholder="John"
-                        className="pl-9"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="lastName"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        placeholder="Doe"
-                        className="pl-9"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="phone">Phone Number <span className="text-red-500">*</span></Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="(555) 123-4567"
-                      className="pl-9"
-                    />
-                  </div>
-                </div>
-
-                {/* SMS Opt-In */}
-                <div className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all duration-200 ${
-                  smsOptIn
-                    ? "border-blue-400 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-600"
-                    : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
-                }`}>
-                  <Checkbox
-                    id="smsOptIn"
-                    checked={smsOptIn}
-                    onCheckedChange={(c) => setSmsOptIn(c as boolean)}
-                    className="mt-0.5 shrink-0"
-                  />
-                  <label htmlFor="smsOptIn" className="cursor-pointer">
-                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 block mb-1">
-                      SMS Consent <span className="text-red-500">*</span>
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                      By submitting this form you agree to receive SMS messages from ScoreShift regarding your credit repair progress. Message and data rates may apply. Reply STOP to opt out at any time.
-                    </span>
-                  </label>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="your@email.com"
-                      className="pl-9"
-                    />
-                  </div>
-                </div>
-
-                {/* Array credit profile enrollment — embedded in signup */}
+                {/* Array credit profile enrollment — FIRST (primary action) */}
                 <div className="rounded-xl border-2 border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 overflow-hidden">
                   <div className="px-5 py-4 border-b border-blue-200 dark:border-blue-800/40 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
@@ -602,6 +573,92 @@ export default function Signup() {
                   <div className="px-5 pb-4 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
                     <Shield className="h-3.5 w-3.5 shrink-0 text-green-500" />
                     <span>Your information is encrypted and secured by ScoreShift.</span>
+                  </div>
+                </div>
+
+                {/* Contact details — filled in after Array enrollment (may be auto-populated) */}
+                <div className="space-y-4">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Your Contact Details</p>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="firstName"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          placeholder="John"
+                          className="pl-9"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="lastName"
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          placeholder="Doe"
+                          className="pl-9"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="your@email.com"
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone">Phone Number <span className="text-red-500">*</span></Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="(555) 123-4567"
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+
+                  {/* SMS Opt-In */}
+                  <div className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all duration-200 ${
+                    smsOptIn
+                      ? "border-blue-400 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-600"
+                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+                  }`}>
+                    <Checkbox
+                      id="smsOptIn"
+                      checked={smsOptIn}
+                      onCheckedChange={(c) => setSmsOptIn(c as boolean)}
+                      className="mt-0.5 shrink-0"
+                    />
+                    <label htmlFor="smsOptIn" className="cursor-pointer">
+                      <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 block mb-1">
+                        SMS Consent <span className="text-red-500">*</span>
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                        By submitting this form you agree to receive SMS messages from ScoreShift regarding your credit repair progress. Message and data rates may apply. Reply STOP to opt out at any time.
+                      </span>
+                    </label>
                   </div>
                 </div>
               </div>
