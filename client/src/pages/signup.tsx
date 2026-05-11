@@ -26,6 +26,7 @@ const STEPS = [
   { label: "Your Rights", icon: Shield },
   { label: "AI Consent", icon: Sparkles },
   { label: "Your Info", icon: User },
+  { label: "Credit Profile", icon: CreditCard },
   { label: "Password", icon: Lock },
   { label: "Your Plan", icon: Star },
 ];
@@ -165,9 +166,9 @@ export default function Signup() {
       });
   }, []);
 
-  // Mount array-account-enroll when on step 2 and script is ready
+  // Mount array-account-enroll when on step 3 and script is ready
   useEffect(() => {
-    if (step !== 2 || !arrayEnrollRef.current || !scriptReady) return;
+    if (step !== 3 || !arrayEnrollRef.current || !scriptReady) return;
     arrayEnrollRef.current.innerHTML = "";
 
     const el = document.createElement("array-account-enroll");
@@ -256,13 +257,16 @@ export default function Signup() {
         toast({ title: "SMS Consent Required", description: "Please check the SMS opt-in box to continue.", variant: "destructive" });
         return false;
       }
+      return true;
+    }
+    if (step === 3) {
       if (!arrayEnrolled) {
-        toast({ title: "Credit Profile Required", description: "Please complete the credit profile setup above to continue.", variant: "destructive" });
+        toast({ title: "Credit Profile Required", description: "Please complete the credit profile setup to continue.", variant: "destructive" });
         return false;
       }
       return true;
     }
-    if (step === 3) {
+    if (step === 4) {
       if (!password) { toast({ title: "Password is required", variant: "destructive" }); return false; }
       if (password.length < 8) { toast({ title: "Password must be at least 8 characters", variant: "destructive" }); return false; }
       if (password !== confirmPassword) { toast({ title: "Passwords don't match", variant: "destructive" }); return false; }
@@ -421,7 +425,7 @@ export default function Signup() {
                 </div>
 
                 <div className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-950/20 px-3 py-1.5 rounded-md border border-blue-100 dark:border-blue-900">
-                  Step 1 of 5 — Please read the disclosure below before continuing.
+                  Step 1 of 6 — Please read the disclosure below before continuing.
                 </div>
 
                 <div
@@ -474,7 +478,7 @@ export default function Signup() {
                 </div>
 
                 <div className="text-xs text-gray-500 dark:text-gray-400 bg-amber-50 dark:bg-amber-950/20 px-3 py-1.5 rounded-md border border-amber-100 dark:border-amber-900">
-                  Step 2 of 5 — All four items must be acknowledged to continue.
+                  Step 2 of 6 — All four items must be acknowledged to continue.
                 </div>
 
                 <div className="space-y-3">
@@ -544,57 +548,15 @@ export default function Signup() {
               </div>
             )}
 
-            {/* Step 2: Personal Info */}
+            {/* Step 2: Your Info */}
             {step === 2 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Verify Your Identity</h2>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">Complete your credit profile first, then confirm your contact details below.</p>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Contact Info</h2>
+                  <p className="text-gray-500 dark:text-gray-400 mt-1">Enter your details and agree to SMS updates before connecting your credit profile.</p>
                 </div>
 
-                {/* Array credit profile enrollment — FIRST (primary action) */}
-                <div className="rounded-xl border-2 border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 overflow-hidden">
-                  <div className="px-5 py-4 border-b border-blue-200 dark:border-blue-800/40 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
-                        <Shield className="h-3.5 w-3.5 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900 dark:text-white">Connect Your Credit Profile</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Required to access your live credit data</p>
-                      </div>
-                    </div>
-                    {arrayEnrolled ? (
-                      <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 text-xs font-semibold">
-                        <CheckCircle className="h-4 w-4" />
-                        Connected
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                        <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                        Awaiting
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="p-4">
-                    {!scriptReady ? (
-                      <div className="flex items-center justify-center py-8 gap-3">
-                        <div className="w-6 h-6 rounded-full border-2 border-blue-400 border-t-transparent animate-spin" />
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Loading secure enrollment form...</span>
-                      </div>
-                    ) : (
-                      <div ref={arrayEnrollRef} className="w-full min-h-[180px]" />
-                    )}
-                  </div>
-
-                  <div className="px-5 pb-4 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-                    <Shield className="h-3.5 w-3.5 shrink-0 text-green-500" />
-                    <span>Your information is encrypted and secured by ScoreShift.</span>
-                  </div>
-                </div>
-
-                {/* Contact details — filled in after Array enrollment (may be auto-populated) */}
+                {/* Contact details */}
                 <div className="space-y-4">
                   <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Your Contact Details</p>
 
@@ -682,8 +644,59 @@ export default function Signup() {
               </div>
             )}
 
-            {/* Step 3: Password */}
+            {/* Step 3: Credit Profile */}
             {step === 3 && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Connect Your Credit Profile</h2>
+                  <p className="text-gray-500 dark:text-gray-400 mt-1">Securely link your credit data so ScoreShift can identify issues and build your dispute plan.</p>
+                </div>
+
+                <div className="rounded-xl border-2 border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 overflow-hidden">
+                  <div className="px-5 py-4 border-b border-blue-200 dark:border-blue-800/40 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
+                        <CreditCard className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">Credit Profile Setup</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Required to access your live credit data</p>
+                      </div>
+                    </div>
+                    {arrayEnrolled ? (
+                      <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 text-xs font-semibold">
+                        <CheckCircle className="h-4 w-4" />
+                        Connected
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                        <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                        Awaiting
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-4">
+                    {!scriptReady ? (
+                      <div className="flex items-center justify-center py-8 gap-3">
+                        <div className="w-6 h-6 rounded-full border-2 border-blue-400 border-t-transparent animate-spin" />
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Loading secure enrollment form...</span>
+                      </div>
+                    ) : (
+                      <div ref={arrayEnrollRef} className="w-full min-h-[180px]" />
+                    )}
+                  </div>
+
+                  <div className="px-5 pb-4 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                    <Shield className="h-3.5 w-3.5 shrink-0 text-green-500" />
+                    <span>Your information is encrypted and secured by ScoreShift.</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Password */}
+            {step === 4 && (
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create your login</h2>
@@ -766,8 +779,8 @@ export default function Signup() {
               </div>
             )}
 
-            {/* Step 4: Choose Plan */}
-            {step === 4 && (
+            {/* Step 5: Choose Plan */}
+            {step === 5 && (
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Choose your plan</h2>

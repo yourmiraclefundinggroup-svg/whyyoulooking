@@ -32,112 +32,176 @@ export default function PrivacyPolicy() {
             <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Privacy Policy</h1>
-            <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
+            <h1 className="text-3xl font-bold text-foreground">FCRA Privacy Policy</h1>
+            <p className="text-muted-foreground">Effective Date: May 11, 2026</p>
           </div>
         </div>
 
         <div className="prose prose-gray dark:prose-invert max-w-none space-y-8">
 
           <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">1. Introduction</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-3">1. Overview</h2>
             <p className="text-muted-foreground leading-relaxed">
-              ScoreShift ("we," "us," or "our") is committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our credit repair platform and related services. Please read this policy carefully. If you disagree with its terms, please discontinue use of the platform.
+              ScoreShift Capital ("ScoreShift," "we," "us," or "our") is committed to protecting your privacy and handling your personal and financial information in accordance with applicable federal and state laws, including the Fair Credit Reporting Act (FCRA), 15 U.S.C. § 1681 et seq., the Gramm-Leach-Bliley Act (GLBA), and applicable state privacy regulations. This Privacy Policy describes how we collect, use, share, and protect information obtained through your use of our credit repair and financial services platform. By using ScoreShift, you consent to the practices described in this Policy.
             </p>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
             <h2 className="text-xl font-semibold text-foreground mb-3">2. Information We Collect</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">We collect information you provide directly to us, including:</p>
-            <ul className="space-y-2 text-muted-foreground">
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" /><span><strong className="text-foreground">Personal Identification:</strong> Full name, date of birth, Social Security Number (SSN), address, phone number, and email address.</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" /><span><strong className="text-foreground">Financial Information:</strong> Credit reports, account numbers, payment history, outstanding balances, and credit scores.</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" /><span><strong className="text-foreground">Identity Documents:</strong> Government-issued ID, proof of address, and other verification documents you choose to upload.</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" /><span><strong className="text-foreground">Communications:</strong> Messages, chat history, and support tickets submitted through the platform.</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" /><span><strong className="text-foreground">Usage Data:</strong> IP address, browser type, pages visited, and actions taken within the platform.</span></li>
+            <p className="text-muted-foreground leading-relaxed mb-4">We collect the following categories of information in connection with providing our services:</p>
+            <ul className="space-y-3 text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Identity Information:</strong> Full legal name, date of birth (DOB), Social Security Number (last 4 digits for verification purposes), current and prior addresses, phone number, and email address.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Credit Report Data:</strong> Credit scores, account history, payment records, derogatory marks, public records, and inquiry history obtained from Experian, Equifax, and TransUnion through your authorization.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Identity Verification Data:</strong> Government-issued ID images, proof of address documents, police or FTC Identity Theft reports (where applicable for identity theft cases), and other verification materials you choose to upload.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Financial Information:</strong> Account numbers, balances, creditor information, and payment history as it appears on your credit report.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Communications:</strong> Messages, support tickets, chat history, and any other communications submitted through our platform.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Usage & Technical Data:</strong> IP address, browser type and version, device information, pages visited, time spent on the platform, and other analytics data used to improve our services.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Payment Information:</strong> Subscription payment information processed securely through Stripe. ScoreShift does not store full payment card numbers.</span>
+              </li>
             </ul>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
             <h2 className="text-xl font-semibold text-foreground mb-3">3. How We Use Your Information</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">We use the information we collect to:</p>
+            <p className="text-muted-foreground leading-relaxed mb-4">We use the information we collect exclusively for the purpose of providing and improving our services, including:</p>
             <ul className="space-y-2 text-muted-foreground">
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Generate and send dispute letters to credit bureaus (Experian, Equifax, TransUnion) on your behalf</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Analyze your credit report using AI to identify errors and disputable items</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Track the status of dispute letters via USPS certified mail</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Provide personalized credit-building recommendations and action plans</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Communicate with you about your account, updates, and support requests</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Process billing and subscription payments securely through Stripe</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Comply with legal obligations and protect against fraudulent activity</span></li>
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Analyzing your credit reports to identify inaccurate, outdated, or unverifiable items eligible for dispute under the FCRA</span></li>
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Generating and submitting dispute letters to Experian, Equifax, and/or TransUnion on your behalf</span></li>
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Tracking the status of certified mail dispute letters and communicating outcomes to you</span></li>
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Providing personalized credit-building recommendations, action plans, and educational resources</span></li>
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Communicating with you about your account, progress updates, billing, and support</span></li>
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Processing subscription payments and maintaining billing records</span></li>
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Complying with applicable legal obligations, including FCRA, GLBA, and other federal and state requirements</span></li>
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Detecting, preventing, and investigating fraudulent activity, identity theft, and unauthorized access</span></li>
             </ul>
-          </section>
-
-          <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">4. Sharing Your Information</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">We do not sell your personal information. We may share your information with:</p>
-            <ul className="space-y-2 text-muted-foreground">
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" /><span><strong className="text-foreground">Credit Bureaus:</strong> Experian, Equifax, and TransUnion for the purpose of submitting disputes on your behalf.</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" /><span><strong className="text-foreground">Service Providers:</strong> Third-party vendors (such as OpenAI for AI analysis, USPS for mail tracking, and Stripe for payments) who assist us in operating the platform, bound by confidentiality agreements.</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" /><span><strong className="text-foreground">Legal Requirements:</strong> When required by law, subpoena, or to protect the rights and safety of ScoreShift and its users.</span></li>
-            </ul>
-          </section>
-
-          <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">5. Data Security</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We implement industry-standard security measures including encrypted data transmission (SSL/TLS), hashed and salted password storage, role-based access controls, and secure document storage. However, no method of transmission over the internet is 100% secure. You are responsible for maintaining the confidentiality of your account credentials.
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              We do not use your personal or credit information for targeted advertising, data brokering, or any purpose unrelated to the credit repair and financial services described above.
             </p>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">6. Data Retention</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We retain your personal information for as long as your account is active or as needed to provide services. If you close your account, we will retain certain information as required by law or for legitimate business purposes such as resolving disputes and enforcing agreements. You may request deletion of your data by contacting us.
+            <h2 className="text-xl font-semibold text-foreground mb-3">4. FCRA Consumer Rights</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              As a consumer whose credit information is accessed through our platform, you have the following rights under the FCRA:
             </p>
-          </section>
-
-          <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">7. Your Rights</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">Depending on your location, you may have the right to:</p>
-            <ul className="space-y-2 text-muted-foreground">
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" /><span>Access the personal data we hold about you</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" /><span>Correct inaccurate or incomplete data</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" /><span>Request deletion of your personal data ("right to be forgotten")</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" /><span>Opt out of marketing communications at any time</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" /><span>Request a portable copy of your data</span></li>
+            <ul className="space-y-3 text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Right to Know:</strong> You have the right to know what is in your credit file at Experian, Equifax, and TransUnion, and to receive a free annual credit report from each bureau at AnnualCreditReport.com.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Right to Dispute:</strong> You have the right to dispute inaccurate or incomplete information in your credit report directly with the credit bureaus at no charge, with or without the assistance of a credit repair company.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Right to Correction:</strong> Credit bureaus must correct or delete information that is found to be inaccurate, incomplete, or unverifiable, generally within 30 days of receiving a dispute.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Right to Limit Access:</strong> You have the right to place a security freeze on your credit file with each of the major bureaus (Experian, Equifax, TransUnion) to restrict access to your credit report.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Right to Seek Damages:</strong> If any entity violates your FCRA rights, you may have the right to seek actual damages, statutory damages, punitive damages, and attorney's fees by bringing a civil lawsuit.</span>
+              </li>
             </ul>
-            <p className="text-muted-foreground leading-relaxed mt-4">To exercise any of these rights, please contact us at <strong className="text-foreground">support@scoreshift.com</strong>.</p>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">8. Cookies and Tracking</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We use cookies and similar tracking technologies to maintain your session, remember your preferences, and analyze platform usage. You can control cookie settings through your browser; however, disabling certain cookies may affect platform functionality.
+            <h2 className="text-xl font-semibold text-foreground mb-3">5. Sharing of Information</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              <strong className="text-foreground">We do not sell, rent, or trade your personal information to any third party.</strong> We may share your information only in the following limited circumstances:
             </p>
+            <ul className="space-y-3 text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Credit Bureaus:</strong> Experian, Equifax, and TransUnion, for the purpose of submitting disputes and communicating on your behalf as authorized under the FCRA.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Service Providers:</strong> Carefully vetted third-party vendors who assist in operating our platform, including Array.com (credit data access), Lob and USPS (certified mail services), OpenAI and Anthropic (AI-powered analysis and letter generation), and Stripe (payment processing). All vendors are contractually required to protect your data and use it only for the contracted purpose.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Legal Requirements:</strong> When required by applicable law, court order, subpoena, or regulatory request, or when necessary to protect the rights, property, or safety of ScoreShift, our clients, or the public.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Business Transfers:</strong> In the event of a merger, acquisition, or sale of all or substantially all of ScoreShift's assets, your information may be transferred as part of that transaction. We will notify you before your information is transferred and becomes subject to a different privacy policy.</span>
+              </li>
+            </ul>
+          </section>
+
+          <section className="p-6 rounded-xl border border-border bg-card">
+            <h2 className="text-xl font-semibold text-foreground mb-3">6. Data Protection</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              We implement robust administrative, technical, and physical safeguards to protect your information from unauthorized access, use, alteration, and disclosure. These measures include SSL/TLS encryption for all data in transit, AES-256 encryption for data at rest, hashed and salted password storage, multi-factor authentication options, role-based access controls that limit data access to authorized personnel only, and regular security audits. However, no method of transmission over the internet or electronic storage is completely secure. While we strive to protect your information, we cannot guarantee its absolute security. In the event of a data breach that affects your personal information, we will notify you in accordance with applicable law.
+            </p>
+          </section>
+
+          <section className="p-6 rounded-xl border border-border bg-card">
+            <h2 className="text-xl font-semibold text-foreground mb-3">7. Data Retention</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              We retain your personal and credit-related information for as long as your account is active or as necessary to provide our services, comply with legal obligations, resolve disputes, and enforce our agreements. If you close your account or request deletion of your data, we will delete or anonymize your information within a reasonable timeframe, subject to any legal retention requirements. Certain records related to credit disputes, correspondence with credit bureaus, and financial transactions may be retained for up to seven (7) years in accordance with applicable law.
+            </p>
+          </section>
+
+          <section className="p-6 rounded-xl border border-border bg-card">
+            <h2 className="text-xl font-semibold text-foreground mb-3">8. Consumer Choices</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">You have the following choices regarding your information:</p>
+            <ul className="space-y-2 text-muted-foreground">
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" /><span><strong className="text-foreground">Access & Correction:</strong> You may access and update your personal information at any time through your account settings or by contacting us.</span></li>
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" /><span><strong className="text-foreground">Data Deletion:</strong> You may request deletion of your personal data by contacting us. We will honor your request subject to any legal obligations requiring us to retain certain records.</span></li>
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" /><span><strong className="text-foreground">Marketing Opt-Out:</strong> You may opt out of promotional communications from ScoreShift at any time by using the unsubscribe link in any marketing email or by contacting us directly. Transactional and service-related communications are not subject to opt-out.</span></li>
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" /><span><strong className="text-foreground">SMS Opt-Out:</strong> If you have consented to receive SMS messages, you may opt out at any time by replying STOP to any message or contacting us.</span></li>
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" /><span><strong className="text-foreground">Credit Freeze:</strong> You have the right to place a security freeze on your credit file directly with each credit bureau, which restricts access to your credit report and is separate from your ScoreShift account.</span></li>
+            </ul>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
             <h2 className="text-xl font-semibold text-foreground mb-3">9. Children's Privacy</h2>
             <p className="text-muted-foreground leading-relaxed">
-              ScoreShift is not intended for use by individuals under the age of 18. We do not knowingly collect personal information from minors. If we learn that we have collected information from a child under 18, we will delete it promptly.
+              ScoreShift's platform and services are intended solely for individuals who are 18 years of age or older. We do not knowingly collect, use, or disclose personal information from anyone under the age of 18. If we discover that we have collected personal information from a minor, we will promptly delete that information. If you believe we have inadvertently collected information from a minor, please contact us immediately at info@scoreshiftcapital.com.
             </p>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">10. Changes to This Policy</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-3">10. Policy Updates</h2>
             <p className="text-muted-foreground leading-relaxed">
-              We may update this Privacy Policy periodically. We will notify you of significant changes by posting the new policy on this page with an updated date and, where appropriate, notifying you by email. Continued use of the platform after changes constitutes your acceptance of the updated policy.
+              We may update this Privacy Policy periodically to reflect changes in our practices, technology, legal requirements, or other factors. When we make material changes, we will update the Effective Date at the top of this Policy and provide notice through our platform and, where required by law, by direct communication to affected users. Your continued use of our platform following such notice constitutes your acceptance of the updated Policy. We encourage you to review this Policy regularly to stay informed about how we protect your information.
             </p>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">11. Contact Us</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              If you have questions, concerns, or requests regarding this Privacy Policy, please contact us at:
+            <h2 className="text-xl font-semibold text-foreground mb-3">11. Contact Information</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              If you have questions, concerns, or requests regarding this Privacy Policy, your personal information, or your FCRA rights, please contact us at:
             </p>
-            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <p className="text-foreground font-medium">ScoreShift</p>
-              <p className="text-muted-foreground">Email: support@scoreshift.com</p>
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-foreground font-semibold">ScoreShift Capital</p>
+              <p className="text-muted-foreground">Email: <a href="mailto:info@scoreshiftcapital.com" className="text-blue-600 dark:text-blue-400 hover:underline">info@scoreshiftcapital.com</a></p>
+              <p className="text-muted-foreground">Atlanta, Georgia, USA</p>
             </div>
           </section>
 
@@ -147,11 +211,11 @@ export default function PrivacyPolicy() {
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-border mt-12">
         <div className="container mx-auto text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} ScoreShift. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} ScoreShift Capital. All rights reserved.</p>
           <div className="flex items-center justify-center gap-4 mt-2">
             <Link href="/privacy-policy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
             <span>·</span>
-            <Link href="/terms" className="hover:text-foreground transition-colors">Terms & Conditions</Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Use</Link>
           </div>
         </div>
       </footer>

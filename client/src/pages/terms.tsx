@@ -32,139 +32,163 @@ export default function Terms() {
             <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Terms & Conditions</h1>
-            <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
+            <h1 className="text-3xl font-bold text-foreground">FCRA Terms of Use</h1>
+            <p className="text-muted-foreground">Effective Date: May 11, 2026</p>
           </div>
         </div>
 
         <div className="space-y-8">
 
           <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">1. Agreement to Terms</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-3">1. Introduction</h2>
             <p className="text-muted-foreground leading-relaxed">
-              By accessing or using the ScoreShift platform ("Service"), you agree to be bound by these Terms and Conditions ("Terms"). If you do not agree to these Terms, do not use the Service. These Terms apply to all users, including clients and administrators. ScoreShift reserves the right to modify these Terms at any time, and continued use of the Service constitutes acceptance of any changes.
+              Welcome to ScoreShift Capital ("ScoreShift," "we," "us," or "our"). By accessing or using our credit repair and financial services platform, you ("User," "Client," or "you") agree to be bound by these Terms of Use ("Terms"). These Terms are governed by applicable federal and state laws, including the Fair Credit Reporting Act (FCRA), 15 U.S.C. § 1681 et seq., and the Credit Repair Organizations Act (CROA), 15 U.S.C. § 1679 et seq. If you do not agree to these Terms, you must immediately discontinue use of our platform.
             </p>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">2. Description of Service</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-3">2. Fair Credit Reporting Act ("FCRA") Rights</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              ScoreShift is a credit repair platform that provides:
+              Under the FCRA, you have the following rights regarding your credit information:
             </p>
-            <ul className="space-y-2 text-muted-foreground">
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" /><span>AI-powered credit report analysis and issue identification</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" /><span>Automated dispute letter generation for credit bureaus</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" /><span>USPS certified mail tracking for dispute letters</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" /><span>Credit score monitoring and improvement recommendations</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" /><span>Educational resources and credit-building tools</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" /><span>Secure communication between clients and credit repair professionals</span></li>
+            <ul className="space-y-3 text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Right to Access:</strong> You have the right to request and review a copy of your credit report from each of the three major credit bureaus (Experian, Equifax, and TransUnion) once every 12 months at no cost through AnnualCreditReport.com.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Right to Dispute:</strong> If you believe any information in your credit report is inaccurate, incomplete, or outdated, you have the right to dispute that information directly with the credit bureau or the information furnisher. ScoreShift assists clients in exercising this right.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Right to Correction:</strong> If your dispute is found to be valid, the credit bureau must correct or delete the inaccurate information, typically within 30 days of receiving your dispute.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Right to Know Who Accessed Your Report:</strong> You have the right to know who has accessed your credit report. The credit bureaus are required to maintain records of inquiries.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Right to Opt Out:</strong> You have the right to opt out of pre-screened credit and insurance offers by calling 1-888-5-OPT-OUT or visiting OptOutPrescreen.com.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
+                <span><strong className="text-foreground">Right to Sue:</strong> You have the right to sue a company that violates the FCRA in state or federal court.</span>
+              </li>
             </ul>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">3. Eligibility</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              You must be at least 18 years of age and a legal resident of the United States to use ScoreShift. By using the Service, you represent and warrant that you meet these requirements. ScoreShift reserves the right to refuse service to anyone at its sole discretion.
-            </p>
-          </section>
-
-          <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">4. User Accounts</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-3">3. Permissible Purpose & User Authorization</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              You are responsible for:
+              By using ScoreShift's platform, you expressly authorize us to:
             </p>
-            <ul className="space-y-2 text-muted-foreground">
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" /><span>Maintaining the confidentiality of your account credentials</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" /><span>All activity that occurs under your account</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" /><span>Providing accurate and complete information when creating your account</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" /><span>Notifying us immediately of any unauthorized access to your account</span></li>
+            <ul className="space-y-3 text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
+                <span>Access, review, and analyze your credit reports from Experian, Equifax, and/or TransUnion on your behalf.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
+                <span>Submit dispute letters to credit bureaus and data furnishers on your behalf as your authorized representative.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
+                <span>Receive credit bureau responses and communicate outcomes to you through our platform.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
+                <span>Use your personal information solely for the purpose of providing credit repair and related financial services.</span>
+              </li>
             </ul>
             <p className="text-muted-foreground leading-relaxed mt-4">
-              ScoreShift is not liable for any loss or damage arising from unauthorized use of your account.
+              This authorization constitutes a permissible purpose under the FCRA, 15 U.S.C. § 1681b(a)(3)(A). You may revoke this authorization at any time by contacting us in writing, though revocation will terminate your ability to use our services.
             </p>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">5. Credit Repair Services Disclosure</h2>
-            <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 mb-4">
-              <p className="text-amber-800 dark:text-amber-300 font-medium text-sm">
-                Important Notice: In accordance with the Credit Repair Organizations Act (CROA)
-              </p>
-            </div>
-            <ul className="space-y-3 text-muted-foreground">
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" /><span>You have the right to dispute inaccurate information in your credit report directly with credit bureaus at no charge.</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" /><span>ScoreShift cannot remove accurate, verifiable negative information from your credit report.</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" /><span>Results vary. ScoreShift does not guarantee specific improvements to your credit score.</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" /><span>You may cancel services within 3 business days of signing this agreement without penalty.</span></li>
-            </ul>
-          </section>
-
-          <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">6. Fees and Payment</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-3">4. Credit Disputes & Educational Services</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              Subscription fees are billed in accordance with the plan you select. By providing payment information, you authorize ScoreShift to charge your payment method for all fees incurred. All fees are non-refundable unless otherwise stated or required by applicable law. We reserve the right to modify pricing with 30 days' notice to existing subscribers.
+              ScoreShift provides credit dispute assistance and educational resources to help you improve your credit health. You acknowledge and agree that:
             </p>
-            <p className="text-muted-foreground leading-relaxed">
-              Payments are processed securely through Stripe. ScoreShift does not store your full payment card details.
-            </p>
-          </section>
-
-          <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">7. Acceptable Use</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">You agree not to:</p>
-            <ul className="space-y-2 text-muted-foreground">
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" /><span>Provide false, fraudulent, or misleading information</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" /><span>Use the Service to commit fraud or any illegal activity</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" /><span>Attempt to gain unauthorized access to other accounts or systems</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" /><span>Reverse engineer, copy, or resell the platform or its AI tools</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" /><span>Submit dispute letters for debts that are valid and accurately reported</span></li>
-              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" /><span>Use the platform on behalf of another person without their written authorization</span></li>
+            <ul className="space-y-3 text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+                <span>ScoreShift will only dispute information that appears to be inaccurate, incomplete, unverifiable, or outdated under the FCRA.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+                <span>ScoreShift will never advise you to dispute accurate and verifiable negative information, create a new credit identity (also known as "credit privacy numbers" or "CPN"), or engage in any form of credit fraud.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+                <span>Credit repair results vary. ScoreShift does not guarantee a specific improvement in your credit score, the removal of any specific item, or any particular outcome.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+                <span>You have the right to dispute inaccurate information directly with credit bureaus at no cost, without the use of a credit repair organization.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+                <span>In accordance with CROA, you may cancel your agreement without penalty within three (3) business days of signing up. To cancel, email us at info@scoreshiftcapital.com with the subject line "Cancel My ScoreShift Account."</span>
+              </li>
             </ul>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">8. Intellectual Property</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-3">5. Accuracy of Information</h2>
             <p className="text-muted-foreground leading-relaxed">
-              All content, features, and functionality of the ScoreShift platform — including software, text, graphics, logos, and AI-generated outputs — are owned by ScoreShift and protected by applicable intellectual property laws. You are granted a limited, non-exclusive, non-transferable license to use the Service solely for its intended personal credit repair purposes.
+              You agree to provide accurate, current, and complete information when creating your account and using our services. Providing false or misleading information — including but not limited to your identity, Social Security Number, or credit history — is strictly prohibited and may constitute a violation of federal law, including identity fraud and wire fraud statutes. ScoreShift reserves the right to suspend or terminate your account and report suspected fraud to the appropriate authorities.
             </p>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">9. Disclaimer of Warranties</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              The Service is provided "as is" and "as available" without warranties of any kind, either express or implied. ScoreShift does not warrant that the Service will be uninterrupted, error-free, or that any defects will be corrected. We make no guarantees regarding specific credit score outcomes or the success of any dispute submitted on your behalf.
+            <h2 className="text-xl font-semibold text-foreground mb-3">6. Data Security & Privacy</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              ScoreShift takes the security of your personal and financial information seriously. We implement industry-standard safeguards including:
+            </p>
+            <ul className="space-y-2 text-muted-foreground">
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Encrypted data transmission using SSL/TLS protocols</span></li>
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Secure, encrypted storage of all personal and financial data</span></li>
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Role-based access controls limiting who can view your data</span></li>
+              <li className="flex items-start gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0" /><span>Regular security audits and vulnerability assessments</span></li>
+            </ul>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              Your use of this platform is also subject to our Privacy Policy, which is incorporated into these Terms by reference. Please review our Privacy Policy for additional details on how we collect, use, and protect your information.
             </p>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">10. Limitation of Liability</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-3">7. Third-Party Services</h2>
             <p className="text-muted-foreground leading-relaxed">
-              To the fullest extent permitted by law, ScoreShift shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of or inability to use the Service. Our total cumulative liability shall not exceed the amount you paid for the Service in the 12 months preceding the claim.
+              ScoreShift may integrate with or utilize third-party service providers — including credit bureaus (Experian, Equifax, TransUnion), payment processors (Stripe), AI technology providers (OpenAI, Anthropic), mail delivery services (Lob, USPS), and credit data providers (Array.com) — to facilitate our services. These third parties have their own terms and privacy policies that govern their services. ScoreShift is not responsible for the practices or content of third-party services. Your authorization to use our platform includes authorization for us to interact with these third parties on your behalf solely for the purpose of providing our contracted services.
             </p>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">11. Termination</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-3">8. Limitation of Liability</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Either party may terminate this agreement at any time. ScoreShift may suspend or terminate your account immediately if you violate these Terms. Upon termination, your right to access the Service ceases and we may delete your data in accordance with our Privacy Policy and applicable retention requirements.
+              To the fullest extent permitted by applicable law, ScoreShift Capital and its officers, directors, employees, and agents shall not be liable for any indirect, incidental, consequential, or punitive damages arising out of or related to your use of the platform or services, including but not limited to changes to your credit score, denial of credit, or errors by credit bureaus. Our total cumulative liability to you for any claims arising under these Terms shall not exceed the total fees you paid to ScoreShift in the six (6) months preceding the claim. Nothing in these Terms limits our liability for fraud, gross negligence, or willful misconduct, or any liability that cannot be excluded under applicable law.
             </p>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">12. Governing Law</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-3">9. Changes to Terms</h2>
             <p className="text-muted-foreground leading-relaxed">
-              These Terms are governed by and construed in accordance with the laws of the United States and applicable state laws, without regard to conflict of law principles. Any disputes arising from these Terms shall be resolved through binding arbitration in accordance with the rules of the American Arbitration Association.
+              ScoreShift reserves the right to update or modify these Terms at any time. We will notify you of material changes by posting the updated Terms on our platform with a revised Effective Date, and where required by law, by providing direct notice via email. Your continued use of the platform following notification of changes constitutes your acceptance of the updated Terms. If you do not agree to any updated Terms, you must discontinue use of the platform.
             </p>
           </section>
 
           <section className="p-6 rounded-xl border border-border bg-card">
-            <h2 className="text-xl font-semibold text-foreground mb-3">13. Contact Us</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              If you have questions about these Terms, please contact us at:
+            <h2 className="text-xl font-semibold text-foreground mb-3">10. Contact Information</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              If you have questions about these Terms, wish to exercise your FCRA rights, or need to contact us for any reason, please reach out to us at:
             </p>
-            <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-              <p className="text-foreground font-medium">ScoreShift</p>
-              <p className="text-muted-foreground">Email: support@scoreshift.com</p>
+            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+              <p className="text-foreground font-semibold">ScoreShift Capital</p>
+              <p className="text-muted-foreground">Email: <a href="mailto:info@scoreshiftcapital.com" className="text-purple-600 dark:text-purple-400 hover:underline">info@scoreshiftcapital.com</a></p>
+              <p className="text-muted-foreground">Atlanta, Georgia, USA</p>
             </div>
           </section>
 
@@ -174,11 +198,11 @@ export default function Terms() {
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-border mt-12">
         <div className="container mx-auto text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} ScoreShift. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} ScoreShift Capital. All rights reserved.</p>
           <div className="flex items-center justify-center gap-4 mt-2">
             <Link href="/privacy-policy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
             <span>·</span>
-            <Link href="/terms" className="hover:text-foreground transition-colors">Terms & Conditions</Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Use</Link>
           </div>
         </div>
       </footer>
