@@ -1659,6 +1659,20 @@ Format the response as a complete business letter ready to send.`;
     }
   });
 
+  // Invite Code Validation (pre-signup elite bypass — no auth required)
+  app.post("/api/validate-invite-code", async (req, res) => {
+    try {
+      const { code } = req.body;
+      const envCode = process.env.SIGNUP_ELITE_CODE;
+      if (envCode && code && code.trim().toUpperCase() === envCode.trim().toUpperCase()) {
+        return res.json({ valid: true, tier: "elite" });
+      }
+      return res.json({ valid: false });
+    } catch (error) {
+      return res.json({ valid: false });
+    }
+  });
+
   // Access Code Validation
   app.post("/api/validate-access", async (req, res) => {
     try {

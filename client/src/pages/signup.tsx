@@ -154,6 +154,13 @@ export default function Signup() {
   // Step 4 — Plan
   const [selectedPlan, setSelectedPlan] = useState("free");
 
+  // Invite code (elite bypass for testers)
+  const [inviteCode, setInviteCode] = useState("");
+  const [inviteCodeApplied, setInviteCodeApplied] = useState(false);
+  const [inviteCodeError, setInviteCodeError] = useState("");
+  const [inviteCodeLoading, setInviteCodeLoading] = useState(false);
+  const [showInviteField, setShowInviteField] = useState(false);
+
   // Fetch the real appKey from the server on mount (public endpoint, no auth needed).
   // Scripts won't be injected until this resolves because enrollAppKey starts as "".
   useEffect(() => {
@@ -291,6 +298,29 @@ export default function Signup() {
     return true;
   };
 
+  const applyInviteCode = async () => {
+    if (!inviteCode.trim()) return;
+    setInviteCodeLoading(true);
+    setInviteCodeError("");
+    try {
+      const res = await fetch("/api/validate-invite-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: inviteCode.trim() }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setInviteCodeApplied(true);
+        setShowInviteField(false);
+      } else {
+        setInviteCodeError("Invalid code. Please check and try again.");
+      }
+    } catch {
+      setInviteCodeError("Unable to validate code. Please try again.");
+    }
+    setInviteCodeLoading(false);
+  };
+
   const handleNext = () => {
     if (!validateStep()) return;
     setStep(s => s + 1);
@@ -308,8 +338,9 @@ export default function Signup() {
         password,
         accessLevel: "CLIENT_VIEWER",
         passwordResetRequired: false,
-        subscriptionPlan: selectedPlan === "free" ? "FREE" : selectedPlan.toUpperCase(),
-        subscriptionStatus: selectedPlan === "free" ? "TRIALING" : null,
+        subscriptionPlan: inviteCodeApplied ? "ELITE" : selectedPlan === "free" ? "FREE" : selectedPlan.toUpperCase(),
+        subscriptionTier: inviteCodeApplied ? "elite" : undefined,
+        subscriptionStatus: inviteCodeApplied ? "ACTIVE" : selectedPlan === "free" ? "TRIALING" : null,
         croaAcceptedAt,
         aiConsentAcceptedAt,
         source: "signup",
@@ -358,7 +389,7 @@ export default function Signup() {
         description: "Your account has been created successfully.",
       });
 
-      if (selectedPlan === "free") {
+      if (inviteCodeApplied || selectedPlan === "free") {
         window.location.href = "/dashboard";
       } else {
         window.location.href = "/billing";
@@ -837,61 +868,140 @@ export default function Signup() {
                   <p className="text-gray-500 dark:text-gray-400 mt-1">Select the plan that best fits your credit repair goals.</p>
                 </div>
 
-                <div className="space-y-3">
-                  {PLANS.map((plan) => (
-                    <div
-                      key={plan.id}
-                      onClick={() => setSelectedPlan(plan.id)}
-                      className={`relative p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                        selectedPlan === plan.id
-                          ? plan.id === "free"
-                            ? "border-green-500 bg-green-50 dark:bg-green-950/30 shadow-lg"
-                            : "border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-lg"
-                          : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800/50"
-                      }`}
-                    >
-                      {plan.badge && (
-                        <Badge className={`absolute -top-3 left-4 ${plan.badgeColor} text-white text-xs px-2 py-0.5`}>
-                          {plan.badge}
-                        </Badge>
-                      )}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                            selectedPlan === plan.id
-                              ? plan.id === "free" ? "border-green-500 bg-green-500" : "border-blue-500 bg-blue-500"
-                              : "border-gray-300 dark:border-gray-600"
-                          }`}>
-                            {selectedPlan === plan.id && <div className="w-2 h-2 rounded-full bg-white" />}
-                          </div>
-                          <span className="font-bold text-gray-900 dark:text-white text-lg">{plan.name}</span>
-                        </div>
-                        <div className="text-right">
-                          <span className={`text-2xl font-bold ${plan.id === "free" ? "text-green-600 dark:text-green-400" : "text-gray-900 dark:text-white"}`}>
-                            {plan.price}
-                          </span>
-                          <span className="text-gray-500 text-sm">{plan.interval}</span>
-                        </div>
+                {inviteCodeApplied ? (
+                  /* Elite invite unlocked — replace plan cards with confirmation */
+                  <div className="rounded-xl border-2 border-green-400 bg-green-50 dark:bg-green-950/30 p-6 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+                        <CheckCircle className="h-5 w-5 text-white" />
                       </div>
-                      <ul className="space-y-1.5 ml-8">
-                        {plan.features.map((f) => (
-                          <li key={f} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                            <CheckCircle className="h-3.5 w-3.5 shrink-0 text-green-500" />
-                            {f}
-                          </li>
-                        ))}
-                      </ul>
-                      {plan.note && (
-                        <div className="ml-8 mt-2 flex items-center gap-1.5">
-                          <div className="w-3.5 h-3.5 rounded-full bg-amber-400 flex items-center justify-center shrink-0">
-                            <span className="text-white text-[9px] font-bold">!</span>
-                          </div>
-                          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">{plan.note}</span>
-                        </div>
-                      )}
+                      <div>
+                        <p className="font-bold text-green-800 dark:text-green-300 text-lg">Elite Plan — Full Access Unlocked</p>
+                        <p className="text-sm text-green-600 dark:text-green-400">Invite code applied — no payment required</p>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                    <ul className="space-y-2 ml-13">
+                      {[
+                        "Unlimited disputes",
+                        "3-bureau credit monitoring",
+                        "Full AI dispute letters",
+                        "USPS certified mail tracking",
+                        "Priority support",
+                        "Credit report analysis",
+                        "Business credit portal",
+                      ].map((f) => (
+                        <li key={f} className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
+                          <CheckCircle className="h-3.5 w-3.5 shrink-0 text-green-500" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      type="button"
+                      onClick={() => { setInviteCodeApplied(false); setInviteCode(""); setShowInviteField(true); }}
+                      className="text-xs text-green-600 dark:text-green-400 hover:underline"
+                    >
+                      Remove invite code
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {PLANS.map((plan) => (
+                      <div
+                        key={plan.id}
+                        onClick={() => setSelectedPlan(plan.id)}
+                        className={`relative p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                          selectedPlan === plan.id
+                            ? plan.id === "free"
+                              ? "border-green-500 bg-green-50 dark:bg-green-950/30 shadow-lg"
+                              : "border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-lg"
+                            : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800/50"
+                        }`}
+                      >
+                        {plan.badge && (
+                          <Badge className={`absolute -top-3 left-4 ${plan.badgeColor} text-white text-xs px-2 py-0.5`}>
+                            {plan.badge}
+                          </Badge>
+                        )}
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                              selectedPlan === plan.id
+                                ? plan.id === "free" ? "border-green-500 bg-green-500" : "border-blue-500 bg-blue-500"
+                                : "border-gray-300 dark:border-gray-600"
+                            }`}>
+                              {selectedPlan === plan.id && <div className="w-2 h-2 rounded-full bg-white" />}
+                            </div>
+                            <span className="font-bold text-gray-900 dark:text-white text-lg">{plan.name}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className={`text-2xl font-bold ${plan.id === "free" ? "text-green-600 dark:text-green-400" : "text-gray-900 dark:text-white"}`}>
+                              {plan.price}
+                            </span>
+                            <span className="text-gray-500 text-sm">{plan.interval}</span>
+                          </div>
+                        </div>
+                        <ul className="space-y-1.5 ml-8">
+                          {plan.features.map((f) => (
+                            <li key={f} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                              <CheckCircle className="h-3.5 w-3.5 shrink-0 text-green-500" />
+                              {f}
+                            </li>
+                          ))}
+                        </ul>
+                        {plan.note && (
+                          <div className="ml-8 mt-2 flex items-center gap-1.5">
+                            <div className="w-3.5 h-3.5 rounded-full bg-amber-400 flex items-center justify-center shrink-0">
+                              <span className="text-white text-[9px] font-bold">!</span>
+                            </div>
+                            <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">{plan.note}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Invite code section */}
+                {!inviteCodeApplied && (
+                  <div className="pt-2">
+                    {!showInviteField ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowInviteField(true)}
+                        className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2 transition-colors"
+                      >
+                        Have an invite code?
+                      </button>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Enter your invite code</p>
+                        <div className="flex gap-2">
+                          <Input
+                            value={inviteCode}
+                            onChange={(e) => { setInviteCode(e.target.value.toUpperCase()); setInviteCodeError(""); }}
+                            placeholder="e.g. ARRAYTEST2026"
+                            className="font-mono tracking-widest uppercase flex-1"
+                            onKeyDown={(e) => { if (e.key === "Enter") applyInviteCode(); }}
+                          />
+                          <Button
+                            type="button"
+                            onClick={applyInviteCode}
+                            disabled={inviteCodeLoading || !inviteCode.trim()}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4"
+                          >
+                            {inviteCodeLoading ? (
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : "Apply"}
+                          </Button>
+                        </div>
+                        {inviteCodeError && (
+                          <p className="text-xs text-red-500">{inviteCodeError}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
