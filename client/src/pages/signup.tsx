@@ -311,6 +311,7 @@ export default function Signup() {
       const data = await res.json();
       if (data.valid) {
         setInviteCodeApplied(true);
+        setSelectedPlan("elite-invite");
         setShowInviteField(false);
       } else {
         setInviteCodeError("Invalid code. Please check and try again.");
@@ -898,7 +899,7 @@ export default function Signup() {
                     </ul>
                     <button
                       type="button"
-                      onClick={() => { setInviteCodeApplied(false); setInviteCode(""); setShowInviteField(true); }}
+                      onClick={() => { setInviteCodeApplied(false); setSelectedPlan("free"); setInviteCode(""); setShowInviteField(true); }}
                       className="text-xs text-green-600 dark:text-green-400 hover:underline"
                     >
                       Remove invite code
