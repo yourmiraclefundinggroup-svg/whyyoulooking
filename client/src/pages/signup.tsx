@@ -111,6 +111,11 @@ export default function Signup() {
   const [capturedDob, setCapturedDob] = useState<string | null>(null);
   const [capturedSsnLast4, setCapturedSsnLast4] = useState<string | null>(null);
   const [capturedAddress, setCapturedAddress] = useState<{ line1: string; city: string; state: string; zip: string } | null>(null);
+  // Contact PII captured from Array — stored separately so we can offer prefill
+  // if the user navigates back to Step 2 with empty fields after completing Step 3.
+  const [capturedArrayContact, setCapturedArrayContact] = useState<{
+    firstName?: string; lastName?: string; email?: string; phone?: string;
+  } | null>(null);
 
   // Step 0 — CROA
   const [croaAccepted, setCroaAccepted] = useState(false);
@@ -196,6 +201,17 @@ export default function Signup() {
         if (pii.rawDob) setCapturedDob(pii.rawDob);
         if (pii.ssnLast4) setCapturedSsnLast4(pii.ssnLast4);
         if (pii.address) setCapturedAddress(pii.address);
+
+        // Always save Array contact PII so we can offer prefill if the user
+        // returns to Step 2 (Your Info) with empty fields after completing Step 3.
+        if (pii.firstName || pii.lastName || pii.email || pii.phone) {
+          setCapturedArrayContact({
+            firstName: pii.firstName ?? undefined,
+            lastName: pii.lastName ?? undefined,
+            email: pii.email ?? undefined,
+            phone: pii.phone ?? undefined,
+          });
+        }
 
         // Auto-populate contact fields from the event ONLY if the user hasn't
         // already typed into them — read refs to get the latest values, not
@@ -555,6 +571,40 @@ export default function Signup() {
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Contact Info</h2>
                   <p className="text-gray-500 dark:text-gray-400 mt-1">Enter your details and agree to SMS updates before connecting your credit profile.</p>
                 </div>
+
+                {/* Prefill hint — shown only when the user returns here after completing
+                    Step 3 (Credit Profile) and at least one contact field is still empty
+                    but the corresponding value was captured from the Array event. */}
+                {arrayEnrolled && capturedArrayContact && (
+                  (!firstName.trim() && capturedArrayContact.firstName) ||
+                  (!lastName.trim() && capturedArrayContact.lastName) ||
+                  (!email.trim() && capturedArrayContact.email) ||
+                  (!phone.trim() && capturedArrayContact.phone)
+                ) && (
+                  <div className="flex items-start gap-3 p-4 rounded-xl border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30">
+                    <Sparkles className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">
+                        We can prefill these from your credit profile info.
+                      </p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mb-3 leading-relaxed">
+                        Your credit profile contains contact information you entered during enrollment. You can apply it to any empty fields below — you can edit them afterwards.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (capturedArrayContact.firstName && !firstName.trim()) setFirstName(capturedArrayContact.firstName);
+                          if (capturedArrayContact.lastName && !lastName.trim()) setLastName(capturedArrayContact.lastName);
+                          if (capturedArrayContact.email && !email.trim()) setEmail(capturedArrayContact.email);
+                          if (capturedArrayContact.phone && !phone.trim()) setPhone(capturedArrayContact.phone);
+                        }}
+                        className="text-xs font-semibold text-blue-700 dark:text-blue-300 underline underline-offset-2 hover:text-blue-900 dark:hover:text-blue-100 transition-colors"
+                      >
+                        Apply prefill
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Contact details */}
                 <div className="space-y-4">
