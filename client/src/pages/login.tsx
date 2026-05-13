@@ -4,6 +4,7 @@ import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import scoreshiftLogo from "@assets/scoreshift-logo.png";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

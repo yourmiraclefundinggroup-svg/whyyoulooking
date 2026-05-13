@@ -1,5 +1,6 @@
 import { Link } from "wouter";
-import { ArrowLeft, FileText, TrendingUp } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
+import scoreshiftLogo from "@assets/scoreshift-logo.png";
 import { Button } from "@/components/ui/button";
 
 export default function Terms() {
@@ -10,9 +11,7 @@ export default function Terms() {
         <div className="container mx-auto flex items-center justify-between">
           <Link href="/">
             <div className="flex items-center gap-2 cursor-pointer">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-white" />
-              </div>
+              <img src={scoreshiftLogo} alt="ScoreShift" className="w-8 h-8 object-contain" />
               <span className="font-bold text-foreground">ScoreShift</span>
             </div>
           </Link>

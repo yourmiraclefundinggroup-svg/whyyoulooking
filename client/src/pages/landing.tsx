@@ -1,14 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
 import "../styles/landing.css";
-
-// ── SVG icon helpers ─────────────────────────────────────
-const TrendingUpIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }}>
-    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-    <polyline points="16 7 22 7 22 13" />
-  </svg>
-);
+import scoreshiftLogo from "@assets/scoreshift-logo.png";
 
 const ArrowRightIcon = ({ size = 16 }: { size?: number }) => (
   <svg style={{ width: size, height: size }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -104,7 +97,7 @@ function Nav() {
       <div className="lp-container">
         <div className="lp-nav-inner">
           <Link href="/" className="lp-nav-logo">
-            <div className="lp-nav-logo-icon"><TrendingUpIcon /></div>
+            <img src={scoreshiftLogo} alt="ScoreShift" className="lp-nav-logo-icon" style={{ width: 28, height: 28, objectFit: "contain" }} />
             ScoreShift
           </Link>
           <ul className="lp-nav-links">
@@ -613,7 +606,7 @@ function Footer() {
         <div className="lp-footer-inner">
           <div>
             <div className="lp-footer-brand-logo">
-              <div className="lp-footer-brand-logo-icon"><TrendingUpIcon /></div>
+              <img src={scoreshiftLogo} alt="ScoreShift" className="lp-footer-brand-logo-icon" style={{ width: 28, height: 28, objectFit: "contain" }} />
               ScoreShift
             </div>
             <p className="lp-footer-tagline">The operating system for modern credit repair professionals. Built for results, designed for scale.</p>

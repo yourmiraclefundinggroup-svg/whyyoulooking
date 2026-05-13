@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import {
-  TrendingUp, ChevronRight, ChevronLeft, User, Mail,
+  ChevronRight, ChevronLeft, User, Mail,
   Lock, Eye, EyeOff, CheckCircle, Shield, CreditCard, Zap, Star, Sparkles
 } from "lucide-react";
 import {
@@ -21,6 +21,7 @@ import {
   extractArrayEventPII,
   ARRAY_COMPLETION_TYPES,
 } from "@/lib/array-enrollment-event";
+import scoreshiftLogo from "@assets/scoreshift-logo.png";
 
 const STEPS = [
   { label: "Your Rights", icon: Shield },
@@ -413,9 +414,7 @@ export default function Signup() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/">
             <div className="flex items-center gap-2 cursor-pointer">
-              <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-white" />
-              </div>
+              <img src={scoreshiftLogo} alt="ScoreShift" className="h-9 w-9 object-contain" />
               <span className="font-bold text-xl text-gray-900 dark:text-white">ScoreShift</span>
             </div>
           </Link>
