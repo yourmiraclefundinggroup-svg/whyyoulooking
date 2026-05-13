@@ -8792,34 +8792,42 @@ ${denialLetterText}`
     try {
       const user = (req as any).user;
 
-      // ── Sandbox mode for test users ───────────────────────────────────────
-      // Any account flagged as a test user gets Array sandbox credentials so
-      // the client portal points at mock.array.io instead of production Array.
-      // If the user has a real sandbox arrayUserId stored (e.g. Thomas Devos),
-      // we call the sandbox token API dynamically; otherwise fall back to the
-      // generic static sandbox token.
-      if (user.isTestUser) {
+      const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
+      const ARRAY_APP_KEY = process.env.ARRAY_APP_KEY;
+
+      if (!ARRAY_API_KEY || !ARRAY_APP_KEY) {
+        return res.status(500).json({ error: "Array credentials not configured" });
+      }
+
+      // Use sandbox unless ARRAY_PRODUCTION_MODE=true — same logic as /api/array/enroll-config.
+      // ALL users share this check; production-only credentials never run unless explicitly enabled.
+      const isSandbox = process.env.ARRAY_PRODUCTION_MODE !== "true";
+
+      // ── Sandbox path (default) ────────────────────────────────────────────
+      // When in sandbox mode every user — test or real — uses the same sandbox
+      // credentials and mock.array.io API URL. We attempt to get a live sandbox
+      // token using the user's stored Array UUID; if Array returns anything other
+      // than 200 we fall back silently to the static sandbox token so the web
+      // components always have something to work with.
+      if (isSandbox) {
         const SANDBOX_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
         const SANDBOX_API_URL = "https://mock.array.io";
         const SANDBOX_FALLBACK_TOKEN = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
-        const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
-        const ARRAY_API_SECRET = process.env.ARRAY_API_SECRET;
 
-        // Look up any stored sandbox arrayUserId for this user
         const { arrayEnrollments } = await import("@shared/schema");
         const [enrollment] = await db.select().from(arrayEnrollments).where(eq(arrayEnrollments.userId, user.id));
         const sandboxArrayUserId = enrollment?.arrayUserId;
 
-        let sandboxToken = SANDBOX_FALLBACK_TOKEN;
-
-        // If we have real credentials + a stored sandbox userId, get a real sandbox token
-        // sandboxArrayUserId must be a real Array-side UUID (not the fake "scoreshift_user_N")
+        // Only attempt a live token call if we have a real Array-side UUID
+        // (not a constructed "scoreshift_user_N" placeholder)
         const isRealArrayId = sandboxArrayUserId &&
           /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sandboxArrayUserId);
 
+        let sandboxToken = SANDBOX_FALLBACK_TOKEN;
+
         if (ARRAY_API_KEY && isRealArrayId) {
           try {
-            const tokResp = await fetch(`https://sandbox.array.io/api/authenticate/v2/usertoken`, {
+            const tokResp = await fetch("https://sandbox.array.io/api/authenticate/v2/usertoken", {
               method: "POST",
               headers: { "x-array-server-token": ARRAY_API_KEY, "Content-Type": "application/json" },
               body: JSON.stringify({ userId: sandboxArrayUserId }),
@@ -8832,14 +8840,20 @@ ${denialLetterText}`
               if (fetched) sandboxToken = fetched;
               else console.warn(`[Array] Sandbox token response had no token field:`, tokRaw.slice(0, 200));
             } else {
-              console.warn(`[Array] Sandbox token fetch failed (${tokResp.status}) for ${sandboxArrayUserId}:`, tokRaw.slice(0, 200));
+              console.warn(`[Array] Sandbox token fetch failed (${tokResp.status}) for ${sandboxArrayUserId} — using fallback:`, tokRaw.slice(0, 200));
             }
           } catch (e) {
             console.warn("[Array] Sandbox token fetch error, using fallback:", e);
           }
         }
 
-        console.log(`[Array] Sandbox mode for test user ${user.id} (arrayUserId: ${sandboxArrayUserId || "fallback"})`);
+        try {
+          await db.update(arrayEnrollments)
+            .set({ lastTokenIssuedAt: new Date() })
+            .where(eq(arrayEnrollments.userId, user.id));
+        } catch { /* non-critical */ }
+
+        console.log(`[Array] Sandbox token issued for user ${user.id} (arrayUserId: ${sandboxArrayUserId || "fallback"})`);
         return res.json({
           token: sandboxToken,
           appKey: SANDBOX_APP_KEY,
@@ -8850,27 +8864,15 @@ ${denialLetterText}`
         });
       }
 
-      const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
-      const ARRAY_APP_KEY = process.env.ARRAY_APP_KEY;
-
-      if (!ARRAY_API_KEY || !ARRAY_APP_KEY) {
-        return res.status(500).json({ error: "Array credentials not configured" });
-      }
-
-      // Use sandbox unless ARRAY_PRODUCTION_MODE=true — same logic as /api/array/enroll-config
-      const isSandbox = process.env.ARRAY_PRODUCTION_MODE !== "true";
-      const ARRAY_TOKEN_URL = isSandbox
-        ? "https://sandbox.array.io/api/authenticate/v2/usertoken"
-        : "https://api.array.io/api/authenticate/v2/usertoken";
-
-      // Look up the real Array UUID stored at enrollment; fall back to a constructed id
-      const { arrayEnrollments } = await import("@shared/schema");
-      const [enrollment] = await db.select().from(arrayEnrollments).where(eq(arrayEnrollments.userId, user.id));
+      // ── Production path (ARRAY_PRODUCTION_MODE=true only) ────────────────
+      const [enrollment] = await db.select()
+        .from((await import("@shared/schema")).arrayEnrollments)
+        .where(eq((await import("@shared/schema")).arrayEnrollments.userId, user.id));
       const isRealArrayId = enrollment?.arrayUserId &&
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(enrollment.arrayUserId);
       const arrayUserId = isRealArrayId ? enrollment.arrayUserId : `scoreshift_user_${user.id}`;
 
-      const tokenResponse = await fetch(ARRAY_TOKEN_URL, {
+      const tokenResponse = await fetch("https://api.array.io/api/authenticate/v2/usertoken", {
         method: "POST",
         headers: {
           "x-array-server-token": ARRAY_API_KEY,
@@ -8886,17 +8888,15 @@ ${denialLetterText}`
       }
 
       const tokenData = await tokenResponse.json() as any;
-      console.log(`[Array] Token generated for user ${user.id} (arrayUserId: ${arrayUserId}, sandbox: ${isSandbox})`);
+      console.log(`[Array] Production token generated for user ${user.id} (arrayUserId: ${arrayUserId})`);
 
       try {
+        const { arrayEnrollments } = await import("@shared/schema");
         await db.update(arrayEnrollments)
           .set({ lastTokenIssuedAt: new Date() })
           .where(eq(arrayEnrollments.userId, user.id));
-      } catch (dbErr: any) {
-        console.warn(`[Array] Could not update lastTokenIssuedAt for user ${user.id}:`, dbErr?.message ?? dbErr);
-      }
+      } catch { /* non-critical */ }
 
-      // Resolve expiry — fall back to 55 min if Array doesn't return one.
       let expiresAt: string;
       if (tokenData.expiresAt) {
         expiresAt = tokenData.expiresAt;
@@ -8909,8 +8909,8 @@ ${denialLetterText}`
       res.json({
         token: tokenData.token || tokenData.userToken || tokenData.access_token,
         appKey: ARRAY_APP_KEY,
-        apiUrl: isSandbox ? "https://sandbox.array.io" : "",
-        sandboxMode: isSandbox,
+        apiUrl: "",
+        sandboxMode: false,
         arrayUserId,
         expiresAt,
       });
