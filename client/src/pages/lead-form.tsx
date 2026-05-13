@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { ArrowLeft, TrendingUp, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
+import scoreshiftLogo from "@assets/scoreshift-logo.png";
 import { useToast } from "@/hooks/use-toast";
 
 export default function LeadForm() {
@@ -135,9 +136,7 @@ export default function LeadForm() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-white" />
-              </div>
+              <img src={scoreshiftLogo} alt="ScoreShift" className="w-10 h-10 object-contain" />
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">ScoreShift</h1>
               <Badge variant="secondary" className="bg-green-100 text-green-700">
                 Pro Platform
