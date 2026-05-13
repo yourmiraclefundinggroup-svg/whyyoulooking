@@ -19,7 +19,6 @@ import {
 } from "@/hooks/use-array-script";
 import {
   extractArrayEventPII,
-  ARRAY_COMPLETION_TYPES,
 } from "@/lib/array-enrollment-event";
 import scoreshiftLogo from "@assets/scoreshift-logo.png";
 
@@ -188,42 +187,40 @@ export default function Signup() {
 
     const handleEvent = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      // Log event type and non-sensitive fields only — redact SSN and full DOB
-      const safeLog = { type: detail?.type, userId: detail?.userId ?? detail?.data?.userId };
-      console.log("[Array signup] array-event:", JSON.stringify(safeLog));
-
+      // Log the actual event type so we can see what Array fires in production
       const type: string = detail?.type ?? "";
+      const safeLog = { type, userId: detail?.userId ?? detail?.data?.userId };
+      console.log("[Array signup] array-event received:", JSON.stringify(safeLog));
 
-      if (ARRAY_COMPLETION_TYPES.has(type)) {
-        // Extract PII from the event payload so we can save it on account creation
-        const pii = extractArrayEventPII(detail as Record<string, unknown>);
+      // Accept ANY array-event as proof of enrollment completion.
+      // The Array component's own "You're all set!" screen is the real gate —
+      // we don't need to second-guess it with a specific type allowlist.
+      const pii = extractArrayEventPII(detail as Record<string, unknown>);
 
-        if (pii.rawUserId) setCapturedArrayUserId(pii.rawUserId);
-        if (pii.rawDob) setCapturedDob(pii.rawDob);
-        if (pii.ssnLast4) setCapturedSsnLast4(pii.ssnLast4);
-        if (pii.address) setCapturedAddress(pii.address);
+      if (pii.rawUserId) setCapturedArrayUserId(pii.rawUserId);
+      if (pii.rawDob) setCapturedDob(pii.rawDob);
+      if (pii.ssnLast4) setCapturedSsnLast4(pii.ssnLast4);
+      if (pii.address) setCapturedAddress(pii.address);
 
-        // Always save Array contact PII so we can offer prefill if the user
-        // returns to Step 2 (Create Account) with empty fields after completing Step 3.
-        if (pii.firstName || pii.lastName || pii.email) {
-          setCapturedArrayContact({
-            firstName: pii.firstName ?? undefined,
-            lastName: pii.lastName ?? undefined,
-            email: pii.email ?? undefined,
-          });
-        }
-
-        // Auto-populate contact fields from the event ONLY if the user hasn't
-        // already typed into them — read refs to get the latest values, not
-        // the stale closure values from when the effect first ran.
-        if (!firstNameRef.current && pii.firstName) setFirstName(pii.firstName);
-        if (!lastNameRef.current && pii.lastName) setLastName(pii.lastName);
-        if (!emailRef.current && pii.email) setEmail(pii.email);
-
-        setArrayEnrolled(true);
-        // Do NOT auto-advance — user must still confirm their info fields
-        // and click Continue (validateStep will confirm arrayEnrolled is true)
+      // Always save Array contact PII so we can offer prefill if the user
+      // returns to Step 2 (Create Account) with empty fields after completing Step 3.
+      if (pii.firstName || pii.lastName || pii.email) {
+        setCapturedArrayContact({
+          firstName: pii.firstName ?? undefined,
+          lastName: pii.lastName ?? undefined,
+          email: pii.email ?? undefined,
+        });
       }
+
+      // Auto-populate contact fields from the event ONLY if the user hasn't
+      // already typed into them — read refs to get the latest values, not
+      // the stale closure values from when the effect first ran.
+      if (!firstNameRef.current && pii.firstName) setFirstName(pii.firstName);
+      if (!lastNameRef.current && pii.lastName) setLastName(pii.lastName);
+      if (!emailRef.current && pii.email) setEmail(pii.email);
+
+      setArrayEnrolled(true);
+      // Do NOT auto-advance — user must still confirm their info and click Continue
     };
 
     el.addEventListener("array-event", handleEvent);
