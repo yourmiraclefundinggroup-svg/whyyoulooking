@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import {
-  TrendingUp, ChevronRight, ChevronLeft, User, Phone, Mail,
+  TrendingUp, ChevronRight, ChevronLeft, User, Mail,
   Lock, Eye, EyeOff, CheckCircle, Shield, CreditCard, Zap, Star, Sparkles
 } from "lucide-react";
 import {
@@ -25,9 +25,8 @@ import {
 const STEPS = [
   { label: "Your Rights", icon: Shield },
   { label: "AI Consent", icon: Sparkles },
-  { label: "Your Info", icon: User },
+  { label: "Create Account", icon: User },
   { label: "Credit Profile", icon: CreditCard },
-  { label: "Password", icon: Lock },
   { label: "Your Plan", icon: Star },
 ];
 
@@ -114,7 +113,7 @@ export default function Signup() {
   // Contact PII captured from Array — stored separately so we can offer prefill
   // if the user navigates back to Step 2 with empty fields after completing Step 3.
   const [capturedArrayContact, setCapturedArrayContact] = useState<{
-    firstName?: string; lastName?: string; email?: string; phone?: string;
+    firstName?: string; lastName?: string; email?: string;
   } | null>(null);
 
   // Step 0 — CROA
@@ -128,12 +127,12 @@ export default function Signup() {
   const [aiConsent4, setAiConsent4] = useState(false);
   const [aiConsentAcceptedAt, setAiConsentAcceptedAt] = useState<string | null>(null);
 
-  // Step 2 — Personal Info
+  // Step 2 — Create Account
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [smsOptIn, setSmsOptIn] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   // Refs that always reflect the latest contact field values.
   // Used inside the Array event handler closure so we don't read stale state
@@ -141,15 +140,9 @@ export default function Signup() {
   const firstNameRef = useRef(firstName);
   const lastNameRef = useRef(lastName);
   const emailRef = useRef(email);
-  const phoneRef = useRef(phone);
   useEffect(() => { firstNameRef.current = firstName; }, [firstName]);
   useEffect(() => { lastNameRef.current = lastName; }, [lastName]);
   useEffect(() => { emailRef.current = email; }, [email]);
-  useEffect(() => { phoneRef.current = phone; }, [phone]);
-
-  // Step 3 — Password
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   // Step 4 — Plan
   const [selectedPlan, setSelectedPlan] = useState("free");
@@ -210,13 +203,12 @@ export default function Signup() {
         if (pii.address) setCapturedAddress(pii.address);
 
         // Always save Array contact PII so we can offer prefill if the user
-        // returns to Step 2 (Your Info) with empty fields after completing Step 3.
-        if (pii.firstName || pii.lastName || pii.email || pii.phone) {
+        // returns to Step 2 (Create Account) with empty fields after completing Step 3.
+        if (pii.firstName || pii.lastName || pii.email) {
           setCapturedArrayContact({
             firstName: pii.firstName ?? undefined,
             lastName: pii.lastName ?? undefined,
             email: pii.email ?? undefined,
-            phone: pii.phone ?? undefined,
           });
         }
 
@@ -226,7 +218,6 @@ export default function Signup() {
         if (!firstNameRef.current && pii.firstName) setFirstName(pii.firstName);
         if (!lastNameRef.current && pii.lastName) setLastName(pii.lastName);
         if (!emailRef.current && pii.email) setEmail(pii.email);
-        if (!phoneRef.current && pii.phone) setPhone(pii.phone);
 
         setArrayEnrolled(true);
         // Do NOT auto-advance — user must still confirm their info fields
@@ -274,12 +265,10 @@ export default function Signup() {
     if (step === 2) {
       if (!firstName.trim()) { toast({ title: "First name is required", variant: "destructive" }); return false; }
       if (!lastName.trim()) { toast({ title: "Last name is required", variant: "destructive" }); return false; }
-      if (!phone.trim()) { toast({ title: "Phone number is required", variant: "destructive" }); return false; }
       if (!email.trim()) { toast({ title: "Email address is required", variant: "destructive" }); return false; }
-      if (!smsOptIn) {
-        toast({ title: "SMS Consent Required", description: "Please check the SMS opt-in box to continue.", variant: "destructive" });
-        return false;
-      }
+      if (!password) { toast({ title: "Password is required", variant: "destructive" }); return false; }
+      if (password.length < 8) { toast({ title: "Password must be at least 8 characters", variant: "destructive" }); return false; }
+      if (password !== confirmPassword) { toast({ title: "Passwords don't match", variant: "destructive" }); return false; }
       return true;
     }
     if (step === 3) {
@@ -287,12 +276,6 @@ export default function Signup() {
         toast({ title: "Credit Profile Required", description: "Please complete the credit profile setup to continue.", variant: "destructive" });
         return false;
       }
-      return true;
-    }
-    if (step === 4) {
-      if (!password) { toast({ title: "Password is required", variant: "destructive" }); return false; }
-      if (password.length < 8) { toast({ title: "Password must be at least 8 characters", variant: "destructive" }); return false; }
-      if (password !== confirmPassword) { toast({ title: "Passwords don't match", variant: "destructive" }); return false; }
       return true;
     }
     return true;
@@ -334,8 +317,6 @@ export default function Signup() {
         firstName,
         lastName,
         email,
-        phone,
-        smsOptIn,
         password,
         accessLevel: "CLIENT_VIEWER",
         passwordResetRequired: false,
@@ -473,7 +454,7 @@ export default function Signup() {
                 </div>
 
                 <div className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-950/20 px-3 py-1.5 rounded-md border border-blue-100 dark:border-blue-900">
-                  Step 1 of 6 — Please read the disclosure below before continuing.
+                  Step 1 of 5 — Please read the disclosure below before continuing.
                 </div>
 
                 <div
@@ -526,7 +507,7 @@ export default function Signup() {
                 </div>
 
                 <div className="text-xs text-gray-500 dark:text-gray-400 bg-amber-50 dark:bg-amber-950/20 px-3 py-1.5 rounded-md border border-amber-100 dark:border-amber-900">
-                  Step 2 of 6 — All four items must be acknowledged to continue.
+                  Step 2 of 5 — All four items must be acknowledged to continue.
                 </div>
 
                 <div className="space-y-3">
@@ -600,18 +581,17 @@ export default function Signup() {
             {step === 2 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Contact Info</h2>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">Enter your details and agree to SMS updates before connecting your credit profile.</p>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Your Account</h2>
+                  <p className="text-gray-500 dark:text-gray-400 mt-1">Enter your name, email, and choose a password to get started.</p>
                 </div>
 
                 {/* Prefill hint — shown only when the user returns here after completing
-                    Step 3 (Credit Profile) and at least one contact field is still empty
+                    Step 3 (Credit Profile) and at least one name/email field is empty
                     but the corresponding value was captured from the Array event. */}
                 {arrayEnrolled && capturedArrayContact && (
                   (!firstName.trim() && capturedArrayContact.firstName) ||
                   (!lastName.trim() && capturedArrayContact.lastName) ||
-                  (!email.trim() && capturedArrayContact.email) ||
-                  (!phone.trim() && capturedArrayContact.phone)
+                  (!email.trim() && capturedArrayContact.email)
                 ) && (
                   <div className="flex items-start gap-3 p-4 rounded-xl border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30">
                     <Sparkles className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
@@ -628,7 +608,6 @@ export default function Signup() {
                           if (capturedArrayContact.firstName && !firstName.trim()) setFirstName(capturedArrayContact.firstName);
                           if (capturedArrayContact.lastName && !lastName.trim()) setLastName(capturedArrayContact.lastName);
                           if (capturedArrayContact.email && !email.trim()) setEmail(capturedArrayContact.email);
-                          if (capturedArrayContact.phone && !phone.trim()) setPhone(capturedArrayContact.phone);
                         }}
                         className="text-xs font-semibold text-blue-700 dark:text-blue-300 underline underline-offset-2 hover:text-blue-900 dark:hover:text-blue-100 transition-colors"
                       >
@@ -638,10 +617,7 @@ export default function Signup() {
                   </div>
                 )}
 
-                {/* Contact details */}
                 <div className="space-y-4">
-                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Your Contact Details</p>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
@@ -687,40 +663,71 @@ export default function Signup() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="phone">Phone Number <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
-                        id="phone"
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="(555) 123-4567"
-                        className="pl-9"
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Minimum 8 characters"
+                        className="pl-9 pr-10"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
                   </div>
 
-                  {/* SMS Opt-In */}
-                  <div className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all duration-200 ${
-                    smsOptIn
-                      ? "border-blue-400 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-600"
-                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
-                  }`}>
-                    <Checkbox
-                      id="smsOptIn"
-                      checked={smsOptIn}
-                      onCheckedChange={(c) => setSmsOptIn(c as boolean)}
-                      className="mt-0.5 shrink-0"
-                    />
-                    <label htmlFor="smsOptIn" className="cursor-pointer">
-                      <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 block mb-1">
-                        SMS Consent <span className="text-red-500">*</span>
-                      </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                        By submitting this form you agree to receive SMS messages from ScoreShift regarding your credit repair progress. Message and data rates may apply. Reply STOP to opt out at any time.
-                      </span>
-                    </label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirm ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Re-enter your password"
+                        className="pl-9 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirm(!showConfirm)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {password && confirmPassword && password !== confirmPassword && (
+                      <p className="text-xs text-red-500 mt-1">Passwords don't match</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    {[
+                      { label: "At least 8 characters", ok: password.length >= 8 },
+                      { label: "Passwords match", ok: password.length > 0 && password === confirmPassword },
+                    ].map((r) => (
+                      <div key={r.label} className="flex items-center gap-2">
+                        <div className={`w-4 h-4 rounded-full flex items-center justify-center ${r.ok ? "bg-green-500" : "bg-gray-200 dark:bg-gray-700"}`}>
+                          {r.ok && <CheckCircle className="h-3 w-3 text-white" />}
+                        </div>
+                        <span className={`text-xs ${r.ok ? "text-green-600 dark:text-green-400" : "text-gray-400"}`}>{r.label}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <Shield className="h-4 w-4 text-blue-500 shrink-0" />
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Your information is encrypted and protected with enterprise-grade security.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -777,92 +784,8 @@ export default function Signup() {
               </div>
             )}
 
-            {/* Step 4: Password */}
+            {/* Step 4: Choose Plan */}
             {step === 4 && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create your login</h2>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">Choose a secure password to protect your credit repair account.</p>
-                </div>
-
-                <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-800">
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
-                    You'll use <strong>{email}</strong> to sign in.
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Minimum 8 characters"
-                      className="pl-9 pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirm ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Re-enter your password"
-                      className="pl-9 pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirm(!showConfirm)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  {password && confirmPassword && password !== confirmPassword && (
-                    <p className="text-xs text-red-500 mt-1">Passwords don't match</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  {[
-                    { label: "At least 8 characters", ok: password.length >= 8 },
-                    { label: "Passwords match", ok: password.length > 0 && password === confirmPassword },
-                  ].map((r) => (
-                    <div key={r.label} className="flex items-center gap-2">
-                      <div className={`w-4 h-4 rounded-full flex items-center justify-center ${r.ok ? "bg-green-500" : "bg-gray-200 dark:bg-gray-700"}`}>
-                        {r.ok && <CheckCircle className="h-3 w-3 text-white" />}
-                      </div>
-                      <span className={`text-xs ${r.ok ? "text-green-600 dark:text-green-400" : "text-gray-400"}`}>{r.label}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <Shield className="h-4 w-4 text-blue-500 shrink-0" />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Your information is encrypted and protected with enterprise-grade security.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Step 5: Choose Plan */}
-            {step === 5 && (
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Choose your plan</h2>
