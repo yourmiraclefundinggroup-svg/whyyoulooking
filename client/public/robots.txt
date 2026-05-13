@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Disallow authenticated/admin areas that shouldn't be indexed
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /portal
+Disallow: /credit-repair
+Disallow: /billing
+Disallow: /api/
+
+Sitemap: https://scoreshiftapp.com/sitemap.xml
