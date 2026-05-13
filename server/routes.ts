@@ -8857,9 +8857,20 @@ ${denialLetterText}`
         return res.status(500).json({ error: "Array credentials not configured" });
       }
 
-      const arrayUserId = `scoreshift_user_${user.id}`;
+      // Use sandbox unless ARRAY_PRODUCTION_MODE=true — same logic as /api/array/enroll-config
+      const isSandbox = process.env.ARRAY_PRODUCTION_MODE !== "true";
+      const ARRAY_TOKEN_URL = isSandbox
+        ? "https://sandbox.array.io/api/authenticate/v2/usertoken"
+        : "https://api.array.io/api/authenticate/v2/usertoken";
 
-      const tokenResponse = await fetch("https://api.array.io/api/authenticate/v2/usertoken", {
+      // Look up the real Array UUID stored at enrollment; fall back to a constructed id
+      const { arrayEnrollments } = await import("@shared/schema");
+      const [enrollment] = await db.select().from(arrayEnrollments).where(eq(arrayEnrollments.userId, user.id));
+      const isRealArrayId = enrollment?.arrayUserId &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(enrollment.arrayUserId);
+      const arrayUserId = isRealArrayId ? enrollment.arrayUserId : `scoreshift_user_${user.id}`;
+
+      const tokenResponse = await fetch(ARRAY_TOKEN_URL, {
         method: "POST",
         headers: {
           "x-array-server-token": ARRAY_API_KEY,
@@ -8875,10 +8886,9 @@ ${denialLetterText}`
       }
 
       const tokenData = await tokenResponse.json() as any;
-      console.log(`[Array] Token generated for user ${user.id} (arrayUserId: ${arrayUserId})`);
+      console.log(`[Array] Token generated for user ${user.id} (arrayUserId: ${arrayUserId}, sandbox: ${isSandbox})`);
 
       try {
-        const { arrayEnrollments } = await import("@shared/schema");
         await db.update(arrayEnrollments)
           .set({ lastTokenIssuedAt: new Date() })
           .where(eq(arrayEnrollments.userId, user.id));
@@ -8899,8 +8909,8 @@ ${denialLetterText}`
       res.json({
         token: tokenData.token || tokenData.userToken || tokenData.access_token,
         appKey: ARRAY_APP_KEY,
-        apiUrl: "",
-        sandboxMode: false,
+        apiUrl: isSandbox ? "https://sandbox.array.io" : "",
+        sandboxMode: isSandbox,
         arrayUserId,
         expiresAt,
       });
