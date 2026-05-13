@@ -10,7 +10,7 @@ export interface ArrayEventPII {
   rawUserId: string | null;
   rawDob: string | null;
   ssnLast4: string | null;
-  address: { line1: string; city: string; state: string; zip: string } | null;
+  address: { line1: string; line2: string; city: string; state: string; zip: string } | null;
   firstName: string;
   lastName: string;
   email: string;
@@ -47,12 +47,17 @@ export function extractArrayEventPII(detail: Record<string, unknown>): ArrayEven
     (d.address1 as string) ||
     (d.streetAddress as string) ||
     "";
+  const line2 =
+    (d.addressLine2 as string) ||
+    (d.address2 as string) ||
+    (d.aptSuite as string) ||
+    "";
   const city = (d.city as string) || "";
   const state = (d.state as string) || "";
   const zip =
     (d.zipCode as string) || (d.zip as string) || (d.postalCode as string) || "";
   const address =
-    line1 || city || state || zip ? { line1, city, state, zip } : null;
+    line1 || city || state || zip ? { line1, line2, city, state, zip } : null;
 
   const firstName = (d.firstName as string) || "";
   const lastName = (d.lastName as string) || "";

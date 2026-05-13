@@ -109,7 +109,7 @@ export default function Signup() {
   const [capturedArrayUserId, setCapturedArrayUserId] = useState<string | null>(null);
   const [capturedDob, setCapturedDob] = useState<string | null>(null);
   const [capturedSsnLast4, setCapturedSsnLast4] = useState<string | null>(null);
-  const [capturedAddress, setCapturedAddress] = useState<{ line1: string; city: string; state: string; zip: string } | null>(null);
+  const [capturedAddress, setCapturedAddress] = useState<{ line1: string; line2: string; city: string; state: string; zip: string } | null>(null);
   // Contact PII captured from Array — stored separately so we can offer prefill
   // if the user navigates back to Step 2 with empty fields after completing Step 3.
   const [capturedArrayContact, setCapturedArrayContact] = useState<{
@@ -330,6 +330,7 @@ export default function Signup() {
         ...(capturedDob ? { dateOfBirth: capturedDob } : {}),
         ...(capturedSsnLast4 ? { ssnLast4: capturedSsnLast4 } : {}),
         ...(capturedAddress?.line1 ? { addressLine1: capturedAddress.line1 } : {}),
+        ...(capturedAddress?.line2 ? { addressLine2: capturedAddress.line2 } : {}),
         ...(capturedAddress?.city ? { city: capturedAddress.city } : {}),
         ...(capturedAddress?.state ? { state: capturedAddress.state } : {}),
         ...(capturedAddress?.zip ? { zipCode: capturedAddress.zip } : {}),
@@ -364,6 +365,23 @@ export default function Signup() {
         } catch (e) {
           console.warn("[Array] Failed to record enrollment after signup:", e);
         }
+      }
+
+      // Silently persist any Array-captured PII that wasn't included in the
+      // initial POST (e.g. address line2, or data that arrived async).
+      // Fire-and-forget — don't block the redirect on this.
+      const piiPatch: Record<string, string> = {};
+      if (capturedDob) piiPatch.dateOfBirth = capturedDob;
+      if (capturedSsnLast4) piiPatch.ssnLast4 = capturedSsnLast4;
+      if (capturedAddress?.line1) piiPatch.addressLine1 = capturedAddress.line1;
+      if (capturedAddress?.line2) piiPatch.addressLine2 = capturedAddress.line2;
+      if (capturedAddress?.city) piiPatch.city = capturedAddress.city;
+      if (capturedAddress?.state) piiPatch.state = capturedAddress.state;
+      if (capturedAddress?.zip) piiPatch.zipCode = capturedAddress.zip;
+      if (Object.keys(piiPatch).length > 0) {
+        apiRequest("PATCH", `/api/users/${loginData.user.id}`, piiPatch).catch((e) =>
+          console.warn("[Array PII] Background profile update failed:", e)
+        );
       }
 
       toast({

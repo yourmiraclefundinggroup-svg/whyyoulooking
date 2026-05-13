@@ -375,6 +375,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user profile PII (used post-Array-enrollment to persist captured fields)
+  app.patch("/api/users/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const requestingUser = (req as any).user;
+      if (requestingUser.accessLevel !== "ADMIN" && requestingUser.id !== id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      const ALLOWED_FIELDS = [
+        "firstName", "lastName", "phone", "dateOfBirth", "ssnLast4",
+        "addressLine1", "addressLine2", "city", "state", "zipCode",
+      ] as const;
+      type AllowedField = typeof ALLOWED_FIELDS[number];
+      const update: Partial<Record<AllowedField, string>> = {};
+      for (const field of ALLOWED_FIELDS) {
+        if (req.body[field] !== undefined && req.body[field] !== null && req.body[field] !== "") {
+          update[field] = req.body[field] as string;
+        }
+      }
+      if (Object.keys(update).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+      await db.update(users).set(update).where(eq(users.id, id));
+      const updated = await storage.getUser(id);
+      res.json(updated);
+    } catch (error) {
+      console.error("PATCH /api/users/:id error:", error);
+      res.status(500).json({ message: "Failed to update user profile" });
+    }
+  });
+
   // Credit Reports
   app.post("/api/credit-reports", async (req, res) => {
     try {
