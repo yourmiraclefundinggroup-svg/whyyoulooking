@@ -35,7 +35,7 @@ export function Sidebar({ dark }: SidebarProps) {
     >
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 h-16 border-b border-slate-200 dark:border-white/8 shrink-0">
-        <img src={scoreshiftLogo} alt="ScoreShift" className="w-8 h-8 object-contain" />
+        <img src={scoreshiftLogo} alt="ScoreShift" className="w-10 h-10 object-contain shrink-0" />
         <span className="font-black text-slate-900 dark:text-white text-lg tracking-tight">ScoreShift</span>
       </div>
 

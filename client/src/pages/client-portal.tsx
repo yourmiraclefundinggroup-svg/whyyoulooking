@@ -584,7 +584,7 @@ export default function ClientPortal() {
       {/* ── Sidebar ─────────────────────────────────────────────── */}
       <aside className="cp-sidebar">
         <a className="cp-sidebar-logo" href="#" onClick={(e) => { e.preventDefault(); setActivePage("dashboard"); }}>
-          <img src={scoreshiftLogo} alt="ScoreShift" style={{ width: 28, height: 28, objectFit: "contain" }} />
+          <img src={scoreshiftLogo} alt="ScoreShift" style={{ width: 40, height: 40, objectFit: "contain", flexShrink: 0 }} />
           <span className="cp-logo-text">ScoreShift</span>
         </a>
 

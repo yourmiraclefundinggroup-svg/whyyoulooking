@@ -189,7 +189,7 @@ export function AdminShell({ children }: AdminShellProps) {
             )}>
               <Link href="/admin-portal">
                 <div className="flex items-center gap-3 cursor-pointer">
-                  <img src={scoreshiftLogo} alt="ScoreShift" className="w-9 h-9 object-contain" />
+                  <img src={scoreshiftLogo} alt="ScoreShift" className="w-10 h-10 object-contain shrink-0" />
                   {!sidebarCollapsed && (
                     <motion.div
                       initial={{ opacity: 0, x: -10 }}
@@ -344,9 +344,7 @@ export function AdminShell({ children }: AdminShellProps) {
               >
                 <div className="flex items-center justify-between h-16 px-4 border-b border-[hsl(var(--admin-border))]">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(var(--admin-accent-deep))] flex items-center justify-center">
-                      <Shield className="h-5 w-5 text-white" />
-                    </div>
+                    <img src={scoreshiftLogo} alt="ScoreShift" className="w-10 h-10 object-contain shrink-0" />
                     <div>
                       <span className="font-bold text-lg text-white">{brandName}</span>
                       <span className="block text-[10px] font-medium text-[hsl(var(--admin-accent))] tracking-wider">ADMIN</span>
