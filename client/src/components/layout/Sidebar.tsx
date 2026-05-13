@@ -4,6 +4,7 @@ import {
   LayoutDashboard, FileText, Home,
   TrendingUp, Settings, LogOut, Sparkles
 } from 'lucide-react'
+import scoreshiftLogo from "@assets/scoreshift-logo.png";
 
 interface SidebarProps {
   dark: boolean
@@ -34,10 +35,7 @@ export function Sidebar({ dark }: SidebarProps) {
     >
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 h-16 border-b border-slate-200 dark:border-white/8 shrink-0">
-        <div className="relative w-8 h-6">
-          <div className="absolute left-0 top-0.5 w-5 h-5 rounded-full bg-blue-600" />
-          <div className="absolute left-3 top-0.5 w-5 h-5 rounded-full bg-gold-500 opacity-90" />
-        </div>
+        <img src={scoreshiftLogo} alt="ScoreShift" className="w-8 h-8 object-contain" />
         <span className="font-black text-slate-900 dark:text-white text-lg tracking-tight">ScoreShift</span>
       </div>
 

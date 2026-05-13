@@ -1,4 +1,5 @@
 import { useState, createContext, useContext } from "react";
+import scoreshiftLogo from "@assets/scoreshift-logo.png";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -188,9 +189,7 @@ export function AdminShell({ children }: AdminShellProps) {
             )}>
               <Link href="/admin-portal">
                 <div className="flex items-center gap-3 cursor-pointer">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[hsl(var(--admin-accent))] to-[hsl(var(--admin-accent-deep))] flex items-center justify-center shadow-lg shadow-[hsl(var(--admin-accent))]/20">
-                    <Shield className="h-5 w-5 text-white" />
-                  </div>
+                  <img src={scoreshiftLogo} alt="ScoreShift" className="w-9 h-9 object-contain" />
                   {!sidebarCollapsed && (
                     <motion.div
                       initial={{ opacity: 0, x: -10 }}

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import scoreshiftLogo from "@assets/scoreshift-logo.png";
 import { useQuery } from "@tanstack/react-query";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useArrayScript } from "@/hooks/use-array-script";
@@ -583,11 +584,7 @@ export default function ClientPortal() {
       {/* ── Sidebar ─────────────────────────────────────────────── */}
       <aside className="cp-sidebar">
         <a className="cp-sidebar-logo" href="#" onClick={(e) => { e.preventDefault(); setActivePage("dashboard"); }}>
-          <div className="cp-logo-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-            </svg>
-          </div>
+          <img src={scoreshiftLogo} alt="ScoreShift" style={{ width: 28, height: 28, objectFit: "contain" }} />
           <span className="cp-logo-text">ScoreShift</span>
         </a>
 
