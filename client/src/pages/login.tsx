@@ -87,12 +87,7 @@ export default function Login() {
         <div className="text-center mb-8">
           <Link href="/">
             <div className="inline-flex items-center gap-2 cursor-pointer mb-4">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-black font-black"
-                style={{ background: "linear-gradient(135deg, var(--gold), var(--gold-light))" }}
-              >
-                SS
-              </div>
+              <img src={scoreshiftLogo} alt="ScoreShift" className="w-10 h-10 object-contain" />
               <span className="text-white font-black text-2xl tracking-tight">ScoreShift</span>
             </div>
           </Link>
