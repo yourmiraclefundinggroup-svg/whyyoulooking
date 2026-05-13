@@ -8795,13 +8795,15 @@ ${denialLetterText}`
       const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
       const ARRAY_APP_KEY = process.env.ARRAY_APP_KEY;
 
-      if (!ARRAY_API_KEY || !ARRAY_APP_KEY) {
-        return res.status(500).json({ error: "Array credentials not configured" });
-      }
-
       // Use sandbox unless ARRAY_PRODUCTION_MODE=true — same logic as /api/array/enroll-config.
       // ALL users share this check; production-only credentials never run unless explicitly enabled.
       const isSandbox = process.env.ARRAY_PRODUCTION_MODE !== "true";
+
+      // In sandbox mode the response uses hardcoded sandbox credentials, so ARRAY_APP_KEY
+      // is not required. Only gate on ARRAY_APP_KEY for the production path.
+      if (!isSandbox && (!ARRAY_API_KEY || !ARRAY_APP_KEY)) {
+        return res.status(500).json({ error: "Array credentials not configured" });
+      }
 
       // ── Sandbox path (default) ────────────────────────────────────────────
       // When in sandbox mode every user — test or real — uses the same sandbox
@@ -8865,9 +8867,10 @@ ${denialLetterText}`
       }
 
       // ── Production path (ARRAY_PRODUCTION_MODE=true only) ────────────────
+      const { arrayEnrollments: prodEnrollments } = await import("@shared/schema");
       const [enrollment] = await db.select()
-        .from((await import("@shared/schema")).arrayEnrollments)
-        .where(eq((await import("@shared/schema")).arrayEnrollments.userId, user.id));
+        .from(prodEnrollments)
+        .where(eq(prodEnrollments.userId, user.id));
       const isRealArrayId = enrollment?.arrayUserId &&
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(enrollment.arrayUserId);
       const arrayUserId = isRealArrayId ? enrollment.arrayUserId : `scoreshift_user_${user.id}`;
