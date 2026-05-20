@@ -11,7 +11,7 @@ const personalPlans = [
     tier: "starter",
     price: 29,
     yearlyPrice: 24,
-    description: "Get started with essential credit repair tools",
+    description: "Start seeing your full credit picture",
     popular: false,
     badge: null,
     features: [
@@ -28,7 +28,7 @@ const personalPlans = [
     tier: "pro",
     price: 79,
     yearlyPrice: 66,
-    description: "Unlimited disputes, real-time alerts, and premium tools",
+    description: "Full monitoring, guided disputes, and real-time alerts",
     popular: true,
     badge: "Most Popular",
     features: [
@@ -47,7 +47,7 @@ const personalPlans = [
     tier: "elite",
     price: 149,
     yearlyPrice: 124,
-    description: "Full protection suite with identity & privacy tools",
+    description: "Complete credit readiness and identity protection",
     popular: false,
     badge: "🚀 June 1st Launch",
     features: [
@@ -133,10 +133,10 @@ export default function PricingPage() {
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-md mb-5">
               <Sparkles size={12} className="text-yellow-300" />
-              3-Bureau Credit Monitoring — Launching June 1st
+              Live 3-Bureau Monitoring — Available Now
             </div>
             <h1 className="text-5xl md:text-6xl font-black text-white tracking-tight mb-4">
-              Choose Your Plan
+              Your Path Forward
             </h1>
             <p className="text-slate-400 text-lg max-w-xl mx-auto">
               Start with a 3-day free trial. No credit card required. Cancel anytime.

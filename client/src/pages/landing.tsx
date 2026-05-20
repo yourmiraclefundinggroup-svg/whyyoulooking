@@ -84,7 +84,7 @@ function AnnouncementBar() {
         <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
         <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
       </svg>
-      Live 3-Bureau Credit Monitoring now available on ScoreShift
+      ScoreShift now includes live 3-bureau monitoring, readiness tracking, and guided progress tools.
       <Link href="/credit-monitoring">See what's included <ArrowRightIcon size={12} /></Link>
     </div>
   );
@@ -109,7 +109,7 @@ function Nav() {
           </ul>
           <div className="lp-nav-actions">
             <Link href="/auth" className="lp-btn lp-btn-ghost">Sign In</Link>
-            <Link href="/auth" className="lp-btn lp-btn-primary">Start Free <ArrowRightIcon /></Link>
+            <Link href="/auth" className="lp-btn lp-btn-primary">Check Your Credit Health <ArrowRightIcon /></Link>
           </div>
         </div>
       </div>
@@ -147,25 +147,24 @@ function HeroSection() {
           {/* Left: content */}
           <div className="lp-hero-content">
             <div className="lp-hero-eyebrow lp-fade-up">
-              <span className="lp-badge"><span className="lp-badge-dot" />The OS for Credit Repair Professionals</span>
+              <span className="lp-badge"><span className="lp-badge-dot" />Modern Credit &amp; Financial Readiness Platform</span>
             </div>
             <h1 className="lp-hero-headline lp-fade-up lp-delay-1">
-              Credit Repair.<br />
-              <span className="lp-gradient-text">Rebuilt for the</span><br />
-              Modern Pro.
+              Built to move<br />
+              <span className="lp-gradient-text">you forward.</span>
             </h1>
             <p className="lp-hero-subheadline lp-fade-up lp-delay-2">
-              Pull credit reports, analyze negative items, generate personalized dispute strategies, send certified mail, and monitor client progress — all from one clean, unified platform.
+              Modern credit monitoring, improvement, and readiness tools designed to help you move forward financially.
             </p>
             <div className="lp-hero-ctas lp-fade-up lp-delay-3">
-              <Link href="/auth" className="lp-btn lp-btn-primary lp-btn-lg">Start Free <ArrowRightIcon /></Link>
-              <Link href="/pricing" className="lp-btn lp-btn-outline lp-btn-lg">Book a Demo</Link>
+              <Link href="/auth" className="lp-btn lp-btn-primary lp-btn-lg">Check Your Credit Health <ArrowRightIcon /></Link>
+              <a href="#workflow" className="lp-btn lp-btn-outline lp-btn-lg">See How It Works</a>
             </div>
             <div className="lp-hero-social-proof lp-fade-up lp-delay-4">
               <div className="lp-hero-avatars">
                 {["JM","KR","TS","AL"].map(i => <div key={i} className="lp-hero-avatar">{i}</div>)}
               </div>
-              <p className="lp-hero-proof-text">Trusted by <strong>1,200+ credit professionals</strong> nationwide</p>
+              <p className="lp-hero-proof-text">Trusted by <strong>1,200+ people</strong> moving their credit forward</p>
             </div>
           </div>
 
@@ -287,7 +286,7 @@ function TrustBar() {
     <div className="lp-trust-bar">
       <div className="lp-container">
         <div className="lp-trust-bar-inner">
-          <span className="lp-trust-label">Trusted by professionals</span>
+          <span className="lp-trust-label">Built for real financial progress</span>
           {items.map(item => (
             <div key={item.label} className="lp-trust-logo">
               <Icon d={item.icon} size={20} />
@@ -303,24 +302,24 @@ function TrustBar() {
 // ── Problem Section ──────────────────────────────────────
 function ProblemSection() {
   const problems = [
-    "Managing 5+ disconnected tools per client",
-    "Generic dispute templates with no real strategy",
-    "No Metro 2 compliance or FCRA analysis",
-    "Manual certified mail with zero tracking",
+    "No single place to see your full credit picture",
+    "No visibility into what's actually affecting your profile",
+    "No clear path forward or readiness indicators",
+    "No organized system to track progress over time",
   ];
   const cards = [
-    { bg: "rgba(99,102,241,0.12)",  color: "#818cf8", icon: ICONS.workflow, title: "Scattered Workflows",    body: "Switching between 5+ tools to manage one client. Credit reports here, letters there, billing somewhere else entirely." },
-    { bg: "rgba(251,191,36,0.12)",  color: "#fbbf24", icon: ICONS.file,     title: "Template-Based Disputes",body: "Cookie-cutter letters that bureaus have seen a thousand times. No personalization, no Metro 2 compliance, no strategy." },
-    { bg: "rgba(239,68,68,0.12)",   color: "#f87171", icon: ICONS.truck,    title: "Manual Mail Runs",       body: "Printing, stuffing envelopes, driving to the post office. Hours lost every week on a process that should be automated." },
+    { bg: "rgba(99,102,241,0.12)",  color: "#818cf8", icon: ICONS.workflow, title: "No Financial Visibility",       body: "You can't see your full credit picture in one place — scattered accounts, inconsistent data, and no clear view of what lenders actually see." },
+    { bg: "rgba(251,191,36,0.12)",  color: "#fbbf24", icon: ICONS.file,     title: "Uncertainty Without Clarity",   body: "Not knowing what's hurting your profile or why creates anxiety and inaction. You need a clear, honest view of where you stand." },
+    { bg: "rgba(239,68,68,0.12)",   color: "#f87171", icon: ICONS.truck,    title: "No Organized Progress Tracking",body: "Scattered paperwork, forgotten follow-ups, no single view of what's been sent, disputed, or resolved — progress gets lost." },
   ];
   return (
     <section className="lp-problem">
       <div className="lp-container">
         <div className="lp-problem-inner">
           <div className="lp-fade-up">
-            <div className="lp-section-label" style={{ color: "#818cf8" }}>The Problem</div>
-            <h2 className="lp-problem-headline">Credit repair is broken.<br /><span className="lp-gradient-text">We fixed it.</span></h2>
-            <p className="lp-problem-body">The old way of running a credit repair business is a patchwork of disconnected tools, manual processes, and generic templates. There's a better way.</p>
+            <div className="lp-section-label" style={{ color: "#818cf8" }}>The Challenge</div>
+            <h2 className="lp-problem-headline">Financial uncertainty is overwhelming.<br /><span className="lp-gradient-text">We built clarity.</span></h2>
+            <p className="lp-problem-body">Managing your credit profile shouldn't mean navigating confusion, chasing paperwork, or wondering what's actually happening. There's a better way to move forward.</p>
             <ul className="lp-problem-list">
               {problems.map(p => (
                 <li key={p}>
@@ -352,23 +351,23 @@ function ProblemSection() {
 // ── Solution Section ─────────────────────────────────────
 function SolutionSection() {
   const modules = [
-    { bg: "#ede9fe", color: "#4f46e5", icon: ICONS.chart,  name: "Credit Reports",   desc: "Live tri-bureau data — not stale PDFs. Real-time and ready to dispute." },
-    { bg: "#fef3c7", color: "#d97706", icon: ICONS.brain,  name: "Dispute IQ",       desc: "AI-powered Metro 2 & FCRA analysis engine." },
-    { bg: "#d1fae5", color: "#059669", icon: ICONS.letter, name: "Smart Letters",    desc: "Personalized dispute letters built for results." },
-    { bg: "#fee2e2", color: "#dc2626", icon: ICONS.send,   name: "Certified Mail",   desc: "Automated USPS certified mail — no printing, no post office trips." },
-    { bg: "#dbeafe", color: "#2563eb", icon: ICONS.bell,   name: "Monitoring",       desc: "Live 3-bureau alerts and score tracking." },
-    { bg: "#fce7f3", color: "#db2777", icon: ICONS.shield, name: "Identity Protect", desc: "Dark web monitoring and fraud alerts." },
-    { bg: "#ecfdf5", color: "#059669", icon: ICONS.user,   name: "Client Portal",    desc: "White-label portal for your clients." },
-    { bg: "#f0fdf4", color: "#16a34a", icon: ICONS.card,   name: "Billing",          desc: "Active client management and payments." },
+    { bg: "#ede9fe", color: "#4f46e5", icon: ICONS.chart,  name: "Credit Reports",   desc: "Live tri-bureau visibility — see exactly what's affecting your profile." },
+    { bg: "#fef3c7", color: "#d97706", icon: ICONS.brain,  name: "Dispute IQ",       desc: "Identifies what can be challenged and guides you through it." },
+    { bg: "#d1fae5", color: "#059669", icon: ICONS.letter, name: "Smart Letters",    desc: "Guided dispute letters built around your specific profile." },
+    { bg: "#fee2e2", color: "#dc2626", icon: ICONS.send,   name: "Certified Mail",   desc: "Automated USPS certified mail — no manual steps needed." },
+    { bg: "#dbeafe", color: "#2563eb", icon: ICONS.bell,   name: "Monitoring",       desc: "Real-time alerts when anything changes across all 3 bureaus." },
+    { bg: "#fce7f3", color: "#db2777", icon: ICONS.shield, name: "Identity Protect", desc: "Dark web surveillance and fraud alerts, always on." },
+    { bg: "#ecfdf5", color: "#059669", icon: ICONS.user,   name: "Client Portal",    desc: "See your progress, disputes, and credit profile in one view." },
+    { bg: "#f0fdf4", color: "#16a34a", icon: ICONS.card,   name: "Billing",          desc: "Manage your subscription and plan from your dashboard." },
   ];
   return (
     <section className="lp-solution" id="solution">
       <div className="lp-container">
         <div className="lp-solution-header">
-          <div className="lp-section-label lp-fade-up">The Solution</div>
-          <h2 className="lp-solution-headline lp-fade-up lp-delay-1">One platform.<br /><span className="lp-gradient-text">Every tool you need.</span></h2>
+          <div className="lp-section-label lp-fade-up">The Platform</div>
+          <h2 className="lp-solution-headline lp-fade-up lp-delay-1">Everything that moves you forward.<br /><span className="lp-gradient-text">In one place.</span></h2>
           <p className="lp-solution-body lp-fade-up lp-delay-2">
-            ScoreShift brings reports, disputes, letters, certified mail, monitoring, billing, and client management into one unified, intelligent workflow — purpose-built for credit repair professionals.
+            ScoreShift brings monitoring, visibility, dispute management, and readiness tools into one organized, intelligent platform — so you always know where you stand and what to do next.
           </p>
         </div>
         <div className="lp-solution-platform lp-fade-up lp-delay-2">
@@ -390,21 +389,21 @@ function SolutionSection() {
 // ── Features Section ─────────────────────────────────────
 function FeaturesSection() {
   const features = [
-    { span2: true,  delay: 0, bg: "#ede9fe", color: "#4f46e5", icon: ICONS.chart,  name: "Tri-Bureau Credit Reports",  desc: "Pull live tri-bureau credit reports directly inside ScoreShift. Real-time data — not stale PDFs — so you can analyze, dispute, and track with precision. Every negative item is surfaced, categorized, and ready for action." },
-    { span2: false, delay: 1, bg: "#fef3c7", color: "#d97706", icon: ICONS.brain,  name: "Dispute IQ",                 desc: "AI-powered Metro 2 compliance and FCRA analysis. Automatically identifies disputable items and builds the strongest possible strategy for each client." },
-    { span2: false, delay: 2, bg: "#d1fae5", color: "#059669", icon: ICONS.letter, name: "Personalized Letters",       desc: "No more templates. Every dispute letter is generated from the client's actual credit data — specific, compliant, and built to get results." },
-    { span2: false, delay: 1, bg: "#fee2e2", color: "#dc2626", icon: ICONS.send,   name: "Certified Mail Automation",  desc: "Send USPS certified mail directly from the platform — no printing, no post office runs. Full delivery tracking and confirmation included automatically." },
-    { span2: false, delay: 2, bg: "#dbeafe", color: "#2563eb", icon: ICONS.bell,   name: "Credit Monitoring",          desc: "Live 3-bureau score tracking with real-time alerts. Know the moment a client's score changes — and why." },
-    { span2: false, delay: 3, bg: "#fce7f3", color: "#db2777", icon: ICONS.shield, name: "Identity Protection",        desc: "Dark web monitoring, SSN alerts, and identity theft protection built into every client account." },
-    { span2: true,  delay: 1, bg: "#ecfdf5", color: "#059669", icon: ICONS.user,   name: "Client Portal & Billing",    desc: "A white-label client portal where your clients can track their progress, view dispute status, and access their credit data — all under your brand. Paired with active client management and integrated billing so you can run your entire business from one place." },
+    { span2: true,  delay: 0, bg: "#ede9fe", color: "#4f46e5", icon: ICONS.chart,  name: "Tri-Bureau Credit Reports",  desc: "See your full credit picture across all three bureaus — live, organized, and always up to date. Know exactly what's on your profile before you make any financial move." },
+    { span2: false, delay: 1, bg: "#fef3c7", color: "#d97706", icon: ICONS.brain,  name: "Dispute IQ",                 desc: "ScoreShift identifies what can be challenged on your profile and builds a clear path forward — guided by FCRA and Metro 2 standards." },
+    { span2: false, delay: 2, bg: "#d1fae5", color: "#059669", icon: ICONS.letter, name: "Personalized Letters",       desc: "Every dispute letter is built around your actual profile data — specific, compliant, and organized through your dashboard." },
+    { span2: false, delay: 1, bg: "#fee2e2", color: "#dc2626", icon: ICONS.send,   name: "Certified Mail Automation",  desc: "Dispute letters go out via USPS certified mail automatically — tracked, confirmed, and visible inside your account." },
+    { span2: false, delay: 2, bg: "#dbeafe", color: "#2563eb", icon: ICONS.bell,   name: "Credit Monitoring",          desc: "Live alerts the moment anything changes across all 3 bureaus — so you're never caught off guard." },
+    { span2: false, delay: 3, bg: "#fce7f3", color: "#db2777", icon: ICONS.shield, name: "Identity Protection",        desc: "Dark web monitoring, SSN surveillance, and fraud alerts — running continuously in the background." },
+    { span2: true,  delay: 1, bg: "#ecfdf5", color: "#059669", icon: ICONS.user,   name: "Client Portal & Billing",    desc: "Track your progress, view dispute status, and manage your profile — all organized in one clear view. Paired with integrated billing so everything you need is in one place." },
   ];
   return (
     <section className="lp-features" id="features">
       <div className="lp-container">
         <div className="lp-features-header">
-          <div className="lp-section-label lp-fade-up">Platform Features</div>
-          <h2 className="lp-features-headline lp-fade-up lp-delay-1">Everything a credit professional needs</h2>
-          <p className="lp-features-subhead lp-fade-up lp-delay-2">Built from the ground up for the modern credit repair business. Not retrofitted. Not generic. Purpose-built.</p>
+          <div className="lp-section-label lp-fade-up">What You Get</div>
+          <h2 className="lp-features-headline lp-fade-up lp-delay-1">Complete visibility. Guided progress.</h2>
+          <p className="lp-features-subhead lp-fade-up lp-delay-2">Know where you stand. See what's affecting you. Understand what to do next.</p>
         </div>
         <div className="lp-feature-grid">
           {features.map(f => (
@@ -425,20 +424,20 @@ function FeaturesSection() {
 // ── Workflow Section ─────────────────────────────────────
 function WorkflowSection() {
   const steps = [
-    { icon: ICONS.file,     title: "Pull Report",       desc: "Live tri-bureau data, instant" },
-    { icon: ICONS.search,   title: "Analyze Items",     desc: "AI surfaces every disputable negative" },
-    { icon: ICONS.strategy, title: "Generate Strategy", desc: "Metro 2 & FCRA-based dispute plan" },
-    { icon: ICONS.letter,   title: "Create Letters",    desc: "Personalized, compliant dispute letters" },
-    { icon: ICONS.send,     title: "Send Certified Mail", desc: "USPS certified mail — automated" },
-    { icon: ICONS.layers,   title: "Track Results",     desc: "Live monitoring and score updates" },
+    { icon: ICONS.file,     title: "See Your Profile",       desc: "Live tri-bureau data in one organized view" },
+    { icon: ICONS.search,   title: "Understand What's There", desc: "See what's affecting your profile and why" },
+    { icon: ICONS.strategy, title: "Build Your Path Forward", desc: "Clear, guided steps toward financial readiness" },
+    { icon: ICONS.letter,   title: "Prepare Dispute Letters", desc: "Profile-specific, compliant dispute letters" },
+    { icon: ICONS.send,     title: "Send & Track",            desc: "USPS certified mail — automated and tracked" },
+    { icon: ICONS.layers,   title: "Monitor Progress",        desc: "Live monitoring and real-time score updates" },
   ];
   return (
     <section className="lp-workflow" id="workflow">
       <div className="lp-container">
         <div className="lp-workflow-header">
           <div className="lp-section-label lp-fade-up">How It Works</div>
-          <h2 className="lp-workflow-headline lp-fade-up lp-delay-1">Six steps. One platform. Zero chaos.</h2>
-          <p className="lp-workflow-body lp-fade-up lp-delay-2">ScoreShift guides you through the entire credit repair process — from the first report pull to the final result — without ever leaving the platform.</p>
+          <h2 className="lp-workflow-headline lp-fade-up lp-delay-1">A clear path forward.</h2>
+          <p className="lp-workflow-body lp-fade-up lp-delay-2">ScoreShift walks you through every step — from seeing your full credit picture to tracking your progress — so you always know where you are and what's next.</p>
         </div>
         <div className="lp-workflow-steps">
           {steps.map((s, i) => (
@@ -462,8 +461,8 @@ function IntegrationsSection() {
       <div className="lp-container">
         <div className="lp-integrations-header">
           <div className="lp-section-label lp-fade-up">Platform Capabilities</div>
-          <h2 className="lp-integrations-headline lp-fade-up lp-delay-1">Enterprise infrastructure.<br /><span className="lp-gradient-text">Beautifully unified.</span></h2>
-          <p className="lp-integrations-body lp-fade-up lp-delay-2">ScoreShift is built on enterprise-grade credit, mail, and identity infrastructure — delivering the reliability of institutional fintech with the simplicity of modern SaaS.</p>
+          <h2 className="lp-integrations-headline lp-fade-up lp-delay-1">The infrastructure<br /><span className="lp-gradient-text">behind your progress.</span></h2>
+          <p className="lp-integrations-body lp-fade-up lp-delay-2">ScoreShift connects live credit data, dispute management, and certified mail into one organized experience — so everything affecting your financial profile is visible in one place.</p>
         </div>
 
         <div className="lp-integrations-layout lp-fade-up lp-delay-2">
@@ -531,17 +530,17 @@ function PricingSection() {
   const plans = [
     {
       tier: "Starter", price: "29", period: "per month",
-      note: "Perfect to get started", featured: false,
+      note: "Start seeing your full credit picture", featured: false,
       features: ["Credit report import","3 dispute letters/month","Basic AI analysis","Email support"],
     },
     {
       tier: "Pro", price: "79", period: "per month",
-      note: "Most popular for professionals", featured: true,
+      note: "Most popular — everything you need to move forward", featured: true,
       features: ["Unlimited dispute letters","Live 3-bureau monitoring","Score simulator","Certified mail automation","Priority support"],
     },
     {
       tier: "Elite", price: "149", period: "per month",
-      note: "Full-featured business suite", featured: false,
+      note: "Complete readiness and protection suite", featured: false,
       features: ["Everything in Pro","Identity protection","Debt navigator","White-label portal","Dedicated account manager"],
     },
   ];
@@ -550,7 +549,7 @@ function PricingSection() {
       <div className="lp-container">
         <div className="lp-pricing-header">
           <div className="lp-section-label lp-fade-up">Simple Pricing</div>
-          <h2 className="lp-pricing-headline lp-fade-up lp-delay-1">Plans for every professional</h2>
+          <h2 className="lp-pricing-headline lp-fade-up lp-delay-1">Plans built for where you are</h2>
           <p className="lp-pricing-subhead lp-fade-up lp-delay-2">Start free. Scale when you're ready. No hidden fees, no long-term contracts.</p>
         </div>
         <div className="lp-pricing-grid">
@@ -568,7 +567,7 @@ function PricingSection() {
                 ))}
               </ul>
               <Link href="/auth" className={`lp-btn lp-btn-lg ${p.featured ? "lp-btn-accent" : "lp-btn-outline"}`} style={{ width: "100%", justifyContent: "center" }}>
-                Get Started <ArrowRightIcon />
+                {p.tier === "Starter" ? "Start Monitoring" : p.tier === "Pro" ? "Check Your Readiness" : "Get Started"} <ArrowRightIcon />
               </Link>
             </div>
           ))}
@@ -584,11 +583,11 @@ function FinalCTA() {
     <section className="lp-final-cta">
       <div className="lp-container">
         <div className="lp-final-cta-inner">
-          <div className="lp-final-cta-eyebrow">Join 1,200+ Credit Professionals</div>
-          <h2 className="lp-final-cta-headline">The platform your clients deserve.</h2>
-          <p className="lp-final-cta-body">Stop stitching together tools. ScoreShift brings your entire credit repair workflow into one intelligent, branded platform — so you can focus on what matters: results.</p>
+          <div className="lp-final-cta-eyebrow">Join 1,200+ people moving their credit forward</div>
+          <h2 className="lp-final-cta-headline">Built to move you forward.</h2>
+          <p className="lp-final-cta-body">ScoreShift gives you the visibility, organization, and tools to understand your credit profile — and a clear path to move forward financially.</p>
           <div className="lp-final-cta-actions">
-            <Link href="/auth" className="lp-btn lp-btn-white lp-btn-lg">Start Free <ArrowRightIcon /></Link>
+            <Link href="/auth" className="lp-btn lp-btn-white lp-btn-lg">Check Your Credit Health <ArrowRightIcon /></Link>
             <a href="#pricing" className="lp-btn lp-btn-ghost-white lp-btn-lg">See Pricing</a>
           </div>
           <p className="lp-final-cta-note">No credit card required · Cancel anytime</p>
@@ -609,7 +608,7 @@ function Footer() {
               <img src={scoreshiftLogo} alt="ScoreShift" className="lp-footer-brand-logo-icon" style={{ width: 28, height: 28, objectFit: "contain" }} />
               ScoreShift
             </div>
-            <p className="lp-footer-tagline">The operating system for modern credit repair professionals. Built for results, designed for scale.</p>
+            <p className="lp-footer-tagline">Modern credit monitoring, progress tracking, and readiness tools — built to move you forward.</p>
             <div className="lp-footer-socials">
               <div className="lp-footer-social-btn">
                 <svg style={{ width: 15, height: 15 }} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>

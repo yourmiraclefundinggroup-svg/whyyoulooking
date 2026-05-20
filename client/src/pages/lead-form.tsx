@@ -102,7 +102,7 @@ export default function LeadForm() {
       if (response.ok) {
         toast({
           title: "Request Submitted Successfully",
-          description: "Your credit repair request has been sent to our team. You'll receive a call within 24 hours.",
+          description: "Your request has been sent to our team. You'll receive a call within 24 hours.",
         });
         
         // Reset form
@@ -139,7 +139,7 @@ export default function LeadForm() {
               <img src={scoreshiftLogo} alt="ScoreShift" className="w-10 h-10 object-contain" />
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">ScoreShift</h1>
               <Badge variant="secondary" className="bg-green-100 text-green-700">
-                Pro Platform
+                Credit Readiness Platform
               </Badge>
             </div>
             <Link href="/">
@@ -157,18 +157,18 @@ export default function LeadForm() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Start Your Credit Repair Journey
+              Start Moving Your Credit Forward
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300">
-              Tell us about your credit situation and we'll create a personalized plan to help you achieve your financial goals.
+              Tell us where you are financially and we'll show you a clear path toward credit readiness and progress.
             </p>
           </div>
 
           <Card className="shadow-xl border-0">
             <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
-              <CardTitle className="text-2xl">Credit Repair Assessment</CardTitle>
+              <CardTitle className="text-2xl">Credit Readiness Assessment</CardTitle>
               <CardDescription className="text-blue-100">
-                Complete this form to receive your free consultation
+                Complete this form to receive your free credit readiness consultation
               </CardDescription>
             </CardHeader>
             <CardContent className="p-8">
