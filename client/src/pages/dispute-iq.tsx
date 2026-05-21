@@ -727,7 +727,7 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
             </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: 16, color: "#111827", marginBottom: 4 }}>Pull from Credit File</div>
-              <div style={{ fontSize: 13, color: "#6b7280" }}>Fetch live 3-bureau data from your connected Array credit monitoring account</div>
+              <div style={{ fontSize: 13, color: "#6b7280" }}>Fetch live 3-bureau data from your connected ScoreShift credit monitoring account</div>
             </div>
             <div style={{ padding: "4px 12px", borderRadius: 20, background: "#d97706", color: "#fff", fontSize: 11, fontWeight: 700 }}>RECOMMENDED</div>
           </button>
@@ -848,7 +848,7 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
         <div style={{ textAlign: "center", padding: "72px 24px" }}>
           <div style={{ width: 40, height: 40, border: "3px solid #e5e7eb", borderTopColor: "#d97706", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
           <div style={{ fontWeight: 600, color: "#374151" }}>Pulling your credit data…</div>
-          <div style={{ fontSize: 13, color: "#9ca3af", marginTop: 6 }}>Fetching 3-bureau report from Array</div>
+          <div style={{ fontSize: 13, color: "#9ca3af", marginTop: 6 }}>Fetching your 3-bureau report…</div>
         </div>
       )}
 
@@ -859,7 +859,7 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
             <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
             <div style={{ fontWeight: 700, fontSize: 16, color: "#92400e", marginBottom: 8 }}>Credit Monitoring Not Connected</div>
             <div style={{ fontSize: 13, color: "#78350f", marginBottom: 16 }}>
-              Connect your Array credit monitoring account first to pull live 3-bureau data.
+              Connect your ScoreShift credit monitoring account first to pull live 3-bureau data.
             </div>
             <a href="/portal" style={{ color: "#d97706", fontWeight: 600, fontSize: 13 }}>Go to Credit Monitoring →</a>
           </div>

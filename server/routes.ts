@@ -9304,41 +9304,55 @@ ${denialLetterText}`
 
       const arrayUserId = enrollment.arrayUserId;
 
-      // Step 1: Generate a server-side user token for this client
-      const tokenResponse = await fetch("https://api.array.io/api/authenticate/v2/usertoken", {
-        method: "POST",
-        headers: {
-          "x-array-server-token": ARRAY_API_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId: arrayUserId }),
-      });
+      const isSandboxAdmin = process.env.ARRAY_PRODUCTION_MODE !== "true";
+      const ARRAY_BASE_URL_ADMIN = isSandboxAdmin ? "https://sandbox.array.io" : "https://api.array.io";
+      const SANDBOX_FALLBACK_TOKEN_ADMIN = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
 
-      if (!tokenResponse.ok) {
-        const errData = await tokenResponse.json().catch(() => ({})) as Record<string, unknown>;
-        console.error(`[Array] Admin tradeline token fetch failed for user ${clientId}:`, errData);
-        return res.status(502).json({ error: "Failed to generate Array token for client" });
+      // Step 1: Generate a server-side user token for this client — sandbox fallback on failure
+      let userToken: string = SANDBOX_FALLBACK_TOKEN_ADMIN;
+      try {
+        const tokenResponse = await fetch(`${ARRAY_BASE_URL_ADMIN}/api/authenticate/v2/usertoken`, {
+          method: "POST",
+          headers: {
+            "x-array-server-token": ARRAY_API_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId: arrayUserId }),
+        });
+        if (tokenResponse.ok) {
+          const tokenData = await tokenResponse.json() as ArrayTokenResponse;
+          userToken = tokenData.token || tokenData.userToken || tokenData.access_token || SANDBOX_FALLBACK_TOKEN_ADMIN;
+        } else {
+          const errText = await tokenResponse.text().catch(() => "");
+          console.warn(`[Array] Admin tradeline token failed (${tokenResponse.status}) for client ${clientId}${isSandboxAdmin ? ", using fallback" : ""}:`, errText.slice(0, 200));
+          if (!isSandboxAdmin) return res.status(502).json({ error: "Failed to generate credit monitoring token for client" });
+        }
+      } catch (e: any) {
+        console.warn(`[Array] Admin tradeline token DNS/network error for client ${clientId}${isSandboxAdmin ? ", using fallback" : ""}:`, e.message);
+        if (!isSandboxAdmin) return res.status(502).json({ error: "Credit monitoring service unreachable" });
       }
-
-      const tokenData = await tokenResponse.json() as ArrayTokenResponse;
-      const userToken = tokenData.token || tokenData.userToken || tokenData.access_token;
 
       // Step 2: Fetch the credit report using the user token
-      const reportResponse = await fetch("https://api.array.io/v2/user/credit-report", {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${userToken}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!reportResponse.ok) {
-        const errData = await reportResponse.json().catch(() => ({})) as Record<string, unknown>;
-        console.error(`[Array] Credit report fetch failed for user ${clientId}:`, errData);
-        return res.status(502).json({ error: "Failed to fetch credit report from Array" });
+      let reportData: ArrayCreditReport | null = null;
+      try {
+        const reportResponse = await fetch(`${ARRAY_BASE_URL_ADMIN}/v2/user/credit-report`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${userToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (!reportResponse.ok) {
+          const errData = await reportResponse.json().catch(() => ({})) as Record<string, unknown>;
+          console.error(`[Array] Credit report fetch failed (${reportResponse.status}) for client ${clientId}:`, errData);
+          return res.status(502).json({ error: "Failed to fetch credit report" });
+        }
+        reportData = await reportResponse.json() as ArrayCreditReport;
+      } catch (e: any) {
+        console.error(`[Array] Admin credit report DNS/network error for client ${clientId}:`, e.message);
+        return res.status(502).json({ error: "Credit monitoring service unreachable" });
       }
-
-      const reportData = await reportResponse.json() as ArrayCreditReport;
+      if (!reportData) return res.status(502).json({ error: "No report data received" });
 
       // Step 3: Format tradelines as pre-filled dispute letter inputs
       const tradelines: Array<{
@@ -9429,6 +9443,10 @@ ${denialLetterText}`
         return res.status(500).json({ error: "Array credentials not configured" });
       }
 
+      const isSandbox = process.env.ARRAY_PRODUCTION_MODE !== "true";
+      const ARRAY_BASE_URL = isSandbox ? "https://sandbox.array.io" : "https://api.array.io";
+      const SANDBOX_FALLBACK_TOKEN = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
+
       const { arrayEnrollments } = await import("@shared/schema");
       const [enrollment] = await db
         .select()
@@ -9437,45 +9455,56 @@ ${denialLetterText}`
 
       if (!enrollment) {
         return res.status(404).json({
-          error: "Not enrolled in Array credit monitoring",
+          error: "Not enrolled in credit monitoring",
           enrolled: false,
         });
       }
 
       const arrayUserId = enrollment.arrayUserId;
 
-      // Generate a server-side token for this client
-      const tokenResponse = await fetch("https://api.array.io/api/authenticate/v2/usertoken", {
-        method: "POST",
-        headers: {
-          "x-array-server-token": ARRAY_API_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId: arrayUserId }),
-      });
-
-      if (!tokenResponse.ok) {
-        const errData = await tokenResponse.json().catch(() => ({})) as Record<string, unknown>;
-        console.error(`[Array] Client tradeline token fetch failed for user ${userId}:`, errData);
-        return res.status(502).json({ error: "Failed to generate Array token" });
+      // Generate a server-side token — use sandbox fallback if token fetch fails
+      let userToken: string = SANDBOX_FALLBACK_TOKEN;
+      try {
+        const tokenResponse = await fetch(`${ARRAY_BASE_URL}/api/authenticate/v2/usertoken`, {
+          method: "POST",
+          headers: {
+            "x-array-server-token": ARRAY_API_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId: arrayUserId }),
+        });
+        if (tokenResponse.ok) {
+          const tokenData = await tokenResponse.json() as { token?: string; userToken?: string; access_token?: string };
+          userToken = tokenData.token || tokenData.userToken || tokenData.access_token || SANDBOX_FALLBACK_TOKEN;
+        } else {
+          const errText = await tokenResponse.text().catch(() => "");
+          console.warn(`[Array] Client tradeline token failed (${tokenResponse.status}) for user ${userId}${isSandbox ? ", using fallback" : ""}:`, errText.slice(0, 200));
+          if (!isSandbox) return res.status(502).json({ error: "Failed to generate credit monitoring token" });
+        }
+      } catch (e: any) {
+        console.warn(`[Array] Client tradeline token DNS/network error for user ${userId}${isSandbox ? ", using fallback" : ""}:`, e.message);
+        if (!isSandbox) return res.status(502).json({ error: "Credit monitoring service unreachable" });
       }
 
-      const tokenData = await tokenResponse.json() as { token?: string; userToken?: string; access_token?: string };
-      const userToken = tokenData.token || tokenData.userToken || tokenData.access_token;
-
       // Fetch the credit report
-      const reportResponse = await fetch("https://api.array.io/v2/user/credit-report", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!reportResponse.ok) {
-        const errData = await reportResponse.json().catch(() => ({})) as Record<string, unknown>;
-        console.error(`[Array] Client credit report fetch failed for user ${userId}:`, errData);
-        return res.status(502).json({ error: "Failed to fetch credit report from Array" });
+      let reportData: any = null;
+      try {
+        const reportResponse = await fetch(`${ARRAY_BASE_URL}/v2/user/credit-report`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${userToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (!reportResponse.ok) {
+          const errData = await reportResponse.json().catch(() => ({})) as Record<string, unknown>;
+          console.error(`[Array] Client credit report fetch failed (${reportResponse.status}) for user ${userId}:`, errData);
+          return res.status(502).json({ error: "Failed to fetch credit report" });
+        }
+        reportData = await reportResponse.json();
+      } catch (e: any) {
+        console.error(`[Array] Client credit report DNS/network error for user ${userId}:`, e.message);
+        return res.status(502).json({ error: "Credit monitoring service unreachable. Please try uploading your PDF report instead." });
       }
 
       type ArrAcct = {
@@ -9504,8 +9533,8 @@ ${denialLetterText}`
         data?: { accounts?: ArrAcct[]; inquiries?: ArrInq[] };
       };
 
-      const reportData = await reportResponse.json() as ArrReport;
       const { analyzeAllTradelines, analyzeTradelineViolations, isNegativeTradeline } = await import("./violation-analysis");
+      const typedReportData = reportData as ArrReport;
 
       // Map raw Array accounts → RawTradeline format, then analyze
       const rawTradelines = (reportData?.accounts || reportData?.tradelines || reportData?.data?.accounts || []).map((acct) => {

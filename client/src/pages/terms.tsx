@@ -161,7 +161,7 @@ export default function Terms() {
           <section className="p-6 rounded-xl border border-border bg-card">
             <h2 className="text-xl font-semibold text-foreground mb-3">7. Third-Party Services</h2>
             <p className="text-muted-foreground leading-relaxed">
-              ScoreShift may integrate with or utilize third-party service providers — including credit bureaus (Experian, Equifax, TransUnion), payment processors (Stripe), AI technology providers (OpenAI, Anthropic), mail delivery services (Lob, USPS), and credit data providers (Array.com) — to facilitate our services. These third parties have their own terms and privacy policies that govern their services. ScoreShift is not responsible for the practices or content of third-party services. Your authorization to use our platform includes authorization for us to interact with these third parties on your behalf solely for the purpose of providing our contracted services.
+              ScoreShift may integrate with or utilize third-party service providers — including credit bureaus (Experian, Equifax, TransUnion), payment processors (Stripe), AI technology providers (OpenAI, Anthropic), mail delivery services (Lob, USPS), and credit data providers — to facilitate our services. These third parties have their own terms and privacy policies that govern their services. ScoreShift is not responsible for the practices or content of third-party services. Your authorization to use our platform includes authorization for us to interact with these third parties on your behalf solely for the purpose of providing our contracted services.
             </p>
           </section>
 

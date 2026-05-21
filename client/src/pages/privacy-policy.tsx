@@ -139,7 +139,7 @@ export default function PrivacyPolicy() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
-                <span><strong className="text-foreground">Service Providers:</strong> Carefully vetted third-party vendors who assist in operating our platform, including Array.com (credit data access), Lob and USPS (certified mail services), OpenAI and Anthropic (AI-powered analysis and letter generation), and Stripe (payment processing). All vendors are contractually required to protect your data and use it only for the contracted purpose.</span>
+                <span><strong className="text-foreground">Service Providers:</strong> Carefully vetted third-party vendors who assist in operating our platform, including credit data access providers, Lob and USPS (certified mail services), OpenAI and Anthropic (AI-powered analysis and letter generation), and Stripe (payment processing). All vendors are contractually required to protect your data and use it only for the contracted purpose.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
