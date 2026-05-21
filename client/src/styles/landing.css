@@ -84,10 +84,6 @@
    Sections with colored backgrounds (features, pricing, etc.) overlay on top. */
 .landing-page {
   position: relative;
-  background-image:
-    linear-gradient(var(--bone-deep) 1px, transparent 1px),
-    linear-gradient(90deg, var(--bone-deep) 1px, transparent 1px);
-  background-size: 60px 60px;
   background-color: var(--bone-base);
 }
 
