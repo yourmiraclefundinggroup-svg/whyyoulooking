@@ -85,6 +85,8 @@
 .landing-page {
   position: relative;
   background-color: var(--bone-base);
+  background-image: radial-gradient(circle, var(--bone-deep) 1.5px, transparent 1.5px);
+  background-size: 28px 28px;
 }
 
 .landing-page::before {
