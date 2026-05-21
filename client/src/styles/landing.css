@@ -470,6 +470,49 @@
   }
 }
 
+.lp-platform-module {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 16px 12px;
+  background: rgba(241,232,218,0.6);
+  border: 1px solid var(--bone-deep);
+  border-radius: 12px;
+  transition: all 0.2s;
+  cursor: default;
+}
+
+.lp-platform-module:hover {
+  border-color: var(--aura-400);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(124,107,203,0.12);
+}
+
+.lp-platform-module-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+
+.lp-platform-module-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 4px;
+}
+
+.lp-platform-module-desc {
+  font-size: 11px;
+  color: var(--gray-500);
+  line-height: 1.4;
+}
+
 .lp-hero-avatars { display: flex; }
 
 .lp-hero-avatar {
