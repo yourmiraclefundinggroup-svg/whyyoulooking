@@ -143,7 +143,16 @@ function HeroSection() {
           <p className="lp-hero-subheadline lp-hero-subheadline-centered lp-fade-up lp-delay-2">
             Modern credit monitoring, improvement, and readiness tools to help you move forward financially.
           </p>
-          <div className="lp-hero-ctas lp-hero-ctas-centered lp-fade-up lp-delay-3">
+          <div className="lp-hero-screenshot lp-fade-up lp-delay-3">
+            <div className="lp-hero-screenshot-bar">
+              <span className="lp-ss-dot lp-ss-dot-red" />
+              <span className="lp-ss-dot lp-ss-dot-yellow" />
+              <span className="lp-ss-dot lp-ss-dot-green" />
+              <span className="lp-ss-dot-label">ScoreShift — Dashboard</span>
+            </div>
+            <img src="/dashboard-preview.png" alt="ScoreShift dashboard showing credit scores across all three bureaus" />
+          </div>
+          <div className="lp-hero-ctas lp-hero-ctas-centered lp-fade-up lp-delay-4">
             <Link href="/auth" className="lp-btn lp-btn-primary lp-btn-lg">Check Your Credit Health <ArrowRightIcon /></Link>
             <a href="#workflow" className="lp-btn lp-btn-outline lp-btn-lg">See How It Works</a>
           </div>
