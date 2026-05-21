@@ -9532,16 +9532,29 @@ ${denialLetterText}`
           return res.status(400).json({ error: "No file uploaded" });
         }
 
-        // Extract text from PDF
+        // Extract text from PDF using pdf-parse v2 class-based API
         let pdfText = "";
+        const fileBuffer = fs.readFileSync(req.file.path);
+        let isScannedPdf = false;
         try {
-          const pdfParse = require("pdf-parse");
-          const fileBuffer = fs.readFileSync(req.file.path);
-          const parsed = await pdfParse(fileBuffer);
-          pdfText = parsed.text || "";
+          const parser = new PDFParse({ data: new Uint8Array(fileBuffer) });
+          let result: { text?: string };
+          try {
+            result = await parser.getText();
+            pdfText = result.text || "";
+          } finally {
+            await parser.destroy().catch(() => undefined);
+          }
         } catch (pdfErr) {
-          console.error("[DisputeIQ] PDF parse error:", pdfErr);
-          pdfText = "";
+          const msg = pdfErr instanceof Error ? pdfErr.message : String(pdfErr);
+          // Distinguish scanned/image-only PDFs (no text layer) from genuine parse failures
+          if (msg.toLowerCase().includes("no text") || msg.toLowerCase().includes("image")) {
+            isScannedPdf = true;
+            pdfText = "";
+          } else {
+            console.error("[DisputeIQ] PDF parse error:", pdfErr);
+            return res.status(500).json({ error: `PDF parsing failed: ${msg}` });
+          }
         }
 
         if (!pdfText || pdfText.trim().length < 50) {
@@ -9552,7 +9565,9 @@ ${denialLetterText}`
             tradelines: [],
             negativeTradelines: [],
             inquiries: [],
-            note: "Could not extract text from this PDF. Please ensure it is a text-based credit report.",
+            note: isScannedPdf
+              ? "This appears to be a scanned/image PDF with no text layer. Please upload a digital credit report."
+              : "Could not extract enough text from this PDF. Please ensure it is a text-based credit report.",
           });
         }
 
