@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useFeatureAccess, FEATURES } from "@/hooks/use-feature-access";
-import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
@@ -23,6 +22,8 @@ interface AnalyzedTradeline {
   latePayments?: { days30?: number; days60?: number; days90?: number };
   violations: TradelineViolation[];
   isDerogatory: boolean;
+  bureau?: string;
+  bureaus?: string[];
 }
 
 interface TradelineResponse {
@@ -36,10 +37,20 @@ interface TradelineResponse {
   note?: string;
 }
 
+const BUREAU_LABELS: Record<string, string> = {
+  EXPERIAN: "Experian",
+  EQUIFAX: "Equifax",
+  TRANSUNION: "TransUnion",
+};
+const BUREAU_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  EXPERIAN: { bg: "#eff6ff", text: "#1d4ed8", border: "#93c5fd" },
+  EQUIFAX: { bg: "#fef2f2", text: "#b91c1c", border: "#fca5a5" },
+  TRANSUNION: { bg: "#f5f3ff", text: "#6d28d9", border: "#c4b5fd" },
+};
+
 /* ── Violation badge colours ────────────────────────────────────────────────── */
 function violationStyle(v: TradelineViolation): { bg: string; text: string; border: string } {
   if (v.category === "metro2") return { bg: "#fffbeb", text: "#92400e", border: "#fcd34d" };
-  // fcra
   if (v.code.includes("1681C") || v.code.includes("REAGING")) {
     return { bg: "#fef2f2", text: "#991b1b", border: "#fca5a5" };
   }
@@ -58,18 +69,18 @@ function statusColor(status: string): { bg: string; text: string } {
 }
 
 /* ── Empty state ─────────────────────────────────────────────────────────────── */
-function EmptyState({ icon, title, sub }: { icon: string; title: string; sub: string }) {
+function EmptyState({ icon, title, description }: { icon: string; title: string; description: string }) {
   return (
     <div style={{ textAlign: "center", padding: "56px 24px" }}>
       <div style={{ fontSize: 48, marginBottom: 12 }}>{icon}</div>
-      <div style={{ fontWeight: 600, fontSize: 16, color: "var(--cp-text-primary, #111827)", marginBottom: 6 }}>{title}</div>
-      <div style={{ color: "var(--cp-text-muted, #6b7280)", fontSize: 14 }}>{sub}</div>
+      <div style={{ fontWeight: 600, fontSize: 16, color: "#111827", marginBottom: 6 }}>{title}</div>
+      <div style={{ color: "#6b7280", fontSize: 14 }}>{description}</div>
     </div>
   );
 }
 
 /* ── Tier gate card ──────────────────────────────────────────────────────────── */
-function LockedGate({ upgradeLabel }: { upgradeLabel: string | null }) {
+function LockedGate() {
   return (
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -92,7 +103,7 @@ function LockedGate({ upgradeLabel }: { upgradeLabel: string | null }) {
           textDecoration: "none",
         }}
       >
-        {upgradeLabel || "View Plans"}
+        View Plans
       </a>
     </div>
   );
@@ -117,19 +128,33 @@ function ViolationBadge({ v }: { v: TradelineViolation }) {
   );
 }
 
+/* ── Bureau badge ────────────────────────────────────────────────────────────── */
+function BureauBadge({ bureau }: { bureau: string }) {
+  const key = bureau.toUpperCase();
+  const color = BUREAU_COLORS[key] || { bg: "#f3f4f6", text: "#374151", border: "#e5e7eb" };
+  const label = BUREAU_LABELS[key] || bureau;
+  return (
+    <span style={{
+      padding: "1px 7px", borderRadius: 4, fontSize: 10, fontWeight: 700,
+      background: color.bg, color: color.text, border: `1px solid ${color.border}`,
+      letterSpacing: "0.03em",
+    }}>
+      {label}
+    </span>
+  );
+}
+
 /* ── Account card ────────────────────────────────────────────────────────────── */
 function AccountCard({
   tradeline,
   selected,
   locked,
   onToggle,
-  index,
 }: {
   tradeline: AnalyzedTradeline;
   selected: boolean;
   locked: boolean;
   onToggle: () => void;
-  index: number;
 }) {
   const sc = statusColor(tradeline.status);
   const lateTotal =
@@ -139,6 +164,13 @@ function AccountCard({
 
   const metro2Violations = tradeline.violations.filter((v) => v.category === "metro2");
   const fcraViolations = tradeline.violations.filter((v) => v.category === "fcra");
+
+  // Determine bureaus to display
+  const displayBureaus: string[] = tradeline.bureaus?.length
+    ? tradeline.bureaus
+    : tradeline.bureau
+    ? [tradeline.bureau]
+    : [];
 
   return (
     <div
@@ -154,7 +186,6 @@ function AccountCard({
         opacity: locked && !selected ? 0.6 : 1,
       }}
     >
-      {/* Header row */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         {/* Checkbox */}
         <div
@@ -175,20 +206,18 @@ function AccountCard({
 
         {/* Main content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Creditor + status */}
+          {/* Row 1: creditor + status pill + bureau badges */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
             <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>{tradeline.creditor}</span>
-            <span
-              style={{
-                padding: "1px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600,
-                background: sc.bg, color: sc.text,
-              }}
-            >
+            <span style={{ padding: "1px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: sc.bg, color: sc.text }}>
               {tradeline.status || "Unknown Status"}
             </span>
+            {displayBureaus.map((b) => (
+              <BureauBadge key={b} bureau={b} />
+            ))}
           </div>
 
-          {/* Meta line */}
+          {/* Row 2: meta info */}
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 12 }}>
             <span style={{ fontSize: 12, color: "#6b7280" }}>
               <strong style={{ color: "#374151" }}>Acct:</strong> ••••{tradeline.accountNumber.slice(-4)}
@@ -217,44 +246,36 @@ function AccountCard({
             )}
           </div>
 
-          {/* Violation badges */}
-          {tradeline.violations.length > 0 && (
-            <div>
+          {/* Row 3: violation badges */}
+          {tradeline.violations.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {metro2Violations.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 4 }}>
-                  <span style={{ fontSize: 10, color: "#6b7280", alignSelf: "center", marginRight: 2, fontWeight: 600 }}>METRO 2:</span>
-                  {metro2Violations.map((v) => (
-                    <ViolationBadge key={v.code} v={v} />
-                  ))}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
+                  <span style={{ fontSize: 10, color: "#6b7280", fontWeight: 700, marginRight: 2, minWidth: 52 }}>METRO 2:</span>
+                  {metro2Violations.map((v) => <ViolationBadge key={v.code} v={v} />)}
                 </div>
               )}
               {fcraViolations.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                  <span style={{ fontSize: 10, color: "#6b7280", alignSelf: "center", marginRight: 2, fontWeight: 600 }}>FCRA:</span>
-                  {fcraViolations.map((v) => (
-                    <ViolationBadge key={v.code} v={v} />
-                  ))}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
+                  <span style={{ fontSize: 10, color: "#6b7280", fontWeight: 700, marginRight: 2, minWidth: 52 }}>FCRA:</span>
+                  {fcraViolations.map((v) => <ViolationBadge key={v.code} v={v} />)}
                 </div>
               )}
             </div>
-          )}
-
-          {tradeline.violations.length === 0 && (
+          ) : (
             <span style={{ fontSize: 11, color: "#9ca3af", fontStyle: "italic" }}>No automated violations detected</span>
           )}
         </div>
 
         {/* Violation count bubble */}
-        <div
-          style={{
-            flexShrink: 0, width: 36, height: 36, borderRadius: "50%",
-            background: tradeline.violations.length > 0 ? "#fef3c7" : "#f3f4f6",
-            border: `1.5px solid ${tradeline.violations.length > 0 ? "#fcd34d" : "#e5e7eb"}`,
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-            fontSize: 13, fontWeight: 700,
-            color: tradeline.violations.length > 0 ? "#92400e" : "#9ca3af",
-          }}
-        >
+        <div style={{
+          flexShrink: 0, width: 38, height: 38, borderRadius: "50%",
+          background: tradeline.violations.length > 0 ? "#fef3c7" : "#f3f4f6",
+          border: `1.5px solid ${tradeline.violations.length > 0 ? "#fcd34d" : "#e5e7eb"}`,
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          fontSize: 14, fontWeight: 700,
+          color: tradeline.violations.length > 0 ? "#92400e" : "#9ca3af",
+        }}>
           {tradeline.violations.length}
           <span style={{ fontSize: 8, fontWeight: 400, lineHeight: 1 }}>issues</span>
         </div>
@@ -265,6 +286,27 @@ function AccountCard({
           Upgrade to select more accounts
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Bureau group header ──────────────────────────────────────────────────────── */
+function BureauGroupHeader({ bureau, count }: { bureau: string; count: number }) {
+  const key = bureau.toUpperCase();
+  const color = BUREAU_COLORS[key] || BUREAU_COLORS["EXPERIAN"];
+  const label = BUREAU_LABELS[key] || bureau;
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10, margin: "20px 0 8px",
+      paddingBottom: 8, borderBottom: `2px solid ${color.border}`,
+    }}>
+      <span style={{
+        padding: "3px 12px", borderRadius: 6, fontSize: 12, fontWeight: 700,
+        background: color.bg, color: color.text, border: `1px solid ${color.border}`,
+      }}>
+        {label}
+      </span>
+      <span style={{ fontSize: 12, color: "#6b7280" }}>{count} negative account{count !== 1 ? "s" : ""}</span>
     </div>
   );
 }
@@ -313,6 +355,29 @@ function DropZone({ onFile }: { onFile: (f: File) => void }) {
   );
 }
 
+/* ── Group tradelines by bureau ──────────────────────────────────────────────── */
+function groupByBureau(tradelines: AnalyzedTradeline[]): Record<string, AnalyzedTradeline[]> {
+  const groups: Record<string, AnalyzedTradeline[]> = {};
+  const bureauOrder = ["EXPERIAN", "EQUIFAX", "TRANSUNION"];
+
+  for (const t of tradelines) {
+    const primaryBureau =
+      (t.bureaus && t.bureaus.length > 0 ? t.bureaus[0] : t.bureau || "OTHER").toUpperCase();
+    if (!groups[primaryBureau]) groups[primaryBureau] = [];
+    groups[primaryBureau].push(t);
+  }
+
+  // Sort by preferred bureau order
+  const sorted: Record<string, AnalyzedTradeline[]> = {};
+  for (const b of bureauOrder) {
+    if (groups[b]?.length) sorted[b] = groups[b];
+  }
+  for (const b of Object.keys(groups)) {
+    if (!sorted[b]) sorted[b] = groups[b];
+  }
+  return sorted;
+}
+
 /* ── Main page ───────────────────────────────────────────────────────────────── */
 export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (items: AnalyzedTradeline[]) => void }) {
   const { toast } = useToast();
@@ -354,16 +419,13 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
     onSuccess: (data) => {
       setUploadResult(data);
       setSelectedKeys(new Set());
-      if (data.note) {
-        toast({ title: "Heads up", description: data.note });
-      }
+      if (data.note) toast({ title: "Heads up", description: data.note });
     },
     onError: (err: Error) => {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     },
   });
 
-  // Active data comes from whichever source is selected
   const activeData: TradelineResponse | null =
     source === "array" ? (arrayData || null) : uploadResult;
 
@@ -379,7 +441,7 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
         if (disputeLimit !== null && next.size >= disputeLimit) {
           toast({
             title: `${tier === "starter" ? "Starter" : "Plan"} limit reached`,
-            description: `Your plan allows up to ${disputeLimit} accounts per dispute. Upgrade to Pro or Elite for unlimited.`,
+            description: `Your plan allows up to ${disputeLimit} accounts per dispute batch. Upgrade to Pro or Elite for unlimited.`,
           });
           return prev;
         }
@@ -395,13 +457,13 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
 
   const handleGenerate = () => {
     if (selectedTradelines.length === 0) {
-      toast({ title: "No accounts selected", description: "Check at least one account before generating dispute letters." });
+      toast({ title: "No accounts selected", description: "Select at least one account first." });
       return;
     }
     if (onGenerateLetters) {
       onGenerateLetters(selectedTradelines);
     } else {
-      toast({ title: "Coming soon", description: "Letter generation will be available shortly (Task #135)." });
+      toast({ title: "Letter generation coming soon", description: "This will be available in the next update." });
     }
   };
 
@@ -416,7 +478,7 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
             <p className="cp-page-subtitle">AI-powered credit report analysis and violation detection.</p>
           </div>
         </div>
-        <LockedGate upgradeLabel="View Plans" />
+        <LockedGate />
       </div>
     );
   }
@@ -434,50 +496,36 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
             </p>
           </div>
           {disputeLimit !== null && (
-            <div style={{
-              padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600,
-              background: "#fffbeb", color: "#92400e", border: "1px solid #fcd34d",
-            }}>
+            <div style={{ padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "#fffbeb", color: "#92400e", border: "1px solid #fcd34d" }}>
               {tier.charAt(0).toUpperCase() + tier.slice(1)} plan · up to {disputeLimit} accounts
             </div>
           )}
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 720, margin: "32px auto" }}>
-          {/* Array pull option */}
           <button
-            onClick={() => { setSource("array"); refetchArray(); }}
+            onClick={() => { setSource("array"); }}
             style={{
               background: "#fff", border: "2px solid #e5e7eb", borderRadius: 16,
               padding: "36px 24px", textAlign: "center", cursor: "pointer",
               transition: "all 0.15s", display: "flex", flexDirection: "column",
               alignItems: "center", gap: 12,
             }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = "#d97706";
-              (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 3px rgba(217,119,6,0.1)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = "#e5e7eb";
-              (e.currentTarget as HTMLElement).style.boxShadow = "none";
-            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#d97706"; (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 3px rgba(217,119,6,0.1)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#e5e7eb"; (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
           >
             <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#fffbeb", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22C6.48 22 2 17.52 2 12S6.48 2 12 2s10 4.48 10 10" />
-                <path d="M16 12l-4-4-4 4M12 8v8" />
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
               </svg>
             </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: 16, color: "#111827", marginBottom: 4 }}>Pull from Credit File</div>
               <div style={{ fontSize: 13, color: "#6b7280" }}>Fetch live 3-bureau data from your connected Array credit monitoring account</div>
             </div>
-            <div style={{ padding: "4px 12px", borderRadius: 20, background: "#d97706", color: "#fff", fontSize: 11, fontWeight: 700 }}>
-              RECOMMENDED
-            </div>
+            <div style={{ padding: "4px 12px", borderRadius: 20, background: "#d97706", color: "#fff", fontSize: 11, fontWeight: 700 }}>RECOMMENDED</div>
           </button>
 
-          {/* Upload option */}
           <button
             onClick={() => setSource("upload")}
             style={{
@@ -486,14 +534,8 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
               transition: "all 0.15s", display: "flex", flexDirection: "column",
               alignItems: "center", gap: 12,
             }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = "#6366f1";
-              (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 3px rgba(99,102,241,0.1)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor = "#e5e7eb";
-              (e.currentTarget as HTMLElement).style.boxShadow = "none";
-            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#6366f1"; (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 3px rgba(99,102,241,0.1)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#e5e7eb"; (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
           >
             <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#eef2ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -545,11 +587,14 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
   // ── Results screen ────────────────────────────────────────────────────────
   const isLoading = source === "array" && arrayLoading;
   const isError = source === "array" && !!arrayError;
-  const errorMessage = arrayError instanceof Error ? arrayError.message : "";
+  const errorMessage = arrayError instanceof Error ? arrayError.message : String(arrayError || "");
   const notEnrolled = errorMessage.includes("enrolled") || errorMessage.includes("404");
 
+  const bureauGroups = groupByBureau(negativeTradelines);
+  const hasBureauData = Object.keys(bureauGroups).some((b) => b !== "OTHER");
+
   return (
-    <div style={{ paddingBottom: selectedKeys.size > 0 ? 100 : 0 }}>
+    <div style={{ paddingBottom: selectedKeys.size > 0 ? 108 : 0 }}>
       {/* Page header */}
       <div className="cp-page-header">
         <div>
@@ -563,10 +608,7 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {disputeLimit !== null && (
-            <div style={{
-              padding: "5px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600,
-              background: "#fffbeb", color: "#92400e", border: "1px solid #fcd34d",
-            }}>
+            <div style={{ padding: "5px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "#fffbeb", color: "#92400e", border: "1px solid #fcd34d" }}>
               {tier.charAt(0).toUpperCase() + tier.slice(1)} · max {disputeLimit} selected
             </div>
           )}
@@ -580,11 +622,7 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
             <button
               onClick={() => refetchArray()}
               disabled={arrayLoading}
-              style={{
-                background: "#d97706", color: "#fff", border: "none", borderRadius: 8,
-                padding: "7px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600,
-                opacity: arrayLoading ? 0.6 : 1,
-              }}
+              style={{ background: "#d97706", color: "#fff", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600, opacity: arrayLoading ? 0.6 : 1 }}
             >
               {arrayLoading ? "Refreshing…" : "↻ Refresh"}
             </button>
@@ -608,11 +646,9 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
             <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
             <div style={{ fontWeight: 700, fontSize: 16, color: "#92400e", marginBottom: 8 }}>Credit Monitoring Not Connected</div>
             <div style={{ fontSize: 13, color: "#78350f", marginBottom: 16 }}>
-              Connect your Array credit monitoring account first to pull live 3-bureau data here.
+              Connect your Array credit monitoring account first to pull live 3-bureau data.
             </div>
-            <a href="/portal" style={{ color: "#d97706", fontWeight: 600, fontSize: 13 }}>
-              Go to Credit Monitoring → 
-            </a>
+            <a href="/portal" style={{ color: "#d97706", fontWeight: 600, fontSize: 13 }}>Go to Credit Monitoring →</a>
           </div>
         </div>
       )}
@@ -627,34 +663,18 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
         <>
           {/* Summary bar */}
           {negativeTradelines.length > 0 && (
-            <div style={{
-              display: "flex", gap: 16, marginBottom: 20, flexWrap: "wrap",
-            }}>
-              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 18px", flex: 1, minWidth: 120 }}>
-                <div style={{ fontSize: 22, fontWeight: 700, color: "#dc2626" }}>{negativeTradelines.length}</div>
-                <div style={{ fontSize: 11, color: "#6b7280", fontWeight: 500 }}>Negative Accounts</div>
-              </div>
-              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 18px", flex: 1, minWidth: 120 }}>
-                <div style={{ fontSize: 22, fontWeight: 700, color: "#d97706" }}>
-                  {negativeTradelines.reduce((a, t) => a + t.violations.length, 0)}
+            <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
+              {[
+                { value: negativeTradelines.length, label: "Negative Accounts", color: "#dc2626" },
+                { value: negativeTradelines.reduce((a, t) => a + t.violations.length, 0), label: "Total Violations", color: "#d97706" },
+                { value: negativeTradelines.filter((t) => t.violations.some((v) => v.category === "fcra")).length, label: "FCRA Issues", color: "#1e40af" },
+                { value: selectedKeys.size, label: `Selected${disputeLimit !== null ? ` / ${disputeLimit}` : ""}`, color: "#7c3aed" },
+              ].map(({ value, label, color }) => (
+                <div key={label} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 18px", flex: 1, minWidth: 110 }}>
+                  <div style={{ fontSize: 22, fontWeight: 700, color }}>{value}</div>
+                  <div style={{ fontSize: 11, color: "#6b7280", fontWeight: 500 }}>{label}</div>
                 </div>
-                <div style={{ fontSize: 11, color: "#6b7280", fontWeight: 500 }}>Total Violations</div>
-              </div>
-              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 18px", flex: 1, minWidth: 120 }}>
-                <div style={{ fontSize: 22, fontWeight: 700, color: "#1e40af" }}>
-                  {negativeTradelines.filter((t) => t.violations.some((v) => v.category === "fcra")).length}
-                </div>
-                <div style={{ fontSize: 11, color: "#6b7280", fontWeight: 500 }}>FCRA Violations</div>
-              </div>
-              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 18px", flex: 1, minWidth: 120 }}>
-                <div style={{ fontSize: 22, fontWeight: 700, color: "#7c3aed" }}>
-                  {selectedKeys.size}
-                </div>
-                <div style={{ fontSize: 11, color: "#6b7280", fontWeight: 500 }}>
-                  Selected
-                  {disputeLimit !== null ? ` / ${disputeLimit}` : ""}
-                </div>
-              </div>
+              ))}
             </div>
           )}
 
@@ -683,7 +703,7 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
                 </>
               )}
               <span style={{ fontSize: 12, color: "#9ca3af", marginLeft: "auto" }}>
-                Click an account card to select it for disputing
+                Click a card to select it for disputing
               </span>
             </div>
           )}
@@ -693,18 +713,39 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
             <EmptyState
               icon="✅"
               title="No Negative Accounts Found"
-              description="Great news — no derogatory items were detected in your credit report. Check back after your next credit pull."
+              description="Great news — no derogatory items were detected. Check back after your next credit pull."
             />
+          ) : hasBureauData ? (
+            /* Grouped by bureau */
+            Object.entries(bureauGroups).map(([bureau, tradelines]) => (
+              <div key={bureau}>
+                <BureauGroupHeader bureau={bureau} count={tradelines.length} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {tradelines.map((tradeline) => {
+                    const globalIndex = negativeTradelines.indexOf(tradeline);
+                    const key = `${tradeline.creditor}_${globalIndex}`;
+                    const isSelected = selectedKeys.has(key);
+                    const isLocked = !isSelected && disputeLimit !== null && selectedKeys.size >= disputeLimit;
+                    return (
+                      <AccountCard
+                        key={key}
+                        tradeline={tradeline}
+                        selected={isSelected}
+                        locked={isLocked}
+                        onToggle={() => toggleSelect(key)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            ))
           ) : (
+            /* Flat list (no bureau data) */
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {negativeTradelines.map((tradeline, i) => {
                 const key = `${tradeline.creditor}_${i}`;
                 const isSelected = selectedKeys.has(key);
-                const isLocked =
-                  !isSelected &&
-                  disputeLimit !== null &&
-                  selectedKeys.size >= disputeLimit;
-
+                const isLocked = !isSelected && disputeLimit !== null && selectedKeys.size >= disputeLimit;
                 return (
                   <AccountCard
                     key={key}
@@ -712,14 +753,12 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
                     selected={isSelected}
                     locked={isLocked}
                     onToggle={() => toggleSelect(key)}
-                    index={i}
                   />
                 );
               })}
             </div>
           )}
 
-          {/* Report timestamp */}
           {activeData?.reportFetchedAt && (
             <div style={{ marginTop: 16, fontSize: 11, color: "#9ca3af", textAlign: "right" }}>
               Report pulled {new Date(activeData.reportFetchedAt).toLocaleString()}
@@ -730,15 +769,13 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
 
       {/* Sticky bottom bar */}
       {selectedKeys.size > 0 && (
-        <div
-          style={{
-            position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
-            background: "#1f2937", color: "#fff", borderRadius: 16,
-            padding: "14px 24px", display: "flex", alignItems: "center", gap: 20,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.25)", zIndex: 100,
-            maxWidth: "calc(100vw - 48px)",
-          }}
-        >
+        <div style={{
+          position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
+          background: "#1f2937", color: "#fff", borderRadius: 16,
+          padding: "14px 24px", display: "flex", alignItems: "center", gap: 20,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.25)", zIndex: 100,
+          maxWidth: "calc(100vw - 48px)",
+        }}>
           <div>
             <span style={{ fontWeight: 700, fontSize: 16 }}>{selectedKeys.size}</span>
             <span style={{ fontSize: 13, color: "#9ca3af", marginLeft: 4 }}>
@@ -768,9 +805,7 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
         </div>
       )}
 
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

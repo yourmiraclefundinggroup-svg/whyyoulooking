@@ -21,7 +21,8 @@ export interface RawTradeline {
   paymentStatus?: string;
   latePayments?: { days30?: number; days60?: number; days90?: number };
   suggestedDisputeReason?: string;
-  bureaus?: string[];
+  bureaus?: string[];       // Which bureaus report this account
+  bureau?: string;          // Primary bureau (if single-bureau source)
 }
 
 export interface AnalyzedTradeline extends RawTradeline {
@@ -137,7 +138,7 @@ export function analyzeTradelineViolations(t: RawTradeline): TradelineViolation[
     });
   }
 
-  // Cross-bureau inconsistency placeholder — present when multi-bureau data is supplied
+  // Cross-bureau inconsistency — present when multi-bureau data shows this account
   if (t.bureaus && t.bureaus.length > 1) {
     violations.push({
       code: "M2_CROSS_BUREAU",
@@ -168,6 +169,13 @@ export function analyzeTradelineViolations(t: RawTradeline): TradelineViolation[
       category: "fcra",
       label: "§ 1681s-2(b) Furnisher",
       statute: "15 U.S.C. § 1681s-2(b)",
+    });
+    // § 1681b — permissible purpose: all reporting must have an allowable purpose
+    violations.push({
+      code: "FCRA_1681B",
+      category: "fcra",
+      label: "§ 1681b Permissible Purpose",
+      statute: "15 U.S.C. § 1681b",
     });
   }
 

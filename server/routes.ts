@@ -9413,6 +9413,9 @@ ${denialLetterText}`
         latePayments60?: number; monthsLate60?: number;
         latePayments90?: number; monthsLate90?: number;
         remarks?: string;
+        // Bureau attribution fields (Array 3-bureau report)
+        bureau?: string; reportingBureau?: string; bureauCode?: string;
+        bureaus?: string[]; reportingBureaus?: string[];
       };
       type ArrInq = {
         creditorName?: string; subscriberName?: string; name?: string;
@@ -9436,6 +9439,18 @@ ${denialLetterText}`
           days60: acct.latePayments60 || acct.monthsLate60 || 0,
           days90: acct.latePayments90 || acct.monthsLate90 || 0,
         };
+        // Extract bureau attribution — Array 3-bureau reports often tag accounts per bureau
+        const bureauRaw = acct.bureaus || acct.reportingBureaus;
+        const singleBureau = acct.bureau || acct.reportingBureau || acct.bureauCode;
+        const normalizeBureau = (b: string) => {
+          const u = b.toUpperCase();
+          if (u.includes("EXPERIAN") || u === "EXP") return "EXPERIAN";
+          if (u.includes("EQUIFAX") || u === "EQF") return "EQUIFAX";
+          if (u.includes("TRANSUNION") || u === "TU" || u.includes("TRANS")) return "TRANSUNION";
+          return u;
+        };
+        const bureaus = bureauRaw ? bureauRaw.map(normalizeBureau) : undefined;
+        const bureau = singleBureau ? normalizeBureau(singleBureau) : undefined;
         return {
           creditor: acct.creditorName || acct.name || acct.furnisherName || "Unknown Creditor",
           accountNumber: acct.accountNumber || acct.number || acct.accountId || "Unknown",
@@ -9445,6 +9460,8 @@ ${denialLetterText}`
           dateOpened: acct.dateOpened || acct.openDate || "",
           dateOfFirstDelinquency: dofd || undefined,
           latePayments,
+          bureaus,
+          bureau,
         };
       });
 
