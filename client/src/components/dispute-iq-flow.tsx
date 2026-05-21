@@ -205,6 +205,130 @@ function Field({
   );
 }
 
+/* ── Tracking panel ─────────────────────────────────────────────────────────── */
+interface TrackingEvent {
+  id: string;
+  name: string;
+  time: string;
+  location: string;
+  type: string;
+}
+interface TrackingData {
+  status: string;
+  events: TrackingEvent[];
+  expectedDelivery: string;
+}
+
+function TrackingPanel({ lobId, onClose }: { lobId: string; onClose: () => void }) {
+  const authToken = localStorage.getItem("auth_token");
+
+  const isTerminal = (status: string) => {
+    const s = status.toLowerCase();
+    return s.includes("delivered") || s.includes("returned") || s.includes("re-routed");
+  };
+
+  const { data, isLoading, isError, dataUpdatedAt } = useQuery<TrackingData>({
+    queryKey: ["/api/lob/track", lobId],
+    queryFn: async () => {
+      const res = await fetch(`/api/lob/track/${lobId}`, {
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+      });
+      if (!res.ok) throw new Error("Tracking fetch failed");
+      return res.json();
+    },
+    refetchInterval: (query) => {
+      const status = query.state.data?.status || "";
+      return isTerminal(status) ? false : 3 * 60 * 1000;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const statusColor = (() => {
+    const s = (data?.status || "").toLowerCase();
+    if (s.includes("delivered")) return { bg: "#f0fdf4", text: "#166534", border: "#86efac" };
+    if (s.includes("return")) return { bg: "#fef2f2", text: "#b91c1c", border: "#fca5a5" };
+    if (s.includes("transit") || s.includes("local") || s.includes("processed") || s.includes("accept"))
+      return { bg: "#eff6ff", text: "#1d4ed8", border: "#93c5fd" };
+    return { bg: "#f9fafb", text: "#374151", border: "#e5e7eb" };
+  })();
+
+  return (
+    <div style={{ margin: "0 24px 16px", padding: 16, background: "#f9fafb", borderRadius: 12, border: "1px solid #e5e7eb" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <span style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>📦 USPS Certified Mail Tracking</span>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#9ca3af" }}>✕</button>
+      </div>
+
+      {isLoading && (
+        <div style={{ color: "#6b7280", fontSize: 13 }}>Loading tracking info…</div>
+      )}
+      {isError && (
+        <div style={{ color: "#dc2626", fontSize: 13 }}>Could not load tracking data. Try again shortly.</div>
+      )}
+
+      {data && (
+        <>
+          {/* Status badge + estimated delivery */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+            <span style={{
+              padding: "4px 14px", borderRadius: 20, fontSize: 13, fontWeight: 700,
+              background: statusColor.bg, color: statusColor.text, border: `1px solid ${statusColor.border}`,
+            }}>
+              {data.status || "Label Created"}
+            </span>
+            {data.expectedDelivery && (
+              <span style={{ fontSize: 12, color: "#6b7280" }}>
+                Est. delivery: <strong>{data.expectedDelivery}</strong>
+              </span>
+            )}
+          </div>
+
+          {/* Events timeline */}
+          {data.events.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {data.events.map((ev, i) => (
+                <div key={ev.id || i} style={{ display: "flex", gap: 10 }}>
+                  {/* Dot + line */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                    <div style={{
+                      width: 10, height: 10, borderRadius: "50%", marginTop: 4, flexShrink: 0,
+                      background: i === 0 ? statusColor.text : "#d1d5db",
+                      border: `2px solid ${i === 0 ? statusColor.border : "#e5e7eb"}`,
+                    }} />
+                    {i < data.events.length - 1 && (
+                      <div style={{ width: 2, flex: 1, minHeight: 18, background: "#e5e7eb" }} />
+                    )}
+                  </div>
+                  {/* Event text */}
+                  <div style={{ paddingBottom: 14 }}>
+                    <div style={{ fontSize: 13, fontWeight: i === 0 ? 700 : 500, color: i === 0 ? "#111827" : "#374151" }}>
+                      {ev.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>
+                      {ev.time ? new Date(ev.time).toLocaleString() : ""}
+                      {ev.location ? ` · ${ev.location}` : ""}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontSize: 13, color: "#6b7280", fontStyle: "italic" }}>
+              No scan events yet — your letter has been prepared for USPS pickup.
+            </div>
+          )}
+
+          {/* Footer: last updated + auto-refresh note */}
+          <div style={{ marginTop: 6, fontSize: 11, color: "#9ca3af", textAlign: "right" }}>
+            Updated {new Date(dataUpdatedAt).toLocaleTimeString()}
+            {!isTerminal(data.status) && " · auto-refreshes every 3 min"}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ── Letter preview dialog ──────────────────────────────────────────────────── */
 function LetterPreviewDialog({
   letter,
@@ -226,8 +350,9 @@ function LetterPreviewDialog({
   const { user } = useUserContext();
   const canMail = canAccess(FEATURES.LOB_MAIL);
   const [showSendConfirm, setShowSendConfirm] = useState(false);
-  const [sendResult, setSendResult] = useState<{ trackingNumber: string; expectedDelivery: string } | null>(null);
+  const [sendResult, setSendResult] = useState<{ trackingNumber: string; expectedDelivery: string; lobId?: string } | null>(null);
   const [draftConfirmed, setDraftConfirmed] = useState(false);
+  const [showTracking, setShowTracking] = useState(false);
 
   const mailMutation = useMutation({
     mutationFn: async () => {
@@ -248,7 +373,7 @@ function LetterPreviewDialog({
         const err = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(err.error || "Send failed");
       }
-      return res.json() as Promise<{ trackingNumber: string; expectedDelivery: string }>;
+      return res.json() as Promise<{ trackingNumber: string; expectedDelivery: string; lobId?: string }>;
     },
     onSuccess: (data) => {
       setSendResult(data);
@@ -359,12 +484,34 @@ function LetterPreviewDialog({
             <div style={{ fontSize: 13, color: "#166534" }}>
               Tracking: <strong>{sendResult.trackingNumber}</strong> · Expected delivery: {sendResult.expectedDelivery || "5–7 business days"}
             </div>
-            <button
-              onClick={onTrack}
-              style={{ marginTop: 8, fontSize: 12, color: "#d97706", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0 }}
-            >
-              View in Disputes Tracking →
-            </button>
+            <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
+              {sendResult.lobId && (
+                <button
+                  onClick={() => setShowTracking((v) => !v)}
+                  style={{
+                    fontSize: 12, fontWeight: 700, padding: "5px 14px", borderRadius: 8,
+                    background: showTracking ? "#166534" : "#fff",
+                    color: showTracking ? "#fff" : "#166534",
+                    border: "1px solid #86efac", cursor: "pointer",
+                  }}
+                >
+                  {showTracking ? "▲ Hide Tracking" : "📦 Track Delivery"}
+                </button>
+              )}
+              <button
+                onClick={onTrack}
+                style={{ fontSize: 12, color: "#d97706", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+              >
+                View in Disputes Tracking →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Inline tracking panel */}
+        {sendResult?.lobId && showTracking && (
+          <div style={{ marginTop: 8 }}>
+            <TrackingPanel lobId={sendResult.lobId} onClose={() => setShowTracking(false)} />
           </div>
         )}
 
