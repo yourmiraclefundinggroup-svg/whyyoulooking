@@ -19,7 +19,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
 import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
-import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users, disputeLettersNew, disputes, creditScoreHistory } from "@shared/schema";
+import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users, disputeLettersNew, disputes, creditIssues, creditScoreHistory } from "@shared/schema";
 import { TIER_FEATURES, tierHasFeature, getDisputeLimit, type SubscriptionTier } from "./tier-features";
 import { z } from "zod";
 import { createRequire } from "module";
@@ -9897,7 +9897,37 @@ ${pdfText.slice(0, 8000)}`;
             .where(eq(disputeLettersNew.id, parseInt(letterId)));
         }
 
-        // No-op: disputeLettersNew record (updated above) is the source of truth for client letter tracking
+        // Create a credit issue + dispute record so the mailed letter appears in the client disputes tracker
+        try {
+          const bureauLabel: Record<string, string> = { EXPERIAN: "Experian", EQUIFAX: "Equifax", TRANSUNION: "TransUnion" };
+          const [issue] = await db
+            .insert(creditIssues)
+            .values({
+              userId: user.id,
+              type: "COLLECTION",
+              title: `${bureauLabel[bureau.toUpperCase()] || bureau} Dispute Letter (Certified Mail)`,
+              description: `Dispute letter mailed via USPS Certified Mail to ${bureauLabel[bureau.toUpperCase()] || bureau} on ${new Date().toLocaleDateString()}. Tracking: ${result.trackingNumber}`,
+              impact: 0,
+              dateAdded: new Date(),
+              status: "DISPUTED",
+              creditor: bureauLabel[bureau.toUpperCase()] || bureau,
+            })
+            .returning({ id: creditIssues.id });
+
+          if (issue) {
+            await db.insert(disputes).values({
+              userId: user.id,
+              issueId: issue.id,
+              bureau: bureau.toUpperCase(),
+              status: "SENT",
+              letterContent,
+              uspsTrackingNumber: result.trackingNumber,
+              expectedResponse: new Date(Date.now() + 35 * 86_400_000),
+            });
+          }
+        } catch (disputeErr) {
+          console.error("[Lob/Client] Failed to create dispute tracking record:", disputeErr);
+        }
 
         res.json({
           success: true,

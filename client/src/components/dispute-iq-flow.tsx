@@ -227,6 +227,7 @@ function LetterPreviewDialog({
   const canMail = canAccess(FEATURES.LOB_MAIL);
   const [showSendConfirm, setShowSendConfirm] = useState(false);
   const [sendResult, setSendResult] = useState<{ trackingNumber: string; expectedDelivery: string } | null>(null);
+  const [draftConfirmed, setDraftConfirmed] = useState(false);
 
   const mailMutation = useMutation({
     mutationFn: async () => {
@@ -299,14 +300,56 @@ function LetterPreviewDialog({
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "#9ca3af" }}>✕</button>
         </div>
 
-        {/* Letter content */}
+        {/* Letter content with citation highlighting */}
         <div style={{
           padding: "24px", maxHeight: "55vh", overflowY: "auto",
           fontFamily: "'Courier New', monospace", fontSize: 12, lineHeight: 1.7,
-          whiteSpace: "pre-wrap", color: "#1f2937", background: "#fafafa",
-          borderBottom: "1px solid #e5e7eb",
+          background: "#fafafa", borderBottom: "1px solid #e5e7eb",
         }}>
-          {letter}
+          {letter.split("\n").map((line, i) => {
+            const t = line.trim();
+            const isDisputeNum = /^DISPUTE #\d+:/.test(t);
+            const isSectionHeader = !isDisputeNum && /^(SECTION|LEGAL NOTICE|PACKAGE CONTENTS|CONSUMER IDENTIFICATION|DISPUTED ACCOUNTS|Sent via|RE:)/.test(t);
+            const isDivider = /^[═─]{4,}$/.test(t);
+            const isGround = /^\s*(Ground \d+|DEMAND:)/.test(line);
+            const isViolation = t.startsWith("▶");
+            const hasCitation = !isDivider && /§\s*\d+|U\.S\.C\.|Metro 2|FCRA|§\s*160\d/.test(line);
+
+            let color = "#1f2937";
+            let fontWeight: string | number = "normal";
+            let background = "transparent";
+            let borderLeft = "none";
+            let padding = "0";
+
+            if (isDisputeNum) {
+              color = bColor.text; fontWeight = 700;
+              background = bColor.bg;
+              borderLeft = `3px solid ${bColor.text}`;
+              padding = "4px 8px";
+            } else if (isSectionHeader) {
+              color = "#111827"; fontWeight = 600;
+            } else if (isGround) {
+              color = "#374151"; fontWeight = 600;
+            } else if (isViolation) {
+              color = "#92400e";
+            } else if (hasCitation) {
+              color = "#b45309";
+            } else if (isDivider) {
+              color = bColor.text;
+            }
+
+            return (
+              <div key={i} style={{
+                color, fontWeight, background, borderLeft, padding,
+                marginTop: isDisputeNum ? 8 : 0,
+                marginBottom: isDisputeNum ? 4 : 0,
+                whiteSpace: "pre-wrap",
+                minHeight: t === "" ? "0.8em" : undefined,
+              }}>
+                {line || "\u00A0"}
+              </div>
+            );
+          })}
         </div>
 
         {/* Sent success */}
@@ -367,6 +410,26 @@ function LetterPreviewDialog({
           >
             ⬇ Download PDF
           </button>
+
+          {/* Save as Draft — explicit user action (letter is already auto-saved on generation) */}
+          {!sendResult && (
+            <button
+              onClick={() => {
+                setDraftConfirmed(true);
+                toast({ title: "Draft saved", description: "Your dispute letter is saved as a draft. You can find it under My Letters." });
+              }}
+              style={{
+                padding: "9px 18px", borderRadius: 8,
+                border: `1px solid ${draftConfirmed ? "#86efac" : "#e5e7eb"}`,
+                background: draftConfirmed ? "#f0fdf4" : "#fff",
+                color: draftConfirmed ? "#166534" : "#374151",
+                fontSize: 13, fontWeight: 600, cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 6,
+              }}
+            >
+              {draftConfirmed ? "✓ Draft Saved" : "💾 Save as Draft"}
+            </button>
+          )}
 
           {!sendResult && (
             canMail ? (
