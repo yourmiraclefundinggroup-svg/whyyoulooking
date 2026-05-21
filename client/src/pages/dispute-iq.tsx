@@ -650,9 +650,20 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
                     {ltr.status}
                   </span>
                   {ltr.trackingNumber && (
-                    <div style={{ fontSize: 12, color: "#6b7280", flexShrink: 0 }}>
+                    <a
+                      href={`https://tools.usps.com/go/TrackConfirmAction?tLabels=${encodeURIComponent(ltr.trackingNumber)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        fontSize: 12, color: ltr.status === "mailed" ? "#166534" : "#6b7280",
+                        fontWeight: ltr.status === "mailed" ? 600 : 400,
+                        textDecoration: "underline", flexShrink: 0,
+                        display: "flex", alignItems: "center", gap: 4,
+                      }}
+                    >
                       📦 {ltr.trackingNumber}
-                    </div>
+                    </a>
                   )}
                   <span style={{ color: "#d1d5db", fontSize: 18, flexShrink: 0 }}>›</span>
                 </div>
@@ -764,6 +775,8 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
           </button>
         </div>
 
+        {TabBar}
+
         {ProfileNudgeBanner}
 
         <div style={{ maxWidth: 580, margin: "0 auto" }}>
@@ -827,6 +840,7 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
         </div>
       </div>
 
+      {TabBar}
       {ProfileNudgeBanner}
 
       {/* Loading */}
