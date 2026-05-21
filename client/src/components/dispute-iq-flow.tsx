@@ -232,7 +232,7 @@ function LetterPreviewDialog({
   const mailMutation = useMutation({
     mutationFn: async () => {
       const authToken = localStorage.getItem("auth_token");
-      const res = await fetch("/api/client/lob/send-letter", {
+      const res = await fetch("/api/lob/send-letter", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -528,8 +528,9 @@ export function DisputeIQFlow({
     try {
       const authToken = localStorage.getItem("auth_token");
       const fd = new FormData();
-      fd.append("file", file);
+      // docType MUST come before the file so multer req.body has it when naming the file
       fd.append("docType", docType);
+      fd.append("file", file);
       const res = await fetch("/api/client/dispute-docs", {
         method: "POST",
         headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},

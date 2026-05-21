@@ -8280,13 +8280,51 @@ If you are just answering a question (not updating the letter), just respond nor
   // Requires LOB_API_KEY env var. Use test_* key for dev, live_* for production.
 
   // POST /api/lob/send-letter
-  // Send a dispute letter to a bureau via certified mail
-  app.post("/api/lob/send-letter", authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  // Send a dispute letter via certified mail.
+  // Admin callers: must supply clientId, clientName, clientAddress, bureau, letterContent.
+  // Pro/Elite client callers: supply only bureau, letterContent, and optionally letterId —
+  //   clientName and clientAddress are derived from the authenticated user's profile.
+  app.post("/api/lob/send-letter", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const { clientId, letterId, bureau, letterContent, clientName, clientAddress } = req.body;
+      const user = (req as any).user as any;
+      if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-      if (!clientId || !bureau || !letterContent || !clientName || !clientAddress) {
-        return res.status(400).json({ error: "Missing required fields: clientId, bureau, letterContent, clientName, clientAddress" });
+      const isAdmin = user.role === "ADMIN";
+
+      // Check access — admin always allowed; clients need lob_mail feature
+      if (!isAdmin) {
+        const { getTierFeatures } = await import("./tier-features.js");
+        const features = getTierFeatures(user.subscriptionTier || "none");
+        if (!features.lob_mail) {
+          return res.status(403).json({ error: "Certified mail requires a Pro or Elite subscription." });
+        }
+      }
+
+      const { clientId: bodyClientId, letterId, bureau, letterContent } = req.body;
+      let { clientName, clientAddress } = req.body;
+
+      if (!bureau || !letterContent) {
+        return res.status(400).json({ error: "Missing required fields: bureau, letterContent" });
+      }
+
+      if (isAdmin) {
+        // Admin path: clientName + clientAddress must be provided in body
+        if (!clientName || !clientAddress) {
+          return res.status(400).json({ error: "Admin callers must supply clientName and clientAddress" });
+        }
+      } else {
+        // Client path: derive name + address from authenticated user profile
+        clientName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username;
+        if (!user.addressLine1 || !user.city || !user.state || !user.zipCode) {
+          return res.status(400).json({ error: "Your profile address is incomplete. Please update it before sending." });
+        }
+        clientAddress = {
+          line1: user.addressLine1,
+          line2: user.addressLine2 || undefined,
+          city: user.city,
+          state: user.state,
+          zip: user.zipCode,
+        };
       }
 
       const { sendDisputeLetter } = await import("./lob-service.js");
@@ -8300,17 +8338,44 @@ If you are just answering a question (not updating the letter), just respond nor
         returnReceipt: false,
       });
 
+      const resolvedClientId = isAdmin ? (bodyClientId || null) : user.id;
       console.log(`[Lob] Letter created — client: ${clientName}, bureau: ${bureau}, lobId: ${result.lobId}, tracking: ${result.trackingNumber}`);
 
-      // If a letterId was provided, update the tracking number in the DB
-      if (letterId) {
+      // Update letter record with tracking number
+      const resolvedLetterId = letterId ? parseInt(letterId) : null;
+      if (resolvedLetterId) {
         await db.update(disputeLettersNew)
           .set({
             trackingNumber: result.trackingNumber,
             status: "sent" as any,
             sentDate: new Date() as any,
           })
-          .where(eq(disputeLettersNew.id, parseInt(letterId)));
+          .where(eq(disputeLettersNew.id, resolvedLetterId));
+      }
+
+      // For client sends, create creditIssues + disputes tracking record
+      if (!isAdmin && resolvedClientId) {
+        try {
+          const [issue] = await db.insert(creditIssues).values({
+            userId: resolvedClientId,
+            issueType: "dispute",
+            description: `Certified mail dispute sent to ${bureau.toUpperCase()}`,
+            bureau: bureau.toUpperCase(),
+            status: "in_dispute",
+          } as any).returning();
+          if (issue) {
+            await db.insert(disputes).values({
+              userId: resolvedClientId,
+              issueId: issue.id,
+              letterContent,
+              trackingNumber: result.trackingNumber,
+              status: "sent",
+              bureau: bureau.toUpperCase(),
+            } as any);
+          }
+        } catch (trackErr: any) {
+          console.warn("[Lob] Could not create dispute tracking record:", trackErr.message);
+        }
       }
 
       res.json({
