@@ -125,88 +125,103 @@ export default function PricingPage() {
   const plans = audience === "personal" ? personalPlans : businessPlans;
 
   return (
-    <div className="min-h-screen" style={{ background: "#050A14" }}>
-      <Navbar variant="dark" />
+    <div className="min-h-screen" style={{ background: "#F1E8DA" }}>
+      <Navbar variant="light" />
 
       <div className="pt-44 pb-24 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-md mb-5">
-              <Sparkles size={12} className="text-yellow-300" />
+            <div
+              className="inline-flex items-center gap-2 text-white text-xs font-bold px-4 py-2 rounded-full shadow-md mb-5"
+              style={{ background: "linear-gradient(135deg, #7C6BCB, #9F93D9)" }}
+            >
+              <Sparkles size={12} className="text-white/80" />
               Live 3-Bureau Monitoring — Available Now
             </div>
-            <h1 className="text-5xl md:text-6xl font-black text-white tracking-tight mb-4">
+            <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-4" style={{ color: "#2A2725" }}>
               Your Path Forward
             </h1>
-            <p className="text-slate-400 text-lg max-w-xl mx-auto">
+            <p className="text-lg max-w-xl mx-auto" style={{ color: "#5B5652" }}>
               Start with a 3-day free trial. No credit card required. Cancel anytime.
             </p>
           </div>
 
+          {/* Audience Toggle */}
           <div className="flex justify-center mb-8">
             <div
-              id="business"
               className="flex rounded-full p-1"
               style={{
-                background: "#0F1E35",
-                border: "1px solid rgba(255,255,255,0.06)",
+                background: "#E0D5C4",
+                border: "1px solid rgba(42,39,37,0.12)",
               }}
             >
               <button
                 onClick={() => setAudience("personal")}
-                className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${
+                className="px-6 py-2 rounded-full text-sm font-semibold transition-all"
+                style={
                   audience === "personal"
-                    ? "bg-amber-500 text-black"
-                    : "text-slate-400 hover:text-white"
-                }`}
+                    ? { background: "#7C6BCB", color: "#fff" }
+                    : { color: "#5B5652" }
+                }
               >
                 Personal Credit
               </button>
               <button
                 onClick={() => setAudience("business")}
-                className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${
+                className="px-6 py-2 rounded-full text-sm font-semibold transition-all"
+                style={
                   audience === "business"
-                    ? "bg-amber-500 text-black"
-                    : "text-slate-400 hover:text-white"
-                }`}
+                    ? { background: "#7C6BCB", color: "#fff" }
+                    : { color: "#5B5652" }
+                }
               >
                 White-Label Business
               </button>
             </div>
           </div>
 
+          {/* Yearly toggle */}
           <div className="flex items-center justify-center gap-3 mb-12">
-            <span className={`text-sm ${!yearly ? "text-white" : "text-slate-500"}`}>Monthly</span>
+            <span className="text-sm font-medium" style={{ color: !yearly ? "#2A2725" : "#8B8480" }}>Monthly</span>
             <button
               onClick={() => setYearly(!yearly)}
               className="relative w-12 h-6 rounded-full transition-colors"
-              style={{ background: yearly ? "#F59E0B" : "rgba(255,255,255,0.1)" }}
+              style={{ background: yearly ? "#7C6BCB" : "rgba(42,39,37,0.15)" }}
             >
               <div
-                className="absolute top-1 w-4 h-4 rounded-full bg-white transition-transform"
+                className="absolute top-1 w-4 h-4 rounded-full bg-white transition-transform shadow-sm"
                 style={{ transform: yearly ? "translateX(28px)" : "translateX(4px)" }}
               />
             </button>
-            <span className={`text-sm ${yearly ? "text-white" : "text-slate-500"}`}>
-              Yearly <span className="text-emerald-400 font-semibold">Save 20%</span>
+            <span className="text-sm font-medium" style={{ color: yearly ? "#2A2725" : "#8B8480" }}>
+              Yearly <span className="font-semibold" style={{ color: "#6A7769" }}>Save 20%</span>
             </span>
           </div>
 
+          {/* Plan Cards */}
           <div className="grid gap-6 mb-16 md:grid-cols-3">
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className="card-3d card-3d-gold p-8 relative flex flex-col"
+                className="p-8 rounded-2xl relative flex flex-col transition-all"
                 style={
                   plan.popular
-                    ? { borderColor: "rgba(245,158,11,0.35)" }
-                    : {}
+                    ? {
+                        background: "#3A3734",
+                        border: "1px solid rgba(124,107,203,0.30)",
+                        boxShadow: "0 8px 32px rgba(42,39,37,0.18)",
+                      }
+                    : {
+                        background: "#F3EEE6",
+                        border: "1px solid rgba(42,39,37,0.12)",
+                        boxShadow: "0 2px 12px rgba(42,39,37,0.06)",
+                      }
                 }
               >
                 {plan.popular && (
                   <div
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-black text-xs font-bold whitespace-nowrap"
-                    style={{ background: "linear-gradient(135deg, #F59E0B, #FCD34D)" }}
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-white text-xs font-bold whitespace-nowrap"
+                    style={{ background: "linear-gradient(135deg, #7C6BCB, #9F93D9)" }}
                   >
                     ⭐ Most Popular
                   </div>
@@ -216,7 +231,7 @@ export default function PricingPage() {
                   <div className="mb-3">
                     <span
                       className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full text-white"
-                      style={{ background: "linear-gradient(135deg, #2563EB, #4F46E5)" }}
+                      style={{ background: "linear-gradient(135deg, #7C6BCB, #9F93D9)" }}
                     >
                       {plan.badge}
                     </span>
@@ -224,19 +239,32 @@ export default function PricingPage() {
                 )}
 
                 <div className="mb-6">
-                  <h3 className="text-white font-black text-xl mb-1">{plan.name}</h3>
-                  <p className="text-slate-500 text-sm">{plan.description}</p>
+                  <h3
+                    className="font-black text-xl mb-1"
+                    style={{ color: plan.popular ? "#fff" : "#2A2725" }}
+                  >
+                    {plan.name}
+                  </h3>
+                  <p
+                    className="text-sm"
+                    style={{ color: plan.popular ? "rgba(255,255,255,0.55)" : "#5B5652" }}
+                  >
+                    {plan.description}
+                  </p>
                 </div>
 
                 <div className="mb-6">
                   <div className="flex items-end gap-1">
-                    <span className="text-4xl font-black text-white">
+                    <span
+                      className="text-4xl font-black"
+                      style={{ color: plan.popular ? "#fff" : "#2A2725" }}
+                    >
                       ${yearly ? plan.yearlyPrice : plan.price}
                     </span>
-                    <span className="text-slate-500 mb-1">/mo</span>
+                    <span className="mb-1" style={{ color: plan.popular ? "rgba(255,255,255,0.45)" : "#8B8480" }}>/mo</span>
                   </div>
                   {yearly && (
-                    <div className="text-emerald-400 text-xs mt-1">
+                    <div className="text-xs mt-1" style={{ color: "#7B8A7A" }}>
                       Save ${((plan.price - plan.yearlyPrice) * 12).toFixed(0)}/year
                     </div>
                   )}
@@ -244,59 +272,82 @@ export default function PricingPage() {
 
                 <ul className="space-y-3 mb-8 flex-1">
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2 text-slate-300 text-sm">
-                      <CheckCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                    <li
+                      key={feature}
+                      className="flex items-start gap-2 text-sm"
+                      style={{ color: plan.popular ? "rgba(255,255,255,0.80)" : "#4A4541" }}
+                    >
+                      <CheckCircle
+                        className="w-4 h-4 flex-shrink-0 mt-0.5"
+                        style={{ color: plan.popular ? "#B0A6DF" : "#7B8A7A" }}
+                      />
                       {feature}
                     </li>
                   ))}
                 </ul>
 
                 <Link href={audience === "personal" ? `/checkout?tier=${plan.tier}` : "/signup"}>
-                  <Button
-                    className={`w-full font-bold ${
+                  <button
+                    className="w-full py-2.5 rounded-xl font-bold text-sm transition-all"
+                    style={
                       plan.popular
-                        ? "bg-amber-500 hover:bg-amber-400 text-black glow-gold"
-                        : "bg-white/5 hover:bg-white/10 text-white border border-white/10"
-                    }`}
+                        ? { background: "#7C6BCB", color: "#fff" }
+                        : {
+                            background: "transparent",
+                            color: "#2A2725",
+                            border: "1px solid rgba(42,39,37,0.22)",
+                          }
+                    }
+                    onMouseEnter={(e) => {
+                      if (plan.popular) (e.currentTarget.style.background = "#8D80D3");
+                      else (e.currentTarget.style.background = "rgba(42,39,37,0.05)");
+                    }}
+                    onMouseLeave={(e) => {
+                      if (plan.popular) (e.currentTarget.style.background = "#7C6BCB");
+                      else (e.currentTarget.style.background = "transparent");
+                    }}
                   >
                     {plan.popular ? "Start Free Trial →" : "Get Started →"}
-                  </Button>
+                  </button>
                 </Link>
               </div>
             ))}
           </div>
 
+          {/* Business info banner */}
           {audience === "business" && (
             <div
-              className="mb-10 flex items-start gap-3 px-5 py-4 rounded-xl border text-sm"
+              className="mb-10 flex items-start gap-3 px-5 py-4 rounded-xl text-sm"
               style={{
-                background: "rgba(245,158,11,0.06)",
-                borderColor: "rgba(245,158,11,0.2)",
+                background: "rgba(124,107,203,0.06)",
+                border: "1px solid rgba(124,107,203,0.20)",
               }}
             >
-              <span className="text-amber-400 mt-0.5 text-base leading-none flex-shrink-0">ℹ</span>
-              <p className="text-slate-300 leading-relaxed">
-                <span className="font-semibold text-amber-400">White-Label & SaaS Reseller:</span> All business plans include live 3-bureau credit monitoring, full white-label branding under your domain, and a complete client management portal. Launch your own credit repair brand with enterprise-grade technology.
+              <span className="mt-0.5 text-base leading-none flex-shrink-0" style={{ color: "#7C6BCB" }}>ℹ</span>
+              <p className="leading-relaxed" style={{ color: "#4A4541" }}>
+                <span className="font-semibold" style={{ color: "#7C6BCB" }}>White-Label &amp; SaaS Reseller:</span>{" "}
+                All business plans include live 3-bureau credit monitoring, full white-label branding under your domain, and a complete client management portal. Launch your own credit repair brand with enterprise-grade technology.
               </p>
             </div>
           )}
 
+          {/* Feature Comparison Table */}
           <div className="mb-16">
-            <h2 className="text-2xl font-black text-white text-center mb-8">Full Feature Comparison</h2>
+            <h2 className="text-2xl font-black text-center mb-8" style={{ color: "#2A2725" }}>Full Feature Comparison</h2>
             <div
-              className="rounded-2xl overflow-hidden border"
-              style={{ borderColor: "rgba(255,255,255,0.06)" }}
+              className="rounded-2xl overflow-hidden"
+              style={{ border: "1px solid rgba(42,39,37,0.10)" }}
             >
               <div
                 className="grid text-sm font-bold"
                 style={{
-                  background: "#0F1E35",
+                  background: "#E0D5C4",
                   gridTemplateColumns: "1fr repeat(3, 1fr)",
                 }}
               >
-                <div className="p-4 text-slate-400">Feature</div>
+                <div className="p-4" style={{ color: "#5B5652" }}>Feature</div>
                 {plans.map((p) => (
-                  <div key={p.name} className="p-4 text-center text-white">{p.name}</div>
+                  <div key={p.name} className="p-4 text-center font-bold" style={{ color: "#2A2725" }}>{p.name}</div>
                 ))}
               </div>
 
@@ -329,24 +380,24 @@ export default function PricingPage() {
               ]).map((row, i) => (
                 <div
                   key={row.label}
-                  className="grid text-sm border-t"
+                  className="grid text-sm"
                   style={{
-                    borderColor: "rgba(255,255,255,0.04)",
-                    background: i % 2 === 0 ? "rgba(255,255,255,0.01)" : "transparent",
+                    borderTop: "1px solid rgba(42,39,37,0.07)",
+                    background: i % 2 === 0 ? "rgba(42,39,37,0.02)" : "#F3EEE6",
                     gridTemplateColumns: "1fr repeat(3, 1fr)",
                   }}
                 >
-                  <div className="p-4 text-slate-400">{row.label}</div>
+                  <div className="p-4" style={{ color: "#5B5652" }}>{row.label}</div>
                   {row.values.map((val, j) => (
                     <div key={j} className="p-4 text-center">
                       {typeof val === "boolean" ? (
                         val ? (
-                          <span className="text-emerald-400 text-lg">✓</span>
+                          <span className="text-lg font-bold" style={{ color: "#7B8A7A" }}>✓</span>
                         ) : (
-                          <span className="text-slate-700">—</span>
+                          <span style={{ color: "#C5BDB6" }}>—</span>
                         )
                       ) : (
-                        <span className="text-slate-300">{val}</span>
+                        <span style={{ color: "#4A4541" }}>{val}</span>
                       )}
                     </div>
                   ))}
@@ -355,8 +406,9 @@ export default function PricingPage() {
             </div>
           </div>
 
+          {/* FAQ */}
           <div className="max-w-2xl mx-auto">
-            <h2 className="text-2xl font-black text-white text-center mb-8">Frequently Asked Questions</h2>
+            <h2 className="text-2xl font-black text-center mb-8" style={{ color: "#2A2725" }}>Frequently Asked Questions</h2>
             <div className="space-y-4">
               {[
                 {
@@ -378,10 +430,14 @@ export default function PricingPage() {
               ].map((faq) => (
                 <div
                   key={faq.q}
-                  className="card-3d p-6"
+                  className="p-6 rounded-2xl"
+                  style={{
+                    background: "#F3EEE6",
+                    border: "1px solid rgba(42,39,37,0.10)",
+                  }}
                 >
-                  <h3 className="text-white font-semibold mb-2 text-sm">{faq.q}</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">{faq.a}</p>
+                  <h3 className="font-semibold mb-2 text-sm" style={{ color: "#2A2725" }}>{faq.q}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: "#5B5652" }}>{faq.a}</p>
                 </div>
               ))}
             </div>

@@ -57,7 +57,7 @@ const PLANS = [
     price: "$99",
     interval: "/mo",
     badge: "Most Popular",
-    badgeColor: "bg-blue-600",
+    badgeColor: "bg-[#7C6BCB]",
     features: ["Unlimited disputes", "USPS certified mail tracking", "Full AI dispute letters", "Priority support", "Credit report analysis"],
     note: null,
   },
@@ -67,7 +67,7 @@ const PLANS = [
     price: "$149",
     interval: "/mo",
     badge: "Best Value",
-    badgeColor: "bg-purple-600",
+    badgeColor: "bg-[#5B5652]",
     features: ["Everything in Premium", "Business credit portal", "Dedicated advisor", "White-glove service", "Same-day dispute filing"],
     note: null,
   },
@@ -96,47 +96,35 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Array script + enrollment state
-  // Start with empty string so useArrayScript waits for the real key from the server
-  // before injecting scripts — prevents script injection with the wrong/sandbox key.
   const [enrollAppKey, setEnrollAppKey] = useState<string>("");
   const [enrollSandboxMode, setEnrollSandboxMode] = useState<boolean>(true);
   const { loaded: scriptReady } = useArrayScript(enrollAppKey);
   const [arrayEnrolled, setArrayEnrolled] = useState(false);
   const arrayEnrollRef = useRef<HTMLDivElement>(null);
 
-  // PII captured from the Array enrollment event
   const [capturedArrayUserId, setCapturedArrayUserId] = useState<string | null>(null);
   const [capturedDob, setCapturedDob] = useState<string | null>(null);
   const [capturedSsnLast4, setCapturedSsnLast4] = useState<string | null>(null);
   const [capturedAddress, setCapturedAddress] = useState<{ line1: string; line2: string; city: string; state: string; zip: string } | null>(null);
-  // Contact PII captured from Array — stored separately so we can offer prefill
-  // if the user navigates back to Step 2 with empty fields after completing Step 3.
   const [capturedArrayContact, setCapturedArrayContact] = useState<{
     firstName?: string; lastName?: string; email?: string;
   } | null>(null);
 
-  // Step 0 — CROA
   const [croaAccepted, setCroaAccepted] = useState(false);
   const [croaAcceptedAt, setCroaAcceptedAt] = useState<string | null>(null);
 
-  // Step 1 — AI Consent
   const [aiConsent1, setAiConsent1] = useState(false);
   const [aiConsent2, setAiConsent2] = useState(false);
   const [aiConsent3, setAiConsent3] = useState(false);
   const [aiConsent4, setAiConsent4] = useState(false);
   const [aiConsentAcceptedAt, setAiConsentAcceptedAt] = useState<string | null>(null);
 
-  // Step 2 — Create Account
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Refs that always reflect the latest contact field values.
-  // Used inside the Array event handler closure so we don't read stale state
-  // and accidentally overwrite something the user has already typed.
   const firstNameRef = useRef(firstName);
   const lastNameRef = useRef(lastName);
   const emailRef = useRef(email);
@@ -144,57 +132,41 @@ export default function Signup() {
   useEffect(() => { lastNameRef.current = lastName; }, [lastName]);
   useEffect(() => { emailRef.current = email; }, [email]);
 
-  // Step 4 — Plan
   const [selectedPlan, setSelectedPlan] = useState("free");
 
-  // Invite code (elite bypass for testers)
   const [inviteCode, setInviteCode] = useState("");
   const [inviteCodeApplied, setInviteCodeApplied] = useState(false);
   const [inviteCodeError, setInviteCodeError] = useState("");
   const [inviteCodeLoading, setInviteCodeLoading] = useState(false);
   const [showInviteField, setShowInviteField] = useState(false);
 
-  // Fetch the real appKey from the server on mount (public endpoint, no auth needed).
-  // Scripts won't be injected until this resolves because enrollAppKey starts as "".
   useEffect(() => {
     fetch("/api/array/enroll-config")
       .then(r => r.json())
       .then(data => {
         if (data.appKey) setEnrollAppKey(data.appKey);
-        // sandboxMode defaults to true on the server; only false when ARRAY_PRODUCTION_MODE=true
         setEnrollSandboxMode(data.sandboxMode !== false);
       })
       .catch(() => {
-        // Fall back to sandbox mode with the constant so enrollment isn't blocked
         setEnrollAppKey(ARRAY_SANDBOX_APP_KEY);
         setEnrollSandboxMode(true);
       });
   }, []);
 
-  // Mount array-account-enroll when on step 3 and script is ready
   useEffect(() => {
     if (step !== 3 || !arrayEnrollRef.current || !scriptReady) return;
     arrayEnrollRef.current.innerHTML = "";
 
     const el = document.createElement("array-account-enroll");
-    // Only set appKey (and sandbox when required) — do NOT set userToken or apiUrl.
-    // Passing userToken blocks new-user enrollment; Array must create the user fresh.
     el.setAttribute("appKey", enrollAppKey);
-    // sandbox="true" tells the component to use Array's sandbox infrastructure.
-    // Required whenever credentials target sandbox.array.io (which they always do
-    // until ARRAY_PRODUCTION_MODE=true is explicitly set).
     if (enrollSandboxMode) el.setAttribute("sandbox", "true");
 
     const handleEvent = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      // Log the actual event type so we can see what Array fires in production
       const type: string = detail?.type ?? "";
       const safeLog = { type, userId: detail?.userId ?? detail?.data?.userId };
       console.log("[Array signup] array-event received:", JSON.stringify(safeLog));
 
-      // Accept ANY array-event as proof of enrollment completion.
-      // The Array component's own "You're all set!" screen is the real gate —
-      // we don't need to second-guess it with a specific type allowlist.
       const pii = extractArrayEventPII(detail as Record<string, unknown>);
 
       if (pii.rawUserId) setCapturedArrayUserId(pii.rawUserId);
@@ -202,8 +174,6 @@ export default function Signup() {
       if (pii.ssnLast4) setCapturedSsnLast4(pii.ssnLast4);
       if (pii.address) setCapturedAddress(pii.address);
 
-      // Always save Array contact PII so we can offer prefill if the user
-      // returns to Step 2 (Create Account) with empty fields after completing Step 3.
       if (pii.firstName || pii.lastName || pii.email) {
         setCapturedArrayContact({
           firstName: pii.firstName ?? undefined,
@@ -212,15 +182,11 @@ export default function Signup() {
         });
       }
 
-      // Auto-populate contact fields from the event ONLY if the user hasn't
-      // already typed into them — read refs to get the latest values, not
-      // the stale closure values from when the effect first ran.
       if (!firstNameRef.current && pii.firstName) setFirstName(pii.firstName);
       if (!lastNameRef.current && pii.lastName) setLastName(pii.lastName);
       if (!emailRef.current && pii.email) setEmail(pii.email);
 
       setArrayEnrolled(true);
-      // Do NOT auto-advance — user must still confirm their info and click Continue
     };
 
     el.addEventListener("array-event", handleEvent);
@@ -324,7 +290,6 @@ export default function Signup() {
         croaAcceptedAt,
         aiConsentAcceptedAt,
         source: "signup",
-        // PII captured from the Array enrollment event
         ...(capturedDob ? { dateOfBirth: capturedDob } : {}),
         ...(capturedSsnLast4 ? { ssnLast4: capturedSsnLast4 } : {}),
         ...(capturedAddress?.line1 ? { addressLine1: capturedAddress.line1 } : {}),
@@ -352,9 +317,6 @@ export default function Signup() {
       localStorage.setItem("user_id", loginData.user.id.toString());
       setCurrentUserId(loginData.user.id);
 
-      // Record Array enrollment in DB now that we have a valid auth token
-      // Pass the real arrayUserId from the enrollment event so the DB row
-      // stores the genuine Array UUID instead of a placeholder
       if (arrayEnrolled) {
         try {
           await apiRequest("POST", "/api/array/enroll", {
@@ -365,9 +327,6 @@ export default function Signup() {
         }
       }
 
-      // Silently persist any Array-captured PII that wasn't included in the
-      // initial POST (e.g. address line2, or data that arrived async).
-      // Fire-and-forget — don't block the redirect on this.
       const piiPatch: Record<string, string> = {};
       if (capturedDob) piiPatch.dateOfBirth = capturedDob;
       if (capturedSsnLast4) piiPatch.ssnLast4 = capturedSsnLast4;
@@ -405,19 +364,25 @@ export default function Signup() {
   const allAiChecked = aiConsent1 && aiConsent2 && aiConsent3 && aiConsent4;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className="min-h-screen" style={{ background: "#F1E8DA" }}>
       {/* Header */}
-      <header className="border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur sticky top-0 z-10">
+      <header
+        className="border-b backdrop-blur sticky top-0 z-10"
+        style={{
+          background: "rgba(243,238,230,0.90)",
+          borderColor: "rgba(42,39,37,0.12)",
+        }}
+      >
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/">
             <div className="flex items-center gap-2 cursor-pointer">
               <img src={scoreshiftLogo} alt="ScoreShift" className="h-9 w-9 object-contain" />
-              <span className="font-bold text-xl text-gray-900 dark:text-white">ScoreShift</span>
+              <span className="font-bold text-xl" style={{ color: "#2A2725" }}>ScoreShift</span>
             </div>
           </Link>
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="text-sm" style={{ color: "#5B5652" }}>
             Already have an account?{" "}
-            <Link href="/login" className="text-blue-600 hover:underline font-medium">Sign in</Link>
+            <Link href="/login" className="font-medium hover:underline" style={{ color: "#7C6BCB" }}>Sign in</Link>
           </div>
         </div>
       </header>
@@ -426,62 +391,98 @@ export default function Signup() {
         {/* Progress Steps */}
         <div className="mb-10">
           <div className="flex items-center justify-between relative">
-            <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-700 z-0" />
             <div
-              className="absolute top-5 left-0 h-0.5 bg-blue-500 z-0 transition-all duration-500"
-              style={{ width: `${(step / (STEPS.length - 1)) * 100}%` }}
+              className="absolute top-5 left-0 right-0 h-0.5 z-0"
+              style={{ background: "rgba(42,39,37,0.12)" }}
+            />
+            <div
+              className="absolute top-5 left-0 h-0.5 z-0 transition-all duration-500"
+              style={{
+                width: `${(step / (STEPS.length - 1)) * 100}%`,
+                background: "#7C6BCB",
+              }}
             />
             {STEPS.map(({ label }, i) => (
               <div key={i} className="flex flex-col items-center z-10">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-all duration-300 ${
-                  i < step
-                    ? "bg-green-500 text-white shadow-lg shadow-green-200 dark:shadow-green-900"
-                    : i === step
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900 scale-110"
-                    : "bg-white dark:bg-gray-800 text-gray-400 border-2 border-gray-200 dark:border-gray-700"
-                }`}>
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-all duration-300"
+                  style={
+                    i < step
+                      ? { background: "#7B8A7A", color: "#fff", boxShadow: "0 4px 12px rgba(123,138,122,0.3)" }
+                      : i === step
+                      ? { background: "#7C6BCB", color: "#fff", boxShadow: "0 4px 12px rgba(124,107,203,0.3)", transform: "scale(1.1)" }
+                      : { background: "#F3EEE6", color: "#8B8480", border: "2px solid rgba(42,39,37,0.15)" }
+                  }
+                >
                   {i < step ? <CheckCircle className="h-5 w-5" /> : i + 1}
                 </div>
-                <span className={`text-xs mt-2 font-medium ${
-                  i <= step ? "text-gray-900 dark:text-white" : "text-gray-400"
-                }`}>{label}</span>
+                <span
+                  className="text-xs mt-2 font-medium"
+                  style={{ color: i <= step ? "#2A2725" : "#8B8480" }}
+                >
+                  {label}
+                </span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Step Content */}
-        <Card className="border-0 shadow-xl dark:bg-gray-900">
-          <CardContent className="p-8">
+        <div
+          className="rounded-2xl shadow-xl"
+          style={{
+            background: "#F3EEE6",
+            border: "1px solid rgba(42,39,37,0.08)",
+          }}
+        >
+          <div className="p-8">
 
             {/* Step 0: CROA Disclosure */}
             {step === 0 && (
               <div className="space-y-6">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
-                    <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: "rgba(124,107,203,0.12)" }}
+                  >
+                    <Shield className="h-5 w-5" style={{ color: "#7C6BCB" }} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Consumer Credit File Rights</h2>
-                    <p className="text-blue-600 dark:text-blue-400 text-sm font-medium mt-0.5">Required by Federal Law (15 U.S.C. §1679c)</p>
+                    <h2 className="text-2xl font-bold" style={{ color: "#2A2725" }}>Consumer Credit File Rights</h2>
+                    <p className="text-sm font-medium mt-0.5" style={{ color: "#7C6BCB" }}>Required by Federal Law (15 U.S.C. §1679c)</p>
                   </div>
                 </div>
 
-                <div className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-950/20 px-3 py-1.5 rounded-md border border-blue-100 dark:border-blue-900">
+                <div
+                  className="text-xs px-3 py-1.5 rounded-md"
+                  style={{
+                    background: "rgba(124,107,203,0.06)",
+                    border: "1px solid rgba(124,107,203,0.18)",
+                    color: "#5B5652",
+                  }}
+                >
                   Step 1 of 5 — Please read the disclosure below before continuing.
                 </div>
 
                 <div
-                  className="max-h-[300px] overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800/60 p-4 text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line"
+                  className="max-h-[300px] overflow-y-auto rounded-xl p-4 text-sm leading-relaxed whitespace-pre-line"
+                  style={{
+                    background: "#E0D5C4",
+                    border: "1px solid rgba(42,39,37,0.12)",
+                    color: "#4A4541",
+                  }}
                 >
                   {CROA_TEXT}
                 </div>
 
-                <div className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all duration-200 ${
-                  croaAccepted
-                    ? "border-blue-400 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-600"
-                    : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
-                }`}>
+                <div
+                  className="flex items-start gap-3 p-4 rounded-xl border-2 transition-all duration-200"
+                  style={
+                    croaAccepted
+                      ? { borderColor: "#7C6BCB", background: "rgba(124,107,203,0.06)" }
+                      : { borderColor: "rgba(42,39,37,0.15)", background: "#E0D5C4" }
+                  }
+                >
                   <Checkbox
                     id="croaAccepted"
                     checked={croaAccepted}
@@ -489,16 +490,16 @@ export default function Signup() {
                     className="mt-0.5 shrink-0"
                   />
                   <label htmlFor="croaAccepted" className="cursor-pointer">
-                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 block mb-1">
+                    <span className="text-sm font-semibold block mb-1" style={{ color: "#2A2725" }}>
                       Acknowledge Disclosure <span className="text-red-500">*</span>
                     </span>
-                    <span className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                    <span className="text-xs leading-relaxed" style={{ color: "#5B5652" }}>
                       I have received and read this Consumer Credit Rights Disclosure and understand my right to cancel within 3 business days.
                     </span>
                   </label>
                 </div>
 
-                <p className="text-xs text-gray-400 dark:text-gray-500">
+                <p className="text-xs" style={{ color: "#8B8480" }}>
                   Time of acknowledgment will be recorded:{" "}
                   <span className="font-mono">
                     {croaAcceptedAt ? new Date(croaAcceptedAt).toLocaleString() : new Date().toLocaleString()}
@@ -511,16 +512,26 @@ export default function Signup() {
             {step === 1 && (
               <div className="space-y-5">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
-                    <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: "rgba(228,162,111,0.15)" }}
+                  >
+                    <Sparkles className="h-5 w-5" style={{ color: "#E4A26F" }} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">How We Use AI to Help You</h2>
-                    <p className="text-amber-600 dark:text-amber-400 text-sm font-medium mt-0.5">Please review and acknowledge each item below</p>
+                    <h2 className="text-2xl font-bold" style={{ color: "#2A2725" }}>How We Use AI to Help You</h2>
+                    <p className="text-sm font-medium mt-0.5" style={{ color: "#E4A26F" }}>Please review and acknowledge each item below</p>
                   </div>
                 </div>
 
-                <div className="text-xs text-gray-500 dark:text-gray-400 bg-amber-50 dark:bg-amber-950/20 px-3 py-1.5 rounded-md border border-amber-100 dark:border-amber-900">
+                <div
+                  className="text-xs px-3 py-1.5 rounded-md"
+                  style={{
+                    background: "rgba(228,162,111,0.08)",
+                    border: "1px solid rgba(228,162,111,0.22)",
+                    color: "#5B5652",
+                  }}
+                >
                   Step 2 of 5 — All four items must be acknowledged to continue.
                 </div>
 
@@ -551,18 +562,22 @@ export default function Signup() {
                       text: "I understand I can request deletion of my personal data at any time by contacting support@scoreshiftapp.com, and that ScoreShift retains data for 2 years after account closure unless deletion is requested.",
                     },
                   ].map((item) => (
-                    <div key={item.id} className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all duration-200 ${
-                      item.checked
-                        ? "border-amber-400 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-600"
-                        : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
-                    }`}>
+                    <div
+                      key={item.id}
+                      className="flex items-start gap-3 p-4 rounded-xl border-2 transition-all duration-200"
+                      style={
+                        item.checked
+                          ? { borderColor: "#7C6BCB", background: "rgba(124,107,203,0.06)" }
+                          : { borderColor: "rgba(42,39,37,0.15)", background: "#E0D5C4" }
+                      }
+                    >
                       <Checkbox
                         id={item.id}
                         checked={item.checked}
                         onCheckedChange={(c) => item.onChange(c as boolean)}
                         className="mt-0.5 shrink-0"
                       />
-                      <label htmlFor={item.id} className="cursor-pointer text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                      <label htmlFor={item.id} className="cursor-pointer text-sm leading-relaxed" style={{ color: "#4A4541" }}>
                         {item.text}
                       </label>
                     </div>
@@ -570,20 +585,29 @@ export default function Signup() {
                 </div>
 
                 {/* AI Notice Box */}
-                <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30">
-                  <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                <div
+                  className="flex items-start gap-3 p-4 rounded-xl"
+                  style={{
+                    border: "1px solid rgba(228,162,111,0.30)",
+                    background: "rgba(228,162,111,0.07)",
+                  }}
+                >
+                  <div
+                    className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                    style={{ background: "#E4A26F" }}
+                  >
                     <span className="text-white text-xs font-bold">!</span>
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">AI Analysis Notice</p>
-                    <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                    <p className="text-sm font-semibold mb-1" style={{ color: "#3A3734" }}>AI Analysis Notice</p>
+                    <p className="text-xs leading-relaxed" style={{ color: "#5B5652" }}>
                       ScoreShift AI analyzes your credit information and generates dispute letters for your review. AI does not make final decisions — you retain full control over which items are disputed on your behalf.
                     </p>
                   </div>
                 </div>
 
                 {aiConsentAcceptedAt && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                  <p className="text-xs" style={{ color: "#8B8480" }}>
                     Time of acknowledgment will be recorded:{" "}
                     <span className="font-mono">{new Date(aiConsentAcceptedAt).toLocaleString()}</span>
                   </p>
@@ -595,25 +619,28 @@ export default function Signup() {
             {step === 2 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Your Account</h2>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">Enter your name, email, and choose a password to get started.</p>
+                  <h2 className="text-2xl font-bold" style={{ color: "#2A2725" }}>Create Your Account</h2>
+                  <p className="mt-1" style={{ color: "#5B5652" }}>Enter your name, email, and choose a password to get started.</p>
                 </div>
 
-                {/* Prefill hint — shown only when the user returns here after completing
-                    Step 3 (Credit Profile) and at least one name/email field is empty
-                    but the corresponding value was captured from the Array event. */}
                 {arrayEnrolled && capturedArrayContact && (
                   (!firstName.trim() && capturedArrayContact.firstName) ||
                   (!lastName.trim() && capturedArrayContact.lastName) ||
                   (!email.trim() && capturedArrayContact.email)
                 ) && (
-                  <div className="flex items-start gap-3 p-4 rounded-xl border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30">
-                    <Sparkles className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+                  <div
+                    className="flex items-start gap-3 p-4 rounded-xl"
+                    style={{
+                      border: "1px solid rgba(124,107,203,0.28)",
+                      background: "rgba(124,107,203,0.06)",
+                    }}
+                  >
+                    <Sparkles className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "#7C6BCB" }} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">
+                      <p className="text-sm font-semibold mb-1" style={{ color: "#3A3734" }}>
                         We can prefill these from your credit profile info.
                       </p>
-                      <p className="text-xs text-blue-600 dark:text-blue-400 mb-3 leading-relaxed">
+                      <p className="text-xs mb-3 leading-relaxed" style={{ color: "#5B5652" }}>
                         Your credit profile contains contact information you entered during enrollment. You can apply it to any empty fields below — you can edit them afterwards.
                       </p>
                       <button
@@ -623,7 +650,8 @@ export default function Signup() {
                           if (capturedArrayContact.lastName && !lastName.trim()) setLastName(capturedArrayContact.lastName);
                           if (capturedArrayContact.email && !email.trim()) setEmail(capturedArrayContact.email);
                         }}
-                        className="text-xs font-semibold text-blue-700 dark:text-blue-300 underline underline-offset-2 hover:text-blue-900 dark:hover:text-blue-100 transition-colors"
+                        className="text-xs font-semibold underline underline-offset-2 transition-colors hover:opacity-80"
+                        style={{ color: "#7C6BCB" }}
                       >
                         Apply prefill
                       </button>
@@ -636,7 +664,7 @@ export default function Signup() {
                     <div className="space-y-1.5">
                       <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
                       <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#8B8480" }} />
                         <Input
                           id="firstName"
                           value={firstName}
@@ -649,7 +677,7 @@ export default function Signup() {
                     <div className="space-y-1.5">
                       <Label htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
                       <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#8B8480" }} />
                         <Input
                           id="lastName"
                           value={lastName}
@@ -664,7 +692,7 @@ export default function Signup() {
                   <div className="space-y-1.5">
                     <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#8B8480" }} />
                       <Input
                         id="email"
                         type="email"
@@ -679,7 +707,7 @@ export default function Signup() {
                   <div className="space-y-1.5">
                     <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#8B8480" }} />
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
@@ -691,7 +719,8 @@ export default function Signup() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                        style={{ color: "#8B8480" }}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -701,7 +730,7 @@ export default function Signup() {
                   <div className="space-y-1.5">
                     <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#8B8480" }} />
                       <Input
                         id="confirmPassword"
                         type={showConfirm ? "text" : "password"}
@@ -713,7 +742,8 @@ export default function Signup() {
                       <button
                         type="button"
                         onClick={() => setShowConfirm(!showConfirm)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                        style={{ color: "#8B8480" }}
                       >
                         {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -729,17 +759,23 @@ export default function Signup() {
                       { label: "Passwords match", ok: password.length > 0 && password === confirmPassword },
                     ].map((r) => (
                       <div key={r.label} className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded-full flex items-center justify-center ${r.ok ? "bg-green-500" : "bg-gray-200 dark:bg-gray-700"}`}>
+                        <div
+                          className="w-4 h-4 rounded-full flex items-center justify-center"
+                          style={{ background: r.ok ? "#7B8A7A" : "rgba(42,39,37,0.12)" }}
+                        >
                           {r.ok && <CheckCircle className="h-3 w-3 text-white" />}
                         </div>
-                        <span className={`text-xs ${r.ok ? "text-green-600 dark:text-green-400" : "text-gray-400"}`}>{r.label}</span>
+                        <span className="text-xs" style={{ color: r.ok ? "#6A7769" : "#8B8480" }}>{r.label}</span>
                       </div>
                     ))}
                   </div>
 
-                  <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <Shield className="h-4 w-4 text-blue-500 shrink-0" />
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <div
+                    className="flex items-center gap-2 p-3 rounded-lg"
+                    style={{ background: "#E0D5C4" }}
+                  >
+                    <Shield className="h-4 w-4 shrink-0" style={{ color: "#7C6BCB" }} />
+                    <p className="text-xs" style={{ color: "#5B5652" }}>
                       Your information is encrypted and protected with enterprise-grade security.
                     </p>
                   </div>
@@ -751,29 +787,44 @@ export default function Signup() {
             {step === 3 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Connect Your Credit Profile</h2>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">Securely link your credit data so ScoreShift can identify issues and build your dispute plan.</p>
+                  <h2 className="text-2xl font-bold" style={{ color: "#2A2725" }}>Connect Your Credit Profile</h2>
+                  <p className="mt-1" style={{ color: "#5B5652" }}>Securely link your credit data so ScoreShift can identify issues and build your dispute plan.</p>
                 </div>
 
-                <div className="rounded-xl border-2 border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 overflow-hidden">
-                  <div className="px-5 py-4 border-b border-blue-200 dark:border-blue-800/40 flex items-center justify-between">
+                <div
+                  className="rounded-xl overflow-hidden"
+                  style={{
+                    border: "2px solid rgba(124,107,203,0.22)",
+                    background: "rgba(124,107,203,0.04)",
+                  }}
+                >
+                  <div
+                    className="px-5 py-4 flex items-center justify-between"
+                    style={{ borderBottom: "1px solid rgba(124,107,203,0.15)" }}
+                  >
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
+                      <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: "linear-gradient(135deg, #7C6BCB, #9F93D9)" }}
+                      >
                         <CreditCard className="h-3.5 w-3.5 text-white" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-gray-900 dark:text-white">Credit Profile Setup</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Required to access your live credit data</p>
+                        <p className="text-sm font-bold" style={{ color: "#2A2725" }}>Credit Profile Setup</p>
+                        <p className="text-xs" style={{ color: "#5B5652" }}>Required to access your live credit data</p>
                       </div>
                     </div>
                     {arrayEnrolled ? (
-                      <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 text-xs font-semibold">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: "#6A7769" }}>
                         <CheckCircle className="h-4 w-4" />
                         Connected
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                        <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                      <div className="flex items-center gap-1.5 text-xs" style={{ color: "#8B8480" }}>
+                        <div
+                          className="w-2 h-2 rounded-full animate-pulse"
+                          style={{ background: "#E4A26F" }}
+                        />
                         Awaiting
                       </div>
                     )}
@@ -782,16 +833,19 @@ export default function Signup() {
                   <div className="p-4">
                     {!scriptReady ? (
                       <div className="flex items-center justify-center py-8 gap-3">
-                        <div className="w-6 h-6 rounded-full border-2 border-blue-400 border-t-transparent animate-spin" />
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Loading secure enrollment form...</span>
+                        <div
+                          className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin"
+                          style={{ borderColor: "#7C6BCB", borderTopColor: "transparent" }}
+                        />
+                        <span className="text-sm" style={{ color: "#5B5652" }}>Loading secure enrollment form...</span>
                       </div>
                     ) : (
                       <div ref={arrayEnrollRef} className="w-full min-h-[180px]" />
                     )}
                   </div>
 
-                  <div className="px-5 pb-4 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-                    <Shield className="h-3.5 w-3.5 shrink-0 text-green-500" />
+                  <div className="px-5 pb-4 flex items-center gap-2 text-xs" style={{ color: "#8B8480" }}>
+                    <Shield className="h-3.5 w-3.5 shrink-0" style={{ color: "#7B8A7A" }} />
                     <span>Your information is encrypted and secured by ScoreShift.</span>
                   </div>
                 </div>
@@ -802,20 +856,28 @@ export default function Signup() {
             {step === 4 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Choose your plan</h2>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">Select the plan that best fits your credit repair goals.</p>
+                  <h2 className="text-2xl font-bold" style={{ color: "#2A2725" }}>Choose your plan</h2>
+                  <p className="mt-1" style={{ color: "#5B5652" }}>Select the plan that best fits your credit repair goals.</p>
                 </div>
 
                 {inviteCodeApplied ? (
-                  /* Elite invite unlocked — replace plan cards with confirmation */
-                  <div className="rounded-xl border-2 border-green-400 bg-green-50 dark:bg-green-950/30 p-6 space-y-4">
+                  <div
+                    className="rounded-xl p-6 space-y-4"
+                    style={{
+                      border: "2px solid #7B8A7A",
+                      background: "rgba(123,138,122,0.06)",
+                    }}
+                  >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                        style={{ background: "#7B8A7A" }}
+                      >
                         <CheckCircle className="h-5 w-5 text-white" />
                       </div>
                       <div>
-                        <p className="font-bold text-green-800 dark:text-green-300 text-lg">Elite Plan — Full Access Unlocked</p>
-                        <p className="text-sm text-green-600 dark:text-green-400">Invite code applied — no payment required</p>
+                        <p className="font-bold text-lg" style={{ color: "#2A2725" }}>Elite Plan — Full Access Unlocked</p>
+                        <p className="text-sm" style={{ color: "#6A7769" }}>Invite code applied — no payment required</p>
                       </div>
                     </div>
                     <ul className="space-y-2 ml-13">
@@ -828,8 +890,8 @@ export default function Signup() {
                         "Credit report analysis",
                         "Business credit portal",
                       ].map((f) => (
-                        <li key={f} className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
-                          <CheckCircle className="h-3.5 w-3.5 shrink-0 text-green-500" />
+                        <li key={f} className="flex items-center gap-2 text-sm" style={{ color: "#4A4541" }}>
+                          <CheckCircle className="h-3.5 w-3.5 shrink-0" style={{ color: "#7B8A7A" }} />
                           {f}
                         </li>
                       ))}
@@ -837,7 +899,8 @@ export default function Signup() {
                     <button
                       type="button"
                       onClick={() => { setInviteCodeApplied(false); setSelectedPlan("free"); setInviteCode(""); setShowInviteField(true); }}
-                      className="text-xs text-green-600 dark:text-green-400 hover:underline"
+                      className="text-xs hover:underline"
+                      style={{ color: "#6A7769" }}
                     >
                       Remove invite code
                     </button>
@@ -848,13 +911,14 @@ export default function Signup() {
                       <div
                         key={plan.id}
                         onClick={() => setSelectedPlan(plan.id)}
-                        className={`relative p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                        className="relative p-5 rounded-xl cursor-pointer transition-all duration-200"
+                        style={
                           selectedPlan === plan.id
                             ? plan.id === "free"
-                              ? "border-green-500 bg-green-50 dark:bg-green-950/30 shadow-lg"
-                              : "border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-lg"
-                            : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800/50"
-                        }`}
+                              ? { border: "2px solid #7B8A7A", background: "rgba(123,138,122,0.07)", boxShadow: "0 4px 16px rgba(123,138,122,0.15)" }
+                              : { border: "2px solid #7C6BCB", background: "rgba(124,107,203,0.06)", boxShadow: "0 4px 16px rgba(124,107,203,0.14)" }
+                            : { border: "2px solid rgba(42,39,37,0.13)", background: "#F3EEE6" }
+                        }
                       >
                         {plan.badge && (
                           <Badge className={`absolute -top-3 left-4 ${plan.badgeColor} text-white text-xs px-2 py-0.5`}>
@@ -863,36 +927,47 @@ export default function Signup() {
                         )}
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                              selectedPlan === plan.id
-                                ? plan.id === "free" ? "border-green-500 bg-green-500" : "border-blue-500 bg-blue-500"
-                                : "border-gray-300 dark:border-gray-600"
-                            }`}>
+                            <div
+                              className="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                              style={
+                                selectedPlan === plan.id
+                                  ? plan.id === "free"
+                                    ? { borderColor: "#7B8A7A", background: "#7B8A7A" }
+                                    : { borderColor: "#7C6BCB", background: "#7C6BCB" }
+                                  : { borderColor: "rgba(42,39,37,0.20)" }
+                              }
+                            >
                               {selectedPlan === plan.id && <div className="w-2 h-2 rounded-full bg-white" />}
                             </div>
-                            <span className="font-bold text-gray-900 dark:text-white text-lg">{plan.name}</span>
+                            <span className="font-bold text-lg" style={{ color: "#2A2725" }}>{plan.name}</span>
                           </div>
                           <div className="text-right">
-                            <span className={`text-2xl font-bold ${plan.id === "free" ? "text-green-600 dark:text-green-400" : "text-gray-900 dark:text-white"}`}>
+                            <span
+                              className="text-2xl font-bold"
+                              style={{ color: plan.id === "free" ? "#6A7769" : "#2A2725" }}
+                            >
                               {plan.price}
                             </span>
-                            <span className="text-gray-500 text-sm">{plan.interval}</span>
+                            <span className="text-sm" style={{ color: "#8B8480" }}>{plan.interval}</span>
                           </div>
                         </div>
                         <ul className="space-y-1.5 ml-8">
                           {plan.features.map((f) => (
-                            <li key={f} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                              <CheckCircle className="h-3.5 w-3.5 shrink-0 text-green-500" />
+                            <li key={f} className="flex items-center gap-2 text-sm" style={{ color: "#5B5652" }}>
+                              <CheckCircle className="h-3.5 w-3.5 shrink-0" style={{ color: "#7B8A7A" }} />
                               {f}
                             </li>
                           ))}
                         </ul>
                         {plan.note && (
                           <div className="ml-8 mt-2 flex items-center gap-1.5">
-                            <div className="w-3.5 h-3.5 rounded-full bg-amber-400 flex items-center justify-center shrink-0">
+                            <div
+                              className="w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0"
+                              style={{ background: "#E4A26F" }}
+                            >
                               <span className="text-white text-[9px] font-bold">!</span>
                             </div>
-                            <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">{plan.note}</span>
+                            <span className="text-xs font-medium" style={{ color: "#c47a42" }}>{plan.note}</span>
                           </div>
                         )}
                       </div>
@@ -907,13 +982,14 @@ export default function Signup() {
                       <button
                         type="button"
                         onClick={() => setShowInviteField(true)}
-                        className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-2 transition-colors"
+                        className="text-sm underline underline-offset-2 transition-colors hover:opacity-70"
+                        style={{ color: "#8B8480" }}
                       >
                         Have an invite code?
                       </button>
                     ) : (
                       <div className="space-y-2">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Enter your invite code</p>
+                        <p className="text-sm font-medium" style={{ color: "#4A4541" }}>Enter your invite code</p>
                         <div className="flex gap-2">
                           <Input
                             value={inviteCode}
@@ -922,16 +998,17 @@ export default function Signup() {
                             className="font-mono tracking-widest uppercase flex-1"
                             onKeyDown={(e) => { if (e.key === "Enter") applyInviteCode(); }}
                           />
-                          <Button
+                          <button
                             type="button"
                             onClick={applyInviteCode}
                             disabled={inviteCodeLoading || !inviteCode.trim()}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4"
+                            className="px-4 py-2 rounded-md text-sm font-semibold text-white transition-all disabled:opacity-50"
+                            style={{ background: "#7C6BCB" }}
                           >
                             {inviteCodeLoading ? (
                               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                             ) : "Apply"}
-                          </Button>
+                          </button>
                         </div>
                         {inviteCodeError && (
                           <p className="text-xs text-red-500">{inviteCodeError}</p>
@@ -944,7 +1021,10 @@ export default function Signup() {
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+            <div
+              className="flex items-center justify-between mt-8 pt-6"
+              style={{ borderTop: "1px solid rgba(42,39,37,0.10)" }}
+            >
               {step > 0 ? (
                 <Button variant="outline" onClick={() => setStep(s => s - 1)}>
                   <ChevronLeft className="h-4 w-4 mr-1" /> Back
@@ -958,38 +1038,50 @@ export default function Signup() {
               )}
 
               {step < STEPS.length - 1 ? (
-                <Button
+                <button
                   onClick={handleNext}
                   disabled={
                     (step === 0 && !croaAccepted) ||
                     (step === 1 && !allAiChecked)
                   }
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-8 py-2 rounded-lg font-semibold text-sm text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                  style={{ background: "#7C6BCB" }}
+                  onMouseEnter={(e) => { if (!((step === 0 && !croaAccepted) || (step === 1 && !allAiChecked))) (e.currentTarget.style.background = "#8D80D3"); }}
+                  onMouseLeave={(e) => { (e.currentTarget.style.background = "#7C6BCB"); }}
                 >
-                  Continue <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
+                  Continue <ChevronRight className="h-4 w-4" />
+                </button>
               ) : (
-                <Button
+                <button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 shadow-lg"
+                  className="px-8 py-2 rounded-lg font-semibold text-sm text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg"
+                  style={{ background: "#7C6BCB" }}
+                  onMouseEnter={(e) => { if (!isSubmitting) (e.currentTarget.style.background = "#8D80D3"); }}
+                  onMouseLeave={(e) => { (e.currentTarget.style.background = "#7C6BCB"); }}
                 >
                   {isSubmitting ? (
-                    <><div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" /> Creating Account...</>
+                    <><div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> Creating Account...</>
                   ) : (
-                    <><Zap className="h-4 w-4 mr-2" /> Create My Account</>
+                    <><Zap className="h-4 w-4" /> Create My Account</>
                   )}
-                </Button>
+                </button>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Trust Footer */}
-        <div className="mt-6 flex items-center justify-center gap-6 text-xs text-gray-500">
-          <div className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-green-500" /> Bank-level security</div>
-          <div className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500" /> FCRA Compliant</div>
-          <div className="flex items-center gap-1.5"><Star className="h-3.5 w-3.5 text-yellow-500" /> 4.9★ Rated</div>
+        <div className="mt-6 flex items-center justify-center gap-6 text-xs" style={{ color: "#8B8480" }}>
+          <div className="flex items-center gap-1.5">
+            <Shield className="h-3.5 w-3.5" style={{ color: "#7B8A7A" }} /> Bank-level security
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CheckCircle className="h-3.5 w-3.5" style={{ color: "#7B8A7A" }} /> FCRA Compliant
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Star className="h-3.5 w-3.5 text-yellow-500" /> 4.9★ Rated
+          </div>
         </div>
       </main>
     </div>

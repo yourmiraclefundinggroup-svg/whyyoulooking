@@ -5,6 +5,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import scoreshiftLogo from "@assets/scoreshift-logo.png";
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,28 +24,14 @@ export default function Login() {
       return response.json();
     },
     onSuccess: (data) => {
-      // Store authentication in localStorage first
       localStorage.setItem("auth_token", data.token);
       localStorage.setItem("user_id", data.user.id.toString());
-
-      // Set user context
       setCurrentUserId(data.user.id);
-
-      // Store first name for welcome toast on dashboard (always set, fallback to "there")
       sessionStorage.setItem("ss_welcome_name", data.user?.firstName || "there");
-
-      // Redirect to root and let App.tsx handle routing to correct portal
       window.location.href = "/";
     },
     onError: (error: any) => {
       console.error("Login failed:", error);
-      console.error("Error details:", {
-        message: error.message,
-        status: error.status,
-        response: error.response
-      });
-
-      // Show specific error message based on the error type
       if (error.message?.includes("Invalid credentials")) {
         console.error("Credential validation failed - check email/password combination");
       }
@@ -57,29 +44,22 @@ export default function Login() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-
-    console.log("Login attempt:", {
-      email,
-      password: password.substring(0, 3) + "***", // Only show first 3 chars for debugging
-      loginType
-    });
-
     loginMutation.mutate({ email, password, type: loginType });
   };
 
   return (
     <div
       className="min-h-screen flex items-center justify-center py-12 px-4 relative overflow-hidden"
-      style={{ background: "var(--bg-primary)" }}
+      style={{ background: "#F1E8DA" }}
     >
       {/* Ambient orbs */}
       <div
         className="absolute top-20 right-20 w-96 h-96 rounded-full blur-3xl pointer-events-none"
-        style={{ background: "rgba(245,158,11,0.04)" }}
+        style={{ background: "rgba(124,107,203,0.08)" }}
       />
       <div
         className="absolute bottom-20 left-20 w-80 h-80 rounded-full blur-3xl pointer-events-none"
-        style={{ background: "rgba(96,165,250,0.04)" }}
+        style={{ background: "rgba(124,107,203,0.05)" }}
       />
 
       <div className="relative z-10 w-full max-w-md">
@@ -88,13 +68,13 @@ export default function Login() {
           <Link href="/">
             <div className="inline-flex items-center gap-2 cursor-pointer mb-4">
               <img src={scoreshiftLogo} alt="ScoreShift" className="w-10 h-10 object-contain" />
-              <span className="text-white font-black text-2xl tracking-tight">ScoreShift</span>
+              <span className="font-black text-2xl tracking-tight" style={{ color: "#2A2725" }}>ScoreShift</span>
             </div>
           </Link>
-          <h1 className="text-2xl font-black text-white mt-2">
+          <h1 className="text-2xl font-black mt-2" style={{ color: "#2A2725" }}>
             {loginType === "client" ? "Welcome back" : "Admin Portal"}
           </h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-sm mt-1" style={{ color: "#5B5652" }}>
             {loginType === "client"
               ? "Sign in to your credit repair dashboard"
               : "Empower clients to shift their credit scores"}
@@ -103,38 +83,43 @@ export default function Login() {
 
         {/* Card */}
         <div
-          className="card-3d p-8"
+          className="p-8 rounded-2xl"
+          style={{
+            background: "#F3EEE6",
+            border: "1px solid rgba(42,39,37,0.12)",
+            boxShadow: "0 4px 24px rgba(42,39,37,0.08)",
+          }}
         >
           {/* Portal type selector */}
           <div className="mb-6">
             <div
               className="flex rounded-full p-1"
               style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.06)",
+                background: "rgba(42,39,37,0.06)",
+                border: "1px solid rgba(42,39,37,0.10)",
               }}
             >
               <button
                 type="button"
                 onClick={() => setLoginType("client")}
-                className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all ${
+                className="flex-1 py-2 rounded-full text-sm font-semibold transition-all"
+                style={
                   loginType === "client"
-                    ? "text-black"
-                    : "text-slate-400 hover:text-white"
-                }`}
-                style={loginType === "client" ? { background: "linear-gradient(135deg, var(--gold), var(--gold-light))" } : {}}
+                    ? { background: "#7C6BCB", color: "#fff" }
+                    : { color: "#8B8480" }
+                }
               >
                 Client Portal
               </button>
               <button
                 type="button"
                 onClick={() => setLoginType("admin")}
-                className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all ${
+                className="flex-1 py-2 rounded-full text-sm font-semibold transition-all"
+                style={
                   loginType === "admin"
-                    ? "text-black"
-                    : "text-slate-400 hover:text-white"
-                }`}
-                style={loginType === "admin" ? { background: "linear-gradient(135deg, var(--gold), var(--gold-light))" } : {}}
+                    ? { background: "#7C6BCB", color: "#fff" }
+                    : { color: "#8B8480" }
+                }
               >
                 Admin Portal
               </button>
@@ -143,7 +128,7 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium mb-1.5" style={{ color: "#4A4541" }}>
                 Email Address
               </label>
               <input
@@ -153,16 +138,19 @@ export default function Login() {
                 placeholder="you@example.com"
                 required
                 autoComplete="email"
-                className="w-full px-4 py-3 rounded-xl text-white placeholder-slate-600 text-sm outline-none focus:ring-2 focus:ring-amber-500/50 transition-all"
+                className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
                 style={{
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(42,39,37,0.04)",
+                  border: "1px solid rgba(42,39,37,0.15)",
+                  color: "#2A2725",
                 }}
+                onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(124,107,203,0.20)")}
+                onBlur={(e) => (e.target.style.boxShadow = "none")}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium mb-1.5" style={{ color: "#4A4541" }}>
                 Password
               </label>
               <div className="relative">
@@ -173,16 +161,20 @@ export default function Login() {
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"
-                  className="w-full px-4 py-3 rounded-xl text-white placeholder-slate-600 text-sm outline-none focus:ring-2 focus:ring-amber-500/50 transition-all pr-12"
+                  className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all pr-12"
                   style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: "rgba(42,39,37,0.04)",
+                    border: "1px solid rgba(42,39,37,0.15)",
+                    color: "#2A2725",
                   }}
+                  onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(124,107,203,0.20)")}
+                  onBlur={(e) => (e.target.style.boxShadow = "none")}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                  style={{ color: "#8B8480" }}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -195,10 +187,11 @@ export default function Login() {
 
             {loginMutation.isError && (
               <div
-                className="flex items-center gap-2 p-3 rounded-xl text-red-400 text-sm"
+                className="flex items-center gap-2 p-3 rounded-xl text-sm"
                 style={{
-                  background: "rgba(239,68,68,0.08)",
-                  border: "1px solid rgba(239,68,68,0.2)",
+                  background: "rgba(239,68,68,0.06)",
+                  border: "1px solid rgba(239,68,68,0.18)",
+                  color: "#dc2626",
                 }}
               >
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -209,22 +202,24 @@ export default function Login() {
             <button
               type="submit"
               disabled={loginMutation.isPending || !email || !password}
-              className="w-full py-3 rounded-xl font-bold text-black text-sm transition-all glow-gold disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ background: "linear-gradient(135deg, #C9A84C, #E8C96B)" }}
+              className="w-full py-3 rounded-xl font-bold text-white text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ background: "#7C6BCB" }}
+              onMouseEnter={(e) => { if (!loginMutation.isPending) (e.target as HTMLButtonElement).style.background = "#8D80D3"; }}
+              onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.background = "#7C6BCB"; }}
             >
               {loginMutation.isPending ? "Signing in..." : "Sign In →"}
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-slate-500">
+          <div className="mt-6 text-center text-sm" style={{ color: "#8B8480" }}>
             Don't have an account?{" "}
-            <a href="/signup" style={{ color: "var(--gold-light)" }} className="font-medium transition-colors hover:opacity-80">
+            <a href="/signup" style={{ color: "#7C6BCB" }} className="font-medium transition-colors hover:opacity-80">
               Sign up free
             </a>
           </div>
         </div>
 
-        <p className="text-center text-slate-600 text-xs mt-6">
+        <p className="text-center text-xs mt-6" style={{ color: "#8B8480" }}>
           Protected by enterprise-grade security
         </p>
       </div>
