@@ -9682,17 +9682,33 @@ ${pdfText.slice(0, 8000)}`;
 
         const { generateClientDisputePacket } = await import("./client-dispute-packet");
 
-        // Group accounts by bureau
+        // Group accounts by bureau — accounts with multiple bureaus appear in each bureau's packet
         const groups: Record<string, typeof selectedAccounts> = {};
-        for (const acct of selectedAccounts) {
-          const b = ((acct.bureaus?.[0] || acct.bureau || "EXPERIAN") as string).toUpperCase();
-          if (!groups[b]) groups[b] = [];
-          groups[b].push(acct);
-        }
         const validBureaus = ["EXPERIAN", "EQUIFAX", "TRANSUNION"];
+        for (const acct of selectedAccounts) {
+          const acctBureaus: string[] = [];
+          if (Array.isArray(acct.bureaus) && acct.bureaus.length > 0) {
+            for (const b of acct.bureaus) {
+              const upper = (b as string).toUpperCase();
+              if (validBureaus.includes(upper)) acctBureaus.push(upper);
+            }
+          }
+          if (acct.bureau && validBureaus.includes((acct.bureau as string).toUpperCase())) {
+            const upper = (acct.bureau as string).toUpperCase();
+            if (!acctBureaus.includes(upper)) acctBureaus.push(upper);
+          }
+          // If no bureau tagged, will fall back below
+          for (const b of acctBureaus) {
+            if (!groups[b]) groups[b] = [];
+            groups[b].push(acct);
+          }
+        }
         const bureaus = Object.keys(groups).filter((b) => validBureaus.includes(b));
-        // If no tagged bureau, generate one for each or just EXPERIAN
-        if (bureaus.length === 0) bureaus.push("EXPERIAN");
+        // Accounts with no bureau tag → generate one EXPERIAN packet with all un-tagged accounts
+        if (bureaus.length === 0) {
+          bureaus.push("EXPERIAN");
+          groups["EXPERIAN"] = selectedAccounts;
+        }
 
         const results = await Promise.all(
           bureaus.map(async (bureau) => {
@@ -9769,9 +9785,11 @@ ${pdfText.slice(0, 8000)}`;
         fs.mkdirSync(dir, { recursive: true });
         cb(null, dir);
       },
-      filename: (_req, file, cb) => {
+      filename: (req, file, cb) => {
         const ext = nodePath.extname(file.originalname) || "";
-        cb(null, `${file.fieldname}_${Date.now()}${ext}`);
+        // Use docType from req.body (text fields arrive before file in multipart form)
+        const docType = (req as any).body?.docType || file.fieldname;
+        cb(null, `${docType}_${Date.now()}${ext}`);
       },
     }),
     limits: { fileSize: 10 * 1024 * 1024 },
