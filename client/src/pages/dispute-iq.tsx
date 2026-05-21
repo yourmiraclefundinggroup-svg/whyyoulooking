@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useFeatureAccess, FEATURES } from "@/hooks/use-feature-access";
 import { useToast } from "@/hooks/use-toast";
 import { useUserContext } from "@/hooks/use-user-context";
-import { DisputeIQFlow } from "@/components/dispute-iq-flow";
+import { DisputeIQFlow, LetterPreviewDialog, BUREAU_COLORS, BUREAU_LABELS } from "@/components/dispute-iq-flow";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
 interface TradelineViolation {
@@ -39,16 +39,17 @@ interface TradelineResponse {
   note?: string;
 }
 
-const BUREAU_LABELS: Record<string, string> = {
-  EXPERIAN: "Experian",
-  EQUIFAX: "Equifax",
-  TRANSUNION: "TransUnion",
-};
-const BUREAU_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  EXPERIAN: { bg: "#eff6ff", text: "#1d4ed8", border: "#93c5fd" },
-  EQUIFAX: { bg: "#fef2f2", text: "#b91c1c", border: "#fca5a5" },
-  TRANSUNION: { bg: "#f5f3ff", text: "#6d28d9", border: "#c4b5fd" },
-};
+interface SavedLetter {
+  id: number;
+  bureau: string;
+  letterType: string;
+  status: string;
+  trackingNumber: string | null;
+  expectedDeliveryDate: string | null;
+  sentDate: string | null;
+  createdAt: string;
+  content: string;
+}
 
 /* ── Violation badge colours ────────────────────────────────────────────────── */
 function violationStyle(v: TradelineViolation): { bg: string; text: string; border: string } {
@@ -390,6 +391,14 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
   // Show nudge if address is missing — so the flow pre-fills cleanly on first use
   const profileMissingAddress = hasAnyPlan && !profileNudgeDismissed && !(user?.addressLine1 && user?.city && user?.state && user?.zipCode);
 
+  const [activeTab, setActiveTab] = useState<"analyze" | "letters">("analyze");
+  const [previewLetter, setPreviewLetter] = useState<SavedLetter | null>(null);
+
+  const { data: savedLetters = [], isLoading: lettersLoading } = useQuery<SavedLetter[]>({
+    queryKey: ["/api/client/dispute-letters"],
+    enabled: activeTab === "letters",
+  });
+
   const [source, setSource] = useState<"array" | "upload" | null>(null);
   const [uploadResult, setUploadResult] = useState<TradelineResponse | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
@@ -526,6 +535,146 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
     </div>
   ) : null;
 
+  // ── Tab bar (Analyze / My Letters) ────────────────────────────────────────
+  const TabBar = (
+    <div style={{ display: "flex", borderBottom: "2px solid #e5e7eb", marginBottom: 24 }}>
+      {(["analyze", "letters"] as const).map((tab) => (
+        <button
+          key={tab}
+          onClick={() => setActiveTab(tab)}
+          style={{
+            padding: "10px 20px", fontSize: 13, fontWeight: 600, background: "none",
+            border: "none", cursor: "pointer",
+            color: activeTab === tab ? "#d97706" : "#6b7280",
+            borderBottom: `2px solid ${activeTab === tab ? "#d97706" : "transparent"}`,
+            marginBottom: -2,
+          }}
+        >
+          {tab === "analyze" ? "Analyze" : "My Letters"}
+        </button>
+      ))}
+    </div>
+  );
+
+  // ── My Letters view ───────────────────────────────────────────────────────
+  const LETTER_TYPE_LABELS: Record<string, string> = {
+    round1: "Round 1", round2: "Round 2", validation: "Debt Validation",
+    goodwill: "Goodwill", inquiry: "Inquiry",
+  };
+  const LETTER_STATUS_STYLE: Record<string, { bg: string; color: string }> = {
+    draft: { bg: "#f3f4f6", color: "#374151" },
+    approved: { bg: "#eff6ff", color: "#1d4ed8" },
+    sent: { bg: "#fffbeb", color: "#92400e" },
+    mailed: { bg: "#f0fdf4", color: "#166534" },
+    removed: { bg: "#fef2f2", color: "#b91c1c" },
+    deleted: { bg: "#fef2f2", color: "#b91c1c" },
+  };
+
+  if (activeTab === "letters") {
+    return (
+      <div>
+        <div className="cp-page-header">
+          <div>
+            <span className="cp-page-eyebrow">Credit Repair</span>
+            <h1 className="cp-page-title">Dispute IQ</h1>
+            <p className="cp-page-subtitle">All dispute letters you've generated.</p>
+          </div>
+          {disputeLimit !== null && (
+            <div style={{ padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "#fffbeb", color: "#92400e", border: "1px solid #fcd34d" }}>
+              {tier.charAt(0).toUpperCase() + tier.slice(1)} plan · up to {disputeLimit} accounts
+            </div>
+          )}
+        </div>
+
+        {TabBar}
+
+        {lettersLoading && (
+          <div style={{ textAlign: "center", padding: "60px 24px" }}>
+            <div style={{ width: 36, height: 36, border: "3px solid #e5e7eb", borderTopColor: "#d97706", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+            <div style={{ color: "#6b7280", fontSize: 14 }}>Loading your letters…</div>
+          </div>
+        )}
+
+        {!lettersLoading && savedLetters.length === 0 && (
+          <div style={{ textAlign: "center", padding: "80px 24px" }}>
+            <div style={{ fontSize: 52, marginBottom: 16 }}>📬</div>
+            <div style={{ fontWeight: 700, fontSize: 16, color: "#374151", marginBottom: 8 }}>No letters yet</div>
+            <div style={{ fontSize: 14, color: "#9ca3af", marginBottom: 24 }}>
+              Generate your first dispute letter and it will appear here.
+            </div>
+            <button
+              onClick={() => setActiveTab("analyze")}
+              style={{ padding: "9px 20px", borderRadius: 8, background: "#d97706", color: "#fff", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+            >
+              Start Analyzing →
+            </button>
+          </div>
+        )}
+
+        {!lettersLoading && savedLetters.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {savedLetters.map((ltr) => {
+              const bColor = BUREAU_COLORS[ltr.bureau?.toUpperCase()] || BUREAU_COLORS["EXPERIAN"];
+              const ss = LETTER_STATUS_STYLE[ltr.status] || LETTER_STATUS_STYLE.draft;
+              const typeLabel = LETTER_TYPE_LABELS[ltr.letterType] || ltr.letterType;
+              return (
+                <div
+                  key={ltr.id}
+                  onClick={() => setPreviewLetter(ltr)}
+                  style={{
+                    background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12,
+                    padding: "14px 18px", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.07)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "none")}
+                >
+                  <span style={{
+                    padding: "3px 12px", borderRadius: 6, fontSize: 12, fontWeight: 700,
+                    background: bColor.bg, color: bColor.text, border: `1px solid ${bColor.border}`,
+                    flexShrink: 0,
+                  }}>
+                    {BUREAU_LABELS[ltr.bureau?.toUpperCase()] || ltr.bureau}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 120 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>{typeLabel} Letter</div>
+                    <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>
+                      {new Date(ltr.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </div>
+                  </div>
+                  <span style={{
+                    padding: "3px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700,
+                    background: ss.bg, color: ss.color, flexShrink: 0,
+                    textTransform: "uppercase", letterSpacing: "0.04em",
+                  }}>
+                    {ltr.status}
+                  </span>
+                  {ltr.trackingNumber && (
+                    <div style={{ fontSize: 12, color: "#6b7280", flexShrink: 0 }}>
+                      📦 {ltr.trackingNumber}
+                    </div>
+                  )}
+                  <span style={{ color: "#d1d5db", fontSize: 18, flexShrink: 0 }}>›</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {previewLetter && (
+          <LetterPreviewDialog
+            letter={previewLetter.content}
+            bureau={previewLetter.bureau}
+            clientName={`${user?.firstName || ""} ${user?.lastName || ""}`.trim()}
+            letterId={previewLetter.id}
+            onClose={() => setPreviewLetter(null)}
+            onTrack={() => setPreviewLetter(null)}
+          />
+        )}
+      </div>
+    );
+  }
+
   // ── Source selection screen ───────────────────────────────────────────────
   if (!source) {
     return (
@@ -545,6 +694,7 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
           )}
         </div>
 
+        {TabBar}
         {ProfileNudgeBanner}
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 720, margin: "32px auto" }}>

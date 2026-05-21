@@ -54,12 +54,12 @@ interface DisputeDoc {
 
 type Step = 1 | 2 | 3 | "preview";
 
-const BUREAU_LABELS: Record<string, string> = {
+export const BUREAU_LABELS: Record<string, string> = {
   EXPERIAN: "Experian",
   EQUIFAX: "Equifax",
   TRANSUNION: "TransUnion",
 };
-const BUREAU_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+export const BUREAU_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   EXPERIAN: { bg: "#eff6ff", text: "#1d4ed8", border: "#93c5fd" },
   EQUIFAX: { bg: "#fef2f2", text: "#b91c1c", border: "#fca5a5" },
   TRANSUNION: { bg: "#f5f3ff", text: "#6d28d9", border: "#c4b5fd" },
@@ -330,7 +330,7 @@ function TrackingPanel({ lobId, onClose }: { lobId: string; onClose: () => void 
 }
 
 /* ── Letter preview dialog ──────────────────────────────────────────────────── */
-function LetterPreviewDialog({
+export function LetterPreviewDialog({
   letter,
   bureau,
   clientName,
