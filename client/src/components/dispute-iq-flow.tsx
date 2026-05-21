@@ -637,6 +637,7 @@ export function DisputeIQFlow({
 
   const [step, setStep] = useState<Step>(1);
   const [letterType, setLetterType] = useState<"round1" | "validation" | "goodwill">("round1");
+  const [saveToProfile, setSaveToProfile] = useState(true);
 
   // Pre-fill consumer info from user profile
   const [info, setInfo] = useState<ConsumerInfo>({
@@ -691,6 +692,57 @@ export function DisputeIQFlow({
       setUploadingDoc(null);
     }
   }, [refetchDocs, toast]);
+
+  // Detect when the entered address differs from the stored profile
+  const addressDiffersFromProfile =
+    info.addressLine1 !== (user?.addressLine1 || "") ||
+    info.addressLine2 !== (user?.addressLine2 || "") ||
+    info.city !== (user?.city || "") ||
+    info.state !== (user?.state || "") ||
+    info.zipCode !== (user?.zipCode || "");
+
+  // Only show the save checkbox when we have a complete address that's different from profile
+  const showSaveCheckbox =
+    addressDiffersFromProfile &&
+    !!(info.addressLine1 && info.city && info.state && info.zipCode);
+
+  // Save address back to profile
+  const saveProfileMutation = useMutation({
+    mutationFn: async () => {
+      const authToken = localStorage.getItem("auth_token");
+      const res = await fetch(`/api/users/${user!.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+        body: JSON.stringify({
+          addressLine1: info.addressLine1,
+          ...(info.addressLine2 ? { addressLine2: info.addressLine2 } : {}),
+          city: info.city,
+          state: info.state,
+          zipCode: info.zipCode,
+        }),
+      });
+      if (!res.ok) throw new Error("Profile update failed");
+      return res.json();
+    },
+    onSuccess: () => {
+      qClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}`] });
+      toast({ title: "Address saved to profile", description: "Your address will pre-fill automatically next time." });
+    },
+    onError: () => {
+      toast({ title: "Couldn't save address", description: "Your letter will still generate — update your profile later.", variant: "destructive" });
+    },
+  });
+
+  // Handle advancing from Step 1 → 2, optionally saving address to profile
+  const handleNextFromStep1 = () => {
+    if (saveToProfile && showSaveCheckbox && user?.id) {
+      saveProfileMutation.mutate(); // non-blocking — don't delay flow
+    }
+    setStep(2);
+  };
 
   // Generate letters
   const generateMutation = useMutation({
@@ -882,6 +934,28 @@ export function DisputeIQFlow({
                   </div>
                 )}
               </div>
+
+              {/* Save address to profile checkbox — shown when address differs from stored profile */}
+              {showSaveCheckbox && (
+                <div style={{ padding: "12px 16px", background: "#fffbeb", borderRadius: 10, border: "1px solid #fcd34d" }}>
+                  <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={saveToProfile}
+                      onChange={(e) => setSaveToProfile(e.target.checked)}
+                      style={{ width: 16, height: 16, marginTop: 2, cursor: "pointer", accentColor: "#d97706" }}
+                    />
+                    <div>
+                      <span style={{ fontWeight: 600, fontSize: 13, color: "#92400e" }}>
+                        Save this address to my profile
+                      </span>
+                      <div style={{ fontSize: 12, color: "#b45309", marginTop: 2 }}>
+                        It will pre-fill automatically next time so you don't have to type it again.
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              )}
             </div>
           )}
 
@@ -1023,7 +1097,7 @@ export function DisputeIQFlow({
 
           {step !== 3 ? (
             <button
-              onClick={() => setStep((s) => (s === 1 ? 2 : 3) as Step)}
+              onClick={step === 1 ? handleNextFromStep1 : () => setStep(3)}
               disabled={step === 1 && !step1Valid}
               style={{
                 padding: "9px 22px", borderRadius: 8, background: "#d97706", color: "#fff",

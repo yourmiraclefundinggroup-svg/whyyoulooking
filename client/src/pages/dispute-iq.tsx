@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useFeatureAccess, FEATURES } from "@/hooks/use-feature-access";
 import { useToast } from "@/hooks/use-toast";
+import { useUserContext } from "@/hooks/use-user-context";
 import { DisputeIQFlow } from "@/components/dispute-iq-flow";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
@@ -382,7 +383,12 @@ function groupByBureau(tradelines: AnalyzedTradeline[]): Record<string, Analyzed
 /* ── Main page ───────────────────────────────────────────────────────────────── */
 export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (items: AnalyzedTradeline[]) => void }) {
   const { toast } = useToast();
+  const { user } = useUserContext();
   const { tier, hasAnyPlan, disputeLimit } = useFeatureAccess(FEATURES.BASIC_DISPUTES);
+  const [profileNudgeDismissed, setProfileNudgeDismissed] = useState(false);
+
+  // Show nudge if address is missing — so the flow pre-fills cleanly on first use
+  const profileMissingAddress = hasAnyPlan && !profileNudgeDismissed && !(user?.addressLine1 && user?.city && user?.state && user?.zipCode);
 
   const [source, setSource] = useState<"array" | "upload" | null>(null);
   const [uploadResult, setUploadResult] = useState<TradelineResponse | null>(null);
@@ -485,6 +491,41 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
     );
   }
 
+  // ── Profile nudge banner (reusable) ──────────────────────────────────────
+  const ProfileNudgeBanner = profileMissingAddress ? (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
+      background: "#fffbeb", borderRadius: 10, border: "1px solid #fcd34d",
+      marginBottom: 20, flexWrap: "wrap",
+    }}>
+      <span style={{ fontSize: 18 }}>📋</span>
+      <div style={{ flex: 1, minWidth: 200 }}>
+        <span style={{ fontWeight: 600, fontSize: 13, color: "#92400e" }}>Complete your profile — </span>
+        <span style={{ fontSize: 13, color: "#b45309" }}>
+          Add your mailing address so it pre-fills automatically when you generate dispute letters.
+        </span>
+      </div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
+        <a
+          href="/portal/profile"
+          style={{
+            padding: "6px 14px", borderRadius: 8, background: "#d97706", color: "#fff",
+            fontSize: 12, fontWeight: 700, textDecoration: "none", display: "inline-block",
+          }}
+        >
+          Update Profile →
+        </a>
+        <button
+          onClick={() => setProfileNudgeDismissed(true)}
+          style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0 }}
+          title="Dismiss"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  ) : null;
+
   // ── Source selection screen ───────────────────────────────────────────────
   if (!source) {
     return (
@@ -503,6 +544,8 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
             </div>
           )}
         </div>
+
+        {ProfileNudgeBanner}
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 720, margin: "32px auto" }}>
           <button
@@ -571,6 +614,8 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
           </button>
         </div>
 
+        {ProfileNudgeBanner}
+
         <div style={{ maxWidth: 580, margin: "0 auto" }}>
           {uploadMutation.isPending ? (
             <div style={{ textAlign: "center", padding: "56px 24px" }}>
@@ -631,6 +676,8 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
           )}
         </div>
       </div>
+
+      {ProfileNudgeBanner}
 
       {/* Loading */}
       {isLoading && (
