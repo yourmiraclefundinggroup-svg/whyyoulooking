@@ -523,7 +523,8 @@ function SettingsPage() {
 // ── Demo banner (top strip) ───────────────────────────────────────────────────
 function DemoBanner() {
   const [visible, setVisible] = useState(true);
-  if (!visible) return null;
+  const isEmbedded = window.self !== window.top;
+  if (!visible || isEmbedded) return null;
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
