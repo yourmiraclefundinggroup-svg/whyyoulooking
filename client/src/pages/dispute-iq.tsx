@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useFeatureAccess, FEATURES } from "@/hooks/use-feature-access";
 import { useToast } from "@/hooks/use-toast";
+import { DisputeIQFlow } from "@/components/dispute-iq-flow";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
 interface TradelineViolation {
@@ -386,6 +387,7 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
   const [source, setSource] = useState<"array" | "upload" | null>(null);
   const [uploadResult, setUploadResult] = useState<TradelineResponse | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [showFlow, setShowFlow] = useState(false);
 
   // ── Array pull query ──────────────────────────────────────────────────────
   const {
@@ -463,7 +465,7 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
     if (onGenerateLetters) {
       onGenerateLetters(selectedTradelines);
     } else {
-      toast({ title: "Letter generation coming soon", description: "This will be available in the next update." });
+      setShowFlow(true);
     }
   };
 
@@ -806,6 +808,14 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
       )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+      {showFlow && (
+        <DisputeIQFlow
+          selectedAccounts={selectedTradelines}
+          onClose={() => setShowFlow(false)}
+          onDisputeCreated={() => setShowFlow(false)}
+        />
+      )}
     </div>
   );
 }

@@ -9663,6 +9663,257 @@ ${pdfText.slice(0, 8000)}`;
     }
   );
 
+  // ─── Client Dispute IQ — Letter Generation & Document Flow ──────────────────
+
+  // POST /api/client/dispute-packet/generate
+  // Generate AI-written dispute packet(s) from selected tradelines, save as drafts
+  app.post(
+    "/api/client/dispute-packet/generate",
+    authenticateToken,
+    requireClientAccess,
+    async (req, res) => {
+      try {
+        const user = (req as any).user;
+        const { consumer, selectedAccounts, enclosureNames } = req.body;
+
+        if (!consumer || !consumer.fullName || !consumer.addressLine1 || !selectedAccounts?.length) {
+          return res.status(400).json({ error: "consumer info and selectedAccounts are required" });
+        }
+
+        const { generateClientDisputePacket } = await import("./client-dispute-packet");
+
+        // Group accounts by bureau
+        const groups: Record<string, typeof selectedAccounts> = {};
+        for (const acct of selectedAccounts) {
+          const b = ((acct.bureaus?.[0] || acct.bureau || "EXPERIAN") as string).toUpperCase();
+          if (!groups[b]) groups[b] = [];
+          groups[b].push(acct);
+        }
+        const validBureaus = ["EXPERIAN", "EQUIFAX", "TRANSUNION"];
+        const bureaus = Object.keys(groups).filter((b) => validBureaus.includes(b));
+        // If no tagged bureau, generate one for each or just EXPERIAN
+        if (bureaus.length === 0) bureaus.push("EXPERIAN");
+
+        const results = await Promise.all(
+          bureaus.map(async (bureau) => {
+            const accounts = groups[bureau] || selectedAccounts;
+            const packet = await generateClientDisputePacket({
+              consumer,
+              bureau: bureau as "EXPERIAN" | "EQUIFAX" | "TRANSUNION",
+              selectedAccounts: accounts,
+              enclosureNames: enclosureNames || [],
+            });
+
+            // Save draft to disputeLettersNew
+            let letterId: number | null = null;
+            try {
+              const [saved] = await db
+                .insert(disputeLettersNew)
+                .values({
+                  clientId: user.id,
+                  letterType: "round1",
+                  bureau: bureau as "EXPERIAN" | "EQUIFAX" | "TRANSUNION",
+                  content: packet.letterContent,
+                  status: "draft",
+                })
+                .returning({ id: disputeLettersNew.id });
+              letterId = saved?.id ?? null;
+            } catch (dbErr) {
+              console.error("[DisputeIQ] Failed to save letter draft:", dbErr);
+            }
+
+            return {
+              bureau,
+              letterContent: packet.letterContent,
+              letterId,
+              accountCount: packet.accountCount,
+            };
+          })
+        );
+
+        res.json(results);
+      } catch (error: any) {
+        console.error("[DisputeIQ] Generate error:", error);
+        res.status(500).json({ error: error.message || "Letter generation failed" });
+      }
+    }
+  );
+
+  // GET /api/client/dispute-letters — list client's saved dispute letters
+  app.get(
+    "/api/client/dispute-letters",
+    authenticateToken,
+    requireClientAccess,
+    async (req, res) => {
+      try {
+        const user = (req as any).user;
+        const letters = await db
+          .select()
+          .from(disputeLettersNew)
+          .where(eq(disputeLettersNew.clientId, user.id))
+          .orderBy(desc(disputeLettersNew.createdAt));
+        res.json(letters);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Multer for dispute docs (gov_id, ssn_card, auth_letter)
+  const disputeDocUpload = multer({
+    storage: multer.diskStorage({
+      destination: (req, _file, cb) => {
+        const userId = (req as any).user?.id;
+        const dir = nodePath.join(process.cwd(), "uploads", "dispute-docs", String(userId));
+        fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+      },
+      filename: (_req, file, cb) => {
+        const ext = nodePath.extname(file.originalname) || "";
+        cb(null, `${file.fieldname}_${Date.now()}${ext}`);
+      },
+    }),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const ok = ["image/jpeg","image/png","image/webp","application/pdf"].includes(file.mimetype);
+      cb(null, ok);
+    },
+  });
+
+  // POST /api/client/dispute-docs — upload a dispute support document
+  app.post(
+    "/api/client/dispute-docs",
+    authenticateToken,
+    requireClientAccess,
+    disputeDocUpload.single("file"),
+    async (req, res) => {
+      try {
+        if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+        const docType = req.body.docType as string;
+        if (!["gov_id", "ssn_card", "auth_letter"].includes(docType)) {
+          return res.status(400).json({ error: "Invalid docType. Must be gov_id, ssn_card, or auth_letter" });
+        }
+        res.json({
+          docType,
+          fileName: req.file.originalname,
+          uploadedAt: new Date().toISOString(),
+        });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // GET /api/client/dispute-docs — list uploaded dispute docs for the client
+  app.get(
+    "/api/client/dispute-docs",
+    authenticateToken,
+    requireClientAccess,
+    async (req, res) => {
+      try {
+        const user = (req as any).user;
+        const dir = nodePath.join(process.cwd(), "uploads", "dispute-docs", String(user.id));
+        if (!fs.existsSync(dir)) return res.json([]);
+
+        const files = fs.readdirSync(dir);
+        const DOC_TYPES = ["gov_id", "ssn_card", "auth_letter"] as const;
+        type DocType = typeof DOC_TYPES[number];
+
+        // Return the most recent file per docType
+        const byType: Partial<Record<DocType, { docType: DocType; fileName: string; uploadedAt: string }>> = {};
+        for (const file of files) {
+          for (const dt of DOC_TYPES) {
+            if (file.startsWith(dt + "_")) {
+              const fullPath = nodePath.join(dir, file);
+              const stat = fs.statSync(fullPath);
+              if (!byType[dt] || new Date(byType[dt]!.uploadedAt) < stat.mtime) {
+                byType[dt] = {
+                  docType: dt,
+                  fileName: file,
+                  uploadedAt: stat.mtime.toISOString(),
+                };
+              }
+            }
+          }
+        }
+        res.json(Object.values(byType));
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // POST /api/client/lob/send-letter — Pro/Elite client sends letter via Lob
+  app.post(
+    "/api/client/lob/send-letter",
+    authenticateToken,
+    requireClientAccess,
+    requireFeature("lob_mail"),
+    async (req, res) => {
+      try {
+        const user = (req as any).user;
+        const { bureau, letterContent, letterId } = req.body;
+
+        if (!bureau || !letterContent) {
+          return res.status(400).json({ error: "bureau and letterContent are required" });
+        }
+
+        const clientName = `${user.firstName} ${user.lastName}`;
+        const clientAddress = [
+          user.addressLine1 || "",
+          user.addressLine2 || "",
+          [user.city, user.state, user.zipCode].filter(Boolean).join(", "),
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        if (!user.addressLine1 || !user.city || !user.state || !user.zipCode) {
+          return res.status(400).json({ error: "Your profile address is incomplete. Please update your profile before mailing." });
+        }
+
+        const { sendDisputeLetter } = await import("./lob-service.js");
+        const result = await sendDisputeLetter({
+          clientName,
+          clientAddress,
+          bureau: bureau.toUpperCase() as "EXPERIAN" | "EQUIFAX" | "TRANSUNION",
+          letterContent,
+          certified: true,
+          returnReceipt: false,
+        });
+
+        console.log(`[Lob/Client] Letter created — user: ${user.id}, bureau: ${bureau}, tracking: ${result.trackingNumber}`);
+
+        // Update letter record with tracking info
+        if (letterId) {
+          await db
+            .update(disputeLettersNew)
+            .set({
+              trackingNumber: result.trackingNumber,
+              lobId: result.lobId,
+              status: "sent" as any,
+              sentDate: new Date() as any,
+              expectedDeliveryDate: result.expectedDelivery ? new Date(result.expectedDelivery) as any : undefined,
+            })
+            .where(eq(disputeLettersNew.id, parseInt(letterId)));
+        }
+
+        // No-op: disputeLettersNew record (updated above) is the source of truth for client letter tracking
+
+        res.json({
+          success: true,
+          trackingNumber: result.trackingNumber,
+          expectedDelivery: result.expectedDelivery,
+          lobId: result.lobId,
+        });
+      } catch (error: any) {
+        console.error("[Lob/Client] Send error:", error.message);
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // ─── End Client Dispute IQ ────────────────────────────────────────────────
+
   const httpServer = createServer(app);
   return httpServer;
 }
