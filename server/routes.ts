@@ -8289,7 +8289,7 @@ If you are just answering a question (not updating the letter), just respond nor
       const user = (req as any).user as any;
       if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-      const isAdmin = user.role === "ADMIN";
+      const isAdmin = user.accessLevel === "ADMIN";
 
       // Check access — admin always allowed; clients need lob_mail feature
       if (!isAdmin) {
@@ -8340,16 +8340,24 @@ If you are just answering a question (not updating the letter), just respond nor
       const resolvedClientId = isAdmin ? (bodyClientId || null) : user.id;
       console.log(`[Lob] Letter created — client: ${clientName}, bureau: ${bureau}, lobId: ${result.lobId}, tracking: ${result.trackingNumber}`);
 
-      // Update letter record with tracking number
+      // Update letter record with tracking number — enforce ownership for non-admin callers
       const resolvedLetterId = letterId ? parseInt(letterId) : null;
       if (resolvedLetterId) {
-        await db.update(disputeLettersNew)
+        const whereClause = isAdmin
+          ? eq(disputeLettersNew.id, resolvedLetterId)
+          : and(eq(disputeLettersNew.id, resolvedLetterId), eq(disputeLettersNew.clientId, user.id));
+        const updated = await db.update(disputeLettersNew)
           .set({
             trackingNumber: result.trackingNumber,
             status: "sent" as any,
             sentDate: new Date() as any,
           })
-          .where(eq(disputeLettersNew.id, resolvedLetterId));
+          .where(whereClause)
+          .returning();
+        if (!isAdmin && updated.length === 0) {
+          // Letter not found or doesn't belong to this user — still allow send but log the mismatch
+          console.warn(`[Lob] letterId ${resolvedLetterId} not updated: not owned by user ${user.id}`);
+        }
       }
 
       // For client sends, create creditIssues + disputes tracking record
