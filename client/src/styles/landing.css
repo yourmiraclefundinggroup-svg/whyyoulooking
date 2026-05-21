@@ -202,21 +202,23 @@
 }
 
 .lp-btn-primary {
-  background: var(--accent-grad);
-  color: #ffffff;
+  background: var(--aura-700);
+  color: var(--bone-light);
   box-shadow: 0 2px 12px rgba(124,107,203,0.25);
 }
 .lp-btn-primary:hover {
+  background: var(--aura-600);
   transform: translateY(-1px);
   box-shadow: 0 6px 24px rgba(124,107,203,0.35);
 }
 
 .lp-btn-accent {
-  background: var(--accent-grad);
-  color: #ffffff;
+  background: var(--aura-700);
+  color: var(--bone-light);
   box-shadow: 0 2px 12px rgba(124,107,203,0.25);
 }
 .lp-btn-accent:hover {
+  background: var(--aura-600);
   transform: translateY(-1px);
   box-shadow: 0 6px 24px rgba(124,107,203,0.35);
 }
