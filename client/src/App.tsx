@@ -34,6 +34,7 @@ import DenialDecoder from "@/pages/denial-decoder";
 import WhiteLabelOnboarding from "@/pages/white-label-onboarding";
 import CreditMonitoring from "@/pages/credit-monitoring";
 import ClientPortal from "@/pages/client-portal";
+import Demo from "@/pages/demo";
 import NotFound from "@/pages/not-found";
 import { TrialUpgradeWall } from "@/components/trial-upgrade-wall";
 
@@ -105,6 +106,9 @@ function Router() {
   }
   if (location === "/pricing") {
     return <Pricing />;
+  }
+  if (location === "/demo") {
+    return <Demo />;
   }
 
   // Show login if no user is authenticated and not on other allowed pages
@@ -191,6 +195,7 @@ function Router() {
             <CreditMonitoring />
           </Route>
           <Route path="/portal" component={ClientPortal} />
+          <Route path="/demo" component={Demo} />
           <Route path="/credit-building-v2">
             <Navigation />
             <CreditBuildingV2 />
