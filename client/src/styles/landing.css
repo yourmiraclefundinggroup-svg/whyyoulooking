@@ -412,7 +412,7 @@
 
 /* ── HERO SCREENSHOT FRAME ── */
 .lp-hero-screenshot {
-  max-width: 900px;
+  max-width: 1100px;
   margin: 32px auto 48px;
   border-radius: 16px;
   box-shadow:
@@ -453,9 +453,19 @@
   margin-right: 29px; /* visually center between dots and right edge */
 }
 
-.lp-hero-screenshot-img {
+.lp-hero-demo-wrap {
+  position: relative;
+  overflow: hidden;
+  /* height is set dynamically by ResizeObserver */
+}
+
+.lp-hero-demo-iframe {
+  width: 1440px;
+  height: 900px;
+  border: none;
+  transform-origin: top left;
   display: block;
-  width: 100%;
+  /* transform: scale() applied via JS */
 }
 
 @media (max-width: 640px) {

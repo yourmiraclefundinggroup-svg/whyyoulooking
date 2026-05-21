@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "wouter";
 import "../styles/landing.css";
 import scoreshiftLogo from "@assets/scoreshift-logo.png";
@@ -116,8 +116,27 @@ function Nav() {
   );
 }
 
+const PORTAL_W = 1440;
+const PORTAL_H = 900;
+
 // ── Hero ─────────────────────────────────────────────────
 function HeroSection() {
+  const wrapRef  = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    const apply = () => {
+      if (!wrapRef.current || !iframeRef.current) return;
+      const scale = wrapRef.current.offsetWidth / PORTAL_W;
+      iframeRef.current.style.transform = `scale(${scale})`;
+      wrapRef.current.style.height = `${PORTAL_H * scale}px`;
+    };
+    const ro = new ResizeObserver(apply);
+    if (wrapRef.current) ro.observe(wrapRef.current);
+    apply();
+    return () => ro.disconnect();
+  }, []);
+
   const modules = [
     { bg: "#ede9fe", color: "#4f46e5", icon: ICONS.chart,  name: "Credit Reports",   desc: "Live tri-bureau visibility — see exactly what's affecting your profile." },
     { bg: "#fef3c7", color: "#d97706", icon: ICONS.brain,  name: "Dispute IQ",       desc: "Identifies what can be challenged and guides you through it." },
@@ -150,11 +169,16 @@ function HeroSection() {
               <span className="lp-ss-dot lp-ss-dot-green" />
               <span className="lp-ss-dot-label">ScoreShift — Dashboard</span>
             </div>
-            <img
-              src="/dashboard-preview.png"
-              alt="ScoreShift dashboard showing credit scores across all three bureaus"
-              className="lp-hero-screenshot-img"
-            />
+            <div ref={wrapRef} className="lp-hero-demo-wrap">
+              <iframe
+                ref={iframeRef}
+                src="/demo"
+                title="ScoreShift interactive demo"
+                scrolling="no"
+                tabIndex={-1}
+                className="lp-hero-demo-iframe"
+              />
+            </div>
           </div>
           <div className="lp-hero-ctas lp-hero-ctas-centered lp-fade-up lp-delay-4">
             <Link href="/auth" className="lp-btn lp-btn-primary lp-btn-lg">Check Your Credit Health <ArrowRightIcon /></Link>
