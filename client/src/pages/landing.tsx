@@ -150,12 +150,10 @@ function HeroSection() {
               <span className="lp-ss-dot lp-ss-dot-green" />
               <span className="lp-ss-dot-label">ScoreShift — Dashboard</span>
             </div>
-            <iframe
-              className="lp-hero-demo-iframe"
-              src="/demo"
-              title="ScoreShift interactive demo"
-              scrolling="no"
-              tabIndex={-1}
+            <img
+              src="/dashboard-preview.png"
+              alt="ScoreShift dashboard showing credit scores across all three bureaus"
+              className="lp-hero-screenshot-img"
             />
           </div>
           <div className="lp-hero-ctas lp-hero-ctas-centered lp-fade-up lp-delay-4">
