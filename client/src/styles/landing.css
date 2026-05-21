@@ -412,7 +412,7 @@
 
 /* ── HERO SCREENSHOT FRAME ── */
 .lp-hero-screenshot {
-  max-width: 900px;
+  max-width: 1100px;
   margin: 0 auto 48px;
   border-radius: 16px;
   box-shadow:
@@ -456,8 +456,8 @@
 .lp-hero-screenshot-iframe-wrap {
   position: relative;
   width: 100%;
-  /* scale 0.5 × 1500px iframe height = 750px visible */
-  height: 750px;
+  /* scale 0.61 × 1500px iframe height = 915px visible */
+  height: 915px;
   overflow: hidden;
 }
 
@@ -465,11 +465,11 @@
   position: absolute;
   top: 0;
   left: 0;
-  /* 1800px × 0.5 = 900px fills the max-width container */
+  /* 1800px × 0.61 = 1098px fills the 1100px max-width container */
   width: 1800px;
   height: 1500px;
   border: none;
-  transform: scale(0.5);
+  transform: scale(0.61);
   transform-origin: top left;
 }
 
