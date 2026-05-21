@@ -9341,6 +9341,296 @@ ${denialLetterText}`
     }
   });
 
+  // ── Client: pull own Array tradelines ────────────────────────────────────────
+  app.get("/api/client/array/tradelines", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const userId = user.id;
+
+      const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
+      if (!ARRAY_API_KEY) {
+        return res.status(500).json({ error: "Array credentials not configured" });
+      }
+
+      const { arrayEnrollments } = await import("@shared/schema");
+      const [enrollment] = await db
+        .select()
+        .from(arrayEnrollments)
+        .where(eq(arrayEnrollments.userId, userId));
+
+      if (!enrollment) {
+        return res.status(404).json({
+          error: "Not enrolled in Array credit monitoring",
+          enrolled: false,
+        });
+      }
+
+      const arrayUserId = enrollment.arrayUserId;
+
+      // Generate a server-side token for this client
+      const tokenResponse = await fetch("https://api.array.io/api/authenticate/v2/usertoken", {
+        method: "POST",
+        headers: {
+          "x-array-server-token": ARRAY_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: arrayUserId }),
+      });
+
+      if (!tokenResponse.ok) {
+        const errData = await tokenResponse.json().catch(() => ({})) as Record<string, unknown>;
+        console.error(`[Array] Client tradeline token fetch failed for user ${userId}:`, errData);
+        return res.status(502).json({ error: "Failed to generate Array token" });
+      }
+
+      const tokenData = await tokenResponse.json() as { token?: string; userToken?: string; access_token?: string };
+      const userToken = tokenData.token || tokenData.userToken || tokenData.access_token;
+
+      // Fetch the credit report
+      const reportResponse = await fetch("https://api.array.io/v2/user/credit-report", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!reportResponse.ok) {
+        const errData = await reportResponse.json().catch(() => ({})) as Record<string, unknown>;
+        console.error(`[Array] Client credit report fetch failed for user ${userId}:`, errData);
+        return res.status(502).json({ error: "Failed to fetch credit report from Array" });
+      }
+
+      type ArrAcct = {
+        creditorName?: string; name?: string; furnisherName?: string;
+        accountNumber?: string; number?: string; accountId?: string;
+        accountType?: string; type?: string;
+        balance?: number; currentBalance?: number;
+        status?: string; accountStatus?: string; paymentStatus?: string;
+        dateOpened?: string; openDate?: string;
+        dateOfFirstDelinquency?: string; firstDelinquencyDate?: string;
+        latePayments30?: number; monthsLate30?: number;
+        latePayments60?: number; monthsLate60?: number;
+        latePayments90?: number; monthsLate90?: number;
+        remarks?: string;
+      };
+      type ArrInq = {
+        creditorName?: string; subscriberName?: string; name?: string;
+        inquiryDate?: string; date?: string; inquiryType?: string;
+      };
+      type ArrReport = {
+        accounts?: ArrAcct[]; tradelines?: ArrAcct[];
+        inquiries?: ArrInq[];
+        data?: { accounts?: ArrAcct[]; inquiries?: ArrInq[] };
+      };
+
+      const reportData = await reportResponse.json() as ArrReport;
+      const { analyzeAllTradelines, analyzeTradelineViolations, isNegativeTradeline } = await import("./violation-analysis");
+
+      // Map raw Array accounts → RawTradeline format, then analyze
+      const rawTradelines = (reportData?.accounts || reportData?.tradelines || reportData?.data?.accounts || []).map((acct) => {
+        const status = acct.status || acct.accountStatus || acct.paymentStatus || "";
+        const dofd = acct.dateOfFirstDelinquency || acct.firstDelinquencyDate || "";
+        const latePayments = {
+          days30: acct.latePayments30 || acct.monthsLate30 || 0,
+          days60: acct.latePayments60 || acct.monthsLate60 || 0,
+          days90: acct.latePayments90 || acct.monthsLate90 || 0,
+        };
+        return {
+          creditor: acct.creditorName || acct.name || acct.furnisherName || "Unknown Creditor",
+          accountNumber: acct.accountNumber || acct.number || acct.accountId || "Unknown",
+          accountType: acct.accountType || acct.type || "other",
+          balance: acct.balance !== undefined ? String(acct.balance) : (acct.currentBalance !== undefined ? String(acct.currentBalance) : "0"),
+          status,
+          dateOpened: acct.dateOpened || acct.openDate || "",
+          dateOfFirstDelinquency: dofd || undefined,
+          latePayments,
+        };
+      });
+
+      const allNegative = analyzeAllTradelines(rawTradelines);
+      // Also include a summary of all tradelines for context
+      const allTradelines = rawTradelines.map((t) => ({
+        ...t,
+        violations: analyzeTradelineViolations(t),
+        isDerogatory: isNegativeTradeline(t),
+      }));
+
+      const inquiries = (reportData?.inquiries || reportData?.data?.inquiries || []).map((inq) => ({
+        creditor: inq.creditorName || inq.subscriberName || inq.name || "Unknown",
+        inquiryDate: inq.inquiryDate || inq.date || "",
+        inquiryType: inq.inquiryType || "hard",
+        suggestedDisputeReason: "Unauthorized hard inquiry — no permissible purpose established (FCRA § 1681b)",
+      }));
+
+      console.log(`[Array] Client tradelines fetched for user ${userId}: ${allTradelines.length} total, ${allNegative.length} negative`);
+      res.json({
+        enrolled: true,
+        tradelines: allTradelines,
+        negativeTradelines: allNegative,
+        inquiries,
+        reportFetchedAt: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      console.error("[Array] Client tradeline fetch error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ── Client: manual PDF credit report upload ──────────────────────────────────
+  const creditReportStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      const uploadDir = nodePath.join(process.cwd(), "uploads", "credit-reports");
+      fs.mkdirSync(uploadDir, { recursive: true });
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const user = (req as any).user;
+      const userId = user?.id || "unknown";
+      const ext = nodePath.extname(file.originalname);
+      cb(null, `user_${userId}_${Date.now()}${ext}`);
+    },
+  });
+  const creditReportUpload = multer({
+    storage: creditReportStorage,
+    limits: { fileSize: 20 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      if (file.mimetype === "application/pdf" || file.originalname.endsWith(".pdf")) {
+        cb(null, true);
+      } else {
+        cb(new Error("Only PDF files are accepted"));
+      }
+    },
+  });
+
+  app.post(
+    "/api/client/credit-report/upload",
+    authenticateToken,
+    requireClientAccess,
+    creditReportUpload.single("file"),
+    async (req, res) => {
+      try {
+        const user = (req as any).user;
+        if (!req.file) {
+          return res.status(400).json({ error: "No file uploaded" });
+        }
+
+        // Extract text from PDF
+        let pdfText = "";
+        try {
+          const pdfParse = require("pdf-parse");
+          const fileBuffer = fs.readFileSync(req.file.path);
+          const parsed = await pdfParse(fileBuffer);
+          pdfText = parsed.text || "";
+        } catch (pdfErr) {
+          console.error("[DisputeIQ] PDF parse error:", pdfErr);
+          pdfText = "";
+        }
+
+        if (!pdfText || pdfText.trim().length < 50) {
+          return res.json({
+            success: true,
+            source: "upload",
+            fileName: req.file.originalname,
+            tradelines: [],
+            negativeTradelines: [],
+            inquiries: [],
+            note: "Could not extract text from this PDF. Please ensure it is a text-based credit report.",
+          });
+        }
+
+        // Use OpenAI to parse tradelines from the PDF text
+        const parsePrompt = `You are a credit report parser. Extract all negative/derogatory accounts from this credit report text.
+Return a JSON object with this exact structure:
+{
+  "tradelines": [
+    {
+      "creditor": "string",
+      "accountNumber": "string (last 4 or masked)",
+      "accountType": "string",
+      "balance": "string (dollar amount)",
+      "status": "string (e.g. Collection, Charge-off, Late 30, Late 60, Late 90, etc.)",
+      "dateOpened": "string (YYYY-MM-DD or empty)",
+      "dateOfFirstDelinquency": "string (YYYY-MM-DD or empty)",
+      "latePayments": { "days30": 0, "days60": 0, "days90": 0 }
+    }
+  ],
+  "inquiries": [
+    { "creditor": "string", "inquiryDate": "string (YYYY-MM-DD)", "inquiryType": "hard" }
+  ]
+}
+Only include accounts with negative status (collections, charge-offs, late payments, defaults).
+If a field is unknown, use an empty string or 0.
+Credit report text (first 8000 chars):
+${pdfText.slice(0, 8000)}`;
+
+        const parseResp = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: parsePrompt }],
+          max_tokens: 2000,
+          temperature: 0,
+          response_format: { type: "json_object" },
+        });
+
+        let parsedData: { tradelines?: any[]; inquiries?: any[] } = {};
+        try {
+          parsedData = JSON.parse(parseResp.choices[0]?.message?.content || "{}");
+        } catch {
+          parsedData = {};
+        }
+
+        const rawTradelines = (parsedData.tradelines || []).map((t: any) => ({
+          creditor: t.creditor || "Unknown",
+          accountNumber: t.accountNumber || "Unknown",
+          accountType: t.accountType || "other",
+          balance: String(t.balance || "0"),
+          status: t.status || "",
+          dateOpened: t.dateOpened || "",
+          dateOfFirstDelinquency: t.dateOfFirstDelinquency || undefined,
+          latePayments: t.latePayments || { days30: 0, days60: 0, days90: 0 },
+        }));
+
+        const { analyzeAllTradelines } = await import("./violation-analysis");
+        const negativeTradelines = analyzeAllTradelines(rawTradelines);
+
+        const inquiries = (parsedData.inquiries || []).map((inq: any) => ({
+          creditor: inq.creditor || "Unknown",
+          inquiryDate: inq.inquiryDate || "",
+          inquiryType: inq.inquiryType || "hard",
+          suggestedDisputeReason: "Unauthorized hard inquiry — no permissible purpose established (FCRA § 1681b)",
+        }));
+
+        // Store the upload record
+        try {
+          await db.insert(creditReportUploads).values({
+            userId: user.id,
+            uploadedBy: user.id,
+            fileName: req.file.originalname,
+            fileType: "application/pdf",
+            sourceFormat: "pdf",
+            parseStatus: "succeeded",
+            bureau: "EXPERIAN",
+          });
+        } catch (dbErr) {
+          console.error("[DisputeIQ] Failed to record upload:", dbErr);
+        }
+
+        res.json({
+          success: true,
+          source: "upload",
+          fileName: req.file.originalname,
+          tradelines: rawTradelines,
+          negativeTradelines,
+          inquiries,
+          reportFetchedAt: new Date().toISOString(),
+        });
+      } catch (error: any) {
+        console.error("[DisputeIQ] Upload error:", error);
+        res.status(500).json({ error: error.message || "Upload failed" });
+      }
+    }
+  );
+
   const httpServer = createServer(app);
   return httpServer;
 }

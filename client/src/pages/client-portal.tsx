@@ -5,6 +5,7 @@ import { useUserContext } from "@/hooks/use-user-context";
 import { useArrayScript } from "@/hooks/use-array-script";
 import { useArrayToken } from "@/hooks/use-array-token";
 import { useFeatureAccess } from "@/hooks/use-feature-access";
+import { DisputeIQPage } from "@/pages/dispute-iq";
 import "@/styles/portal.css";
 
 /* ── Custom element declarations ───────────────────────────────── */
@@ -42,6 +43,7 @@ type PageId =
   | "debt-navigator"
   | "student-loan"
   | "subscription-manager"
+  | "dispute-iq"
   | "disputes"
   | "messages"
   | "documents"
@@ -361,6 +363,20 @@ export default function ClientPortal() {
           ),
         },
         {
+          id: "dispute-iq" as PageId,
+          label: "Dispute IQ",
+          badge: "AI",
+          badgeColor: "amber" as const,
+          icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              <line x1="11" y1="8" x2="11" y2="14" />
+              <line x1="8" y1="11" x2="14" y2="11" />
+            </svg>
+          ),
+        },
+        {
           id: "disputes" as PageId,
           label: "Disputes",
           badge: "2",
@@ -563,6 +579,7 @@ export default function ClientPortal() {
     "debt-navigator": "Debt Navigator",
     "student-loan": "Student Loan Aid",
     "subscription-manager": "Subscription Manager",
+    "dispute-iq": "Dispute IQ",
     disputes: "Disputes",
     messages: "Messages",
     documents: "Documents",
@@ -1144,6 +1161,9 @@ export default function ClientPortal() {
               </ArrayWrapper>
             </div>
           )}
+
+          {/* ══ DISPUTE IQ ══════════════════════════════════════ */}
+          {activePage === "dispute-iq" && <DisputeIQPage />}
 
           {/* ══ DISPUTES ════════════════════════════════════════ */}
           {activePage === "disputes" && <DisputesPage />}
