@@ -254,38 +254,6 @@
   flex-shrink: 0;
 }
 
-/* ── ANNOUNCEMENT BAR ── */
-.lp-announcement {
-  background: var(--taupe-800);
-  color: var(--bone-light);
-  text-align: center;
-  padding: 10px 24px;
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-family: var(--font-sans);
-}
-
-.lp-ann-icon {
-  width: 16px; height: 16px;
-  color: var(--clay-400);
-  flex-shrink: 0;
-}
-
-.lp-announcement a {
-  color: var(--clay-400);
-  font-weight: 600;
-  margin-left: 4px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.lp-announcement a:hover { text-decoration: underline; }
-
 /* ── NAVIGATION ── */
 .lp-nav {
   position: sticky;
