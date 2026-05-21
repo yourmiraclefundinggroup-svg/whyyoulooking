@@ -150,6 +150,16 @@ function HeroSection() {
 
   return (
     <section className="lp-hero">
+      <video
+        className="lp-hero-video"
+        src="/hf_hero_bg.mp4"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="none"
+        aria-hidden="true"
+      />
       <div className="lp-container">
         <div className="lp-hero-content-centered">
           <div className="lp-hero-eyebrow lp-fade-up">
