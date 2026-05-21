@@ -373,8 +373,16 @@ function LetterPreviewDialog({
           <div style={{ margin: "0 24px", marginTop: 16, padding: 16, background: "#fffbeb", borderRadius: 10, border: "1px solid #fcd34d" }}>
             <div style={{ fontWeight: 600, color: "#92400e", marginBottom: 8 }}>Confirm Certified Mail Send</div>
             <div style={{ fontSize: 13, color: "#78350f", marginBottom: 12 }}>
-              Send this dispute letter to <strong>{BUREAU_LABELS[bureau.toUpperCase()] || bureau}</strong> via USPS Certified Mail?
-              <br />A Lob tracking number will be generated and you can track delivery in the Disputes tab.
+              This letter will be sent via USPS Certified Mail to:
+            </div>
+            <div style={{ fontFamily: "'Courier New', monospace", fontSize: 12, color: "#374151", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "10px 14px", marginBottom: 12 }}>
+              {BUREAU_LABELS[bureau.toUpperCase()] || bureau}<br />
+              {bureau.toUpperCase() === "EXPERIAN" && <>Experian Information Solutions, Inc.<br />Dispute Department<br />P.O. Box 4500<br />Allen, TX 75013</>}
+              {bureau.toUpperCase() === "EQUIFAX" && <>Equifax Information Services, LLC<br />P.O. Box 740256<br />Atlanta, GA 30374-0256</>}
+              {bureau.toUpperCase() === "TRANSUNION" && <>TransUnion LLC<br />Consumer Dispute Center<br />P.O. Box 2000<br />Chester, PA 19016</>}
+            </div>
+            <div style={{ fontSize: 12, color: "#92400e", marginBottom: 12 }}>
+              A tracking number will be generated and you can monitor delivery in the Disputes tab.
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button
@@ -481,6 +489,7 @@ export function DisputeIQFlow({
   const qClient = useQueryClient();
 
   const [step, setStep] = useState<Step>(1);
+  const [letterType, setLetterType] = useState<"round1" | "validation" | "goodwill">("round1");
 
   // Pre-fill consumer info from user profile
   const [info, setInfo] = useState<ConsumerInfo>({
@@ -548,6 +557,7 @@ export function DisputeIQFlow({
         body: JSON.stringify({
           consumer: info,
           selectedAccounts,
+          letterType,
           enclosureNames: docs.map((d) => d.fileName),
         }),
       });
@@ -653,6 +663,39 @@ export function DisputeIQFlow({
               <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 4 }}>
                 Confirm your identity information — this will appear on your dispute letters.
               </div>
+
+              {/* Letter type selector */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>
+                  Letter Type <span style={{ color: "#dc2626" }}>*</span>
+                </label>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {([
+                    { value: "round1", label: "Round 1 Dispute", desc: "Initial formal dispute demanding reinvestigation" },
+                    { value: "validation", label: "Debt Validation", desc: "Demand creditor prove the debt is valid and owed" },
+                    { value: "goodwill", label: "Goodwill", desc: "Politely request removal of a paid late payment" },
+                  ] as const).map(({ value, label, desc }) => (
+                    <button
+                      key={value}
+                      onClick={() => setLetterType(value)}
+                      style={{
+                        padding: "8px 14px", borderRadius: 8, border: "none",
+                        background: letterType === value ? "#fef3c7" : "#f3f4f6",
+                        color: letterType === value ? "#92400e" : "#374151",
+                        outline: letterType === value ? "2px solid #d97706" : "none",
+                        fontSize: 13, fontWeight: letterType === value ? 700 : 500,
+                        cursor: "pointer", textAlign: "left", flex: "1 1 auto",
+                        minWidth: 140,
+                      }}
+                      title={desc}
+                    >
+                      {letterType === value ? "● " : "○ "}{label}
+                      <div style={{ fontSize: 10, color: letterType === value ? "#b45309" : "#9ca3af", fontWeight: 400, marginTop: 2 }}>{desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <Field label="Full Name" value={info.fullName} onChange={(v) => setInfo((p) => ({ ...p, fullName: v }))} placeholder="First Last" required />
               <Field label="Street Address" value={info.addressLine1} onChange={(v) => setInfo((p) => ({ ...p, addressLine1: v }))} placeholder="123 Main St" required />
               <Field label="Address Line 2 (optional)" value={info.addressLine2} onChange={(v) => setInfo((p) => ({ ...p, addressLine2: v }))} placeholder="Apt 4B" />
@@ -735,6 +778,16 @@ export function DisputeIQFlow({
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ fontSize: 13, color: "#6b7280" }}>
                 Review your dispute summary. Clicking "Generate" will create AI-written dispute letters per bureau — unique descriptions based on the actual violations found.
+              </div>
+
+              {/* Letter type summary */}
+              <div style={{ padding: "10px 14px", background: "#fffbeb", borderRadius: 10, border: "1px solid #fcd34d", display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 12, color: "#92400e", fontWeight: 600 }}>Letter Type:</span>
+                <span style={{ fontSize: 13, color: "#78350f", fontWeight: 700 }}>
+                  {letterType === "round1" && "Round 1 Dispute — initial formal reinvestigation demand"}
+                  {letterType === "validation" && "Debt Validation — demand proof the debt is valid and owed"}
+                  {letterType === "goodwill" && "Goodwill — polite removal request for paid late payment"}
+                </span>
               </div>
 
               {/* Consumer summary */}

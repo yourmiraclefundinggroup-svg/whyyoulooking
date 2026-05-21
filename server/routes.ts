@@ -9674,7 +9674,7 @@ ${pdfText.slice(0, 8000)}`;
     async (req, res) => {
       try {
         const user = (req as any).user;
-        const { consumer, selectedAccounts, enclosureNames } = req.body;
+        const { consumer, selectedAccounts, enclosureNames, letterType } = req.body;
 
         if (!consumer || !consumer.fullName || !consumer.addressLine1 || !selectedAccounts?.length) {
           return res.status(400).json({ error: "consumer info and selectedAccounts are required" });
@@ -9702,6 +9702,7 @@ ${pdfText.slice(0, 8000)}`;
               bureau: bureau as "EXPERIAN" | "EQUIFAX" | "TRANSUNION",
               selectedAccounts: accounts,
               enclosureNames: enclosureNames || [],
+              letterType: (["round1","validation","goodwill"].includes(letterType) ? letterType : "round1") as "round1" | "validation" | "goodwill",
             });
 
             // Save draft to disputeLettersNew
@@ -9711,7 +9712,7 @@ ${pdfText.slice(0, 8000)}`;
                 .insert(disputeLettersNew)
                 .values({
                   clientId: user.id,
-                  letterType: "round1",
+                  letterType: (["round1","round2","validation","goodwill","inquiry"].includes(letterType) ? letterType : "round1") as any,
                   bureau: bureau as "EXPERIAN" | "EQUIFAX" | "TRANSUNION",
                   content: packet.letterContent,
                   status: "draft",
@@ -9858,18 +9859,19 @@ ${pdfText.slice(0, 8000)}`;
           return res.status(400).json({ error: "bureau and letterContent are required" });
         }
 
-        const clientName = `${user.firstName} ${user.lastName}`;
-        const clientAddress = [
-          user.addressLine1 || "",
-          user.addressLine2 || "",
-          [user.city, user.state, user.zipCode].filter(Boolean).join(", "),
-        ]
-          .filter(Boolean)
-          .join("\n");
-
         if (!user.addressLine1 || !user.city || !user.state || !user.zipCode) {
           return res.status(400).json({ error: "Your profile address is incomplete. Please update your profile before mailing." });
         }
+
+        const clientName = `${user.firstName} ${user.lastName}`;
+        // sendDisputeLetter expects clientAddress as a structured object, not a string
+        const clientAddress = {
+          line1: user.addressLine1,
+          line2: user.addressLine2 || undefined,
+          city: user.city,
+          state: user.state,
+          zip: user.zipCode,
+        };
 
         const { sendDisputeLetter } = await import("./lob-service.js");
         const result = await sendDisputeLetter({
