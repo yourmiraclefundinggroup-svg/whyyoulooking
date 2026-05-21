@@ -8293,9 +8293,8 @@ If you are just answering a question (not updating the letter), just respond nor
 
       // Check access — admin always allowed; clients need lob_mail feature
       if (!isAdmin) {
-        const { getTierFeatures } = await import("./tier-features.js");
-        const features = getTierFeatures(user.subscriptionTier || "none");
-        if (!features.lob_mail) {
+        const { tierHasFeature } = await import("./tier-features.js");
+        if (!tierHasFeature(user.subscriptionTier, "lob_mail")) {
           return res.status(403).json({ error: "Certified mail requires a Pro or Elite subscription." });
         }
       }
@@ -8358,23 +8357,28 @@ If you are just answering a question (not updating the letter), just respond nor
         try {
           const [issue] = await db.insert(creditIssues).values({
             userId: resolvedClientId,
-            issueType: "dispute",
-            description: `Certified mail dispute sent to ${bureau.toUpperCase()}`,
-            bureau: bureau.toUpperCase(),
-            status: "in_dispute",
+            type: "COLLECTION",
+            title: `Dispute letter sent to ${bureau.toUpperCase()}`,
+            description: `Certified mail dispute letter sent to ${bureau.toUpperCase()} via Lob`,
+            impact: 0,
+            dateAdded: new Date(),
+            status: "DISPUTED",
+            creditor: bureau.toUpperCase(),
           } as any).returning();
-          if (issue) {
-            await db.insert(disputes).values({
-              userId: resolvedClientId,
-              issueId: issue.id,
-              letterContent,
-              trackingNumber: result.trackingNumber,
-              status: "sent",
-              bureau: bureau.toUpperCase(),
-            } as any);
-          }
+          if (!issue) throw new Error("creditIssues insert returned no row");
+          await db.insert(disputes).values({
+            userId: resolvedClientId,
+            issueId: issue.id,
+            bureau: bureau.toUpperCase(),
+            status: "SENT",
+            letterContent,
+            uspsTrackingNumber: result.trackingNumber,
+            expectedResponse: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          } as any);
         } catch (trackErr: any) {
-          console.warn("[Lob] Could not create dispute tracking record:", trackErr.message);
+          console.error("[Lob] Failed to create dispute tracking record:", trackErr.message);
+          // Do NOT silently swallow — return error so client knows tracking failed
+          return res.status(500).json({ error: "Letter sent but dispute tracking record creation failed: " + trackErr.message });
         }
       }
 
@@ -9748,31 +9752,45 @@ ${pdfText.slice(0, 8000)}`;
         const { generateClientDisputePacket } = await import("./client-dispute-packet");
 
         // Group accounts by bureau — accounts with multiple bureaus appear in each bureau's packet
-        const groups: Record<string, typeof selectedAccounts> = {};
         const validBureaus = ["EXPERIAN", "EQUIFAX", "TRANSUNION"];
+        const groups: Record<string, typeof selectedAccounts> = {};
+        const untaggedAccounts: typeof selectedAccounts = [];
+
         for (const acct of selectedAccounts) {
           const acctBureaus: string[] = [];
           if (Array.isArray(acct.bureaus) && acct.bureaus.length > 0) {
             for (const b of acct.bureaus) {
               const upper = (b as string).toUpperCase();
-              if (validBureaus.includes(upper)) acctBureaus.push(upper);
+              if (validBureaus.includes(upper) && !acctBureaus.includes(upper)) acctBureaus.push(upper);
             }
           }
-          if (acct.bureau && validBureaus.includes((acct.bureau as string).toUpperCase())) {
+          if (acct.bureau) {
             const upper = (acct.bureau as string).toUpperCase();
-            if (!acctBureaus.includes(upper)) acctBureaus.push(upper);
+            if (validBureaus.includes(upper) && !acctBureaus.includes(upper)) acctBureaus.push(upper);
           }
-          // If no bureau tagged, will fall back below
-          for (const b of acctBureaus) {
-            if (!groups[b]) groups[b] = [];
-            groups[b].push(acct);
+
+          if (acctBureaus.length === 0) {
+            // No bureau tag — collect separately, will be folded in below
+            untaggedAccounts.push(acct);
+          } else {
+            for (const b of acctBureaus) {
+              if (!groups[b]) groups[b] = [];
+              groups[b].push(acct);
+            }
           }
         }
+
         const bureaus = Object.keys(groups).filter((b) => validBureaus.includes(b));
-        // Accounts with no bureau tag → generate one EXPERIAN packet with all un-tagged accounts
+
         if (bureaus.length === 0) {
+          // All accounts are untagged — send one EXPERIAN packet
           bureaus.push("EXPERIAN");
-          groups["EXPERIAN"] = selectedAccounts;
+          groups["EXPERIAN"] = untaggedAccounts;
+        } else if (untaggedAccounts.length > 0) {
+          // Mix of tagged + untagged: include untagged accounts in every bureau packet
+          for (const b of bureaus) {
+            groups[b] = [...groups[b], ...untaggedAccounts];
+          }
         }
 
         const results = await Promise.all(
@@ -9852,8 +9870,10 @@ ${pdfText.slice(0, 8000)}`;
       },
       filename: (req, file, cb) => {
         const ext = nodePath.extname(file.originalname) || "";
-        // Use docType from req.body (text fields arrive before file in multipart form)
-        const docType = (req as any).body?.docType || file.fieldname;
+        // Whitelist docType to prevent path traversal via crafted docType values
+        const ALLOWED_DOC_TYPES = ["gov_id", "ssn_card", "auth_letter"];
+        const rawDocType = (req as any).body?.docType;
+        const docType = ALLOWED_DOC_TYPES.includes(rawDocType) ? rawDocType : "document";
         cb(null, `${docType}_${Date.now()}${ext}`);
       },
     }),
