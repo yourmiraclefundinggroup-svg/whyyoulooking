@@ -412,8 +412,10 @@
 
 /* ── HERO SCREENSHOT FRAME ── */
 .lp-hero-screenshot {
-  max-width: 1100px;
-  margin: 0 auto 48px;
+  /* Break out of container padding so frame is wider */
+  max-width: calc(100% + 64px);
+  width: calc(100% + 64px);
+  margin: 0 -32px 48px;
   border-radius: 16px;
   box-shadow:
     0 24px 64px rgba(42,39,37,0.18),
@@ -453,44 +455,11 @@
   margin-right: 29px; /* visually center between dots and right edge */
 }
 
-.lp-hero-screenshot-iframe-wrap {
-  position: relative;
+.lp-hero-demo-iframe {
+  display: block;
   width: 100%;
-  /* scale 0.61 × 1500px iframe height = 915px visible */
-  height: 915px;
-  overflow: hidden;
-}
-
-.lp-hero-screenshot-iframe-wrap iframe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  /* 1800px × 0.61 = 1098px fills the 1100px max-width container */
-  width: 1800px;
-  height: 1500px;
+  height: 660px;
   border: none;
-  transform: scale(0.61);
-  transform-origin: top left;
-}
-
-@media (max-width: 900px) {
-  .lp-hero-screenshot-iframe-wrap {
-    height: 500px;
-  }
-  .lp-hero-screenshot-iframe-wrap iframe {
-    width: 1800px;
-    transform: scale(calc(100vw / 1800));
-  }
-}
-
-@media (max-width: 640px) {
-  .lp-hero-screenshot-iframe-wrap {
-    height: 360px;
-  }
-  .lp-hero-screenshot-iframe-wrap iframe {
-    width: 1800px;
-    transform: scale(calc(100vw / 1800));
-  }
 }
 
 @media (max-width: 640px) {

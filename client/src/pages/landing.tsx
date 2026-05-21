@@ -150,14 +150,13 @@ function HeroSection() {
               <span className="lp-ss-dot lp-ss-dot-green" />
               <span className="lp-ss-dot-label">ScoreShift — Dashboard</span>
             </div>
-            <div className="lp-hero-screenshot-iframe-wrap">
-              <iframe
-                src="/demo"
-                title="ScoreShift interactive demo"
-                scrolling="no"
-                tabIndex={-1}
-              />
-            </div>
+            <iframe
+              className="lp-hero-demo-iframe"
+              src="/demo"
+              title="ScoreShift interactive demo"
+              scrolling="no"
+              tabIndex={-1}
+            />
           </div>
           <div className="lp-hero-ctas lp-hero-ctas-centered lp-fade-up lp-delay-4">
             <Link href="/auth" className="lp-btn lp-btn-primary lp-btn-lg">Check Your Credit Health <ArrowRightIcon /></Link>
