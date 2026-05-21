@@ -550,6 +550,15 @@ export default function Demo() {
   const [displayPage, setDisplayPage] = useState<PageId>("dashboard");
   const { loaded: scriptReady } = useArrayScript(APP_KEY);
 
+  // Force a minimum 1100px viewport so all 3 bureau columns always fit.
+  // Without this, narrow browser windows clip the Experian column.
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="viewport"]');
+    const original = meta?.getAttribute("content") ?? "width=device-width, initial-scale=1";
+    meta?.setAttribute("content", "width=1100, initial-scale=1");
+    return () => { meta?.setAttribute("content", original); };
+  }, []);
+
   const navigate = (page: PageId) => {
     if (page === activePage || animating) return;
     setAnimating(true);
