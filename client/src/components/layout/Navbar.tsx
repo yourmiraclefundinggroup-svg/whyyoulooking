@@ -27,7 +27,7 @@ export function Navbar({ variant = 'light' }: NavbarProps) {
   return (
     <>
       {/* ─── LAUNCH ANNOUNCEMENT BAR ─── */}
-      <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white text-xs sm:text-sm py-2 px-4 text-center flex items-center justify-center gap-2">
+      <div className="fixed top-0 left-0 right-0 z-[60] text-white text-xs sm:text-sm py-2 px-4 text-center flex items-center justify-center gap-2" style={{ background: "linear-gradient(135deg, #7C6BCB, #8D80D3)" }}>
         <Sparkles size={14} className="text-gold-300 shrink-0" />
         {isPostLaunch ? (
           <>
