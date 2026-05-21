@@ -1,0 +1,387 @@
+We are refining the ScoreShift design system and visual identity based on synthetic persona testing and brand psychology feedback.
+
+The strongest validated foundation system is:
+
+* Bone Ledger
+* Shale Taupe
+* Aura Indigo
+* Muted Sage
+* restrained Clay Apricot
+
+The personas consistently responded positively to the emotional balance of:
+
+* calmness
+* authority
+* operational structure
+* warmth
+* premium restraint
+* progress
+* emotional safety
+
+IMPORTANT:
+The emotional territory is:
+“calm financial confidence.”
+
+NOT:
+
+* dark fintech
+* crypto
+* startup hype
+* aggressive AI aesthetics
+* loud SaaS visuals
+
+---
+
+## CRITICAL BRAND INSIGHT
+
+The personas said:
+
+“Bone Ledger + Shale Taupe + Aura Indigo is the correct foundation system.”
+
+They specifically responded positively because the system felt:
+
+* premium
+* trustworthy
+* calm
+* intelligent
+* differentiated
+
+HOWEVER:
+
+The personas also identified that Aura Indigo should:
+
+* dominate interactions
+* dominate progress moments
+* dominate emotional movement
+
+WITHOUT:
+
+* becoming the full environment/background color.
+
+This distinction is VERY important.
+
+---
+
+## UPDATED COLOR STRATEGY
+
+FOUNDATION ENVIRONMENT:
+
+1. Bone Ledger
+
+Bone Ledger should remain the dominant environmental color.
+
+Use for:
+
+* backgrounds
+* whitespace
+* page atmosphere
+* large surfaces
+* editorial warmth
+
+Purpose:
+
+* calmness
+* openness
+* sophistication
+* premium softness
+* emotional relief
+
+Suggested direction:
+#F1E8DA
+#F3EEE6
+#EFE9DF
+
+This should replace harsh white backgrounds.
+
+The site should feel:
+
+* tactile
+* warm
+* architectural
+* calm
+* human
+
+NOT:
+
+* sterile SaaS white
+* cold fintech minimalism
+
+---
+
+STRUCTURAL DEPTH:
+2. Shale Taupe
+
+Use for:
+
+* navigation
+* typography support
+* deep cards
+* framing
+* footers
+* structure
+* hierarchy
+
+Purpose:
+
+* authority
+* seriousness
+* operational trust
+* financial credibility
+
+Suggested direction:
+#3A3734
+#4A4541
+#5B5652
+
+IMPORTANT:
+Shale Taupe should create selective moments of depth.
+Do NOT make the entire interface dark.
+
+This is the “trust structure” color.
+
+---
+
+PRIMARY BRAND COLOR:
+3. Aura Indigo
+
+IMPORTANT UPDATE:
+
+We DO want stronger Aura Indigo ownership.
+
+The personas validated the system but the brand still needs:
+
+* recognizability
+* memorability
+* emotional signature
+* stronger ScoreShift ownership
+
+Therefore:
+Aura Indigo should appear MORE frequently than before.
+
+BUT:
+Aura Indigo should NOT become the environmental foundation.
+
+Instead:
+Aura Indigo should become:
+
+* the interaction color
+* the movement color
+* the progress color
+* the intelligence color
+
+Use Aura heavily in:
+
+* CTA buttons
+* progress indicators
+* graphs
+* score movement
+* onboarding
+* hover states
+* active states
+* charts
+* onboarding transitions
+* focus moments
+* notifications
+* key emotional highlights
+
+Purpose:
+
+* movement
+* intelligence
+* optimism
+* financial progress
+* clarity
+* product memorability
+
+Suggested direction:
+#B0A6DF
+#9F93D9
+#8D80D3
+#7C6BCB
+
+The user should psychologically associate:
+“progress”
+with:
+Aura Indigo.
+
+That is the strategic goal.
+
+---
+
+EMOTIONAL SAFETY COLOR:
+4. Muted Sage
+
+IMPORTANT:
+The personas identified Sage as unexpectedly important.
+
+This color subtly communicates:
+
+* stability
+* wellness
+* emotional balance
+* reduced anxiety
+* safety
+* financial calmness
+
+WITHOUT:
+using cliché banking green.
+
+Use Sage for:
+
+* success states
+* completed tasks
+* positive indicators
+* balance moments
+* subtle data highlights
+* progress support
+
+Suggested direction:
+#7B8A7A
+#8C9A8B
+#9DA89B
+
+This is NOT a dominant color.
+It is an emotional support color.
+
+---
+
+WARMTH ACCENT:
+5. Clay Apricot
+
+Use VERY sparingly.
+
+Purpose:
+
+* optimism
+* human warmth
+* emotional softness
+* delight moments
+
+Best uses:
+
+* small highlights
+* positive micro moments
+* onboarding warmth
+* subtle graph moments
+
+Avoid:
+large sections or dominant UI usage.
+
+Too much weakens:
+
+* authority
+* sophistication
+* financial seriousness
+
+Suggested direction:
+#E4A26F
+#D99666
+#E5A77A
+
+---
+
+## UPDATED COLOR BALANCE
+
+Recommended ratio:
+
+* Bone Ledger: 50–55%
+* Shale Taupe: 15–20%
+* Aura Indigo: 20–25%
+* Muted Sage: 5–7%
+* Clay Apricot: 2–3%
+
+---
+
+## IMPORTANT EMOTIONAL RULE
+
+The system should feel:
+
+* restrained
+* intentional
+* intelligent
+* premium
+* calm
+* emotionally balanced
+
+The personas consistently rewarded:
+“emotional restraint.”
+
+That means:
+
+* less visual noise
+* less aggressive gradients
+* less glow
+* less clutter
+* more whitespace
+* stronger hierarchy
+* calmer motion
+
+---
+
+## MOTION SYSTEM
+
+Aura Indigo should feel:
+ALIVE.
+
+Use it during:
+
+* progress movement
+* onboarding transitions
+* graph animations
+* hover states
+* CTA interactions
+* workflow completion
+* score movement
+* active monitoring states
+
+The color should psychologically reinforce:
+forward movement.
+
+---
+
+## VISUAL REFERENCE ENERGY
+
+The emotional direction should feel closest to:
+
+* Apple
+* Mercury
+* Monarch
+* Copilot
+
+BUT:
+warmer,
+calmer,
+more editorial,
+and more emotionally intelligent.
+
+The product should feel:
+less like a fintech startup,
+and more like:
+a calm financial operating environment.
+
+---
+
+## FINAL STRATEGIC GOAL
+
+The ScoreShift visual system should communicate:
+
+“Built to move you forward.”
+
+through:
+
+* structure
+* organization
+* operational clarity
+* emotional calmness
+* premium restraint
+* visible progress
+
+The product should feel:
+
+* trustworthy
+* sophisticated
+* financially intelligent
+* emotionally safe
+* modern
+* operational
+* memorable
