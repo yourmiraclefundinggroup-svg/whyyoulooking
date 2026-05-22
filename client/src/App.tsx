@@ -116,18 +116,21 @@ function Router() {
     return <Login />;
   }
 
-  // Auto-redirect users to their correct portal if they're on the root page
-  if (user && location === "/") {
-    if (user.accessLevel === "ADMIN") {
-      return (
-        <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
-          <Navigation />
-          <AdminPortal />
-        </div>
-      );
-    } else {
-      return <ClientPortal />;
-    }
+  // CLIENT_VIEWER users always use the new portal — block all old routes
+  const CLIENT_OLD_ROUTES = ["/dashboard", "/credit-repair", "/credit-monitoring",
+    "/credit-building", "/student-loans", "/education", "/billing", "/dispute-iq"];
+  if (user && user.accessLevel !== "ADMIN" && (location === "/" || CLIENT_OLD_ROUTES.some(r => location.startsWith(r)))) {
+    return <ClientPortal />;
+  }
+
+  // Auto-redirect admins on root page
+  if (user && location === "/" && user.accessLevel === "ADMIN") {
+    return (
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
+        <Navigation />
+        <AdminPortal />
+      </div>
+    );
   }
 
   return (
