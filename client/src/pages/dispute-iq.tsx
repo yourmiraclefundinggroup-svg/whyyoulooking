@@ -383,31 +383,100 @@ function groupByBureau(tradelines: AnalyzedTradeline[]): Record<string, Analyzed
   return sorted;
 }
 
-/* ── Shadow DOM credit report extractor ──────────────────────────────────────── */
-// Parses the text content of the array-credit-report shadow DOM into tradelines.
-// The web component renders each account as: CREDITOR\nReported: DATE\n$BALANCE\nSTATUS
+/* ── Structured Array report parser ──────────────────────────────────────────── */
+// Converts raw Array API / event JSON into the TradelineResponse shape.
+// Called from both the array-event listener and the sessionStorage fallback.
+function parseArrayReport(rawData: unknown): TradelineResponse | null {
+  const d = rawData as any;
+  if (!d) return null;
+
+  const normBureau = (b: string): string => {
+    const u = (b || "").toUpperCase();
+    if (u.includes("EXPERIAN") || u === "EXP") return "EXPERIAN";
+    if (u.includes("EQUIFAX") || u === "EQF") return "EQUIFAX";
+    if (u.includes("TRANSUNION") || u === "TU" || u.includes("TRANS")) return "TRANSUNION";
+    return u;
+  };
+
+  const isNegative = (acct: any): boolean => {
+    const s = (acct.status || acct.accountStatus || acct.paymentStatus || "").toLowerCase();
+    return (
+      s.includes("collection") || s.includes("charge") || s.includes("late") ||
+      s.includes("past due") || s.includes("delinquent") || s.includes("default") ||
+      s.includes("written off") || s.includes("settled") ||
+      (acct.latePayments30 || acct.monthsLate30 || 0) > 0 ||
+      (acct.latePayments60 || acct.monthsLate60 || 0) > 0 ||
+      (acct.latePayments90 || acct.monthsLate90 || 0) > 0
+    );
+  };
+
+  // Array events nest data in several possible locations; try all of them
+  const rawAccounts: any[] =
+    d.accounts ?? d.tradelines ?? d.data?.accounts ?? d.data?.tradelines ??
+    d.report?.accounts ?? d.creditReport?.accounts ?? d.payload?.accounts ?? [];
+
+  const rawInquiries: any[] =
+    d.inquiries ?? d.hardInquiries ?? d.data?.inquiries ??
+    d.report?.inquiries ?? d.creditReport?.inquiries ?? d.payload?.inquiries ?? [];
+
+  if (!Array.isArray(rawAccounts) || rawAccounts.length === 0) return null;
+
+  const tradelines: AnalyzedTradeline[] = rawAccounts.map((acct: any) => {
+    const bureaus = (acct.bureaus || acct.reportingBureaus || []).map(normBureau);
+    const bureau = acct.bureau || acct.reportingBureau || acct.bureauCode
+      ? normBureau(acct.bureau || acct.reportingBureau || acct.bureauCode || "")
+      : undefined;
+    return {
+      creditor: acct.creditorName || acct.name || acct.furnisherName || acct.subscriberName || "Unknown Creditor",
+      accountNumber: acct.accountNumber || acct.number || acct.accountId || "Unknown",
+      accountType: acct.accountType || acct.type || "other",
+      balance: String(acct.balance ?? acct.currentBalance ?? 0).replace(/[^0-9.]/g, ""),
+      status: acct.status || acct.accountStatus || acct.paymentStatus || "",
+      dateOpened: acct.dateOpened || acct.openDate || acct.openedDate || "",
+      dateOfFirstDelinquency: acct.dateOfFirstDelinquency || acct.firstDelinquencyDate,
+      latePayments: {
+        days30: acct.latePayments30 || acct.monthsLate30 || 0,
+        days60: acct.latePayments60 || acct.monthsLate60 || 0,
+        days90: acct.latePayments90 || acct.monthsLate90 || 0,
+      },
+      violations: [],
+      isDerogatory: isNegative(acct),
+      bureaus: bureaus.length ? bureaus : undefined,
+      bureau,
+    };
+  });
+
+  const inquiries = rawInquiries.map((inq: any) => ({
+    creditor: inq.creditor || inq.creditorName || inq.subscriberName || inq.name || "Unknown",
+    inquiryDate: inq.inquiryDate || inq.inquiry_date || inq.date || "",
+    inquiryType: inq.inquiryType || inq.type || "hard",
+    suggestedDisputeReason: "Unauthorized hard inquiry — no permissible purpose established (FCRA § 1681b)",
+  }));
+
+  return {
+    enrolled: true,
+    tradelines,
+    negativeTradelines: tradelines.filter(t => t.isDerogatory),
+    inquiries,
+    source: "array",
+    reportFetchedAt: new Date().toISOString(),
+  };
+}
+
+/* ── Shadow DOM fallback extractor ───────────────────────────────────────────── */
+// Last-resort text parser for when no structured event data is available.
 function extractFromShadowDom(shadowRoot: ShadowRoot): TradelineResponse | null {
-  // Use innerText if available (respects CSS display), else fall back to textContent
   const raw = (shadowRoot as any).innerText ?? shadowRoot.textContent ?? "";
   if (!raw || raw.length < 200) return null;
-
   const lines = raw.split("\n").map((l: string) => l.trim()).filter(Boolean);
   const tradelines: AnalyzedTradeline[] = [];
   const inquiries: { creditor: string; inquiryDate: string; inquiryType: string; suggestedDisputeReason: string }[] = [];
-
   let section: "accounts" | "inquiries" | "collections" | "other" = "accounts";
   let i = 0;
-
-  const isAccountHeader = (l: string) =>
-    /^(credit cards|auto loans|real estate|student loans|other|accounts)$/i.test(l);
   const isBalanceLine = (l: string) => /^\$[\d,]+\.\d{2}$/.test(l);
   const isDateLine = (l: string) => /\w{3,9} \d{1,2},?\s*\d{4}/.test(l);
   const isStatusLine = (l: string) =>
     /good standing|closed|outstanding|late|past due|delinquent|charged.?off|collection|settled/i.test(l);
-  const isInquiryType = (l: string) =>
-    /^(automotive|banking|finance|retail|utilities|credit card|mortgage|personal|other)$/i.test(l);
-
-  // Heuristic: account creditor names are ALL-CAPS or TITLE case, 2-40 chars, no common UI strings
   const UI_WORDS = new Set([
     "Hard inquiries","Inquiries","Collections","Public records","Creditors","Account summary",
     "Balances","Payments","Open accounts","Closed accounts","Show All Summary","Expand All",
@@ -416,81 +485,40 @@ function extractFromShadowDom(shadowRoot: ShadowRoot): TradelineResponse | null 
     "Credit report","Your credit is in excellent shape","Report date","VantageScore",
   ]);
   const isCreditorLine = (l: string) =>
-    l.length >= 3 && l.length <= 50 &&
-    /^[A-Z0-9][A-Z0-9\s/&.',-]{1,}$/i.test(l) &&
-    !UI_WORDS.has(l) &&
-    !/^\d+$/.test(l) &&
-    !isBalanceLine(l) &&
-    !isDateLine(l) &&
-    !isStatusLine(l);
-
+    l.length >= 3 && l.length <= 50 && /^[A-Z0-9][A-Z0-9\s/&.',-]{1,}$/i.test(l) &&
+    !UI_WORDS.has(l) && !/^\d+$/.test(l) && !isBalanceLine(l) && !isDateLine(l) && !isStatusLine(l);
   while (i < lines.length) {
     const line = lines[i];
-
     if (/^hard inquiries$/i.test(line)) { section = "inquiries"; i++; continue; }
     if (/^collections$/i.test(line)) { section = "collections"; i++; continue; }
     if (/^public records$/i.test(line) || /^creditors$/i.test(line)) { section = "other"; i++; continue; }
-    if (isAccountHeader(line)) { section = "accounts"; i++; continue; }
-
-    if (section === "inquiries") {
-      // Pattern: CREDITOR NAME\nTYPE\nDATE  or  CREDITOR NAME\nDATE
-      if (isCreditorLine(line)) {
-        const peek = lines.slice(i + 1, i + 4);
-        const dateStr = peek.find(isDateLine) ?? "";
-        if (dateStr) {
-          inquiries.push({
-            creditor: line,
-            inquiryDate: dateStr,
-            inquiryType: "hard",
-            suggestedDisputeReason: "Unauthorized hard inquiry — no permissible purpose established (FCRA § 1681b)",
-          });
-          i += 2 + peek.indexOf(dateStr);
-          continue;
-        }
+    if (/^(credit cards|auto loans|real estate|student loans|other|accounts)$/i.test(line)) { section = "accounts"; i++; continue; }
+    if (section === "inquiries" && isCreditorLine(line)) {
+      const peek = lines.slice(i + 1, i + 4);
+      const dateStr = peek.find(isDateLine) ?? "";
+      if (dateStr) {
+        inquiries.push({ creditor: line, inquiryDate: dateStr, inquiryType: "hard",
+          suggestedDisputeReason: "Unauthorized hard inquiry — no permissible purpose established (FCRA § 1681b)" });
+        i += 2 + peek.indexOf(dateStr); continue;
       }
     }
-
-    if (section === "accounts" || section === "collections") {
-      if (isCreditorLine(line)) {
-        const window = lines.slice(i + 1, i + 8);
-        const balance = window.find(isBalanceLine) ?? "0";
-        const status = window.find(isStatusLine) ?? (section === "collections" ? "Outstanding" : "Unknown");
-        const dateStr = window.find(l => /reported:/i.test(l))?.replace(/reported:\s*/i, "").trim()
-          ?? window.find(isDateLine)
-          ?? "";
-        const isNeg = section === "collections" || !/good standing/i.test(status);
-        tradelines.push({
-          creditor: line,
-          accountNumber: "Unknown",
-          accountType: section === "collections" ? "collection" : "other",
-          balance: balance.replace("$", "").replace(/,/g, ""),
-          status,
-          dateOpened: dateStr,
-          dateOfFirstDelinquency: undefined,
-          latePayments: { days30: 0, days60: 0, days90: 0 },
-          violations: [],
-          isDerogatory: isNeg,
-          bureaus: ["EXPERIAN"],
-        });
-        i += Math.min(8, window.length) + 1;
-        continue;
-      }
+    if ((section === "accounts" || section === "collections") && isCreditorLine(line)) {
+      const win = lines.slice(i + 1, i + 8);
+      const balance = win.find(isBalanceLine) ?? "0";
+      const status = win.find(isStatusLine) ?? (section === "collections" ? "Outstanding" : "Unknown");
+      const dateStr = win.find(l => /reported:/i.test(l))?.replace(/reported:\s*/i, "").trim() ?? win.find(isDateLine) ?? "";
+      const isNeg = section === "collections" || !/good standing/i.test(status);
+      tradelines.push({ creditor: line, accountNumber: "Unknown", accountType: section === "collections" ? "collection" : "other",
+        balance: balance.replace("$", "").replace(/,/g, ""), status, dateOpened: dateStr,
+        dateOfFirstDelinquency: undefined, latePayments: { days30: 0, days60: 0, days90: 0 },
+        violations: [], isDerogatory: isNeg, bureaus: ["EXPERIAN"] });
+      i += Math.min(8, win.length) + 1; continue;
     }
-
     i++;
   }
-
   if (tradelines.length === 0 && inquiries.length === 0) return null;
-
-  const negativeTradelines = tradelines.filter(t => t.isDerogatory);
-  return {
-    enrolled: true,
-    tradelines,
-    negativeTradelines,
-    inquiries,
-    source: "array",
-    reportFetchedAt: new Date().toISOString(),
-  };
+  return { enrolled: true, tradelines, negativeTradelines: tradelines.filter(t => t.isDerogatory),
+    inquiries, source: "array", reportFetchedAt: new Date().toISOString() };
 }
 
 /* ── Main page ───────────────────────────────────────────────────────────────── */
@@ -590,48 +618,6 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
 
     let settled = false;
 
-    const tryExtract = (): TradelineResponse | null => {
-      // 1. Shadow DOM of the hidden component
-      const el = document.getElementById("__dispute-iq-array-hidden")
-        ?.querySelector("array-credit-report") as any;
-      if (el?.shadowRoot) {
-        const text = (el.shadowRoot as any).innerText ?? el.shadowRoot.textContent ?? "";
-        // Debug: log first 300 chars so we can see what the component renders
-        if (text.length > 50) {
-          console.debug("[DisputeIQ] shadowRoot text sample:", text.slice(0, 300));
-        }
-        const extracted = extractFromShadowDom(el.shadowRoot as ShadowRoot);
-        if (extracted && (extracted.tradelines?.length ?? 0) + (extracted.inquiries?.length ?? 0) > 0) {
-          return extracted;
-        }
-      }
-      // 2. sessionStorage — web component sometimes caches JSON report data here
-      try {
-        const reportKeys = Object.keys(sessionStorage).filter(k =>
-          k.includes("array-report") || k.includes("credmo-report")
-        );
-        for (const key of reportKeys) {
-          const raw = sessionStorage.getItem(key);
-          if (!raw) continue;
-          try {
-            const parsed = JSON.parse(raw);
-            const accts = parsed?.accounts ?? parsed?.tradelines ?? parsed?.data?.accounts;
-            if (Array.isArray(accts) && accts.length > 0) {
-              return {
-                enrolled: true,
-                tradelines: accts,
-                negativeTradelines: accts.filter((a: any) => a.isDerogatory),
-                inquiries: [],
-                source: "array",
-                reportFetchedAt: new Date().toISOString(),
-              };
-            }
-          } catch { /* not JSON */ }
-        }
-      } catch { /* sessionStorage blocked */ }
-      return null;
-    };
-
     const finish = (data: TradelineResponse | null) => {
       if (settled) return;
       settled = true;
@@ -639,50 +625,92 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
       setBrowserExtracting(false);
     };
 
-    // MutationObserver: fire as soon as the shadow DOM gets real content
-    let observer: MutationObserver | null = null;
-    const attachObserver = () => {
-      const el = document.getElementById("__dispute-iq-array-hidden")
-        ?.querySelector("array-credit-report") as any;
-      if (!el) return false;
-      // Watch the shadow root once it exists
-      const watchShadow = () => {
-        const root = el.shadowRoot;
-        if (!root) return;
-        observer = new MutationObserver(() => {
-          const data = tryExtract();
-          if (data) { observer?.disconnect(); finish(data); }
-        });
-        observer.observe(root, { childList: true, subtree: true });
-      };
-      if (el.shadowRoot) {
-        watchShadow();
-      } else {
-        // shadowRoot not yet attached — watch the element itself for upgrades
-        const outer = new MutationObserver(() => {
-          if (el.shadowRoot) { outer.disconnect(); watchShadow(); }
-        });
-        outer.observe(el, { attributes: true, childList: true });
+    // ── Primary: Array structured event listener ──────────────────────────
+    // The array-credit-report web component dispatches "array-event" on itself
+    // and bubbles it up to document. We listen on both to maximise compatibility.
+    const handleArrayEvent = (e: Event) => {
+      const detail = (e as CustomEvent).detail as any;
+      if (!detail) return;
+      console.debug("[DisputeIQ] array-event:", detail?.type, Object.keys(detail || {}));
+      // Try the event detail itself, then common nested shapes
+      const candidates = [
+        detail,
+        detail?.data,
+        detail?.payload,
+        detail?.report,
+        detail?.creditReport,
+        detail?.data?.report,
+      ];
+      for (const candidate of candidates) {
+        const parsed = parseArrayReport(candidate);
+        if (parsed && (parsed.tradelines?.length ?? 0) + (parsed.inquiries?.length ?? 0) > 0) {
+          console.debug("[DisputeIQ] parsed from event:", parsed.tradelines?.length, "accounts");
+          finish(parsed);
+          return;
+        }
       }
-      return true;
+    };
+    document.addEventListener("array-event", handleArrayEvent);
+
+    // Also attach directly on the element once it exists
+    const attachElementListener = () => {
+      const el = document.getElementById("__dispute-iq-array-hidden")
+        ?.querySelector("array-credit-report");
+      if (el) {
+        el.addEventListener("array-event", handleArrayEvent);
+        return true;
+      }
+      return false;
+    };
+    if (!attachElementListener()) setTimeout(attachElementListener, 600);
+
+    // ── Secondary: sessionStorage cache check ─────────────────────────────
+    const trySessionStorage = (): TradelineResponse | null => {
+      try {
+        const keys = Object.keys(sessionStorage).filter(k =>
+          k.includes("array") || k.includes("credmo") || k.includes("credit-report")
+        );
+        for (const key of keys) {
+          try {
+            const raw = sessionStorage.getItem(key);
+            if (!raw) continue;
+            const parsed = parseArrayReport(JSON.parse(raw));
+            if (parsed && (parsed.tradelines?.length ?? 0) > 0) return parsed;
+          } catch { /* skip */ }
+        }
+      } catch { /* blocked */ }
+      return null;
     };
 
-    // Try attaching observer immediately; retry after short delay if the
-    // element isn't in the DOM yet (React hasn't committed the ref yet)
-    if (!attachObserver()) {
-      setTimeout(attachObserver, 500);
-    }
+    // Check sessionStorage immediately (may already have data from prior page visit)
+    const cached = trySessionStorage();
+    if (cached) { finish(cached); return; }
 
-    // Hard timeout at 20s — stop waiting and show whatever we have
-    const timeout = setTimeout(() => {
-      observer?.disconnect();
-      finish(tryExtract());
-    }, 20000);
+    // ── Fallback: shadow DOM text extraction after 12s ────────────────────
+    const fallbackTimeout = setTimeout(() => {
+      if (settled) return;
+      // Try sessionStorage one more time (may have populated by now)
+      const ss = trySessionStorage();
+      if (ss) { finish(ss); return; }
+      // Last resort: scrape shadow DOM text
+      const el = document.getElementById("__dispute-iq-array-hidden")
+        ?.querySelector("array-credit-report") as any;
+      if (el?.shadowRoot) {
+        const dom = extractFromShadowDom(el.shadowRoot as ShadowRoot);
+        if (dom && (dom.tradelines?.length ?? 0) + (dom.inquiries?.length ?? 0) > 0) {
+          finish(dom); return;
+        }
+      }
+      finish(null);
+    }, 12000);
 
     return () => {
       settled = true;
-      observer?.disconnect();
-      clearTimeout(timeout);
+      document.removeEventListener("array-event", handleArrayEvent);
+      const el = document.getElementById("__dispute-iq-array-hidden")
+        ?.querySelector("array-credit-report");
+      if (el) el.removeEventListener("array-event", handleArrayEvent);
+      clearTimeout(fallbackTimeout);
     };
   }, [source, scriptReady, tokenReady]);
 
