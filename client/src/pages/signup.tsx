@@ -164,11 +164,20 @@ export default function Signup() {
   }, []);
 
   useEffect(() => {
-    // Guard: don't render until we have a real appKey (fetch may still be in flight)
-    if (step !== 3 || !arrayEnrollRef.current || !scriptReady || !enrollAppKey) return;
+    console.log("[signup enroll] effect fired", {
+      step,
+      scriptReady,
+      enrollAppKey: enrollAppKey ? enrollAppKey.substring(0, 8) + "…" : "(empty)",
+      enrollSandboxMode,
+      hasRef: !!arrayEnrollRef.current,
+      customElementDefined: typeof customElements !== "undefined" && !!customElements.get("array-account-enroll"),
+    });
+    // Guard: don't render until we have a real appKey and scripts are ready
+    if (step !== 3 || !arrayEnrollRef.current || !enrollAppKey) return;
     arrayEnrollRef.current.innerHTML = "";
 
     const el = document.createElement("array-account-enroll");
+    console.log("[signup enroll] created element, is custom?", el.constructor.name, "tag defined?", !!customElements.get("array-account-enroll"));
     if (enrollSandboxMode) {
       // In sandbox mode the element must use the sandbox appKey — the server's
       // ARRAY_APP_KEY is the production key which Array rejects for sandbox calls
@@ -856,17 +865,18 @@ export default function Signup() {
                   </div>
 
                   <div className="p-4">
-                    {!scriptReady ? (
-                      <div className="flex items-center justify-center py-8 gap-3">
-                        <div
-                          className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin"
-                          style={{ borderColor: "#7C6BCB", borderTopColor: "transparent" }}
-                        />
-                        <span className="text-sm" style={{ color: "#5B5652" }}>Loading secure enrollment form...</span>
-                      </div>
-                    ) : (
-                      <div ref={arrayEnrollRef} className="w-full min-h-[180px]" />
-                    )}
+                    {/* Ref div always mounted so the effect can access it without timing races */}
+                    <div ref={arrayEnrollRef} className="w-full min-h-[300px]">
+                      {!scriptReady && (
+                        <div className="flex items-center justify-center py-8 gap-3">
+                          <div
+                            className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin"
+                            style={{ borderColor: "#7C6BCB", borderTopColor: "transparent" }}
+                          />
+                          <span className="text-sm" style={{ color: "#5B5652" }}>Loading secure enrollment form...</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="px-5 pb-4 flex items-center gap-2 text-xs" style={{ color: "#8B8480" }}>
