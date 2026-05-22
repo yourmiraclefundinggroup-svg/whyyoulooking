@@ -97,7 +97,10 @@ export default function Signup() {
 
   const [enrollAppKey, setEnrollAppKey] = useState<string>("");
   const [enrollSandboxMode, setEnrollSandboxMode] = useState<boolean>(true);
-  const { loaded: scriptReady } = useArrayScript(enrollAppKey);
+  // Only load Array scripts when we reach step 3 (enrollment) — loading them
+  // earlier causes Array's CDN SDK to initialize hidden iframes that steal focus
+  // from the name/email inputs on step 2.
+  const { loaded: scriptReady } = useArrayScript(step >= 3 ? enrollAppKey : undefined);
   const [arrayEnrolled, setArrayEnrolled] = useState(false);
   const arrayEnrollRef = useRef<HTMLDivElement>(null);
 
@@ -670,6 +673,7 @@ export default function Signup() {
                           onChange={(e) => setFirstName(e.target.value)}
                           placeholder="John"
                           className="pl-9"
+                          autoComplete="given-name"
                         />
                       </div>
                     </div>
@@ -683,6 +687,7 @@ export default function Signup() {
                           onChange={(e) => setLastName(e.target.value)}
                           placeholder="Doe"
                           className="pl-9"
+                          autoComplete="family-name"
                         />
                       </div>
                     </div>
@@ -699,6 +704,7 @@ export default function Signup() {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="your@email.com"
                         className="pl-9"
+                        autoComplete="email"
                       />
                     </div>
                   </div>
@@ -714,6 +720,7 @@ export default function Signup() {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Minimum 8 characters"
                         className="pl-9 pr-10"
+                        autoComplete="new-password"
                       />
                       <button
                         type="button"
@@ -737,6 +744,7 @@ export default function Signup() {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Re-enter your password"
                         className="pl-9 pr-10"
+                        autoComplete="new-password"
                       />
                       <button
                         type="button"
