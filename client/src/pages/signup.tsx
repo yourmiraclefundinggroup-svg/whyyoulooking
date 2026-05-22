@@ -169,12 +169,15 @@ export default function Signup() {
     arrayEnrollRef.current.innerHTML = "";
 
     const el = document.createElement("array-account-enroll");
-    el.setAttribute("appKey", enrollAppKey);
     if (enrollSandboxMode) {
+      // In sandbox mode the element must use the sandbox appKey — the server's
+      // ARRAY_APP_KEY is the production key which Array rejects for sandbox calls
+      el.setAttribute("appKey", ARRAY_SANDBOX_APP_KEY);
       el.setAttribute("sandbox", "true");
       el.setAttribute("apiUrl", ARRAY_SANDBOX_API_URL);
-      // Sandbox enrollment requires a userToken so the component renders its form
       el.setAttribute("userToken", ARRAY_SANDBOX_TOKENS.default);
+    } else {
+      el.setAttribute("appKey", enrollAppKey);
     }
     el.setAttribute("showQuickView", "true");
 
