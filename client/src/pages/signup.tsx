@@ -360,7 +360,7 @@ export default function Signup() {
       });
 
       if (inviteCodeApplied || selectedPlan === "free") {
-        window.location.href = "/dashboard";
+        window.location.href = "/portal";
       } else {
         window.location.href = "/billing";
       }
