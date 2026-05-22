@@ -1131,10 +1131,10 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
             // Imperatively append the web component exactly once
             if (node && !node.querySelector("array-credit-report")) {
               const el = document.createElement("array-credit-report");
-              el.setAttribute("app-key", appKey!);
-              el.setAttribute("user-token", arrayToken!);
-              if (sandboxMode && apiUrl) {
-                el.setAttribute("api-url", apiUrl!);
+              el.setAttribute("appKey", appKey!);
+              el.setAttribute("userToken", arrayToken!);
+              if (sandboxMode) {
+                el.setAttribute("apiUrl", apiUrl || "https://mock.array.io");
                 el.setAttribute("sandbox", "true");
               }
               node.appendChild(el);
