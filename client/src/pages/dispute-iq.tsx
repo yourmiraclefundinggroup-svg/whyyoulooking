@@ -382,7 +382,7 @@ function groupByBureau(tradelines: AnalyzedTradeline[]): Record<string, Analyzed
 }
 
 /* ── Main page ───────────────────────────────────────────────────────────────── */
-export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (items: AnalyzedTradeline[]) => void }) {
+export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLetters?: (items: AnalyzedTradeline[]) => void; clientId?: number | null }) {
   const { toast } = useToast();
   const { user } = useUserContext();
   const { tier, hasAnyPlan, disputeLimit } = useFeatureAccess(FEATURES.BASIC_DISPUTES);
@@ -407,13 +407,25 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
   // ── Credit file pull — server-side via /api/client/array/tradelines ─────────
   // The server tries the live credit API first, then falls back to the client's
   // most recently uploaded and parsed PDF credit report stored in the database.
+  const tradelinesUrl = clientId
+    ? `/api/client/array/tradelines?clientId=${clientId}`
+    : "/api/client/array/tradelines";
+
   const {
     data: arrayData,
     isLoading: arrayLoading,
     error: arrayErrorRaw,
     refetch: refetchArray,
   } = useQuery<TradelineResponse>({
-    queryKey: ["/api/client/array/tradelines"],
+    queryKey: ["/api/client/array/tradelines", clientId ?? "self"],
+    queryFn: async () => {
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(tradelinesUrl, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`${res.status}`);
+      return res.json();
+    },
     enabled: source === "array",
     retry: false,
     staleTime: 5 * 60 * 1000,

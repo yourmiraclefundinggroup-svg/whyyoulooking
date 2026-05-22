@@ -90,6 +90,7 @@ import {
   Edit3,
   X,
   Download,
+  ExternalLink,
 } from "lucide-react";
 
 export default function AdminPortal() {
@@ -1300,6 +1301,16 @@ function ClientManagementPage({
               <AdminCardTitle>
                 {selectedClient.firstName} {selectedClient.lastName}
               </AdminCardTitle>
+              <a
+                href={`/portal?clientId=${selectedClient.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button size="sm" variant="outline" className="text-xs border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text-muted))] hover:text-[hsl(var(--admin-accent))] hover:border-[hsl(var(--admin-accent))]">
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  View Client Portal
+                </Button>
+              </a>
             </AdminCardHeader>
             <AdminCardContent>
               {/* No credit report banner */}

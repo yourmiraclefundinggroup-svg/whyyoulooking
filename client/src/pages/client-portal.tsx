@@ -317,6 +317,13 @@ export default function ClientPortal() {
   const { loaded: scriptReady } = useArrayScript(appKey || undefined);
   const featureAccess = useFeatureAccess();
   const [activePage, setActivePage] = useState<PageId>("dashboard");
+
+  // Admins can navigate to /portal?clientId=55 to preview a specific client's portal
+  const portalClientId = (() => {
+    const p = new URLSearchParams(window.location.search).get("clientId");
+    const n = p ? parseInt(p) : NaN;
+    return !isNaN(n) ? n : null;
+  })();
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifPrefs, setNotifPrefs] = useState({ scoreChanges: true, newAlerts: true, disputeUpdates: true, marketing: false });
 
@@ -1163,7 +1170,7 @@ export default function ClientPortal() {
           )}
 
           {/* ══ DISPUTE IQ ══════════════════════════════════════ */}
-          {activePage === "dispute-iq" && <DisputeIQPage />}
+          {activePage === "dispute-iq" && <DisputeIQPage clientId={portalClientId} />}
 
           {/* ══ DISPUTES ════════════════════════════════════════ */}
           {activePage === "disputes" && <DisputesPage />}

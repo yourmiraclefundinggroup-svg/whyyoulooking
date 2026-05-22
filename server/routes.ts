@@ -9441,7 +9441,12 @@ ${denialLetterText}`
   app.get("/api/client/array/tradelines", authenticateToken, requireClientAccess, async (req, res) => {
     try {
       const user = (req as any).user;
-      const userId = user.id;
+      // Admins can pass ?clientId= to pull a specific client's data
+      let userId = user.id;
+      if (user.accessLevel === "ADMIN" && req.query.clientId) {
+        const parsed = parseInt(req.query.clientId as string);
+        if (!isNaN(parsed)) userId = parsed;
+      }
 
       const { analyzeAllTradelines, analyzeTradelineViolations, isNegativeTradeline } = await import("./violation-analysis");
 
