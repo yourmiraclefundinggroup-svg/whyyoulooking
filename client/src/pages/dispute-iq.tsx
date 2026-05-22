@@ -1,8 +1,9 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useFeatureAccess, FEATURES } from "@/hooks/use-feature-access";
 import { useToast } from "@/hooks/use-toast";
 import { useUserContext } from "@/hooks/use-user-context";
+import { useArrayToken } from "@/hooks/use-array-token";
 import { DisputeIQFlow, LetterPreviewDialog, BUREAU_COLORS, BUREAU_LABELS } from "@/components/dispute-iq-flow";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
@@ -404,17 +405,67 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [showFlow, setShowFlow] = useState(false);
 
-  // ── Array pull query ──────────────────────────────────────────────────────
-  const {
-    data: arrayData,
-    isFetching: arrayLoading,
-    error: arrayError,
-    refetch: refetchArray,
-  } = useQuery<TradelineResponse>({
-    queryKey: ["/api/client/array/tradelines"],
-    enabled: source === "array",
-    staleTime: 5 * 60 * 1000,
-  });
+  // ── Array pull — browser-side fetch so browser DNS reaches api.array.io ──
+  const { token: arrayToken, restApiUrl, isReady: tokenReady } = useArrayToken();
+  const [arrayData, setArrayData] = useState<TradelineResponse | null>(null);
+  const [arrayLoading, setArrayLoading] = useState(false);
+  const [arrayError, setArrayError] = useState<Error | null>(null);
+
+  const fetchArrayData = useCallback(async () => {
+    if (!arrayToken || !tokenReady) {
+      setArrayError(new Error("Credit monitoring token not available. Please try again in a moment."));
+      return;
+    }
+    setArrayLoading(true);
+    setArrayError(null);
+    try {
+      const authToken = localStorage.getItem("auth_token");
+      const API_BASE = restApiUrl || "https://api.array.io";
+
+      // Browser fetches credit report directly — bypasses server-side DNS restrictions
+      const reportResp = await fetch(`${API_BASE}/v2/user/credit-report`, {
+        headers: { Authorization: `Bearer ${arrayToken}`, "Content-Type": "application/json" },
+      });
+      if (!reportResp.ok) {
+        const errBody = await reportResp.json().catch(() => ({})) as any;
+        const msg = errBody?.error || errBody?.message || `Credit report fetch failed (${reportResp.status})`;
+        if (reportResp.status === 401 || reportResp.status === 403) {
+          throw new Error("Not enrolled in credit monitoring (enrolled: false)");
+        }
+        throw new Error(msg);
+      }
+      const rawReport = await reportResp.json();
+
+      // Server analyzes the raw JSON — keeps analysis logic & secrets server-side
+      const analyzeResp = await fetch("/api/client/array/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+        body: JSON.stringify(rawReport),
+      });
+      if (!analyzeResp.ok) {
+        const err = await analyzeResp.json().catch(() => ({})) as any;
+        throw new Error(err.error || "Analysis failed");
+      }
+      const result = await analyzeResp.json() as TradelineResponse;
+      setArrayData(result);
+    } catch (e: any) {
+      setArrayError(e instanceof Error ? e : new Error(String(e)));
+    } finally {
+      setArrayLoading(false);
+    }
+  }, [arrayToken, restApiUrl, tokenReady]);
+
+  // Auto-fetch when user picks the Array source and token is ready
+  useEffect(() => {
+    if (source === "array" && tokenReady && !arrayData && !arrayLoading && !arrayError) {
+      fetchArrayData();
+    }
+  }, [source, tokenReady]);
+
+  const refetchArray = fetchArrayData;
 
   // ── PDF upload mutation ───────────────────────────────────────────────────
   const uploadMutation = useMutation({
@@ -823,7 +874,7 @@ export function DisputeIQPage({ onGenerateLetters }: { onGenerateLetters?: (item
             </div>
           )}
           <button
-            onClick={() => { setSource(null); setUploadResult(null); setSelectedKeys(new Set()); }}
+            onClick={() => { setSource(null); setUploadResult(null); setSelectedKeys(new Set()); setArrayData(null); setArrayError(null); }}
             style={{ background: "none", border: "1px solid #e5e7eb", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontSize: 13, color: "#374151" }}
           >
             ← Change Source

@@ -8909,7 +8909,7 @@ ${denialLetterText}`
             const tokResp = await fetch("https://sandbox.array.io/api/authenticate/v2/usertoken", {
               method: "POST",
               headers: { "x-array-server-token": ARRAY_API_KEY, "Content-Type": "application/json" },
-              body: JSON.stringify({ userId: sandboxArrayUserId }),
+              body: JSON.stringify({ appKey: SANDBOX_APP_KEY, userId: sandboxArrayUserId, ttlInMinutes: "55" }),
             });
             const tokRaw = await tokResp.text();
             if (tokResp.ok) {
@@ -8937,6 +8937,7 @@ ${denialLetterText}`
           token: sandboxToken,
           appKey: SANDBOX_APP_KEY,
           apiUrl: SANDBOX_API_URL,
+          restApiUrl: "https://sandbox.array.io",
           sandboxMode: true,
           arrayUserId: sandboxArrayUserId || `scoreshift_user_${user.id}`,
           expiresAt: new Date(Date.now() + 55 * 60 * 1000).toISOString(),
@@ -8958,7 +8959,7 @@ ${denialLetterText}`
           "x-array-server-token": ARRAY_API_KEY,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ userId: arrayUserId }),
+        body: JSON.stringify({ appKey: ARRAY_APP_KEY, userId: arrayUserId, ttlInMinutes: "55" }),
       });
 
       if (!tokenResponse.ok) {
@@ -8990,6 +8991,7 @@ ${denialLetterText}`
         token: tokenData.token || tokenData.userToken || tokenData.access_token,
         appKey: ARRAY_APP_KEY,
         apiUrl: "",
+        restApiUrl: "https://api.array.io",
         sandboxMode: false,
         arrayUserId,
         expiresAt,
@@ -9317,7 +9319,7 @@ ${denialLetterText}`
             "x-array-server-token": ARRAY_API_KEY,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ userId: arrayUserId }),
+          body: JSON.stringify({ appKey: process.env.ARRAY_APP_KEY || "3F03D20E-5311-43D8-8A76-E4B5D77793BD", userId: arrayUserId, ttlInMinutes: "55" }),
         });
         if (tokenResponse.ok) {
           const tokenData = await tokenResponse.json() as ArrayTokenResponse;
@@ -9471,7 +9473,7 @@ ${denialLetterText}`
             "x-array-server-token": ARRAY_API_KEY,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ userId: arrayUserId }),
+          body: JSON.stringify({ appKey: process.env.ARRAY_APP_KEY || "3F03D20E-5311-43D8-8A76-E4B5D77793BD", userId: arrayUserId, ttlInMinutes: "55" }),
         });
         if (tokenResponse.ok) {
           const tokenData = await tokenResponse.json() as { token?: string; userToken?: string; access_token?: string };
@@ -9596,6 +9598,99 @@ ${denialLetterText}`
       });
     } catch (error: any) {
       console.error("[Array] Client tradeline fetch error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ── Client: analyze raw credit report JSON (browser-fetched from Array) ─────
+  app.post("/api/client/array/analyze", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const reportData = req.body;
+      if (!reportData || typeof reportData !== "object") {
+        return res.status(400).json({ error: "Missing or invalid report data" });
+      }
+
+      const { analyzeAllTradelines, analyzeTradelineViolations, isNegativeTradeline } = await import("./violation-analysis");
+
+      type ArrAcct = {
+        creditorName?: string; name?: string; furnisherName?: string;
+        accountNumber?: string; number?: string; accountId?: string;
+        accountType?: string; type?: string;
+        balance?: number; currentBalance?: number;
+        status?: string; accountStatus?: string; paymentStatus?: string;
+        dateOpened?: string; openDate?: string;
+        dateOfFirstDelinquency?: string; firstDelinquencyDate?: string;
+        latePayments30?: number; monthsLate30?: number;
+        latePayments60?: number; monthsLate60?: number;
+        latePayments90?: number; monthsLate90?: number;
+        bureau?: string; reportingBureau?: string; bureauCode?: string;
+        bureaus?: string[]; reportingBureaus?: string[];
+      };
+      type ArrInq = {
+        creditorName?: string; subscriberName?: string; name?: string;
+        inquiryDate?: string; date?: string; inquiryType?: string;
+      };
+
+      const normalizeBureau = (b: string) => {
+        const u = b.toUpperCase();
+        if (u.includes("EXPERIAN") || u === "EXP") return "EXPERIAN";
+        if (u.includes("EQUIFAX") || u === "EQF") return "EQUIFAX";
+        if (u.includes("TRANSUNION") || u === "TU" || u.includes("TRANS")) return "TRANSUNION";
+        return u;
+      };
+
+      const accounts: ArrAcct[] = reportData?.accounts || reportData?.tradelines || reportData?.data?.accounts || [];
+      const rawTradelines = accounts.map((acct) => {
+        const status = acct.status || acct.accountStatus || acct.paymentStatus || "";
+        const dofd = acct.dateOfFirstDelinquency || acct.firstDelinquencyDate || "";
+        const latePayments = {
+          days30: acct.latePayments30 || acct.monthsLate30 || 0,
+          days60: acct.latePayments60 || acct.monthsLate60 || 0,
+          days90: acct.latePayments90 || acct.monthsLate90 || 0,
+        };
+        const bureauRaw = acct.bureaus || acct.reportingBureaus;
+        const singleBureau = acct.bureau || acct.reportingBureau || acct.bureauCode;
+        const bureaus = bureauRaw ? bureauRaw.map(normalizeBureau) : undefined;
+        const bureau = singleBureau ? normalizeBureau(singleBureau) : undefined;
+        return {
+          creditor: acct.creditorName || acct.name || acct.furnisherName || "Unknown Creditor",
+          accountNumber: acct.accountNumber || acct.number || acct.accountId || "Unknown",
+          accountType: acct.accountType || acct.type || "other",
+          balance: acct.balance !== undefined ? String(acct.balance) : (acct.currentBalance !== undefined ? String(acct.currentBalance) : "0"),
+          status,
+          dateOpened: acct.dateOpened || acct.openDate || "",
+          dateOfFirstDelinquency: dofd || undefined,
+          latePayments,
+          bureaus,
+          bureau,
+        };
+      });
+
+      const allNegative = analyzeAllTradelines(rawTradelines);
+      const allTradelines = rawTradelines.map((t) => ({
+        ...t,
+        violations: analyzeTradelineViolations(t),
+        isDerogatory: isNegativeTradeline(t),
+      }));
+
+      const inqArr: ArrInq[] = reportData?.inquiries || reportData?.data?.inquiries || [];
+      const inquiries = inqArr.map((inq) => ({
+        creditor: inq.creditorName || inq.subscriberName || inq.name || "Unknown",
+        inquiryDate: inq.inquiryDate || inq.date || "",
+        inquiryType: inq.inquiryType || "hard",
+        suggestedDisputeReason: "Unauthorized hard inquiry — no permissible purpose established (FCRA § 1681b)",
+      }));
+
+      console.log(`[Array] Analyze: ${allTradelines.length} tradelines (${allNegative.length} negative) for user ${(req as any).user.id}`);
+      res.json({
+        enrolled: true,
+        tradelines: allTradelines,
+        negativeTradelines: allNegative,
+        inquiries,
+        reportFetchedAt: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      console.error("[Array] Analyze endpoint error:", error);
       res.status(500).json({ error: error.message });
     }
   });

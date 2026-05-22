@@ -13,6 +13,7 @@ interface ArrayTokenState {
   token: string;
   appKey: string;
   apiUrl: string;
+  restApiUrl: string;
   sandboxMode: boolean;
   attempted: boolean;
   isReady: boolean;
@@ -24,6 +25,7 @@ const defaultState: ArrayTokenState = {
   token: "",
   appKey: "",
   apiUrl: "",
+  restApiUrl: "",
   sandboxMode: false,
   attempted: false,
   isReady: false,
@@ -38,6 +40,7 @@ export function ArrayTokenProvider({ children }: { children: ReactNode }) {
     token: "",
     appKey: "",
     apiUrl: "",
+    restApiUrl: "",
     sandboxMode: false,
     attempted: false,
     isReady: false,
@@ -68,6 +71,7 @@ export function ArrayTokenProvider({ children }: { children: ReactNode }) {
           token: string;
           appKey: string;
           apiUrl?: string;
+          restApiUrl?: string;
           sandboxMode?: boolean;
           arrayUserId: string;
           expiresAt?: string;
@@ -77,6 +81,7 @@ export function ArrayTokenProvider({ children }: { children: ReactNode }) {
             token: data.token,
             appKey: data.appKey,
             apiUrl: data.apiUrl || "",
+            restApiUrl: data.restApiUrl || (data.sandboxMode ? "https://sandbox.array.io" : "https://api.array.io"),
             sandboxMode: data.sandboxMode ?? false,
             attempted: true,
             isReady: true,
