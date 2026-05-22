@@ -9434,170 +9434,238 @@ ${denialLetterText}`
     }
   });
 
-  // ── Client: pull own Array tradelines ────────────────────────────────────────
+  // ── Client: pull own credit file tradelines ──────────────────────────────────
+  // Strategy: try Array live API first; if unavailable (sandbox / DNS blocked),
+  // fall back to the client's most recently uploaded & parsed PDF credit report
+  // stored in credit_report_uploads / credit_report_accounts / credit_report_inquiries.
   app.get("/api/client/array/tradelines", authenticateToken, requireClientAccess, async (req, res) => {
     try {
       const user = (req as any).user;
       const userId = user.id;
 
-      const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
-      if (!ARRAY_API_KEY) {
-        return res.status(500).json({ error: "Array credentials not configured" });
-      }
-
-      const isSandbox = process.env.ARRAY_PRODUCTION_MODE !== "true";
-      const ARRAY_BASE_URL = isSandbox ? "https://sandbox.array.io" : "https://api.array.io";
-      const SANDBOX_FALLBACK_TOKEN = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
-
-      const { arrayEnrollments } = await import("@shared/schema");
-      const [enrollment] = await db
-        .select()
-        .from(arrayEnrollments)
-        .where(eq(arrayEnrollments.userId, userId));
-
-      if (!enrollment) {
-        return res.status(404).json({
-          error: "Not enrolled in credit monitoring",
-          enrolled: false,
-        });
-      }
-
-      const arrayUserId = enrollment.arrayUserId;
-
-      // Generate a server-side token — use sandbox fallback if token fetch fails
-      let userToken: string = SANDBOX_FALLBACK_TOKEN;
-      try {
-        const tokenResponse = await fetch(`${ARRAY_BASE_URL}/api/authenticate/v2/usertoken`, {
-          method: "POST",
-          headers: {
-            "x-array-server-token": ARRAY_API_KEY,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ appKey: process.env.ARRAY_APP_KEY || "3F03D20E-5311-43D8-8A76-E4B5D77793BD", userId: arrayUserId, ttlInMinutes: "55" }),
-        });
-        if (tokenResponse.ok) {
-          const tokenData = await tokenResponse.json() as { token?: string; userToken?: string; access_token?: string };
-          userToken = tokenData.token || tokenData.userToken || tokenData.access_token || SANDBOX_FALLBACK_TOKEN;
-        } else {
-          const errText = await tokenResponse.text().catch(() => "");
-          console.warn(`[Array] Client tradeline token failed (${tokenResponse.status}) for user ${userId}${isSandbox ? ", using fallback" : ""}:`, errText.slice(0, 200));
-          if (!isSandbox) return res.status(502).json({ error: "Failed to generate credit monitoring token" });
-        }
-      } catch (e: any) {
-        console.warn(`[Array] Client tradeline token DNS/network error for user ${userId}${isSandbox ? ", using fallback" : ""}:`, e.message);
-        if (!isSandbox) return res.status(502).json({ error: "Credit monitoring service unreachable" });
-      }
-
-      // Fetch the credit report
-      let reportData: any = null;
-      try {
-        const reportResponse = await fetch(`${ARRAY_BASE_URL}/v2/user/credit-report`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-            "Content-Type": "application/json",
-          },
-        });
-        if (!reportResponse.ok) {
-          const errData = await reportResponse.json().catch(() => ({})) as Record<string, unknown>;
-          console.error(`[Array] Client credit report fetch failed (${reportResponse.status}) for user ${userId}:`, errData);
-          return res.status(502).json({ error: "Failed to fetch credit report" });
-        }
-        reportData = await reportResponse.json();
-      } catch (e: any) {
-        console.error(`[Array] Client credit report DNS/network error for user ${userId}:`, e.message);
-        return res.status(502).json({ error: "Credit monitoring service unreachable. Please try uploading your PDF report instead." });
-      }
-
-      type ArrAcct = {
-        creditorName?: string; name?: string; furnisherName?: string;
-        accountNumber?: string; number?: string; accountId?: string;
-        accountType?: string; type?: string;
-        balance?: number; currentBalance?: number;
-        status?: string; accountStatus?: string; paymentStatus?: string;
-        dateOpened?: string; openDate?: string;
-        dateOfFirstDelinquency?: string; firstDelinquencyDate?: string;
-        latePayments30?: number; monthsLate30?: number;
-        latePayments60?: number; monthsLate60?: number;
-        latePayments90?: number; monthsLate90?: number;
-        remarks?: string;
-        // Bureau attribution fields (Array 3-bureau report)
-        bureau?: string; reportingBureau?: string; bureauCode?: string;
-        bureaus?: string[]; reportingBureaus?: string[];
-      };
-      type ArrInq = {
-        creditorName?: string; subscriberName?: string; name?: string;
-        inquiryDate?: string; date?: string; inquiryType?: string;
-      };
-      type ArrReport = {
-        accounts?: ArrAcct[]; tradelines?: ArrAcct[];
-        inquiries?: ArrInq[];
-        data?: { accounts?: ArrAcct[]; inquiries?: ArrInq[] };
-      };
-
       const { analyzeAllTradelines, analyzeTradelineViolations, isNegativeTradeline } = await import("./violation-analysis");
-      const typedReportData = reportData as ArrReport;
 
-      // Map raw Array accounts → RawTradeline format, then analyze
-      const rawTradelines = (reportData?.accounts || reportData?.tradelines || reportData?.data?.accounts || []).map((acct) => {
-        const status = acct.status || acct.accountStatus || acct.paymentStatus || "";
-        const dofd = acct.dateOfFirstDelinquency || acct.firstDelinquencyDate || "";
-        const latePayments = {
-          days30: acct.latePayments30 || acct.monthsLate30 || 0,
-          days60: acct.latePayments60 || acct.monthsLate60 || 0,
-          days90: acct.latePayments90 || acct.monthsLate90 || 0,
-        };
-        // Extract bureau attribution — Array 3-bureau reports often tag accounts per bureau
-        const bureauRaw = acct.bureaus || acct.reportingBureaus;
-        const singleBureau = acct.bureau || acct.reportingBureau || acct.bureauCode;
+      // ── Helper: build response from raw tradeline list + inquiries ────────
+      function buildResponse(
+        rawTradelines: any[],
+        rawInquiries: any[],
+        source: string,
+        fileName?: string,
+        bureau?: string,
+      ) {
         const normalizeBureau = (b: string) => {
-          const u = b.toUpperCase();
+          const u = (b || "").toUpperCase();
           if (u.includes("EXPERIAN") || u === "EXP") return "EXPERIAN";
           if (u.includes("EQUIFAX") || u === "EQF") return "EQUIFAX";
           if (u.includes("TRANSUNION") || u === "TU" || u.includes("TRANS")) return "TRANSUNION";
           return u;
         };
-        const bureaus = bureauRaw ? bureauRaw.map(normalizeBureau) : undefined;
-        const bureau = singleBureau ? normalizeBureau(singleBureau) : undefined;
+
+        const allNegative = analyzeAllTradelines(rawTradelines);
+        const allTradelines = rawTradelines.map((t) => ({
+          ...t,
+          violations: analyzeTradelineViolations(t),
+          isDerogatory: isNegativeTradeline(t),
+        }));
+        const inquiries = rawInquiries.map((inq: any) => ({
+          creditor: inq.creditor || inq.creditorName || inq.subscriberName || inq.name || "Unknown",
+          inquiryDate: inq.inquiryDate || inq.inquiry_date || inq.date || "",
+          inquiryType: inq.inquiryType || inq.inquiry_type || "hard",
+          suggestedDisputeReason: "Unauthorized hard inquiry — no permissible purpose established (FCRA § 1681b)",
+        }));
+
+        const bureauxInData = [...new Set(rawTradelines.map(t => t.bureau).filter(Boolean))] as string[];
+        const reportBureau = bureau
+          ? normalizeBureau(bureau)
+          : (bureauxInData.length === 1 ? bureauxInData[0] : undefined);
+
         return {
-          creditor: acct.creditorName || acct.name || acct.furnisherName || "Unknown Creditor",
-          accountNumber: acct.accountNumber || acct.number || acct.accountId || "Unknown",
-          accountType: acct.accountType || acct.type || "other",
-          balance: acct.balance !== undefined ? String(acct.balance) : (acct.currentBalance !== undefined ? String(acct.currentBalance) : "0"),
-          status,
-          dateOpened: acct.dateOpened || acct.openDate || "",
-          dateOfFirstDelinquency: dofd || undefined,
+          enrolled: true,
+          tradelines: allTradelines,
+          negativeTradelines: allNegative,
+          inquiries,
+          reportFetchedAt: new Date().toISOString(),
+          source,
+          fileName,
+          bureau: reportBureau,
+        };
+      }
+
+      // ── Step 1: Try live Array API ────────────────────────────────────────
+      const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
+      if (ARRAY_API_KEY) {
+        const isSandbox = process.env.ARRAY_PRODUCTION_MODE !== "true";
+        const ARRAY_BASE_URL = isSandbox ? "https://sandbox.array.io" : "https://api.array.io";
+        const SANDBOX_FALLBACK_TOKEN = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
+
+        const { arrayEnrollments } = await import("@shared/schema");
+        const [enrollment] = await db
+          .select()
+          .from(arrayEnrollments)
+          .where(eq(arrayEnrollments.userId, userId));
+
+        if (enrollment?.arrayUserId) {
+          let userToken: string = SANDBOX_FALLBACK_TOKEN;
+          try {
+            const tokenResponse = await fetch(`${ARRAY_BASE_URL}/api/authenticate/v2/usertoken`, {
+              method: "POST",
+              headers: { "x-array-server-token": ARRAY_API_KEY, "Content-Type": "application/json" },
+              body: JSON.stringify({ appKey: process.env.ARRAY_APP_KEY, userId: enrollment.arrayUserId, ttlInMinutes: "55" }),
+            });
+            if (tokenResponse.ok) {
+              const td = await tokenResponse.json() as { token?: string; userToken?: string; access_token?: string };
+              userToken = td.token || td.userToken || td.access_token || SANDBOX_FALLBACK_TOKEN;
+            }
+          } catch { /* fall through to DB */ }
+
+          try {
+            const reportResponse = await fetch(`${ARRAY_BASE_URL}/v2/user/credit-report`, {
+              method: "GET",
+              headers: { Authorization: `Bearer ${userToken}` },
+            });
+            if (reportResponse.ok) {
+              const reportData: any = await reportResponse.json();
+              type ArrAcct = {
+                creditorName?: string; name?: string; furnisherName?: string;
+                accountNumber?: string; number?: string; accountId?: string;
+                accountType?: string; type?: string;
+                balance?: number; currentBalance?: number;
+                status?: string; accountStatus?: string; paymentStatus?: string;
+                dateOpened?: string; openDate?: string;
+                dateOfFirstDelinquency?: string; firstDelinquencyDate?: string;
+                latePayments30?: number; monthsLate30?: number;
+                latePayments60?: number; monthsLate60?: number;
+                latePayments90?: number; monthsLate90?: number;
+                bureau?: string; reportingBureau?: string; bureauCode?: string;
+                bureaus?: string[]; reportingBureaus?: string[];
+              };
+              const normB = (b: string) => {
+                const u = b.toUpperCase();
+                if (u.includes("EXPERIAN") || u === "EXP") return "EXPERIAN";
+                if (u.includes("EQUIFAX") || u === "EQF") return "EQUIFAX";
+                if (u.includes("TRANSUNION") || u === "TU" || u.includes("TRANS")) return "TRANSUNION";
+                return u;
+              };
+              const rawTradelines = (reportData?.accounts || reportData?.tradelines || reportData?.data?.accounts || []).map((acct: ArrAcct) => ({
+                creditor: acct.creditorName || acct.name || acct.furnisherName || "Unknown Creditor",
+                accountNumber: acct.accountNumber || acct.number || acct.accountId || "Unknown",
+                accountType: acct.accountType || acct.type || "other",
+                balance: acct.balance !== undefined ? String(acct.balance) : (acct.currentBalance !== undefined ? String(acct.currentBalance) : "0"),
+                status: acct.status || acct.accountStatus || acct.paymentStatus || "",
+                dateOpened: acct.dateOpened || acct.openDate || "",
+                dateOfFirstDelinquency: acct.dateOfFirstDelinquency || acct.firstDelinquencyDate || undefined,
+                latePayments: {
+                  days30: acct.latePayments30 || acct.monthsLate30 || 0,
+                  days60: acct.latePayments60 || acct.monthsLate60 || 0,
+                  days90: acct.latePayments90 || acct.monthsLate90 || 0,
+                },
+                bureaus: (acct.bureaus || acct.reportingBureaus)?.map(normB),
+                bureau: (acct.bureau || acct.reportingBureau || acct.bureauCode) ? normB(acct.bureau || acct.reportingBureau || acct.bureauCode || "") : undefined,
+              }));
+              const rawInquiries = (reportData?.inquiries || reportData?.data?.inquiries || []);
+              console.log(`[CreditFile] Array live data for user ${userId}: ${rawTradelines.length} accounts`);
+              return res.json(buildResponse(rawTradelines, rawInquiries, "array"));
+            }
+          } catch { /* fall through to DB */ }
+        }
+      }
+
+      // ── Step 2: Fall back to latest uploaded & parsed PDF credit report ────
+      const uploads = await storage.getCreditReportUploads(userId);
+      const succeeded = uploads
+        .filter(u => u.parseStatus === "succeeded")
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      if (succeeded.length === 0) {
+        return res.json({
+          enrolled: true,
+          tradelines: [],
+          negativeTradelines: [],
+          inquiries: [],
+          reportFetchedAt: new Date().toISOString(),
+          source: "none",
+          note: "No credit report found. Upload a PDF credit report to get started.",
+        });
+      }
+
+      const latest = succeeded[0];
+      const [dbAccounts, dbInquiries, dbCollections] = await Promise.all([
+        storage.getCreditReportAccounts(latest.id),
+        storage.getCreditReportInquiries(latest.id),
+        storage.getCreditReportCollections(latest.id),
+      ]);
+
+      // Parse late payments — stored as "30:2,60:1,90:0" or JSON or null
+      function parseLatePayments(raw: string | null | undefined) {
+        if (!raw) return { days30: 0, days60: 0, days90: 0 };
+        try {
+          const parsed = JSON.parse(raw);
+          if (typeof parsed === "object") return { days30: parsed["30"] || parsed.days30 || 0, days60: parsed["60"] || parsed.days60 || 0, days90: parsed["90"] || parsed.days90 || 0 };
+        } catch { /* not JSON */ }
+        const m30 = raw.match(/30[:\s]+(\d+)/i);
+        const m60 = raw.match(/60[:\s]+(\d+)/i);
+        const m90 = raw.match(/90[:\s]+(\d+)/i);
+        return { days30: m30 ? parseInt(m30[1]) : 0, days60: m60 ? parseInt(m60[1]) : 0, days90: m90 ? parseInt(m90[1]) : 0 };
+      }
+
+      const normalizeBureau = (b: string) => {
+        const u = (b || "").toUpperCase();
+        if (u.includes("EXPERIAN") || u === "EXP") return "EXPERIAN";
+        if (u.includes("EQUIFAX") || u === "EQF") return "EQUIFAX";
+        if (u.includes("TRANSUNION") || u === "TU" || u.includes("TRANS")) return "TRANSUNION";
+        return u;
+      };
+      const reportBureau = latest.bureau ? normalizeBureau(latest.bureau) : undefined;
+
+      // Regular accounts
+      const accountTradelines = dbAccounts.map((acct: any) => {
+        const latePayments = parseLatePayments(acct.latePayments30_60_90 || acct.late_payments_30_60_90);
+        const statusLower = (acct.status || acct.paymentStatus || acct.payment_status || "").toLowerCase();
+        const flags = (acct.derogatoryFlags || acct.derogatory_flags || "").toLowerCase();
+        return {
+          creditor: acct.creditorName || acct.creditor_name || "Unknown Creditor",
+          accountNumber: acct.accountNumberMasked || acct.account_number_masked || acct.accountNumber || "Unknown",
+          accountType: acct.accountType || acct.account_type || "other",
+          balance: String(acct.balance || 0),
+          status: acct.status || acct.paymentStatus || acct.payment_status || "",
+          dateOpened: acct.dateOpened || acct.date_opened || "",
+          dateOfFirstDelinquency: undefined as string | undefined,
           latePayments,
-          bureaus,
-          bureau,
+          bureau: reportBureau,
+          remarks: acct.remarks || "",
+          isDerogatory: flags.includes("charge") || flags.includes("collection") || flags.includes("derogatory") ||
+            statusLower.includes("charge") || statusLower.includes("collection") || statusLower.includes("derogatory") ||
+            latePayments.days30 > 0 || latePayments.days60 > 0 || latePayments.days90 > 0,
         };
       });
 
-      const allNegative = analyzeAllTradelines(rawTradelines);
-      // Also include a summary of all tradelines for context
-      const allTradelines = rawTradelines.map((t) => ({
-        ...t,
-        violations: analyzeTradelineViolations(t),
-        isDerogatory: isNegativeTradeline(t),
+      // Collections → derogatory tradelines
+      const collectionTradelines = dbCollections.map((coll: any) => ({
+        creditor: coll.agencyName || coll.agency_name || "Collection Agency",
+        accountNumber: `Collection — ${coll.originalCreditor || coll.original_creditor || "Unknown"}`,
+        accountType: "collection",
+        balance: String(coll.amount || 0),
+        status: coll.status || "Collection",
+        dateOpened: coll.dateOpened || coll.date_opened || "",
+        dateOfFirstDelinquency: undefined as string | undefined,
+        latePayments: { days30: 0, days60: 0, days90: 0 },
+        bureau: reportBureau,
+        isDerogatory: true,
       }));
 
-      const inquiries = (reportData?.inquiries || reportData?.data?.inquiries || []).map((inq) => ({
-        creditor: inq.creditorName || inq.subscriberName || inq.name || "Unknown",
-        inquiryDate: inq.inquiryDate || inq.date || "",
-        inquiryType: inq.inquiryType || "hard",
-        suggestedDisputeReason: "Unauthorized hard inquiry — no permissible purpose established (FCRA § 1681b)",
+      const rawTradelines = [...accountTradelines, ...collectionTradelines];
+
+      const rawInquiries = dbInquiries.map((inq: any) => ({
+        creditor: inq.creditorName || inq.creditor_name || "Unknown",
+        inquiryDate: inq.inquiryDate || inq.inquiry_date || "",
+        inquiryType: inq.inquiryType || inq.inquiry_type || "hard",
       }));
 
-      console.log(`[Array] Client tradelines fetched for user ${userId}: ${allTradelines.length} total, ${allNegative.length} negative`);
-      res.json({
-        enrolled: true,
-        tradelines: allTradelines,
-        negativeTradelines: allNegative,
-        inquiries,
-        reportFetchedAt: new Date().toISOString(),
-      });
+      console.log(`[CreditFile] DB fallback for user ${userId}: ${rawTradelines.length} accounts, ${rawInquiries.length} inquiries from ${latest.fileName || latest.file_name}`);
+      return res.json(buildResponse(rawTradelines, rawInquiries, "credit_file", latest.fileName || latest.file_name, latest.bureau));
+
     } catch (error: any) {
-      console.error("[Array] Client tradeline fetch error:", error);
+      console.error("[CreditFile] Client tradeline fetch error:", error);
       res.status(500).json({ error: error.message });
     }
   });
