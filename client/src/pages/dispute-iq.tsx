@@ -588,55 +588,102 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
     extractionAttempted.current = true;
     setBrowserExtracting(true);
 
-    // Give the hidden web component time to fetch its HTML from embed.array.io and render
-    const extractAfterDelay = (delayMs: number) =>
-      new Promise<TradelineResponse | null>(resolve => {
-        setTimeout(() => {
-          // 1. Try reading the shadow DOM of the hidden component
-          const el = document.getElementById("__dispute-iq-array-hidden")
-            ?.querySelector("array-credit-report") as any;
-          if (el?.shadowRoot) {
-            const extracted = extractFromShadowDom(el.shadowRoot as ShadowRoot);
-            if (extracted && (extracted.tradelines?.length ?? 0) > 0) {
-              resolve(extracted);
-              return;
-            }
-          }
-          // 2. Try reading from sessionStorage (the web component caches data there)
-          try {
-            const allKeys = Object.keys(sessionStorage);
-            const reportKeys = allKeys.filter(k => k.includes("array-report"));
-            for (const key of reportKeys) {
-              const raw = sessionStorage.getItem(key);
-              if (!raw) continue;
-              try {
-                const parsed = JSON.parse(raw);
-                const accts = parsed?.accounts ?? parsed?.tradelines ?? parsed?.data?.accounts;
-                if (Array.isArray(accts) && accts.length > 0) {
-                  resolve({ enrolled: true, tradelines: accts, negativeTradelines: accts.filter((a: any) => a.isDerogatory), inquiries: [], source: "array", reportFetchedAt: new Date().toISOString() });
-                  return;
-                }
-              } catch { /* not JSON, skip */ }
-            }
-          } catch { /* sessionStorage not accessible */ }
+    let settled = false;
 
-          resolve(null);
-        }, delayMs);
-      });
-
-    // Try at 6s, then 12s as fallback
-    extractAfterDelay(6000).then(data => {
-      if (data) {
-        setBrowserExtracted(data);
-        setBrowserExtracting(false);
-      } else {
-        // Second attempt after more time
-        extractAfterDelay(8000).then(data2 => {
-          if (data2) setBrowserExtracted(data2);
-          setBrowserExtracting(false);
-        });
+    const tryExtract = (): TradelineResponse | null => {
+      // 1. Shadow DOM of the hidden component
+      const el = document.getElementById("__dispute-iq-array-hidden")
+        ?.querySelector("array-credit-report") as any;
+      if (el?.shadowRoot) {
+        const text = (el.shadowRoot as any).innerText ?? el.shadowRoot.textContent ?? "";
+        // Debug: log first 300 chars so we can see what the component renders
+        if (text.length > 50) {
+          console.debug("[DisputeIQ] shadowRoot text sample:", text.slice(0, 300));
+        }
+        const extracted = extractFromShadowDom(el.shadowRoot as ShadowRoot);
+        if (extracted && (extracted.tradelines?.length ?? 0) + (extracted.inquiries?.length ?? 0) > 0) {
+          return extracted;
+        }
       }
-    });
+      // 2. sessionStorage — web component sometimes caches JSON report data here
+      try {
+        const reportKeys = Object.keys(sessionStorage).filter(k =>
+          k.includes("array-report") || k.includes("credmo-report")
+        );
+        for (const key of reportKeys) {
+          const raw = sessionStorage.getItem(key);
+          if (!raw) continue;
+          try {
+            const parsed = JSON.parse(raw);
+            const accts = parsed?.accounts ?? parsed?.tradelines ?? parsed?.data?.accounts;
+            if (Array.isArray(accts) && accts.length > 0) {
+              return {
+                enrolled: true,
+                tradelines: accts,
+                negativeTradelines: accts.filter((a: any) => a.isDerogatory),
+                inquiries: [],
+                source: "array",
+                reportFetchedAt: new Date().toISOString(),
+              };
+            }
+          } catch { /* not JSON */ }
+        }
+      } catch { /* sessionStorage blocked */ }
+      return null;
+    };
+
+    const finish = (data: TradelineResponse | null) => {
+      if (settled) return;
+      settled = true;
+      if (data) setBrowserExtracted(data);
+      setBrowserExtracting(false);
+    };
+
+    // MutationObserver: fire as soon as the shadow DOM gets real content
+    let observer: MutationObserver | null = null;
+    const attachObserver = () => {
+      const el = document.getElementById("__dispute-iq-array-hidden")
+        ?.querySelector("array-credit-report") as any;
+      if (!el) return false;
+      // Watch the shadow root once it exists
+      const watchShadow = () => {
+        const root = el.shadowRoot;
+        if (!root) return;
+        observer = new MutationObserver(() => {
+          const data = tryExtract();
+          if (data) { observer?.disconnect(); finish(data); }
+        });
+        observer.observe(root, { childList: true, subtree: true });
+      };
+      if (el.shadowRoot) {
+        watchShadow();
+      } else {
+        // shadowRoot not yet attached — watch the element itself for upgrades
+        const outer = new MutationObserver(() => {
+          if (el.shadowRoot) { outer.disconnect(); watchShadow(); }
+        });
+        outer.observe(el, { attributes: true, childList: true });
+      }
+      return true;
+    };
+
+    // Try attaching observer immediately; retry after short delay if the
+    // element isn't in the DOM yet (React hasn't committed the ref yet)
+    if (!attachObserver()) {
+      setTimeout(attachObserver, 500);
+    }
+
+    // Hard timeout at 20s — stop waiting and show whatever we have
+    const timeout = setTimeout(() => {
+      observer?.disconnect();
+      finish(tryExtract());
+    }, 20000);
+
+    return () => {
+      settled = true;
+      observer?.disconnect();
+      clearTimeout(timeout);
+    };
   }, [source, scriptReady, tokenReady]);
 
   // Reset extraction state when source changes
@@ -1094,7 +1141,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
             }
           }}
           aria-hidden="true"
-          style={{ position: "fixed", left: -9999, top: -9999, width: 1, height: 1, overflow: "hidden", pointerEvents: "none", opacity: 0, zIndex: -1 }}
+          style={{ position: "fixed", left: -15000, top: -15000, width: 1280, height: 900, overflow: "hidden", pointerEvents: "none", zIndex: -1 }}
         />
       )}
 
