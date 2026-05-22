@@ -15,6 +15,8 @@ import {
 import {
   useArrayScript,
   ARRAY_SANDBOX_APP_KEY,
+  ARRAY_SANDBOX_API_URL,
+  ARRAY_SANDBOX_TOKENS,
 } from "@/hooks/use-array-script";
 import {
   extractArrayEventPII,
@@ -146,8 +148,14 @@ export default function Signup() {
     fetch("/api/array/enroll-config")
       .then(r => r.json())
       .then(data => {
-        if (data.appKey) setEnrollAppKey(data.appKey);
-        setEnrollSandboxMode(data.sandboxMode !== false);
+        if (data.appKey) {
+          setEnrollAppKey(data.appKey);
+          setEnrollSandboxMode(data.sandboxMode !== false);
+        } else {
+          // Server returned an error body (e.g. ARRAY_APP_KEY not configured) — fall back to sandbox
+          setEnrollAppKey(ARRAY_SANDBOX_APP_KEY);
+          setEnrollSandboxMode(true);
+        }
       })
       .catch(() => {
         setEnrollAppKey(ARRAY_SANDBOX_APP_KEY);
@@ -156,12 +164,19 @@ export default function Signup() {
   }, []);
 
   useEffect(() => {
-    if (step !== 3 || !arrayEnrollRef.current || !scriptReady) return;
+    // Guard: don't render until we have a real appKey (fetch may still be in flight)
+    if (step !== 3 || !arrayEnrollRef.current || !scriptReady || !enrollAppKey) return;
     arrayEnrollRef.current.innerHTML = "";
 
     const el = document.createElement("array-account-enroll");
     el.setAttribute("appKey", enrollAppKey);
-    if (enrollSandboxMode) el.setAttribute("sandbox", "true");
+    if (enrollSandboxMode) {
+      el.setAttribute("sandbox", "true");
+      el.setAttribute("apiUrl", ARRAY_SANDBOX_API_URL);
+      // Sandbox enrollment requires a userToken so the component renders its form
+      el.setAttribute("userToken", ARRAY_SANDBOX_TOKENS.default);
+    }
+    el.setAttribute("showQuickView", "true");
 
     const handleEvent = (e: Event) => {
       const detail = (e as CustomEvent).detail;
