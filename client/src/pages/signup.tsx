@@ -13,7 +13,6 @@ import {
   Lock, Eye, EyeOff, CheckCircle, Shield, CreditCard, Zap, Star, Sparkles
 } from "lucide-react";
 import {
-  useArrayScript,
   ARRAY_SANDBOX_APP_KEY,
   ARRAY_SANDBOX_API_URL,
   ARRAY_SANDBOX_TOKENS,
@@ -97,12 +96,8 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const [enrollAppKey, setEnrollAppKey] = useState<string>("");
-  const [enrollSandboxMode, setEnrollSandboxMode] = useState<boolean>(true);
-  // Only load Array scripts when we reach step 3 (enrollment) — loading them
-  // earlier causes Array's CDN SDK to initialize hidden iframes that steal focus
-  // from the name/email inputs on step 2.
-  const { loaded: scriptReady } = useArrayScript(step >= 3 ? enrollAppKey : undefined);
+  const [enrollSandboxMode] = useState<boolean>(true);
+  const [enrollScriptReady, setEnrollScriptReady] = useState(false);
   const [arrayEnrolled, setArrayEnrolled] = useState(false);
   const arrayEnrollRef = useRef<HTMLDivElement>(null);
 
@@ -144,50 +139,39 @@ export default function Signup() {
   const [inviteCodeLoading, setInviteCodeLoading] = useState(false);
   const [showInviteField, setShowInviteField] = useState(false);
 
+  // Load ONLY the array-account-enroll script directly — bypasses the 14-script
+  // singleton which can stall if any of the other scripts fail to load.
   useEffect(() => {
-    fetch("/api/array/enroll-config")
-      .then(r => r.json())
-      .then(data => {
-        if (data.appKey) {
-          setEnrollAppKey(data.appKey);
-          setEnrollSandboxMode(data.sandboxMode !== false);
-        } else {
-          // Server returned an error body (e.g. ARRAY_APP_KEY not configured) — fall back to sandbox
-          setEnrollAppKey(ARRAY_SANDBOX_APP_KEY);
-          setEnrollSandboxMode(true);
-        }
-      })
-      .catch(() => {
-        setEnrollAppKey(ARRAY_SANDBOX_APP_KEY);
-        setEnrollSandboxMode(true);
-      });
+    const TAG = "array-account-enroll";
+    if (document.querySelector(`script[data-array-enroll]`) || customElements.get(TAG)) {
+      setEnrollScriptReady(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = `https://embed.array.io/cms/${TAG}.js?appKey=${ARRAY_SANDBOX_APP_KEY}`;
+    script.dataset.arrayEnroll = "1";
+    const settle = () => {
+      customElements.whenDefined(TAG)
+        .then(() => setEnrollScriptReady(true))
+        .catch(() => setEnrollScriptReady(true));
+      // fallback in case whenDefined never resolves (script error)
+      setTimeout(() => setEnrollScriptReady(true), 3000);
+    };
+    script.onload = settle;
+    script.onerror = settle;
+    document.head.appendChild(script);
   }, []);
 
+  // Mount the enrollment web component once the script is ready and we're on step 3
   useEffect(() => {
-    console.log("[signup enroll] effect fired", {
-      step,
-      scriptReady,
-      enrollAppKey: enrollAppKey ? enrollAppKey.substring(0, 8) + "…" : "(empty)",
-      enrollSandboxMode,
-      hasRef: !!arrayEnrollRef.current,
-      customElementDefined: typeof customElements !== "undefined" && !!customElements.get("array-account-enroll"),
-    });
-    // Guard: don't render until we have a real appKey and scripts are ready
-    if (step !== 3 || !arrayEnrollRef.current || !enrollAppKey) return;
+    if (step !== 3 || !arrayEnrollRef.current || !enrollScriptReady) return;
     arrayEnrollRef.current.innerHTML = "";
 
     const el = document.createElement("array-account-enroll");
-    console.log("[signup enroll] created element, is custom?", el.constructor.name, "tag defined?", !!customElements.get("array-account-enroll"));
-    if (enrollSandboxMode) {
-      // In sandbox mode the element must use the sandbox appKey — the server's
-      // ARRAY_APP_KEY is the production key which Array rejects for sandbox calls
-      el.setAttribute("appKey", ARRAY_SANDBOX_APP_KEY);
-      el.setAttribute("sandbox", "true");
-      el.setAttribute("apiUrl", ARRAY_SANDBOX_API_URL);
-      el.setAttribute("userToken", ARRAY_SANDBOX_TOKENS.default);
-    } else {
-      el.setAttribute("appKey", enrollAppKey);
-    }
+    el.setAttribute("appKey", ARRAY_SANDBOX_APP_KEY);
+    el.setAttribute("sandbox", "true");
+    el.setAttribute("apiUrl", ARRAY_SANDBOX_API_URL);
+    el.setAttribute("userToken", ARRAY_SANDBOX_TOKENS.default);
     el.setAttribute("showQuickView", "true");
 
     const handleEvent = (e: Event) => {
@@ -224,7 +208,7 @@ export default function Signup() {
     return () => {
       if (arrayEnrollRef.current) arrayEnrollRef.current.innerHTML = "";
     };
-  }, [step, scriptReady, enrollAppKey, enrollSandboxMode]);
+  }, [step, enrollScriptReady]);
 
   const handleCroaCheck = (checked: boolean) => {
     setCroaAccepted(checked);
@@ -867,7 +851,7 @@ export default function Signup() {
                   <div className="p-4">
                     {/* Ref div always mounted so the effect can access it without timing races */}
                     <div ref={arrayEnrollRef} className="w-full min-h-[300px]">
-                      {!scriptReady && (
+                      {!enrollScriptReady && (
                         <div className="flex items-center justify-center py-8 gap-3">
                           <div
                             className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin"
