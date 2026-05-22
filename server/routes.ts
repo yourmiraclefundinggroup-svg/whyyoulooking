@@ -9500,8 +9500,14 @@ ${denialLetterText}`
       const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
       if (ARRAY_API_KEY) {
         const isSandbox = process.env.ARRAY_PRODUCTION_MODE !== "true";
-        const ARRAY_BASE_URL = isSandbox ? "https://sandbox.array.io" : "https://api.array.io";
+        // In sandbox mode: auth tokens come from sandbox.array.io but credit report
+        // data is served by mock.array.io (same URL the web components use).
+        const SANDBOX_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
+        const TOKEN_BASE_URL = isSandbox ? "https://sandbox.array.io" : "https://api.array.io";
+        // mock.array.io is what the array-credit-report web component hits in sandbox mode
+        const DATA_BASE_URL = isSandbox ? "https://mock.array.io" : "https://api.array.io";
         const SANDBOX_FALLBACK_TOKEN = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
+        const appKey = isSandbox ? SANDBOX_APP_KEY : (process.env.ARRAY_APP_KEY || "");
 
         const { arrayEnrollments } = await import("@shared/schema");
         const [enrollment] = await db
@@ -9512,10 +9518,10 @@ ${denialLetterText}`
         if (enrollment?.arrayUserId) {
           let userToken: string = SANDBOX_FALLBACK_TOKEN;
           try {
-            const tokenResponse = await fetch(`${ARRAY_BASE_URL}/api/authenticate/v2/usertoken`, {
+            const tokenResponse = await fetch(`${TOKEN_BASE_URL}/api/authenticate/v2/usertoken`, {
               method: "POST",
               headers: { "x-array-server-token": ARRAY_API_KEY, "Content-Type": "application/json" },
-              body: JSON.stringify({ appKey: process.env.ARRAY_APP_KEY, userId: enrollment.arrayUserId, ttlInMinutes: "55" }),
+              body: JSON.stringify({ appKey, userId: enrollment.arrayUserId, ttlInMinutes: "55" }),
             });
             if (tokenResponse.ok) {
               const td = await tokenResponse.json() as { token?: string; userToken?: string; access_token?: string };
@@ -9524,11 +9530,26 @@ ${denialLetterText}`
           } catch { /* fall through to DB */ }
 
           try {
-            const reportResponse = await fetch(`${ARRAY_BASE_URL}/v2/user/credit-report`, {
-              method: "GET",
-              headers: { Authorization: `Bearer ${userToken}` },
-            });
-            if (reportResponse.ok) {
+            // Try multiple potential endpoints — mock.array.io serves the web component
+            const reportEndpoints = [
+              `${DATA_BASE_URL}/v2/user/credit-report`,
+              `${DATA_BASE_URL}/v1/user/credit-report`,
+              `${DATA_BASE_URL}/v2/credit-report`,
+            ];
+            let reportResponse: Response | null = null;
+            for (const endpoint of reportEndpoints) {
+              try {
+                const r = await fetch(endpoint, {
+                  method: "GET",
+                  headers: { Authorization: `Bearer ${userToken}`, "Content-Type": "application/json" },
+                });
+                if (r.ok) { reportResponse = r; break; }
+                console.log(`[CreditFile] ${endpoint} → ${r.status}`);
+              } catch (e) {
+                console.log(`[CreditFile] ${endpoint} → fetch error:`, e);
+              }
+            }
+            if (reportResponse && reportResponse.ok) {
               const reportData: any = await reportResponse.json();
               type ArrAcct = {
                 creditorName?: string; name?: string; furnisherName?: string;

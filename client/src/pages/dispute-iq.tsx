@@ -1,9 +1,11 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useFeatureAccess, FEATURES } from "@/hooks/use-feature-access";
 import { useToast } from "@/hooks/use-toast";
 import { useUserContext } from "@/hooks/use-user-context";
 import { DisputeIQFlow, LetterPreviewDialog, BUREAU_COLORS, BUREAU_LABELS } from "@/components/dispute-iq-flow";
+import { useArrayToken } from "@/hooks/use-array-token";
+import { useArrayScript } from "@/hooks/use-array-script";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
 interface TradelineViolation {
@@ -381,12 +383,124 @@ function groupByBureau(tradelines: AnalyzedTradeline[]): Record<string, Analyzed
   return sorted;
 }
 
+/* ── Shadow DOM credit report extractor ──────────────────────────────────────── */
+// Parses the text content of the array-credit-report shadow DOM into tradelines.
+// The web component renders each account as: CREDITOR\nReported: DATE\n$BALANCE\nSTATUS
+function extractFromShadowDom(shadowRoot: ShadowRoot): TradelineResponse | null {
+  // Use innerText if available (respects CSS display), else fall back to textContent
+  const raw = (shadowRoot as any).innerText ?? shadowRoot.textContent ?? "";
+  if (!raw || raw.length < 200) return null;
+
+  const lines = raw.split("\n").map((l: string) => l.trim()).filter(Boolean);
+  const tradelines: AnalyzedTradeline[] = [];
+  const inquiries: { creditor: string; inquiryDate: string; inquiryType: string; suggestedDisputeReason: string }[] = [];
+
+  let section: "accounts" | "inquiries" | "collections" | "other" = "accounts";
+  let i = 0;
+
+  const isAccountHeader = (l: string) =>
+    /^(credit cards|auto loans|real estate|student loans|other|accounts)$/i.test(l);
+  const isBalanceLine = (l: string) => /^\$[\d,]+\.\d{2}$/.test(l);
+  const isDateLine = (l: string) => /\w{3,9} \d{1,2},?\s*\d{4}/.test(l);
+  const isStatusLine = (l: string) =>
+    /good standing|closed|outstanding|late|past due|delinquent|charged.?off|collection|settled/i.test(l);
+  const isInquiryType = (l: string) =>
+    /^(automotive|banking|finance|retail|utilities|credit card|mortgage|personal|other)$/i.test(l);
+
+  // Heuristic: account creditor names are ALL-CAPS or TITLE case, 2-40 chars, no common UI strings
+  const UI_WORDS = new Set([
+    "Hard inquiries","Inquiries","Collections","Public records","Creditors","Account summary",
+    "Balances","Payments","Open accounts","Closed accounts","Show All Summary","Expand All",
+    "Credit cards","Auto loans","Real estate","Student loans","Other","Accounts",
+    "Hide","Show","View Summary","Download PDF","All Bureaus","TransUnion","Equifax","Experian",
+    "Credit report","Your credit is in excellent shape","Report date","VantageScore",
+  ]);
+  const isCreditorLine = (l: string) =>
+    l.length >= 3 && l.length <= 50 &&
+    /^[A-Z0-9][A-Z0-9\s/&.',-]{1,}$/i.test(l) &&
+    !UI_WORDS.has(l) &&
+    !/^\d+$/.test(l) &&
+    !isBalanceLine(l) &&
+    !isDateLine(l) &&
+    !isStatusLine(l);
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (/^hard inquiries$/i.test(line)) { section = "inquiries"; i++; continue; }
+    if (/^collections$/i.test(line)) { section = "collections"; i++; continue; }
+    if (/^public records$/i.test(line) || /^creditors$/i.test(line)) { section = "other"; i++; continue; }
+    if (isAccountHeader(line)) { section = "accounts"; i++; continue; }
+
+    if (section === "inquiries") {
+      // Pattern: CREDITOR NAME\nTYPE\nDATE  or  CREDITOR NAME\nDATE
+      if (isCreditorLine(line)) {
+        const peek = lines.slice(i + 1, i + 4);
+        const dateStr = peek.find(isDateLine) ?? "";
+        if (dateStr) {
+          inquiries.push({
+            creditor: line,
+            inquiryDate: dateStr,
+            inquiryType: "hard",
+            suggestedDisputeReason: "Unauthorized hard inquiry — no permissible purpose established (FCRA § 1681b)",
+          });
+          i += 2 + peek.indexOf(dateStr);
+          continue;
+        }
+      }
+    }
+
+    if (section === "accounts" || section === "collections") {
+      if (isCreditorLine(line)) {
+        const window = lines.slice(i + 1, i + 8);
+        const balance = window.find(isBalanceLine) ?? "0";
+        const status = window.find(isStatusLine) ?? (section === "collections" ? "Outstanding" : "Unknown");
+        const dateStr = window.find(l => /reported:/i.test(l))?.replace(/reported:\s*/i, "").trim()
+          ?? window.find(isDateLine)
+          ?? "";
+        const isNeg = section === "collections" || !/good standing/i.test(status);
+        tradelines.push({
+          creditor: line,
+          accountNumber: "Unknown",
+          accountType: section === "collections" ? "collection" : "other",
+          balance: balance.replace("$", "").replace(/,/g, ""),
+          status,
+          dateOpened: dateStr,
+          dateOfFirstDelinquency: undefined,
+          latePayments: { days30: 0, days60: 0, days90: 0 },
+          violations: [],
+          isDerogatory: isNeg,
+          bureaus: ["EXPERIAN"],
+        });
+        i += Math.min(8, window.length) + 1;
+        continue;
+      }
+    }
+
+    i++;
+  }
+
+  if (tradelines.length === 0 && inquiries.length === 0) return null;
+
+  const negativeTradelines = tradelines.filter(t => t.isDerogatory);
+  return {
+    enrolled: true,
+    tradelines,
+    negativeTradelines,
+    inquiries,
+    source: "array",
+    reportFetchedAt: new Date().toISOString(),
+  };
+}
+
 /* ── Main page ───────────────────────────────────────────────────────────────── */
 export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLetters?: (items: AnalyzedTradeline[]) => void; clientId?: number | null }) {
   const { toast } = useToast();
   const { user } = useUserContext();
   const { tier, hasAnyPlan, disputeLimit } = useFeatureAccess(FEATURES.BASIC_DISPUTES);
   const [profileNudgeDismissed, setProfileNudgeDismissed] = useState(false);
+  const { appKey, token: arrayToken, apiUrl, sandboxMode, isReady: tokenReady } = useArrayToken();
+  const { loaded: scriptReady } = useArrayScript(appKey || undefined);
 
   // Show nudge if address is missing — so the flow pre-fills cleanly on first use
   const profileMissingAddress = hasAnyPlan && !profileNudgeDismissed && !(user?.addressLine1 && user?.city && user?.state && user?.zipCode);
@@ -459,8 +573,97 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
     },
   });
 
+  // ── Browser-side Array web component extraction ───────────────────────────
+  // When "Pull from Credit File" is selected, we embed a hidden array-credit-report
+  // web component. After it renders (5-10 sec), we read its open shadow DOM and
+  // parse the credit accounts. This works even when the server-side REST API can't
+  // reach Array's endpoints, because the web component fetches from the browser.
+  const [browserExtracted, setBrowserExtracted] = useState<TradelineResponse | null>(null);
+  const [browserExtracting, setBrowserExtracting] = useState(false);
+  const extractionAttempted = useRef(false);
+  const hiddenContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (source !== "array" || !scriptReady || !tokenReady || extractionAttempted.current) return;
+    extractionAttempted.current = true;
+    setBrowserExtracting(true);
+
+    // Give the hidden web component time to fetch its HTML from embed.array.io and render
+    const extractAfterDelay = (delayMs: number) =>
+      new Promise<TradelineResponse | null>(resolve => {
+        setTimeout(() => {
+          // 1. Try reading the shadow DOM of the hidden component
+          const el = document.getElementById("__dispute-iq-array-hidden")
+            ?.querySelector("array-credit-report") as any;
+          if (el?.shadowRoot) {
+            const extracted = extractFromShadowDom(el.shadowRoot as ShadowRoot);
+            if (extracted && (extracted.tradelines?.length ?? 0) > 0) {
+              resolve(extracted);
+              return;
+            }
+          }
+          // 2. Try reading from sessionStorage (the web component caches data there)
+          try {
+            const allKeys = Object.keys(sessionStorage);
+            const reportKeys = allKeys.filter(k => k.includes("array-report"));
+            for (const key of reportKeys) {
+              const raw = sessionStorage.getItem(key);
+              if (!raw) continue;
+              try {
+                const parsed = JSON.parse(raw);
+                const accts = parsed?.accounts ?? parsed?.tradelines ?? parsed?.data?.accounts;
+                if (Array.isArray(accts) && accts.length > 0) {
+                  resolve({ enrolled: true, tradelines: accts, negativeTradelines: accts.filter((a: any) => a.isDerogatory), inquiries: [], source: "array", reportFetchedAt: new Date().toISOString() });
+                  return;
+                }
+              } catch { /* not JSON, skip */ }
+            }
+          } catch { /* sessionStorage not accessible */ }
+
+          resolve(null);
+        }, delayMs);
+      });
+
+    // Try at 6s, then 12s as fallback
+    extractAfterDelay(6000).then(data => {
+      if (data) {
+        setBrowserExtracted(data);
+        setBrowserExtracting(false);
+      } else {
+        // Second attempt after more time
+        extractAfterDelay(8000).then(data2 => {
+          if (data2) setBrowserExtracted(data2);
+          setBrowserExtracting(false);
+        });
+      }
+    });
+  }, [source, scriptReady, tokenReady]);
+
+  // Reset extraction state when source changes
+  useEffect(() => {
+    if (source !== "array") {
+      extractionAttempted.current = false;
+      setBrowserExtracted(null);
+      setBrowserExtracting(false);
+    }
+  }, [source]);
+
+  // Browser-extracted data takes priority; server data is the fallback
   const activeData: TradelineResponse | null =
-    source === "array" ? (arrayData || null) : uploadResult;
+    source === "array"
+      ? (browserExtracted || arrayData || null)
+      : uploadResult;
+
+  // isLoadingArray: true while either source is still running AND we have no data yet.
+  // We keep showing the spinner even after the server finishes quickly (e.g. source:"none")
+  // so the browser extraction has a chance to complete first.
+  const serverHasRealData = !!arrayData && arrayData.source !== "none";
+  const isLoadingArray = source === "array" && !browserExtracted && (
+    arrayLoading ||
+    browserExtracting ||
+    // Scripts or token not ready yet — extraction hasn't started, keep spinner on
+    (!extractionAttempted.current && !serverHasRealData)
+  );
 
   const negativeTradelines: AnalyzedTradeline[] = activeData?.negativeTradelines || [];
 
@@ -811,8 +1014,10 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
   }
 
   // ── Results screen ────────────────────────────────────────────────────────
-  const isLoading = source === "array" && arrayLoading;
-  const isError = source === "array" && !!arrayError;
+  // isLoading: show spinner while either the server query OR the browser extraction is running
+  const isLoading = source === "array" && isLoadingArray && !browserExtracted;
+  // Only show error if the server failed AND the browser extraction also produced nothing
+  const isError = source === "array" && !!arrayError && !browserExtracted && !browserExtracting;
   const errorMessage = arrayError instanceof Error ? arrayError.message : String(arrayError || "");
   const notEnrolled = errorMessage.includes("enrolled") || errorMessage.includes("404");
 
@@ -850,11 +1055,15 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
           </button>
           {source === "array" && (
             <button
-              onClick={() => refetchArray()}
-              disabled={arrayLoading}
-              style={{ background: "#d97706", color: "#fff", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600, opacity: arrayLoading ? 0.6 : 1 }}
+              onClick={() => {
+                setBrowserExtracted(null);
+                extractionAttempted.current = false;
+                refetchArray();
+              }}
+              disabled={isLoadingArray}
+              style={{ background: "#d97706", color: "#fff", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600, opacity: isLoadingArray ? 0.6 : 1 }}
             >
-              {arrayLoading ? "Refreshing…" : "↻ Refresh"}
+              {isLoadingArray ? "Refreshing…" : "↻ Refresh"}
             </button>
           )}
         </div>
@@ -863,12 +1072,38 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
       {TabBar}
       {ProfileNudgeBanner}
 
+      {/* Hidden array-credit-report web component — loads in background so we can
+          extract data from its shadow DOM once it renders. Never shown to the user.
+          The inner div is created imperatively via useEffect to avoid JSX conflicts
+          with unregistered custom elements. */}
+      {source === "array" && scriptReady && tokenReady && arrayToken && appKey && (
+        <div
+          id="__dispute-iq-array-hidden"
+          ref={(node) => {
+            hiddenContainerRef.current = node;
+            // Imperatively append the web component exactly once
+            if (node && !node.querySelector("array-credit-report")) {
+              const el = document.createElement("array-credit-report");
+              el.setAttribute("app-key", appKey!);
+              el.setAttribute("user-token", arrayToken!);
+              if (sandboxMode && apiUrl) {
+                el.setAttribute("api-url", apiUrl!);
+                el.setAttribute("sandbox", "true");
+              }
+              node.appendChild(el);
+            }
+          }}
+          aria-hidden="true"
+          style={{ position: "fixed", left: -9999, top: -9999, width: 1, height: 1, overflow: "hidden", pointerEvents: "none", opacity: 0, zIndex: -1 }}
+        />
+      )}
+
       {/* Loading */}
       {isLoading && (
         <div style={{ textAlign: "center", padding: "72px 24px" }}>
           <div style={{ width: 40, height: 40, border: "3px solid #e5e7eb", borderTopColor: "#d97706", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
-          <div style={{ fontWeight: 600, color: "#374151" }}>Pulling your credit data…</div>
-          <div style={{ fontSize: 13, color: "#9ca3af", marginTop: 6 }}>Fetching your 3-bureau report…</div>
+          <div style={{ fontWeight: 600, color: "#374151" }}>Analyzing your credit file…</div>
+          <div style={{ fontSize: 13, color: "#9ca3af", marginTop: 6 }}>Reading your credit report — this takes a few seconds…</div>
         </div>
       )}
 
