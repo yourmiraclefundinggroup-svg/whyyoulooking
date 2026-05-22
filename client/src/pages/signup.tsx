@@ -363,7 +363,7 @@ export default function Signup() {
   const allAiChecked = aiConsent1 && aiConsent2 && aiConsent3 && aiConsent4;
 
   return (
-    <div className="min-h-screen" style={{ background: "#F1E8DA" }}>
+    <div className="min-h-screen signup-page" style={{ background: "#F1E8DA" }}>
       {/* Header */}
       <header
         className="border-b backdrop-blur sticky top-0 z-10"

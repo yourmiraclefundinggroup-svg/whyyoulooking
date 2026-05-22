@@ -571,3 +571,20 @@
 .bg-bureau-experian { background-color: #0062FF; }
 .bg-bureau-equifax { background-color: #E12726; }
 .bg-bureau-transunion { background-color: #662D8C; }
+
+/* ── Signup page — force dark taupe text in inputs so it's readable on
+   the light taupe background (#F1E8DA). The :root dark-mode --foreground
+   (warm cream) becomes near-invisible on light backgrounds. ── */
+.signup-page input,
+.signup-page textarea,
+.signup-page select {
+  color: #2A2725 !important;
+  background-color: #FAF6F0 !important;
+}
+.signup-page input::placeholder,
+.signup-page textarea::placeholder {
+  color: #9B9390 !important;
+}
+.signup-page label {
+  color: #4A4541;
+}
