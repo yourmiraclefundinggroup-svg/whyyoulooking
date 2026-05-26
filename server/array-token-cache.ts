@@ -57,7 +57,7 @@ export async function getOrRefreshArrayToken(
     const resp = await fetch(tokenUrl, {
       method: "POST",
       headers: { "x-array-server-token": apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ appKey, userId: arrayUserId, ttlInMinutes: "55" }),
+      body: JSON.stringify({ appKey, userId: arrayUserId, ttlInMinutes: 55, rotate: true }),
     });
 
     const raw = await resp.text();
