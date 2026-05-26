@@ -1255,19 +1255,19 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
               {/* ── Stats cards ───────────────────────────────────────────── */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 20 }}>
                 {([
-                  { label: "Accounts",     value: allTradelines.length,      bg: "#eff6ff", iconBg: "#dbeafe", color: "#1d4ed8", icon: "🪪" },
-                  { label: "Inquiries",    value: allInquiries.length,        bg: "#fff7ed", iconBg: "#fed7aa", color: "#c2410c", icon: "🔍" },
-                  { label: "Collections", value: negCollections.length,       bg: "#fef2f2", iconBg: "#fecaca", color: "#b91c1c", icon: "📋" },
-                  { label: "Derogatory",  value: negativeTradelines.length,   bg: "#fffbeb", iconBg: "#fde68a", color: "#b45309", icon: "⚠" },
-                  { label: "Late Payments", value: negLate.length,            bg: "#f0fdf4", iconBg: "#bbf7d0", color: "#166534", icon: "🕐" },
-                ] as const).map(({ label, value, bg, iconBg, color, icon }) => (
+                  { label: "Accounts",      value: allTradelines.length,      iconBg: "#3b82f6", color: "#1d4ed8", icon: "💳" },
+                  { label: "Inquiries",     value: allInquiries.length,        iconBg: "#f59e0b", color: "#c2410c", icon: "🔍" },
+                  { label: "Collections",   value: negCollections.length,       iconBg: "#ef4444", color: "#b91c1c", icon: "🏛" },
+                  { label: "Derogatory",    value: negativeTradelines.length,   iconBg: "#f59e0b", color: "#b45309", icon: "⚠️" },
+                  { label: "Late Payments", value: negLate.length,              iconBg: "#22c55e", color: "#166534", icon: "🕐" },
+                ] as const).map(({ label, value, iconBg, color, icon }) => (
                   <div key={label} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ width: 42, height: 42, borderRadius: "50%", background: iconBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
+                    <div style={{ width: 46, height: 46, borderRadius: 10, background: iconBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
                       {icon}
                     </div>
                     <div>
-                      <div style={{ fontSize: 24, fontWeight: 700, color, lineHeight: 1.1 }}>{value}</div>
-                      <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2, fontWeight: 500 }}>{label}</div>
+                      <div style={{ fontSize: 11, color: "#6b7280", fontWeight: 500, marginBottom: 2 }}>{label}</div>
+                      <div style={{ fontSize: 26, fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
                     </div>
                   </div>
                 ))}
@@ -1406,27 +1406,40 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
               {resultTab === "all" && (
                 allTradelines.length === 0
                   ? <EmptyState icon="📋" title="No Accounts Found" description="No accounts were detected on this report." />
-                  : <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  : <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 110px 150px 90px", padding: "9px 20px", background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                        {["", "CREDITOR", "BALANCE", "STATUS", "TYPE"].map((h) => (
+                          <span key={h} style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em" }}>{h}</span>
+                        ))}
+                      </div>
                       {allTradelines.map((t, i) => {
                         const negIdx = negativeTradelines.indexOf(t);
                         const isNeg = negIdx >= 0;
                         const key = `${t.creditor}_${negIdx}`;
                         const isSelected = isNeg && selectedKeys.has(key);
                         const isLocked = !isSelected && disputeLimit !== null && selectedKeys.size >= disputeLimit;
-                        return isNeg
-                          ? <AccountCard key={key} tradeline={t} selected={isSelected} locked={isLocked} onToggle={() => toggleSelect(key)} />
-                          : (
-                            <div key={i} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                              <div>
-                                <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>{t.creditor}</div>
-                                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>{t.accountType || "Account"} · {t.status || "Good Standing"}</div>
-                              </div>
-                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                {t.balance && t.balance !== "0" && <span style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>${Number(t.balance).toLocaleString()}</span>}
-                                <span style={{ padding: "3px 10px", borderRadius: 20, background: "#f0fdf4", color: "#166534", fontSize: 11, fontWeight: 700 }}>Good</span>
-                              </div>
+                        return (
+                          <div key={i} onClick={isNeg && !isLocked ? () => toggleSelect(key) : undefined}
+                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 110px 150px 90px", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: isNeg ? "pointer" : "default" }}>
+                            <div>
+                              {isNeg && <div style={{ width: 18, height: 18, borderRadius: "50%", border: isSelected ? "6px solid #d97706" : "2px solid #d1d5db", background: "#fff" }} />}
                             </div>
-                          );
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
+                              {t.accountNumber && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{t.accountNumber}</div>}
+                            </div>
+                            <div style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
+                              {t.balance && t.balance !== "0" ? `$${Number(t.balance).toLocaleString()}` : "--"}
+                            </div>
+                            <div>
+                              {isNeg
+                                ? <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "#fef2f2", color: "#991b1b" }}>{(t.status || "Derogatory").split(",")[0]}</span>
+                                : <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "#f0fdf4", color: "#166534" }}>Good Standing</span>
+                              }
+                            </div>
+                            <div style={{ fontSize: 12, color: "#6b7280" }}>{t.accountType || "—"}</div>
+                          </div>
+                        );
                       })}
                     </div>
               )}
@@ -1435,49 +1448,115 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
               {resultTab === "derogatory" && (
                 negativeTradelines.length === 0
                   ? <EmptyState icon="✅" title="No Derogatory Accounts" description="No derogatory items were detected on this report." />
-                  : <>
-                      <SelectBar items={negativeTradelines} disputeLimit={disputeLimit} tier={tier} selectedKeys={selectedKeys} setSelectedKeys={setSelectedKeys} />
-                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        {negativeTradelines.map((t, i) => {
-                          const key = `${t.creditor}_${i}`;
-                          const isSelected = selectedKeys.has(key);
-                          const isLocked = !isSelected && disputeLimit !== null && selectedKeys.size >= disputeLimit;
-                          return <AccountCard key={key} tradeline={t} selected={isSelected} locked={isLocked} onToggle={() => toggleSelect(key)} />;
-                        })}
+                  : <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
+                      <div style={{ padding: "13px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 16 }}>⊗</span>
+                        <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Derogatory Accounts</span>
+                        <span style={{ marginLeft: "auto", background: "#dc2626", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{negativeTradelines.length}</span>
                       </div>
-                    </>
+                      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 100px 140px 90px minmax(160px,1fr)", padding: "9px 20px", background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                        {["", "CREDITOR", "BALANCE", "STATUS", "SEVERITY", "STRATEGY"].map((h) => (
+                          <span key={h} style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em" }}>{h}</span>
+                        ))}
+                      </div>
+                      {negativeTradelines.map((t, i) => {
+                        const key = `${t.creditor}_${i}`;
+                        const isSelected = selectedKeys.has(key);
+                        const isLocked = !isSelected && disputeLimit !== null && selectedKeys.size >= disputeLimit;
+                        const status = t.status || "Derogatory";
+                        const sl = status.toLowerCase();
+                        const sev = sl.includes("charge-off") || sl.includes("collection") ? "Critical" : "High";
+                        return (
+                          <div key={i} onClick={!isLocked ? () => toggleSelect(key) : undefined}
+                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 100px 140px 90px minmax(160px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: "pointer" }}>
+                            <div style={{ width: 18, height: 18, borderRadius: "50%", border: isSelected ? "6px solid #d97706" : "2px solid #d1d5db", background: "#fff", flexShrink: 0 }} />
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
+                              {t.accountNumber && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{t.accountNumber}</div>}
+                            </div>
+                            <div style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
+                              {t.balance && t.balance !== "0" ? `$${Number(t.balance).toLocaleString()}` : "--"}
+                            </div>
+                            <div>
+                              <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "#fef2f2", color: "#991b1b" }}>{status.split(",")[0]}</span>
+                            </div>
+                            <div>
+                              <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: sev === "Critical" ? "#fef2f2" : "#fffbeb", color: sev === "Critical" ? "#991b1b" : "#92400e" }}>{sev}</span>
+                            </div>
+                            <div style={{ fontSize: 12, color: "#d97706", fontWeight: 500 }}>Dispute Under FCRA § 1681i</div>
+                          </div>
+                        );
+                      })}
+                    </div>
               )}
 
               {/* ── Late Payments tab ─────────────────────────────────────── */}
               {resultTab === "late" && (
                 negLate.length === 0
                   ? <EmptyState icon="✅" title="No Late Payments" description="No late payment history detected." />
-                  : <>
-                      <SelectBar items={negLate} disputeLimit={disputeLimit} tier={tier} selectedKeys={selectedKeys} setSelectedKeys={setSelectedKeys} indexOffset={negativeTradelines} />
-                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        {negLate.map((t) => {
-                          const i = negativeTradelines.indexOf(t);
-                          const key = `${t.creditor}_${i}`;
-                          const isSelected = selectedKeys.has(key);
-                          const isLocked = !isSelected && disputeLimit !== null && selectedKeys.size >= disputeLimit;
-                          return <AccountCard key={key} tradeline={t} selected={isSelected} locked={isLocked} onToggle={() => toggleSelect(key)} />;
-                        })}
+                  : <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
+                      <div style={{ padding: "13px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 16 }}>🕐</span>
+                        <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Accounts with Late Payments</span>
+                        <span style={{ marginLeft: "auto", background: "#d97706", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{negLate.length}</span>
                       </div>
-                    </>
+                      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 100px 70px 70px 70px minmax(180px,1fr)", padding: "9px 20px", background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                        {["", "CREDITOR", "BALANCE", "30 DAYS", "60 DAYS", "90+ DAYS", "STRATEGY"].map((h) => (
+                          <span key={h} style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em" }}>{h}</span>
+                        ))}
+                      </div>
+                      {negLate.map((t) => {
+                        const i = negativeTradelines.indexOf(t);
+                        const key = `${t.creditor}_${i}`;
+                        const isSelected = selectedKeys.has(key);
+                        const isLocked = !isSelected && disputeLimit !== null && selectedKeys.size >= disputeLimit;
+                        const d30 = t.latePayments?.days30 || 0;
+                        const d60 = t.latePayments?.days60 || 0;
+                        const d90 = t.latePayments?.days90 || 0;
+                        return (
+                          <div key={i} onClick={!isLocked ? () => toggleSelect(key) : undefined}
+                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 100px 70px 70px 70px minmax(180px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: "pointer" }}>
+                            <div style={{ width: 18, height: 18, borderRadius: "50%", border: isSelected ? "6px solid #d97706" : "2px solid #d1d5db", background: "#fff", flexShrink: 0 }} />
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
+                              {t.accountNumber && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{t.accountNumber}</div>}
+                            </div>
+                            <div style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
+                              {t.balance && t.balance !== "0" ? `$${Number(t.balance).toLocaleString()}` : "--"}
+                            </div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: d30 > 0 ? "#d97706" : "#9ca3af" }}>{d30 || 0}</div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: d60 > 0 ? "#ef4444" : "#9ca3af" }}>{d60 || 0}</div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: d90 > 0 ? "#dc2626" : "#9ca3af" }}>{d90 || 0}</div>
+                            <div style={{ fontSize: 12, color: "#d97706", fontWeight: 500 }}>Metro 2 Violation — Request DA Field Correction</div>
+                          </div>
+                        );
+                      })}
+                    </div>
               )}
 
               {/* ── Inquiries tab ─────────────────────────────────────────── */}
               {resultTab === "inquiries" && (
                 allInquiries.length === 0
                   ? <EmptyState icon="🔍" title="No Inquiries" description="No hard inquiries found on this report." />
-                  : <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  : <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
+                      <div style={{ padding: "13px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 16 }}>🔍</span>
+                        <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Credit Inquiries</span>
+                        <span style={{ marginLeft: "auto", background: "#f59e0b", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{allInquiries.length}</span>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 110px 90px minmax(180px,1fr)", padding: "9px 20px", background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                        {["", "CREDITOR", "TYPE", "DATE", "SEVERITY", "STRATEGY"].map((h) => (
+                          <span key={h} style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em" }}>{h}</span>
+                        ))}
+                      </div>
                       {allInquiries.map((inq, i) => (
-                        <div key={i} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>{inq.creditor}</div>
-                            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>Hard Inquiry · {inq.inquiryDate}</div>
-                          </div>
-                          <span style={{ padding: "3px 10px", borderRadius: 20, background: "#eff6ff", color: "#1e40af", fontSize: 11, fontWeight: 700 }}>Hard</span>
+                        <div key={i} style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 110px 90px minmax(180px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: "#fff" }}>
+                          <div />
+                          <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{inq.creditor}</div>
+                          <div><span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "#fef2f2", color: "#991b1b" }}>Hard</span></div>
+                          <div style={{ fontSize: 13, color: "#374151" }}>{inq.inquiryDate}</div>
+                          <div><span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "#fffbeb", color: "#92400e" }}>Medium</span></div>
+                          <div style={{ fontSize: 12, color: "#d97706", fontWeight: 500 }}>Request Written Authorization</div>
                         </div>
                       ))}
                     </div>
@@ -1487,30 +1566,62 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
               {resultTab === "collections" && (
                 negCollections.length === 0
                   ? <EmptyState icon="✅" title="No Collections" description="No collection accounts detected." />
-                  : <>
-                      <SelectBar items={negCollections} disputeLimit={disputeLimit} tier={tier} selectedKeys={selectedKeys} setSelectedKeys={setSelectedKeys} indexOffset={negativeTradelines} />
-                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        {negCollections.map((t) => {
-                          const i = negativeTradelines.indexOf(t);
-                          const key = `${t.creditor}_${i}`;
-                          const isSelected = selectedKeys.has(key);
-                          const isLocked = !isSelected && disputeLimit !== null && selectedKeys.size >= disputeLimit;
-                          return <AccountCard key={key} tradeline={t} selected={isSelected} locked={isLocked} onToggle={() => toggleSelect(key)} />;
-                        })}
+                  : <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
+                      <div style={{ padding: "13px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 16 }}>🏛</span>
+                        <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Collection Accounts</span>
+                        <span style={{ marginLeft: "auto", background: "#ef4444", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{negCollections.length}</span>
                       </div>
-                    </>
+                      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 100px 80px 100px minmax(180px,1fr)", padding: "9px 20px", background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                        {["", "AGENCY", "BALANCE", "STATUS", "SEVERITY", "STRATEGY"].map((h) => (
+                          <span key={h} style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em" }}>{h}</span>
+                        ))}
+                      </div>
+                      {negCollections.map((t) => {
+                        const i = negativeTradelines.indexOf(t);
+                        const key = `${t.creditor}_${i}`;
+                        const isSelected = selectedKeys.has(key);
+                        const isLocked = !isSelected && disputeLimit !== null && selectedKeys.size >= disputeLimit;
+                        const bal = Number(t.balance || 0);
+                        const sev = bal >= 5000 ? "Critical" : "High";
+                        const strategy = bal >= 5000 ? "Dispute — Request Full Deletion" : "Validate then Pay-for-Delete";
+                        return (
+                          <div key={i} onClick={!isLocked ? () => toggleSelect(key) : undefined}
+                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 100px 80px 100px minmax(180px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: "pointer" }}>
+                            <div style={{ width: 18, height: 18, borderRadius: "50%", border: isSelected ? "6px solid #d97706" : "2px solid #d1d5db", background: "#fff", flexShrink: 0 }} />
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
+                              {(t as any).originalCreditor && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{(t as any).originalCreditor}</div>}
+                            </div>
+                            <div style={{ fontSize: 13, color: "#dc2626", fontWeight: 600 }}>
+                              {t.balance && t.balance !== "0" ? `$${Number(t.balance).toLocaleString()}` : "--"}
+                            </div>
+                            <div><span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "#f0fdf4", color: "#166534" }}>Open</span></div>
+                            <div><span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: sev === "Critical" ? "#fef2f2" : "#fffbeb", color: sev === "Critical" ? "#991b1b" : "#92400e" }}>{sev}</span></div>
+                            <div style={{ fontSize: 12, color: "#d97706", fontWeight: 500 }}>{strategy}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
               )}
 
               {/* ── Professional Dispute Packet bar ───────────────────────── */}
-              {selectedKeys.size === 0 && resultTab !== "overview" && (
+              {selectedKeys.size === 0 && resultTab !== "overview" && negativeTradelines.length > 0 && (
                 <div style={{ marginTop: 24, background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 14, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <span style={{ fontSize: 22 }}>📋</span>
                     <div>
                       <div style={{ fontWeight: 700, fontSize: 14, color: "#92400e" }}>Professional Dispute Packet</div>
-                      <div style={{ fontSize: 12, color: "#b45309" }}>Select accounts above to generate FCRA-compliant dispute letters</div>
+                      <div style={{ fontSize: 12, color: "#b45309" }}>AI auto-selects the top highest-severity items and generates a comprehensive FCRA-compliant dispute letter.</div>
                     </div>
                   </div>
+                  <button onClick={() => {
+                    const limit = disputeLimit ?? negativeTradelines.length;
+                    const keys = negativeTradelines.slice(0, limit).map((t, i) => `${t.creditor}_${i}`);
+                    setSelectedKeys(new Set(keys));
+                  }} style={{ background: "#d97706", color: "#fff", border: "none", borderRadius: 10, padding: "10px 20px", fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
+                    ✦ Generate Packet
+                  </button>
                 </div>
               )}
             </>
