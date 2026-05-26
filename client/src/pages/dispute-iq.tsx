@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { useFeatureAccess, FEATURES } from "@/hooks/use-feature-access";
 import { useToast } from "@/hooks/use-toast";
 import { useUserContext } from "@/hooks/use-user-context";
@@ -619,23 +620,22 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
   // ── Credit file pull — server-side via /api/client/array/tradelines ─────────
   // The server tries the live credit API first, then falls back to the client's
   // most recently uploaded and parsed PDF credit report stored in the database.
-  const [forceRefresh, setForceRefresh] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const tradelinesUrl = clientId
     ? `/api/client/array/tradelines?clientId=${clientId}`
     : "/api/client/array/tradelines";
 
+  const cacheKey = ["/api/client/array/tradelines", clientId ?? "self"] as const;
+
   const {
     data: arrayData,
     isLoading: arrayLoading,
     error: arrayErrorRaw,
-    refetch: refetchArray,
   } = useQuery<TradelineResponse>({
-    queryKey: ["/api/client/array/tradelines", clientId ?? "self", forceRefresh],
+    queryKey: cacheKey,
     queryFn: async () => {
       const token = localStorage.getItem("auth_token");
-      const url = forceRefresh ? `${tradelinesUrl}${tradelinesUrl.includes("?") ? "&" : "?"}refresh=true` : tradelinesUrl;
-      const res = await fetch(url, {
+      const res = await fetch(tradelinesUrl, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error(`${res.status}`);
@@ -648,9 +648,23 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
 
   const handleRefreshCache = async () => {
     setIsRefreshing(true);
-    setForceRefresh(true);
-    setTimeout(() => setForceRefresh(false), 500);
-    await refetchArray().finally(() => setIsRefreshing(false));
+    try {
+      const token = localStorage.getItem("auth_token");
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+      // Step 1: invalidate server-side cache so next fetch is guaranteed fresh
+      await fetch("/api/client/array/tradelines/cache", { method: "DELETE", headers }).catch(() => {});
+      // Step 2: fetch with explicit refresh=true (bypasses any remaining cache)
+      const refreshUrl = `${tradelinesUrl}${tradelinesUrl.includes("?") ? "&" : "?"}refresh=true`;
+      const res = await fetch(refreshUrl, { headers });
+      if (!res.ok) throw new Error(`${res.status}`);
+      const fresh = await res.json() as TradelineResponse;
+      // Step 3: push fresh data into React Query cache immediately — no race possible
+      queryClient.setQueryData(cacheKey, fresh);
+    } catch {
+      toast({ title: "Refresh failed", description: "Could not reload credit data. Try again.", variant: "destructive" });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
   const arrayError = arrayErrorRaw ? (arrayErrorRaw instanceof Error ? arrayErrorRaw : new Error(String(arrayErrorRaw))) : null;
 
