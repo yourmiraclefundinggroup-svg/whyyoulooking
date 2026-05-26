@@ -464,29 +464,46 @@ function parseArrayReport(rawData: unknown): TradelineResponse | null {
 
   if (!Array.isArray(rawAccounts) || rawAccounts.length === 0) return null;
 
-  const tradelines: AnalyzedTradeline[] = rawAccounts.map((acct: any) => {
-    const bureaus = (acct.bureaus || acct.reportingBureaus || []).map(normBureau);
-    const bureau = acct.bureau || acct.reportingBureau || acct.bureauCode
+  // Per-bureau expansion: if an account reports to multiple bureaus, emit one row per bureau.
+  // This ensures TransUnion:20 + Equifax:7 + Experian:28 = 55 total rows, matching bureau counts.
+  // Deduplication key prevents overcounting when mixed shapes exist.
+  const seenKeys = new Set<string>();
+  const tradelines: AnalyzedTradeline[] = rawAccounts.flatMap((acct: any) => {
+    const bureauList: string[] = (acct.bureaus || acct.reportingBureaus || [])
+      .map(normBureau).filter(Boolean);
+    const singleBureau: string | undefined = (acct.bureau || acct.reportingBureau || acct.bureauCode)
       ? normBureau(acct.bureau || acct.reportingBureau || acct.bureauCode || "")
       : undefined;
-    return {
-      creditor: acct.creditorName || acct.name || acct.furnisherName || acct.subscriberName || "Unknown Creditor",
-      accountNumber: acct.accountNumber || acct.number || acct.accountId || "Unknown",
-      accountType: acct.accountType || acct.type || "other",
-      balance: String(acct.balance ?? acct.currentBalance ?? 0).replace(/[^0-9.]/g, ""),
-      status: acct.status || acct.accountStatus || acct.paymentStatus || "",
-      dateOpened: acct.dateOpened || acct.openDate || acct.openedDate || "",
-      dateOfFirstDelinquency: acct.dateOfFirstDelinquency || acct.firstDelinquencyDate,
-      latePayments: {
-        days30: acct.latePayments30 || acct.monthsLate30 || 0,
-        days60: acct.latePayments60 || acct.monthsLate60 || 0,
-        days90: acct.latePayments90 || acct.monthsLate90 || 0,
-      },
-      violations: [],
-      isDerogatory: isNegative(acct),
-      bureaus: bureaus.length ? bureaus : undefined,
-      bureau,
-    };
+    // Which bureaus to expand into rows
+    const expandTo: (string | undefined)[] =
+      bureauList.length > 1 ? bureauList :
+      bureauList.length === 1 ? [bureauList[0]] :
+      [singleBureau];
+
+    return expandTo.map((b): AnalyzedTradeline | null => {
+      const acctNum = acct.accountNumber || acct.number || acct.accountId || "Unknown";
+      const credName = acct.creditorName || acct.name || acct.furnisherName || acct.subscriberName || "Unknown Creditor";
+      const key = `${acctNum}|${credName}|${b || ""}`;
+      if (seenKeys.has(key)) return null;
+      seenKeys.add(key);
+      return {
+        creditor: credName,
+        accountNumber: acctNum,
+        accountType: acct.accountType || acct.type || "other",
+        balance: String(acct.balance ?? acct.currentBalance ?? 0).replace(/[^0-9.]/g, ""),
+        status: acct.status || acct.accountStatus || acct.paymentStatus || "",
+        dateOpened: acct.dateOpened || acct.openDate || acct.openedDate || "",
+        dateOfFirstDelinquency: acct.dateOfFirstDelinquency || acct.firstDelinquencyDate,
+        latePayments: {
+          days30: acct.latePayments30 || acct.monthsLate30 || 0,
+          days60: acct.latePayments60 || acct.monthsLate60 || 0,
+          days90: acct.latePayments90 || acct.monthsLate90 || 0,
+        },
+        violations: [],
+        isDerogatory: isNegative(acct),
+        bureau: b,
+      };
+    }).filter((r): r is AnalyzedTradeline => r !== null);
   });
 
   const inquiries = rawInquiries.map((inq: any) => ({

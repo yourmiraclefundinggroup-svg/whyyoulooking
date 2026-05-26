@@ -9597,22 +9597,41 @@ ${denialLetterText}`
                 reportData?.creditReport?.accounts ??
                 reportData?.payload?.accounts ??
                 [];
-              const rawTradelines = (Array.isArray(rawAccountsArr) ? rawAccountsArr : []).map((acct: ArrAcct) => ({
-                creditor: acct.creditorName || acct.name || acct.furnisherName || acct.subscriberName || "Unknown Creditor",
-                accountNumber: acct.accountNumber || acct.number || acct.accountId || "Unknown",
-                accountType: acct.accountType || acct.type || "other",
-                balance: acct.balance !== undefined ? String(acct.balance).replace(/[^0-9.]/g, "") : (acct.currentBalance !== undefined ? String(acct.currentBalance).replace(/[^0-9.]/g, "") : "0"),
-                status: acct.status || acct.accountStatus || acct.paymentStatus || "",
-                dateOpened: acct.dateOpened || acct.openDate || "",
-                dateOfFirstDelinquency: acct.dateOfFirstDelinquency || acct.firstDelinquencyDate || undefined,
-                latePayments: {
-                  days30: acct.latePayments30 || acct.monthsLate30 || acct.late30 || 0,
-                  days60: acct.latePayments60 || acct.monthsLate60 || acct.late60 || 0,
-                  days90: acct.latePayments90 || acct.monthsLate90 || acct.late90 || 0,
-                },
-                bureaus: (acct.bureaus || acct.reportingBureaus)?.map(normB),
-                bureau: (acct.bureau || acct.reportingBureau || acct.bureauCode) ? normB(acct.bureau || acct.reportingBureau || acct.bureauCode || "") : undefined,
-              }));
+              // Per-bureau expansion: one row per reporting bureau.
+              // Accounts with bureaus:["EXPERIAN","TRANSUNION"] become 2 rows, matching bureau counts.
+              const seenTlKeys = new Set<string>();
+              const rawTradelines = (Array.isArray(rawAccountsArr) ? rawAccountsArr : []).flatMap((acct: ArrAcct) => {
+                const bureauList = (acct.bureaus || acct.reportingBureaus || []).map(normB).filter(Boolean);
+                const singleBureau = (acct.bureau || acct.reportingBureau || acct.bureauCode)
+                  ? normB(acct.bureau || acct.reportingBureau || acct.bureauCode || "")
+                  : undefined;
+                const expandTo: (string | undefined)[] =
+                  bureauList.length > 1 ? bureauList :
+                  bureauList.length === 1 ? [bureauList[0]] :
+                  [singleBureau];
+                const acctNum = acct.accountNumber || acct.number || acct.accountId || "Unknown";
+                const credName = acct.creditorName || acct.name || acct.furnisherName || acct.subscriberName || "Unknown Creditor";
+                return expandTo.map(b => {
+                  const key = `${acctNum}|${credName}|${b || ""}`;
+                  if (seenTlKeys.has(key)) return null;
+                  seenTlKeys.add(key);
+                  return {
+                    creditor: credName,
+                    accountNumber: acctNum,
+                    accountType: acct.accountType || acct.type || "other",
+                    balance: acct.balance !== undefined ? String(acct.balance).replace(/[^0-9.]/g, "") : (acct.currentBalance !== undefined ? String(acct.currentBalance).replace(/[^0-9.]/g, "") : "0"),
+                    status: acct.status || acct.accountStatus || acct.paymentStatus || "",
+                    dateOpened: acct.dateOpened || acct.openDate || "",
+                    dateOfFirstDelinquency: acct.dateOfFirstDelinquency || acct.firstDelinquencyDate || undefined,
+                    latePayments: {
+                      days30: acct.latePayments30 || acct.monthsLate30 || acct.late30 || 0,
+                      days60: acct.latePayments60 || acct.monthsLate60 || acct.late60 || 0,
+                      days90: acct.latePayments90 || acct.monthsLate90 || acct.late90 || 0,
+                    },
+                    bureau: b,
+                  };
+                }).filter(Boolean);
+              });
               const rawInquiries =
                 reportData?.inquiries ??
                 reportData?.hardInquiries ??
