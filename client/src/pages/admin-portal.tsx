@@ -756,11 +756,11 @@ function ArrayEnrollmentDialog({ client, enrollmentData, onSuccess }: {
 function ArrayEnrollmentBadge({ client }: { client: User }) {
   const queryClient = useQueryClient();
   const clientId = client.id;
+  const token = localStorage.getItem("auth_token") || "";
 
   const { data, isLoading } = useQuery<{ enrolled: boolean; productCodes: string[]; enrolledAt: string | null; lastTokenIssuedAt: string | null }>({
     queryKey: ["/api/admin/array/enrollments", clientId],
     queryFn: async () => {
-      const token = localStorage.getItem("auth_token") || "";
       const res = await fetch("/api/admin/array/enrollments", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -774,6 +774,18 @@ function ArrayEnrollmentBadge({ client }: { client: User }) {
     staleTime: 60000,
   });
 
+  const { data: cacheData } = useQuery<{ cached: boolean; source?: string; fetchedAt?: string; ageMinutes?: number; isValid?: boolean }>({
+    queryKey: ["/api/admin/users", clientId, "credit-cache"],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/users/${clientId}/credit-cache`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return { cached: false };
+      return res.json();
+    },
+    staleTime: 60000,
+  });
+
   const handleEnrollSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ["/api/admin/array/enrollments", clientId] });
     queryClient.invalidateQueries({ queryKey: ["/api/admin/array/enrollments"] });
@@ -781,6 +793,12 @@ function ArrayEnrollmentBadge({ client }: { client: User }) {
 
   const lastSeenLabel = data?.lastTokenIssuedAt
     ? new Date(data.lastTokenIssuedAt).toLocaleString(undefined, {
+        month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+      })
+    : null;
+
+  const cacheLabel = cacheData?.cached && cacheData.fetchedAt
+    ? new Date(cacheData.fetchedAt).toLocaleString(undefined, {
         month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
       })
     : null;
@@ -811,6 +829,13 @@ function ArrayEnrollmentBadge({ client }: { client: User }) {
         {lastSeenLabel && (
           <span className="text-xs text-[hsl(var(--admin-text-muted))]">
             Last token: {lastSeenLabel}
+          </span>
+        )}
+        {cacheLabel && (
+          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${cacheData?.isValid ? "text-blue-400 border-blue-500/30 bg-blue-500/10" : "text-zinc-500 border-zinc-500/20 bg-zinc-500/10"}`}>
+            <span className={`w-1.5 h-1.5 rounded-full inline-block ${cacheData?.isValid ? "bg-blue-400" : "bg-zinc-500"}`} />
+            Report cached {cacheData!.ageMinutes! < 60 ? `${cacheData!.ageMinutes}m ago` : `${Math.round(cacheData!.ageMinutes! / 60)}h ago`}
+            {cacheData?.source === "credit_file" && <span className="ml-1 opacity-60">· PDF</span>}
           </span>
         )}
         {!isLoading && (

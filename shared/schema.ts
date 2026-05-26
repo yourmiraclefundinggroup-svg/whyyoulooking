@@ -1302,6 +1302,20 @@ export const deletionEvents = pgTable("deletion_events", {
   deletedAt: timestamp("deleted_at").defaultNow().notNull(),
 });
 
+// Credit Report Cache — stores the last successfully fetched/parsed report per user (24h TTL)
+export const creditReportCache = pgTable("credit_report_cache", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  data: jsonb("data").notNull(),
+  source: text("source").notNull().default("array"), // 'array' | 'pdf'
+  fetchedAt: timestamp("fetched_at").defaultNow().notNull(),
+  invalidatedAt: timestamp("invalidated_at"),
+});
+
+export const insertCreditReportCacheSchema = createInsertSchema(creditReportCache).omit({ id: true, fetchedAt: true, invalidatedAt: true });
+export type CreditReportCacheEntry = typeof creditReportCache.$inferSelect;
+export type InsertCreditReportCache = z.infer<typeof insertCreditReportCacheSchema>;
+
 export const insertLeadSchema = createInsertSchema(leads).omit({ id: true, createdAt: true, stageUpdatedAt: true });
 export const insertAffiliateSchema = createInsertSchema(affiliates).omit({ id: true, createdAt: true });
 export const insertAffiliateSignupSchema = createInsertSchema(affiliateSignups).omit({ id: true, createdAt: true });

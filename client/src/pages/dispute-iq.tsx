@@ -39,6 +39,8 @@ interface TradelineResponse {
   source?: string;
   fileName?: string;
   note?: string;
+  fromCache?: boolean;
+  cachedAt?: string;
 }
 
 interface SavedLetter {
@@ -617,6 +619,8 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
   // ── Credit file pull — server-side via /api/client/array/tradelines ─────────
   // The server tries the live credit API first, then falls back to the client's
   // most recently uploaded and parsed PDF credit report stored in the database.
+  const [forceRefresh, setForceRefresh] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const tradelinesUrl = clientId
     ? `/api/client/array/tradelines?clientId=${clientId}`
     : "/api/client/array/tradelines";
@@ -627,10 +631,11 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
     error: arrayErrorRaw,
     refetch: refetchArray,
   } = useQuery<TradelineResponse>({
-    queryKey: ["/api/client/array/tradelines", clientId ?? "self"],
+    queryKey: ["/api/client/array/tradelines", clientId ?? "self", forceRefresh],
     queryFn: async () => {
       const token = localStorage.getItem("auth_token");
-      const res = await fetch(tradelinesUrl, {
+      const url = forceRefresh ? `${tradelinesUrl}${tradelinesUrl.includes("?") ? "&" : "?"}refresh=true` : tradelinesUrl;
+      const res = await fetch(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error(`${res.status}`);
@@ -640,6 +645,13 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
+
+  const handleRefreshCache = async () => {
+    setIsRefreshing(true);
+    setForceRefresh(true);
+    setTimeout(() => setForceRefresh(false), 500);
+    await refetchArray().finally(() => setIsRefreshing(false));
+  };
   const arrayError = arrayErrorRaw ? (arrayErrorRaw instanceof Error ? arrayErrorRaw : new Error(String(arrayErrorRaw))) : null;
 
   // ── PDF upload mutation ───────────────────────────────────────────────────
@@ -1411,6 +1423,21 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                         <span style={{ fontSize: 13, fontWeight: 500, color: "#111827", textAlign: "right", maxWidth: 190, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</span>
                       </div>
                     ))}
+                    {source === "array" && activeData?.fromCache && (
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 18px", background: "#eff6ff", borderTop: "1px solid #dbeafe" }}>
+                        <span style={{ fontSize: 12, color: "#3b82f6", display: "flex", alignItems: "center", gap: 5 }}>
+                          <span style={{ fontSize: 14 }}>⚡</span>
+                          Loaded from cache
+                        </span>
+                        <button
+                          onClick={handleRefreshCache}
+                          disabled={isRefreshing}
+                          style={{ fontSize: 12, color: isRefreshing ? "#9ca3af" : "#2563eb", background: "none", border: "1px solid #bfdbfe", borderRadius: 6, padding: "3px 10px", cursor: isRefreshing ? "not-allowed" : "pointer", fontWeight: 500 }}
+                        >
+                          {isRefreshing ? "Refreshing…" : "↻ Refresh"}
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Right: Issues Found */}

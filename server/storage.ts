@@ -9,8 +9,9 @@ import {
   studentLoans, loanNegotiations, loanDocuments,
   creditReportUploads, creditReportAccounts, creditReportInquiries, creditReportCollections,
   creditReportPublicRecords, disputeItems, disputeLettersNew, disputeCalendarEvents,
-  leads, affiliates, affiliateSignups, deletionEvents, creditScoreHistory,
+  leads, affiliates, affiliateSignups, deletionEvents, creditScoreHistory, creditReportCache,
   type CreditScoreHistory, type InsertCreditScoreHistory,
+  type CreditReportCacheEntry,
   type User,
   type InsertUser,
   type CreditReport, type InsertCreditReport,
@@ -330,6 +331,11 @@ export interface IStorage {
   // Credit Score History
   createCreditScoreHistory(entry: InsertCreditScoreHistory): Promise<CreditScoreHistory>;
   getCreditScoreHistory(userId: number): Promise<CreditScoreHistory[]>;
+
+  // Credit Report Cache
+  getCreditReportCache(userId: number): Promise<CreditReportCacheEntry | undefined>;
+  setCreditReportCache(userId: number, data: any, source: string): Promise<void>;
+  invalidateCreditReportCache(userId: number): Promise<void>;
 
   // Client dashboard stats
   getClientStats(userId: number, subscriptionTier: string): Promise<{
@@ -1056,6 +1062,28 @@ export class DatabaseStorage implements IStorage {
 
   async getCreditScoreHistory(userId: number): Promise<CreditScoreHistory[]> {
     return await db.select().from(creditScoreHistory).where(eq(creditScoreHistory.userId, userId)).orderBy(creditScoreHistory.recordedAt);
+  }
+
+  async getCreditReportCache(userId: number): Promise<CreditReportCacheEntry | undefined> {
+    const [entry] = await db.select().from(creditReportCache).where(eq(creditReportCache.userId, userId));
+    return entry || undefined;
+  }
+
+  async setCreditReportCache(userId: number, data: any, source: string): Promise<void> {
+    await db
+      .insert(creditReportCache)
+      .values({ userId, data, source })
+      .onConflictDoUpdate({
+        target: creditReportCache.userId,
+        set: { data, source, fetchedAt: new Date(), invalidatedAt: null },
+      });
+  }
+
+  async invalidateCreditReportCache(userId: number): Promise<void> {
+    await db
+      .update(creditReportCache)
+      .set({ invalidatedAt: new Date() })
+      .where(eq(creditReportCache.userId, userId));
   }
 
   async getClientStats(userId: number, subscriptionTier: string) {
@@ -2562,6 +2590,28 @@ export class MemStorage implements IStorage {
 
   async getCreditScoreHistory(userId: number): Promise<CreditScoreHistory[]> {
     return await db.select().from(creditScoreHistory).where(eq(creditScoreHistory.userId, userId)).orderBy(creditScoreHistory.recordedAt);
+  }
+
+  async getCreditReportCache(userId: number): Promise<CreditReportCacheEntry | undefined> {
+    const [entry] = await db.select().from(creditReportCache).where(eq(creditReportCache.userId, userId));
+    return entry || undefined;
+  }
+
+  async setCreditReportCache(userId: number, data: any, source: string): Promise<void> {
+    await db
+      .insert(creditReportCache)
+      .values({ userId, data, source })
+      .onConflictDoUpdate({
+        target: creditReportCache.userId,
+        set: { data, source, fetchedAt: new Date(), invalidatedAt: null },
+      });
+  }
+
+  async invalidateCreditReportCache(userId: number): Promise<void> {
+    await db
+      .update(creditReportCache)
+      .set({ invalidatedAt: new Date() })
+      .where(eq(creditReportCache.userId, userId));
   }
 
   async getClientStats(userId: number, subscriptionTier: string) {

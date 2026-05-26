@@ -9448,6 +9448,24 @@ ${denialLetterText}`
         if (!isNaN(parsed)) userId = parsed;
       }
 
+      // ── Cache check (24h TTL) ─────────────────────────────────────────────
+      const forceRefresh = req.query.refresh === "true";
+      if (!forceRefresh) {
+        try {
+          const cached = await storage.getCreditReportCache(userId);
+          if (cached) {
+            const ageMs = Date.now() - new Date(cached.fetchedAt).getTime();
+            const notInvalidated = !cached.invalidatedAt || new Date(cached.invalidatedAt) < new Date(cached.fetchedAt);
+            if (ageMs < 24 * 60 * 60 * 1000 && notInvalidated) {
+              console.log(`[CreditFile] Cache HIT for user ${userId} (age ${Math.round(ageMs / 60000)}m)`);
+              return res.json({ ...(cached.data as object), cachedAt: cached.fetchedAt.toISOString(), fromCache: true });
+            }
+          }
+        } catch (cacheErr) {
+          console.log(`[CreditFile] Cache read error (non-fatal):`, (cacheErr as Error).message);
+        }
+      }
+
       const { analyzeAllTradelines, analyzeTradelineViolations, isNegativeTradeline } = await import("./violation-analysis");
 
       // ── Helper: build response from raw tradeline list + inquiries ────────
@@ -9640,7 +9658,9 @@ ${denialLetterText}`
                 reportData?.creditReport?.inquiries ??
                 [];
               console.log(`[CreditFile] Array live data for user ${userId}: ${rawTradelines.length} accounts, ${(Array.isArray(rawInquiries) ? rawInquiries : []).length} inquiries`);
-              return res.json(buildResponse(rawTradelines, Array.isArray(rawInquiries) ? rawInquiries : [], "array"));
+              const arrayResponseData = buildResponse(rawTradelines, Array.isArray(rawInquiries) ? rawInquiries : [], "array");
+              storage.setCreditReportCache(userId, arrayResponseData, "array").catch(() => {});
+              return res.json(arrayResponseData);
             }
           } catch (err) {
             console.log(`[CreditFile] Array API block error:`, (err as Error).message);
@@ -9741,11 +9761,45 @@ ${denialLetterText}`
       }));
 
       console.log(`[CreditFile] DB fallback for user ${userId}: ${rawTradelines.length} accounts, ${rawInquiries.length} inquiries from ${latest.fileName || latest.file_name}`);
-      return res.json(buildResponse(rawTradelines, rawInquiries, "credit_file", latest.fileName || latest.file_name, latest.bureau));
+      const dbResponseData = buildResponse(rawTradelines, rawInquiries, "credit_file", latest.fileName || latest.file_name, latest.bureau);
+      storage.setCreditReportCache(userId, dbResponseData, "credit_file").catch(() => {});
+      return res.json(dbResponseData);
 
     } catch (error: any) {
       console.error("[CreditFile] Client tradeline fetch error:", error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ── Client: invalidate their own credit report cache (force next load to refetch) ──
+  app.delete("/api/client/array/tradelines/cache", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      await storage.invalidateCreditReportCache(user.id);
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Admin: get credit report cache metadata for a client ─────────────────
+  app.get("/api/admin/users/:id/credit-cache", authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      if (isNaN(clientId)) return res.status(400).json({ error: "Invalid id" });
+      const cached = await storage.getCreditReportCache(clientId);
+      if (!cached) return res.json({ cached: false });
+      const ageMs = Date.now() - new Date(cached.fetchedAt).getTime();
+      const isValid = !cached.invalidatedAt || new Date(cached.invalidatedAt) < new Date(cached.fetchedAt);
+      res.json({
+        cached: true,
+        source: cached.source,
+        fetchedAt: cached.fetchedAt.toISOString(),
+        ageMinutes: Math.round(ageMs / 60000),
+        isValid,
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
     }
   });
 
