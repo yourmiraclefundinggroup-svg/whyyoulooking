@@ -116,6 +116,7 @@ export default function Signup() {
   const [aiConsent2, setAiConsent2] = useState(false);
   const [aiConsent3, setAiConsent3] = useState(false);
   const [aiConsent4, setAiConsent4] = useState(false);
+  const [aiConsent5, setAiConsent5] = useState(false);
   const [aiConsentAcceptedAt, setAiConsentAcceptedAt] = useState<string | null>(null);
 
   const [firstName, setFirstName] = useState("");
@@ -218,7 +219,7 @@ export default function Signup() {
   };
 
   const handleAllAiChecked = () => {
-    const allChecked = aiConsent1 && aiConsent2 && aiConsent3 && aiConsent4;
+    const allChecked = aiConsent1 && aiConsent2 && aiConsent3 && aiConsent4 && aiConsent5;
     if (allChecked && !aiConsentAcceptedAt) {
       setAiConsentAcceptedAt(new Date().toISOString());
     }
@@ -233,7 +234,7 @@ export default function Signup() {
       return true;
     }
     if (step === 1) {
-      if (!aiConsent1 || !aiConsent2 || !aiConsent3 || !aiConsent4) {
+      if (!aiConsent1 || !aiConsent2 || !aiConsent3 || !aiConsent4 || !aiConsent5) {
         toast({ title: "AI Consent Required", description: "Please acknowledge all AI data processing disclosures to continue.", variant: "destructive" });
         return false;
       }
@@ -374,7 +375,7 @@ export default function Signup() {
     setIsSubmitting(false);
   };
 
-  const allAiChecked = aiConsent1 && aiConsent2 && aiConsent3 && aiConsent4;
+  const allAiChecked = aiConsent1 && aiConsent2 && aiConsent3 && aiConsent4 && aiConsent5;
 
   return (
     <div className="min-h-screen signup-page" style={{ background: "#F1E8DA" }}>
@@ -507,7 +508,10 @@ export default function Signup() {
                       Acknowledge Disclosure <span className="text-red-500">*</span>
                     </span>
                     <span className="text-xs leading-relaxed" style={{ color: "#5B5652" }}>
-                      I have received and read this Consumer Credit Rights Disclosure and understand my right to cancel within 3 business days.
+                      I have received and read this Consumer Credit Rights Disclosure and understand my right to cancel within 3 business days, and I agree to the{" "}
+                      <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline font-medium" style={{ color: "#7C6BCB" }} onClick={(e) => e.stopPropagation()}>Terms of Service</a>
+                      {" "}and{" "}
+                      <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline font-medium" style={{ color: "#7C6BCB" }} onClick={(e) => e.stopPropagation()}>Privacy Policy</a>.
                     </span>
                   </label>
                 </div>
@@ -545,7 +549,7 @@ export default function Signup() {
                     color: "#5B5652",
                   }}
                 >
-                  Step 2 of 5 — All four items must be acknowledged to continue.
+                  Step 2 of 5 — All five items must be acknowledged to continue.
                 </div>
 
                 <div className="space-y-3">
@@ -554,25 +558,43 @@ export default function Signup() {
                       id: "aiConsent1",
                       checked: aiConsent1,
                       onChange: (c: boolean) => { setAiConsent1(c); if (c) handleAllAiChecked(); },
+                      node: null as React.ReactNode,
                       text: "I understand that ScoreShift uses artificial intelligence (AI) technology, including services from Anthropic and OpenAI, to read and analyze my credit report data including my name, address, account information, payment history, and other personal financial information.",
                     },
                     {
                       id: "aiConsent2",
                       checked: aiConsent2,
                       onChange: (c: boolean) => { setAiConsent2(c); if (c) handleAllAiChecked(); },
+                      node: null as React.ReactNode,
                       text: "I understand my credit report data may be processed by third-party AI providers (Anthropic, PBC and OpenAI, LLC) to generate dispute letters and analysis. My data is not used to train AI models.",
                     },
                     {
                       id: "aiConsent3",
                       checked: aiConsent3,
                       onChange: (c: boolean) => { setAiConsent3(c); if (c) handleAllAiChecked(); },
+                      node: null as React.ReactNode,
                       text: "I understand my information is stored securely in encrypted cloud databases. ScoreShift uses industry-standard security to protect my data.",
                     },
                     {
                       id: "aiConsent4",
                       checked: aiConsent4,
                       onChange: (c: boolean) => { setAiConsent4(c); if (c) handleAllAiChecked(); },
+                      node: null as React.ReactNode,
                       text: "I understand I can request deletion of my personal data at any time by contacting support@scoreshiftapp.com, and that ScoreShift retains data for 2 years after account closure unless deletion is requested.",
+                    },
+                    {
+                      id: "aiConsent5",
+                      checked: aiConsent5,
+                      onChange: (c: boolean) => { setAiConsent5(c); if (c) handleAllAiChecked(); },
+                      text: "",
+                      node: (
+                        <>
+                          I authorize ScoreShift and Array US, Inc. to access my credit report and credit score data from one or more consumer reporting agencies (Experian, Equifax, TransUnion) for the permissible purpose of providing credit repair, dispute preparation, and credit monitoring services as described in the{" "}
+                          <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline font-medium" style={{ color: "#7C6BCB" }} onClick={(e) => e.stopPropagation()}>Terms of Service</a>
+                          {" "}and{" "}
+                          <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline font-medium" style={{ color: "#7C6BCB" }} onClick={(e) => e.stopPropagation()}>Privacy Policy</a>.
+                        </>
+                      ),
                     },
                   ].map((item) => (
                     <div
@@ -591,7 +613,7 @@ export default function Signup() {
                         className="mt-0.5 shrink-0"
                       />
                       <label htmlFor={item.id} className="cursor-pointer text-sm leading-relaxed" style={{ color: "#4A4541" }}>
-                        {item.text}
+                        {item.node ?? item.text}
                       </label>
                     </div>
                   ))}
