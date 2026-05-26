@@ -612,6 +612,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [showFlow, setShowFlow] = useState(false);
   const [resultTab, setResultTab] = useState<"overview" | "all" | "derogatory" | "late" | "inquiries" | "collections">("overview");
+  const [bureauFilter, setBureauFilter] = useState<string>("ALL");
 
   // ── Credit file pull — server-side via /api/client/array/tradelines ─────────
   // The server tries the live credit API first, then falls back to the client's
@@ -1209,6 +1210,19 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
   const negLate = negativeTradelines.filter(t => latePaymentAccounts.includes(t));
   const negCollections = negativeTradelines.filter(t => collections.includes(t));
 
+  // ── Bureau filter ─────────────────────────────────────────────────────────
+  // Collect distinct bureaus present in data (preferred display order)
+  const BUREAU_ORDER = ["EXPERIAN", "EQUIFAX", "TRANSUNION"];
+  const allBureausInData = BUREAU_ORDER.filter(b =>
+    allTradelines.some(t => (t.bureau || "").toUpperCase() === b)
+  );
+  const filterByBureau = <T extends { bureau?: string }>(arr: T[]): T[] =>
+    bureauFilter === "ALL" ? arr : arr.filter(t => (t.bureau || "").toUpperCase() === bureauFilter);
+  const visibleAll        = filterByBureau(allTradelines);
+  const visibleNeg        = filterByBureau(negativeTradelines);
+  const visibleLate       = filterByBureau(negLate);
+  const visibleCollections = filterByBureau(negCollections);
+
   const RESULT_TABS = [
     { id: "overview", label: "Overview" },
     { id: "all", label: `All Accounts (${allTradelines.length})` },
@@ -1233,7 +1247,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
             </div>
           )}
           <button
-            onClick={() => { setSource(null); setUploadResult(null); setSelectedKeys(new Set()); setResultTab("overview"); }}
+            onClick={() => { setSource(null); setUploadResult(null); setSelectedKeys(new Set()); setResultTab("overview"); setBureauFilter("ALL"); }}
             style={{ background: "none", border: "1px solid #e5e7eb", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontSize: 13, color: "#374151" }}
           >
             ← Change Source
@@ -1333,7 +1347,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
               </div>
 
               {/* ── Result tab bar ────────────────────────────────────────── */}
-              <div style={{ display: "flex", gap: 0, borderBottom: "2px solid #e5e7eb", marginBottom: 20, overflowX: "auto" }}>
+              <div style={{ display: "flex", gap: 0, borderBottom: "2px solid #e5e7eb", marginBottom: 14, overflowX: "auto" }}>
                 {RESULT_TABS.map(({ id, label }) => (
                   <button key={id} onClick={() => setResultTab(id as typeof resultTab)}
                     style={{
@@ -1347,6 +1361,31 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                   </button>
                 ))}
               </div>
+
+              {/* ── Bureau filter chips ───────────────────────────────────── */}
+              {resultTab !== "overview" && allBureausInData.length > 0 && (
+                <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", marginRight: 4 }}>BUREAU</span>
+                  {(["ALL", ...allBureausInData] as string[]).map(bf => {
+                    const label = bf === "ALL" ? "All Bureaus" : (BUREAU_LABELS[bf] || bf);
+                    const count = bf === "ALL" ? allTradelines.length : allTradelines.filter(t => (t.bureau || "").toUpperCase() === bf).length;
+                    const clr = bf !== "ALL" ? BUREAU_COLORS[bf] : null;
+                    const isActive = bureauFilter === bf;
+                    return (
+                      <button key={bf} onClick={() => setBureauFilter(bf)}
+                        style={{
+                          padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600,
+                          cursor: "pointer", border: "1.5px solid", transition: "all 0.12s",
+                          background: isActive ? (clr?.bg || "#fffbeb") : "#f9fafb",
+                          color: isActive ? (clr?.text || "#92400e") : "#6b7280",
+                          borderColor: isActive ? (clr?.border || "#fcd34d") : "#e5e7eb",
+                        }}>
+                        {label} <span style={{ opacity: 0.65, marginLeft: 2, fontWeight: 500 }}>{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* ── Overview tab ─────────────────────────────────────────── */}
               {resultTab === "overview" && (
@@ -1466,12 +1505,17 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                 allTradelines.length === 0
                   ? <EmptyState icon="📋" title="No Accounts Found" description="No accounts were detected on this report." />
                   : <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
-                      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 110px 150px 90px", padding: "9px 20px", background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
-                        {["", "CREDITOR", "BALANCE", "STATUS", "TYPE"].map((h) => (
+                      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 110px 140px 90px", padding: "9px 20px", background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                        {["", "CREDITOR", "BUREAU", "BALANCE", "STATUS", "TYPE"].map((h) => (
                           <span key={h} style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em" }}>{h}</span>
                         ))}
                       </div>
-                      {allTradelines.map((t, i) => {
+                      {visibleAll.length === 0 && (
+                        <div style={{ padding: "28px 20px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
+                          No accounts from {BUREAU_LABELS[bureauFilter] || bureauFilter} in this report.
+                        </div>
+                      )}
+                      {visibleAll.map((t, i) => {
                         const negIdx = negativeTradelines.indexOf(t);
                         const isNeg = negIdx >= 0;
                         const key = `${t.creditor}_${negIdx}`;
@@ -1479,7 +1523,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                         const isLocked = !isSelected && disputeLimit !== null && selectedKeys.size >= disputeLimit;
                         return (
                           <div key={i} onClick={isNeg && !isLocked ? () => toggleSelect(key) : undefined}
-                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 110px 150px 90px", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: isNeg ? "pointer" : "default" }}>
+                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 110px 140px 90px", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: isNeg ? "pointer" : "default" }}>
                             <div>
                               {isNeg && <div style={{ width: 18, height: 18, borderRadius: "50%", border: isSelected ? "6px solid #d97706" : "2px solid #d1d5db", background: "#fff" }} />}
                             </div>
@@ -1487,6 +1531,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                               <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
                               {t.accountNumber && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{t.accountNumber}</div>}
                             </div>
+                            <div>{t.bureau ? <BureauBadge bureau={t.bureau} /> : <span style={{ color: "#d1d5db", fontSize: 12 }}>—</span>}</div>
                             <div style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
                               {t.balance && t.balance !== "0" ? `$${Number(t.balance).toLocaleString()}` : "--"}
                             </div>
@@ -1511,15 +1556,20 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                       <div style={{ padding: "13px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 16 }}>⊗</span>
                         <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Derogatory Accounts</span>
-                        <span style={{ marginLeft: "auto", background: "#dc2626", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{negativeTradelines.length}</span>
+                        <span style={{ marginLeft: "auto", background: "#dc2626", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{visibleNeg.length}</span>
                       </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 100px 140px 90px minmax(160px,1fr)", padding: "9px 20px", background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
-                        {["", "CREDITOR", "BALANCE", "STATUS", "SEVERITY", "STRATEGY"].map((h) => (
+                      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 100px 140px 90px minmax(160px,1fr)", padding: "9px 20px", background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                        {["", "CREDITOR", "BUREAU", "BALANCE", "STATUS", "SEVERITY", "STRATEGY"].map((h) => (
                           <span key={h} style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em" }}>{h}</span>
                         ))}
                       </div>
-                      {negativeTradelines.map((t, i) => {
-                        const key = `${t.creditor}_${i}`;
+                      {visibleNeg.length === 0 && (
+                        <div style={{ padding: "28px 20px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
+                          No derogatory accounts from {BUREAU_LABELS[bureauFilter] || bureauFilter} in this report.
+                        </div>
+                      )}
+                      {visibleNeg.map((t, i) => {
+                        const key = `${t.creditor}_${negativeTradelines.indexOf(t)}`;
                         const isSelected = selectedKeys.has(key);
                         const isLocked = !isSelected && disputeLimit !== null && selectedKeys.size >= disputeLimit;
                         const status = t.status || "Derogatory";
@@ -1527,12 +1577,13 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                         const sev = sl.includes("charge-off") || sl.includes("collection") ? "Critical" : "High";
                         return (
                           <div key={i} onClick={!isLocked ? () => toggleSelect(key) : undefined}
-                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 100px 140px 90px minmax(160px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: "pointer" }}>
+                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 100px 140px 90px minmax(160px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: "pointer" }}>
                             <div style={{ width: 18, height: 18, borderRadius: "50%", border: isSelected ? "6px solid #d97706" : "2px solid #d1d5db", background: "#fff", flexShrink: 0 }} />
                             <div>
                               <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
                               {t.accountNumber && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{t.accountNumber}</div>}
                             </div>
+                            <div>{t.bureau ? <BureauBadge bureau={t.bureau} /> : <span style={{ color: "#d1d5db", fontSize: 12 }}>—</span>}</div>
                             <div style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
                               {t.balance && t.balance !== "0" ? `$${Number(t.balance).toLocaleString()}` : "--"}
                             </div>
@@ -1557,14 +1608,19 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                       <div style={{ padding: "13px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 16 }}>🕐</span>
                         <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Accounts with Late Payments</span>
-                        <span style={{ marginLeft: "auto", background: "#d97706", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{negLate.length}</span>
+                        <span style={{ marginLeft: "auto", background: "#d97706", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{visibleLate.length}</span>
                       </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 100px 70px 70px 70px minmax(180px,1fr)", padding: "9px 20px", background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
-                        {["", "CREDITOR", "BALANCE", "30 DAYS", "60 DAYS", "90+ DAYS", "STRATEGY"].map((h) => (
+                      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 100px 70px 70px 70px minmax(180px,1fr)", padding: "9px 20px", background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                        {["", "CREDITOR", "BUREAU", "BALANCE", "30 DAYS", "60 DAYS", "90+ DAYS", "STRATEGY"].map((h) => (
                           <span key={h} style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em" }}>{h}</span>
                         ))}
                       </div>
-                      {negLate.map((t) => {
+                      {visibleLate.length === 0 && (
+                        <div style={{ padding: "28px 20px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
+                          No late payment accounts from {BUREAU_LABELS[bureauFilter] || bureauFilter} in this report.
+                        </div>
+                      )}
+                      {visibleLate.map((t) => {
                         const i = negativeTradelines.indexOf(t);
                         const key = `${t.creditor}_${i}`;
                         const isSelected = selectedKeys.has(key);
@@ -1574,12 +1630,13 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                         const d90 = t.latePayments?.days90 || 0;
                         return (
                           <div key={i} onClick={!isLocked ? () => toggleSelect(key) : undefined}
-                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 100px 70px 70px 70px minmax(180px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: "pointer" }}>
+                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 100px 70px 70px 70px minmax(180px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: "pointer" }}>
                             <div style={{ width: 18, height: 18, borderRadius: "50%", border: isSelected ? "6px solid #d97706" : "2px solid #d1d5db", background: "#fff", flexShrink: 0 }} />
                             <div>
                               <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
                               {t.accountNumber && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{t.accountNumber}</div>}
                             </div>
+                            <div>{t.bureau ? <BureauBadge bureau={t.bureau} /> : <span style={{ color: "#d1d5db", fontSize: 12 }}>—</span>}</div>
                             <div style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
                               {t.balance && t.balance !== "0" ? `$${Number(t.balance).toLocaleString()}` : "--"}
                             </div>
@@ -1629,14 +1686,19 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                       <div style={{ padding: "13px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 16 }}>🏛</span>
                         <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Collection Accounts</span>
-                        <span style={{ marginLeft: "auto", background: "#ef4444", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{negCollections.length}</span>
+                        <span style={{ marginLeft: "auto", background: "#ef4444", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{visibleCollections.length}</span>
                       </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 100px 80px 100px minmax(180px,1fr)", padding: "9px 20px", background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
-                        {["", "AGENCY", "BALANCE", "STATUS", "SEVERITY", "STRATEGY"].map((h) => (
+                      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 100px 80px 100px minmax(180px,1fr)", padding: "9px 20px", background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                        {["", "AGENCY", "BUREAU", "BALANCE", "STATUS", "SEVERITY", "STRATEGY"].map((h) => (
                           <span key={h} style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em" }}>{h}</span>
                         ))}
                       </div>
-                      {negCollections.map((t) => {
+                      {visibleCollections.length === 0 && (
+                        <div style={{ padding: "28px 20px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
+                          No collections from {BUREAU_LABELS[bureauFilter] || bureauFilter} in this report.
+                        </div>
+                      )}
+                      {visibleCollections.map((t) => {
                         const i = negativeTradelines.indexOf(t);
                         const key = `${t.creditor}_${i}`;
                         const isSelected = selectedKeys.has(key);
@@ -1646,12 +1708,13 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                         const strategy = bal >= 5000 ? "Dispute — Request Full Deletion" : "Validate then Pay-for-Delete";
                         return (
                           <div key={i} onClick={!isLocked ? () => toggleSelect(key) : undefined}
-                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 100px 80px 100px minmax(180px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: "pointer" }}>
+                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 100px 80px 100px minmax(180px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: "pointer" }}>
                             <div style={{ width: 18, height: 18, borderRadius: "50%", border: isSelected ? "6px solid #d97706" : "2px solid #d1d5db", background: "#fff", flexShrink: 0 }} />
                             <div>
                               <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
                               {(t as any).originalCreditor && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{(t as any).originalCreditor}</div>}
                             </div>
+                            <div>{t.bureau ? <BureauBadge bureau={t.bureau} /> : <span style={{ color: "#d1d5db", fontSize: 12 }}>—</span>}</div>
                             <div style={{ fontSize: 13, color: "#dc2626", fontWeight: 600 }}>
                               {t.balance && t.balance !== "0" ? `$${Number(t.balance).toLocaleString()}` : "--"}
                             </div>
