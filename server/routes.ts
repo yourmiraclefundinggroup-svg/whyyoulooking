@@ -9504,7 +9504,9 @@ ${denialLetterText}`
         // data is served by mock.array.io (same URL the web components use).
         const SANDBOX_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
         const TOKEN_BASE_URL = isSandbox ? "https://sandbox.array.io" : "https://api.array.io";
-        // mock.array.io is what the array-credit-report web component hits in sandbox mode
+        // For data: sandbox.array.io is the REST API (same as admin uses);
+        // mock.array.io is the web-component mock server (fallback attempts only).
+        const SANDBOX_DATA_BASE_URL = isSandbox ? "https://sandbox.array.io" : "https://api.array.io";
         const DATA_BASE_URL = isSandbox ? "https://mock.array.io" : "https://api.array.io";
         const SANDBOX_FALLBACK_TOKEN = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
         const appKey = isSandbox ? SANDBOX_APP_KEY : (process.env.ARRAY_APP_KEY || "");
@@ -9530,38 +9532,51 @@ ${denialLetterText}`
           } catch { /* fall through to DB */ }
 
           try {
-            // Try multiple potential endpoints — mock.array.io serves the web component
+            // Try sandbox.array.io first (REST API, same as admin endpoint uses),
+            // then fall back to mock.array.io variants.
             const reportEndpoints = [
+              `${SANDBOX_DATA_BASE_URL}/v2/user/credit-report`,
               `${DATA_BASE_URL}/v2/user/credit-report`,
               `${DATA_BASE_URL}/v1/user/credit-report`,
               `${DATA_BASE_URL}/v2/credit-report`,
+              `${DATA_BASE_URL}/v2/creditreport`,
+              `${DATA_BASE_URL}/api/v2/user/credit-report`,
+              `${DATA_BASE_URL}/v2/report/creditreport`,
+              `${DATA_BASE_URL}/v2/user/credit-report?appKey=${appKey}`,
             ];
             let reportResponse: Response | null = null;
             for (const endpoint of reportEndpoints) {
               try {
                 const r = await fetch(endpoint, {
                   method: "GET",
-                  headers: { Authorization: `Bearer ${userToken}`, "Content-Type": "application/json" },
+                  headers: {
+                    Authorization: `Bearer ${userToken}`,
+                    "Content-Type": "application/json",
+                    "x-array-app-key": appKey,
+                    "x-app-key": appKey,
+                  },
                 });
                 if (r.ok) { reportResponse = r; break; }
                 console.log(`[CreditFile] ${endpoint} → ${r.status}`);
               } catch (e) {
-                console.log(`[CreditFile] ${endpoint} → fetch error:`, e);
+                console.log(`[CreditFile] ${endpoint} → fetch error:`, (e as Error).message);
               }
             }
             if (reportResponse && reportResponse.ok) {
               const reportData: any = await reportResponse.json();
+              // Log top-level keys to help diagnose response shape
+              console.log(`[CreditFile] Array response keys: [${Object.keys(reportData || {}).join(", ")}]`);
               type ArrAcct = {
-                creditorName?: string; name?: string; furnisherName?: string;
+                creditorName?: string; name?: string; furnisherName?: string; subscriberName?: string;
                 accountNumber?: string; number?: string; accountId?: string;
                 accountType?: string; type?: string;
-                balance?: number; currentBalance?: number;
+                balance?: number | string; currentBalance?: number | string;
                 status?: string; accountStatus?: string; paymentStatus?: string;
                 dateOpened?: string; openDate?: string;
                 dateOfFirstDelinquency?: string; firstDelinquencyDate?: string;
-                latePayments30?: number; monthsLate30?: number;
-                latePayments60?: number; monthsLate60?: number;
-                latePayments90?: number; monthsLate90?: number;
+                latePayments30?: number; monthsLate30?: number; late30?: number;
+                latePayments60?: number; monthsLate60?: number; late60?: number;
+                latePayments90?: number; monthsLate90?: number; late90?: number;
                 bureau?: string; reportingBureau?: string; bureauCode?: string;
                 bureaus?: string[]; reportingBureaus?: string[];
               };
@@ -9572,27 +9587,46 @@ ${denialLetterText}`
                 if (u.includes("TRANSUNION") || u === "TU" || u.includes("TRANS")) return "TRANSUNION";
                 return u;
               };
-              const rawTradelines = (reportData?.accounts || reportData?.tradelines || reportData?.data?.accounts || []).map((acct: ArrAcct) => ({
-                creditor: acct.creditorName || acct.name || acct.furnisherName || "Unknown Creditor",
+              // Dig for the accounts array across many possible response shapes
+              const rawAccountsArr =
+                reportData?.accounts ??
+                reportData?.tradelines ??
+                reportData?.data?.accounts ??
+                reportData?.data?.tradelines ??
+                reportData?.report?.accounts ??
+                reportData?.creditReport?.accounts ??
+                reportData?.payload?.accounts ??
+                [];
+              const rawTradelines = (Array.isArray(rawAccountsArr) ? rawAccountsArr : []).map((acct: ArrAcct) => ({
+                creditor: acct.creditorName || acct.name || acct.furnisherName || acct.subscriberName || "Unknown Creditor",
                 accountNumber: acct.accountNumber || acct.number || acct.accountId || "Unknown",
                 accountType: acct.accountType || acct.type || "other",
-                balance: acct.balance !== undefined ? String(acct.balance) : (acct.currentBalance !== undefined ? String(acct.currentBalance) : "0"),
+                balance: acct.balance !== undefined ? String(acct.balance).replace(/[^0-9.]/g, "") : (acct.currentBalance !== undefined ? String(acct.currentBalance).replace(/[^0-9.]/g, "") : "0"),
                 status: acct.status || acct.accountStatus || acct.paymentStatus || "",
                 dateOpened: acct.dateOpened || acct.openDate || "",
                 dateOfFirstDelinquency: acct.dateOfFirstDelinquency || acct.firstDelinquencyDate || undefined,
                 latePayments: {
-                  days30: acct.latePayments30 || acct.monthsLate30 || 0,
-                  days60: acct.latePayments60 || acct.monthsLate60 || 0,
-                  days90: acct.latePayments90 || acct.monthsLate90 || 0,
+                  days30: acct.latePayments30 || acct.monthsLate30 || acct.late30 || 0,
+                  days60: acct.latePayments60 || acct.monthsLate60 || acct.late60 || 0,
+                  days90: acct.latePayments90 || acct.monthsLate90 || acct.late90 || 0,
                 },
                 bureaus: (acct.bureaus || acct.reportingBureaus)?.map(normB),
                 bureau: (acct.bureau || acct.reportingBureau || acct.bureauCode) ? normB(acct.bureau || acct.reportingBureau || acct.bureauCode || "") : undefined,
               }));
-              const rawInquiries = (reportData?.inquiries || reportData?.data?.inquiries || []);
-              console.log(`[CreditFile] Array live data for user ${userId}: ${rawTradelines.length} accounts`);
-              return res.json(buildResponse(rawTradelines, rawInquiries, "array"));
+              const rawInquiries =
+                reportData?.inquiries ??
+                reportData?.hardInquiries ??
+                reportData?.data?.inquiries ??
+                reportData?.report?.inquiries ??
+                reportData?.creditReport?.inquiries ??
+                [];
+              console.log(`[CreditFile] Array live data for user ${userId}: ${rawTradelines.length} accounts, ${(Array.isArray(rawInquiries) ? rawInquiries : []).length} inquiries`);
+              return res.json(buildResponse(rawTradelines, Array.isArray(rawInquiries) ? rawInquiries : [], "array"));
             }
-          } catch { /* fall through to DB */ }
+          } catch (err) {
+            console.log(`[CreditFile] Array API block error:`, (err as Error).message);
+            /* fall through to DB */
+          }
         }
       }
 

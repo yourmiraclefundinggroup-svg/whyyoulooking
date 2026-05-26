@@ -527,9 +527,15 @@ function extractFromShadowDom(shadowRoot: ShadowRoot): TradelineResponse | null 
     "Hide","Show","View Summary","Download PDF","All Bureaus","TransUnion","Equifax","Experian",
     "Credit report","Your credit is in excellent shape","Report date","VantageScore",
   ]);
+  // Creditor names always start with a letter; reject bureau-count lines like "0 Equifax" or "7 TransUnion"
+  const isBureauCountLine = (l: string) => /^\d{1,3}\s*(Equifax|TransUnion|Experian|Bureau|Total|Open|Closed)/i.test(l);
   const isCreditorLine = (l: string) =>
-    l.length >= 3 && l.length <= 50 && /^[A-Z0-9][A-Z0-9\s/&.',-]{1,}$/i.test(l) &&
-    !UI_WORDS.has(l) && !/^\d+$/.test(l) && !isBalanceLine(l) && !isDateLine(l) && !isStatusLine(l);
+    l.length >= 4 && l.length <= 50 &&
+    /^[A-Za-z]/.test(l) &&
+    /^[A-Z0-9\s/&.',-]+$/i.test(l) &&
+    !UI_WORDS.has(l) && !/^\d/.test(l) &&
+    !isBureauCountLine(l) &&
+    !isBalanceLine(l) && !isDateLine(l) && !isStatusLine(l);
   while (i < lines.length) {
     const line = lines[i];
     if (/^hard inquiries$/i.test(line)) { section = "inquiries"; i++; continue; }
@@ -570,7 +576,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
   const { user } = useUserContext();
   const { tier, hasAnyPlan, disputeLimit } = useFeatureAccess(FEATURES.BASIC_DISPUTES);
   const [profileNudgeDismissed, setProfileNudgeDismissed] = useState(false);
-  const { appKey, token: arrayToken, apiUrl, sandboxMode, isReady: tokenReady } = useArrayToken();
+  const { appKey, token: arrayToken, apiUrl, restApiUrl, sandboxMode, isReady: tokenReady } = useArrayToken();
   const { loaded: scriptReady } = useArrayScript(appKey || undefined);
 
   // Show nudge if address is missing — so the flow pre-fills cleanly on first use
@@ -669,7 +675,36 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
       setBrowserExtracting(false);
     };
 
-    // ── Primary: Array structured event listener ──────────────────────────
+    // ── Primary: direct REST fetch to Array API ───────────────────────────
+    // Use the already-issued token to call sandbox.array.io (or api.array.io in prod)
+    // directly from the browser — much more reliable than shadow DOM text scraping.
+    const tryDirectFetch = async () => {
+      if (!arrayToken || !restApiUrl) return;
+      const endpoints = [
+        `${restApiUrl}/v2/user/credit-report`,
+        `${restApiUrl}/v1/user/credit-report`,
+        `${restApiUrl}/v2/creditreport`,
+      ];
+      for (const url of endpoints) {
+        try {
+          const r = await fetch(url, {
+            headers: { Authorization: `Bearer ${arrayToken}`, "Content-Type": "application/json" },
+          });
+          if (r.ok) {
+            const data = await r.json();
+            const parsed = parseArrayReport(data);
+            if (parsed && (parsed.tradelines?.length ?? 0) > 0) {
+              console.debug("[DisputeIQ] direct REST fetch:", parsed.tradelines?.length, "accounts from", url);
+              if (!settled) finish(parsed);
+              return;
+            }
+          }
+        } catch { /* CORS or network; try next */ }
+      }
+    };
+    tryDirectFetch();
+
+    // ── Secondary: Array structured event listener ─────────────────────
     // The array-credit-report web component dispatches "array-event" on itself
     // and bubbles it up to document. We listen on both to maximise compatibility.
     const handleArrayEvent = (e: Event) => {
@@ -756,7 +791,8 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
       if (el) el.removeEventListener("array-event", handleArrayEvent);
       clearTimeout(fallbackTimeout);
     };
-  }, [source, scriptReady, tokenReady]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source, scriptReady, tokenReady, arrayToken, restApiUrl]);
 
   // Reset extraction state when source changes
   useEffect(() => {
@@ -767,11 +803,17 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
     }
   }, [source]);
 
-  // Browser-extracted data takes priority; server data is the fallback
+  // Prefer whichever source has more tradelines; server wins on tie.
+  // This prevents a sparse shadow-DOM scrape (e.g. 2-3 bureau-count lines mis-parsed
+  // as accounts) from overriding a rich server response with 20+ real tradelines.
+  const serverTradelineCount = arrayData?.source !== "none" ? (arrayData?.tradelines?.length ?? 0) : 0;
+  const browserTradelineCount = browserExtracted?.tradelines?.length ?? 0;
+  const bestArrayData =
+    browserTradelineCount > serverTradelineCount
+      ? browserExtracted
+      : (arrayData || browserExtracted || null);
   const activeData: TradelineResponse | null =
-    source === "array"
-      ? (browserExtracted || arrayData || null)
-      : uploadResult;
+    source === "array" ? bestArrayData : uploadResult;
 
   // isLoadingArray: true while either source is still running AND we have no data yet.
   // We keep showing the spinner even after the server finishes quickly (e.g. source:"none")
