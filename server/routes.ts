@@ -19,6 +19,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
 import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
+import { getOrRefreshArrayToken, clearArrayTokenCache } from "./array-token-cache";
 import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users, disputeLettersNew, disputes, creditIssues, creditScoreHistory } from "@shared/schema";
 import { TIER_FEATURES, tierHasFeature, getDisputeLimit, type SubscriptionTier } from "./tier-features";
 import { z } from "zod";
@@ -8905,24 +8906,13 @@ ${denialLetterText}`
         let sandboxToken = SANDBOX_FALLBACK_TOKEN;
 
         if (ARRAY_API_KEY && isRealArrayId) {
-          try {
-            const tokResp = await fetch("https://sandbox.array.io/api/authenticate/v2/usertoken", {
-              method: "POST",
-              headers: { "x-array-server-token": ARRAY_API_KEY, "Content-Type": "application/json" },
-              body: JSON.stringify({ appKey: SANDBOX_APP_KEY, userId: sandboxArrayUserId, ttlInMinutes: "55" }),
-            });
-            const tokRaw = await tokResp.text();
-            if (tokResp.ok) {
-              let tokData: any = {};
-              try { tokData = JSON.parse(tokRaw); } catch { /* non-JSON, ignore */ }
-              const fetched = tokData.token || tokData.userToken || tokData.access_token;
-              if (fetched) sandboxToken = fetched;
-              else console.warn(`[Array] Sandbox token response had no token field:`, tokRaw.slice(0, 200));
-            } else {
-              console.warn(`[Array] Sandbox token fetch failed (${tokResp.status}) for ${sandboxArrayUserId} — using fallback:`, tokRaw.slice(0, 200));
-            }
-          } catch (e) {
-            console.warn("[Array] Sandbox token fetch error, using fallback:", e);
+          const { token: cachedTok, error: tokErr } = await getOrRefreshArrayToken(
+            user.id, sandboxArrayUserId!, ARRAY_API_KEY, SANDBOX_APP_KEY, true,
+          );
+          if (cachedTok) {
+            sandboxToken = cachedTok;
+          } else {
+            console.warn(`[Array] Sandbox token unavailable for user ${user.id} (${tokErr}) — using fallback`);
           }
         }
 
@@ -8953,23 +8943,16 @@ ${denialLetterText}`
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(enrollment.arrayUserId);
       const arrayUserId = isRealArrayId ? enrollment.arrayUserId : `scoreshift_user_${user.id}`;
 
-      const tokenResponse = await fetch("https://api.array.io/api/authenticate/v2/usertoken", {
-        method: "POST",
-        headers: {
-          "x-array-server-token": ARRAY_API_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ appKey: ARRAY_APP_KEY, userId: arrayUserId, ttlInMinutes: "55" }),
-      });
+      const { token: prodToken, error: prodTokErr } = await getOrRefreshArrayToken(
+        user.id, arrayUserId, ARRAY_API_KEY, ARRAY_APP_KEY!, false,
+      );
 
-      if (!tokenResponse.ok) {
-        const errData = await tokenResponse.json().catch(() => ({})) as any;
-        console.error("[Array] Token generation failed:", errData);
-        return res.status(502).json({ error: "Failed to generate Array token", details: errData });
+      if (prodTokErr || !prodToken) {
+        console.error("[Array] Production token generation failed:", prodTokErr);
+        return res.status(502).json({ error: "Failed to generate Array token", details: prodTokErr });
       }
 
-      const tokenData = await tokenResponse.json() as any;
-      console.log(`[Array] Production token generated for user ${user.id} (arrayUserId: ${arrayUserId})`);
+      console.log(`[Array] Production token issued for user ${user.id} (arrayUserId: ${arrayUserId})`);
 
       try {
         const { arrayEnrollments } = await import("@shared/schema");
@@ -8978,17 +8961,10 @@ ${denialLetterText}`
           .where(eq(arrayEnrollments.userId, user.id));
       } catch { /* non-critical */ }
 
-      let expiresAt: string;
-      if (tokenData.expiresAt) {
-        expiresAt = tokenData.expiresAt;
-      } else if (tokenData.exp) {
-        expiresAt = new Date(tokenData.exp * 1000).toISOString();
-      } else {
-        expiresAt = new Date(Date.now() + 55 * 60 * 1000).toISOString();
-      }
+      const expiresAt = new Date(Date.now() + 55 * 60 * 1000).toISOString();
 
       res.json({
-        token: tokenData.token || tokenData.userToken || tokenData.access_token,
+        token: prodToken,
         appKey: ARRAY_APP_KEY,
         apiUrl: "",
         restApiUrl: "https://api.array.io",
@@ -9516,17 +9492,11 @@ ${denialLetterText}`
 
       // ── Step 1: Try live Array API ────────────────────────────────────────
       const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
+      let arrayApiError: string | undefined;
       if (ARRAY_API_KEY) {
         const isSandbox = process.env.ARRAY_PRODUCTION_MODE !== "true";
-        // In sandbox mode: auth tokens come from sandbox.array.io but credit report
-        // data is served by mock.array.io (same URL the web components use).
         const SANDBOX_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
-        const TOKEN_BASE_URL = isSandbox ? "https://sandbox.array.io" : "https://api.array.io";
-        // For data: sandbox.array.io is the REST API (same as admin uses);
-        // mock.array.io is the web-component mock server (fallback attempts only).
-        const SANDBOX_DATA_BASE_URL = isSandbox ? "https://sandbox.array.io" : "https://api.array.io";
-        const DATA_BASE_URL = isSandbox ? "https://mock.array.io" : "https://api.array.io";
-        const SANDBOX_FALLBACK_TOKEN = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
+        const DATA_BASE_URL = isSandbox ? "https://sandbox.array.io" : "https://api.array.io";
         const appKey = isSandbox ? SANDBOX_APP_KEY : (process.env.ARRAY_APP_KEY || "");
 
         const { arrayEnrollments } = await import("@shared/schema");
@@ -9535,53 +9505,43 @@ ${denialLetterText}`
           .from(arrayEnrollments)
           .where(eq(arrayEnrollments.userId, userId));
 
-        if (enrollment?.arrayUserId) {
-          let userToken: string = SANDBOX_FALLBACK_TOKEN;
-          try {
-            const tokenResponse = await fetch(`${TOKEN_BASE_URL}/api/authenticate/v2/usertoken`, {
-              method: "POST",
-              headers: { "x-array-server-token": ARRAY_API_KEY, "Content-Type": "application/json" },
-              body: JSON.stringify({ appKey, userId: enrollment.arrayUserId, ttlInMinutes: "55" }),
-            });
-            if (tokenResponse.ok) {
-              const td = await tokenResponse.json() as { token?: string; userToken?: string; access_token?: string };
-              userToken = td.token || td.userToken || td.access_token || SANDBOX_FALLBACK_TOKEN;
-            }
-          } catch { /* fall through to DB */ }
+        if (!enrollment?.arrayUserId) {
+          arrayApiError = "not_enrolled";
+          console.log(`[CreditFile] User ${userId} has no Array enrollment — skipping live fetch`);
+        } else {
+          // ── Get or reuse a cached user token (50-minute TTL) ───────────
+          const { token: userToken, error: tokenErr } = await getOrRefreshArrayToken(
+            userId, enrollment.arrayUserId, ARRAY_API_KEY, appKey, isSandbox,
+          );
 
-          try {
-            // Try sandbox.array.io first (REST API, same as admin endpoint uses),
-            // then fall back to mock.array.io variants.
-            const reportEndpoints = [
-              `${SANDBOX_DATA_BASE_URL}/v2/user/credit-report`,
-              `${DATA_BASE_URL}/v2/user/credit-report`,
-              `${DATA_BASE_URL}/v1/user/credit-report`,
-              `${DATA_BASE_URL}/v2/credit-report`,
-              `${DATA_BASE_URL}/v2/creditreport`,
-              `${DATA_BASE_URL}/api/v2/user/credit-report`,
-              `${DATA_BASE_URL}/v2/report/creditreport`,
-              `${DATA_BASE_URL}/v2/user/credit-report?appKey=${appKey}`,
-            ];
-            let reportResponse: Response | null = null;
-            for (const endpoint of reportEndpoints) {
-              try {
-                const r = await fetch(endpoint, {
-                  method: "GET",
-                  headers: {
-                    Authorization: `Bearer ${userToken}`,
-                    "Content-Type": "application/json",
-                    "x-array-app-key": appKey,
-                    "x-app-key": appKey,
-                  },
-                });
-                if (r.ok) { reportResponse = r; break; }
-                console.log(`[CreditFile] ${endpoint} → ${r.status}`);
-              } catch (e) {
-                console.log(`[CreditFile] ${endpoint} → fetch error:`, (e as Error).message);
-              }
-            }
-            if (reportResponse && reportResponse.ok) {
-              const reportData: any = await reportResponse.json();
+          if (tokenErr || !userToken) {
+            arrayApiError = tokenErr || "token_failed";
+            console.error(`[CreditFile] Token unavailable for user ${userId}: ${arrayApiError}`);
+          } else {
+            // ── Single canonical credit report endpoint ─────────────────
+            const reportUrl = `${DATA_BASE_URL}/v2/user/credit-report`;
+            console.log(`[CreditFile] Fetching ${reportUrl} for user ${userId}`);
+            try {
+              const reportResp = await fetch(reportUrl, {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${userToken}`,
+                  "Content-Type": "application/json",
+                  "x-array-app-key": appKey,
+                  "x-app-key": appKey,
+                },
+              });
+              const rawBody = await reportResp.text();
+              console.log(`[CreditFile] Array API ${reportResp.status} for user ${userId}:`, rawBody.slice(0, 500));
+
+              if (!reportResp.ok) {
+                arrayApiError = `api_error: HTTP ${reportResp.status}`;
+                // Evict the cached token if Array says it's invalid
+                if (reportResp.status === 401 || reportResp.status === 403) {
+                  clearArrayTokenCache(userId);
+                }
+              } else {
+              const reportData: any = JSON.parse(rawBody);
               // Log top-level keys to help diagnose response shape
               console.log(`[CreditFile] Array response keys: [${Object.keys(reportData || {}).join(", ")}]`);
               type ArrAcct = {
@@ -9661,12 +9621,13 @@ ${denialLetterText}`
               const arrayResponseData = buildResponse(rawTradelines, Array.isArray(rawInquiries) ? rawInquiries : [], "array");
               storage.setCreditReportCache(userId, arrayResponseData, "array").catch(() => {});
               return res.json(arrayResponseData);
+              } // end if reportResp.ok
+            } catch (err) {
+              arrayApiError = `api_error: ${(err as Error).message}`;
+              console.error(`[CreditFile] Array fetch error for user ${userId}:`, arrayApiError);
             }
-          } catch (err) {
-            console.log(`[CreditFile] Array API block error:`, (err as Error).message);
-            /* fall through to DB */
-          }
-        }
+          } // end else (token available)
+        } // end else (enrollment exists)
       }
 
       // ── Step 2: Fall back to latest uploaded & parsed PDF credit report ────
@@ -9676,6 +9637,9 @@ ${denialLetterText}`
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       if (succeeded.length === 0) {
+        const noteMsg = arrayApiError
+          ? `Credit data unavailable (${arrayApiError}). Upload a PDF credit report to get started, or contact support.`
+          : "No credit report found. Upload a PDF credit report to get started.";
         return res.json({
           enrolled: true,
           tradelines: [],
@@ -9683,7 +9647,8 @@ ${denialLetterText}`
           inquiries: [],
           reportFetchedAt: new Date().toISOString(),
           source: "none",
-          note: "No credit report found. Upload a PDF credit report to get started.",
+          note: noteMsg,
+          arrayError: arrayApiError,
         });
       }
 

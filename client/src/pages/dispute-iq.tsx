@@ -42,6 +42,7 @@ interface TradelineResponse {
   note?: string;
   fromCache?: boolean;
   cachedAt?: string;
+  arrayError?: string;
 }
 
 interface SavedLetter {
@@ -1351,8 +1352,15 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
       {!isLoading && !isError && (
         <>
           {activeData?.source === "none" ? (
-            <EmptyState icon="📄" title="No Credit Report on File"
-              description={activeData.note || "Upload a PDF credit report to analyze your accounts and generate dispute letters."} />
+            <EmptyState
+              icon={activeData.arrayError ? "⚠️" : "📄"}
+              title={activeData.arrayError ? "Credit File Unavailable" : "No Credit Report on File"}
+              description={
+                activeData.arrayError
+                  ? `Unable to load your credit file (${activeData.arrayError}). Try clicking Refresh, or upload a PDF report below.`
+                  : (activeData.note || "Upload a PDF credit report to analyze your accounts and generate dispute letters.")
+              }
+            />
           ) : (
             <>
               {/* ── Stats cards ───────────────────────────────────────────── */}
