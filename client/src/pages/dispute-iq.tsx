@@ -1211,13 +1211,17 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
   const negCollections = negativeTradelines.filter(t => collections.includes(t));
 
   // ── Bureau filter ─────────────────────────────────────────────────────────
-  // Collect distinct bureaus present in data (preferred display order)
+  // Collect distinct bureaus present in data (preferred display order).
+  // Check both t.bureau (single) and t.bureaus (array) for multi-bureau accounts.
   const BUREAU_ORDER = ["EXPERIAN", "EQUIFAX", "TRANSUNION"];
+  const tlHasBureau = (t: AnalyzedTradeline, b: string) =>
+    (t.bureau || "").toUpperCase() === b ||
+    !!(t.bureaus?.some(x => x.toUpperCase() === b));
   const allBureausInData = BUREAU_ORDER.filter(b =>
-    allTradelines.some(t => (t.bureau || "").toUpperCase() === b)
+    allTradelines.some(t => tlHasBureau(t, b))
   );
-  const filterByBureau = <T extends { bureau?: string }>(arr: T[]): T[] =>
-    bureauFilter === "ALL" ? arr : arr.filter(t => (t.bureau || "").toUpperCase() === bureauFilter);
+  const filterByBureau = (arr: AnalyzedTradeline[]): AnalyzedTradeline[] =>
+    bureauFilter === "ALL" ? arr : arr.filter(t => tlHasBureau(t, bureauFilter));
   const visibleAll        = filterByBureau(allTradelines);
   const visibleNeg        = filterByBureau(negativeTradelines);
   const visibleLate       = filterByBureau(negLate);
@@ -1368,7 +1372,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                   <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", marginRight: 4 }}>BUREAU</span>
                   {(["ALL", ...allBureausInData] as string[]).map(bf => {
                     const label = bf === "ALL" ? "All Bureaus" : (BUREAU_LABELS[bf] || bf);
-                    const count = bf === "ALL" ? allTradelines.length : allTradelines.filter(t => (t.bureau || "").toUpperCase() === bf).length;
+                    const count = bf === "ALL" ? allTradelines.length : allTradelines.filter(t => tlHasBureau(t, bf)).length;
                     const clr = bf !== "ALL" ? BUREAU_COLORS[bf] : null;
                     const isActive = bureauFilter === bf;
                     return (
@@ -1531,7 +1535,11 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                               <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
                               {t.accountNumber && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{t.accountNumber}</div>}
                             </div>
-                            <div>{t.bureau ? <BureauBadge bureau={t.bureau} /> : <span style={{ color: "#d1d5db", fontSize: 12 }}>—</span>}</div>
+                            <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                              {(t.bureaus?.length ? t.bureaus : t.bureau ? [t.bureau] : []).length > 0
+                                ? (t.bureaus?.length ? t.bureaus : t.bureau ? [t.bureau] : []).map(b => <BureauBadge key={b} bureau={b} />)
+                                : <span style={{ color: "#d1d5db", fontSize: 12 }}>—</span>}
+                            </div>
                             <div style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
                               {t.balance && t.balance !== "0" ? `$${Number(t.balance).toLocaleString()}` : "--"}
                             </div>
@@ -1583,7 +1591,11 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                               <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
                               {t.accountNumber && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{t.accountNumber}</div>}
                             </div>
-                            <div>{t.bureau ? <BureauBadge bureau={t.bureau} /> : <span style={{ color: "#d1d5db", fontSize: 12 }}>—</span>}</div>
+                            <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                              {(t.bureaus?.length ? t.bureaus : t.bureau ? [t.bureau] : []).length > 0
+                                ? (t.bureaus?.length ? t.bureaus : t.bureau ? [t.bureau] : []).map(b => <BureauBadge key={b} bureau={b} />)
+                                : <span style={{ color: "#d1d5db", fontSize: 12 }}>—</span>}
+                            </div>
                             <div style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
                               {t.balance && t.balance !== "0" ? `$${Number(t.balance).toLocaleString()}` : "--"}
                             </div>
@@ -1636,7 +1648,11 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                               <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
                               {t.accountNumber && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{t.accountNumber}</div>}
                             </div>
-                            <div>{t.bureau ? <BureauBadge bureau={t.bureau} /> : <span style={{ color: "#d1d5db", fontSize: 12 }}>—</span>}</div>
+                            <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                              {(t.bureaus?.length ? t.bureaus : t.bureau ? [t.bureau] : []).length > 0
+                                ? (t.bureaus?.length ? t.bureaus : t.bureau ? [t.bureau] : []).map(b => <BureauBadge key={b} bureau={b} />)
+                                : <span style={{ color: "#d1d5db", fontSize: 12 }}>—</span>}
+                            </div>
                             <div style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
                               {t.balance && t.balance !== "0" ? `$${Number(t.balance).toLocaleString()}` : "--"}
                             </div>
@@ -1714,7 +1730,11 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                               <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
                               {(t as any).originalCreditor && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{(t as any).originalCreditor}</div>}
                             </div>
-                            <div>{t.bureau ? <BureauBadge bureau={t.bureau} /> : <span style={{ color: "#d1d5db", fontSize: 12 }}>—</span>}</div>
+                            <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                              {(t.bureaus?.length ? t.bureaus : t.bureau ? [t.bureau] : []).length > 0
+                                ? (t.bureaus?.length ? t.bureaus : t.bureau ? [t.bureau] : []).map(b => <BureauBadge key={b} bureau={b} />)
+                                : <span style={{ color: "#d1d5db", fontSize: 12 }}>—</span>}
+                            </div>
                             <div style={{ fontSize: 13, color: "#dc2626", fontWeight: 600 }}>
                               {t.balance && t.balance !== "0" ? `$${Number(t.balance).toLocaleString()}` : "--"}
                             </div>
