@@ -19,7 +19,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
 import jwt from "jsonwebtoken";
 import { ExperianService } from "./integrations/credit-bureaus";
-import { getOrRefreshArrayToken, clearArrayTokenCache } from "./array-token-cache";
+import { getOrRefreshArrayToken, clearArrayTokenCache, fetchArrayCreditReport } from "./array-token-cache";
 import { insertDisputeSchema, insertCreditGoalSchema, insertTestingFeedbackSchema, insertBetaAccessSchema, insertUserSchema, insertCreditReportSchema, insertBureauResponseSchema, insertBureauResponseAnalysisSchema, insertStudentLoanSchema, insertLoanNegotiationSchema, userOnboardingProgress, onboardingSteps, gamificationBadges, userAchievements, insertUserOnboardingProgressSchema, insertOnboardingStepSchema, insertGamificationBadgeSchema, insertUserAchievementSchema, insertCreditReportUploadSchema, insertCreditReportAccountSchema, insertCreditReportInquirySchema, insertCreditReportCollectionSchema, insertCreditReportPublicRecordSchema, insertDisputeItemSchema, insertDisputeLetterNewSchema, insertDisputeCalendarEventSchema, creditReportUploads, users, disputeLettersNew, disputes, creditIssues, creditScoreHistory } from "@shared/schema";
 import { TIER_FEATURES, tierHasFeature, getDisputeLimit, type SubscriptionTier } from "./tier-features";
 import { z } from "zod";
@@ -9518,31 +9518,15 @@ ${denialLetterText}`
             arrayApiError = tokenErr || "token_failed";
             console.error(`[CreditFile] Token unavailable for user ${userId}: ${arrayApiError}`);
           } else {
-            // ── Single canonical credit report endpoint ─────────────────
-            const reportUrl = `${DATA_BASE_URL}/v2/user/credit-report`;
-            console.log(`[CreditFile] Fetching ${reportUrl} for user ${userId}`);
-            try {
-              const reportResp = await fetch(reportUrl, {
-                method: "GET",
-                headers: {
-                  Authorization: `Bearer ${userToken}`,
-                  "Content-Type": "application/json",
-                  "x-array-app-key": appKey,
-                  "x-app-key": appKey,
-                },
-              });
-              const rawBody = await reportResp.text();
-              console.log(`[CreditFile] Array API ${reportResp.status} for user ${userId}:`, rawBody.slice(0, 500));
-
-              if (!reportResp.ok) {
-                arrayApiError = `api_error: HTTP ${reportResp.status}`;
-                // Evict the cached token if Array says it's invalid
-                if (reportResp.status === 401 || reportResp.status === 403) {
-                  clearArrayTokenCache(userId);
-                }
-              } else {
-              const reportData: any = JSON.parse(rawBody);
-              // Log top-level keys to help diagnose response shape
+            // ── Fetch credit report (via Railway proxy or directly) ──────
+            const reportResult = await fetchArrayCreditReport(userToken, userId, appKey, DATA_BASE_URL);
+            if (reportResult.error) {
+              arrayApiError = reportResult.error;
+              if (reportResult.status === 401 || reportResult.status === 403) {
+                clearArrayTokenCache(userId);
+              }
+            } else {
+              const reportData: any = reportResult.data;
               console.log(`[CreditFile] Array response keys: [${Object.keys(reportData || {}).join(", ")}]`);
               type ArrAcct = {
                 creditorName?: string; name?: string; furnisherName?: string; subscriberName?: string;
@@ -9621,11 +9605,7 @@ ${denialLetterText}`
               const arrayResponseData = buildResponse(rawTradelines, Array.isArray(rawInquiries) ? rawInquiries : [], "array");
               storage.setCreditReportCache(userId, arrayResponseData, "array").catch(() => {});
               return res.json(arrayResponseData);
-              } // end if reportResp.ok
-            } catch (err) {
-              arrayApiError = `api_error: ${(err as Error).message}`;
-              console.error(`[CreditFile] Array fetch error for user ${userId}:`, arrayApiError);
-            }
+            } // end else (report data available)
           } // end else (token available)
         } // end else (enrollment exists)
       }
