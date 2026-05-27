@@ -17,8 +17,8 @@ import {
 import { eq } from "drizzle-orm";
 import { logAction } from "./audit-engine";
 
-const DEMO_EMAIL = "demo@scoreshift.com";
-const DEMO_PASSWORD = "Demo2026!";
+const DEMO_EMAIL = process.env.DEMO_EMAIL || "demo@scoreshift.com";
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD || "Demo2026!";
 
 export async function seedDemoAccount(): Promise<void> {
   console.log("[DemoManager] Seeding demo account for Marcus Johnson...");

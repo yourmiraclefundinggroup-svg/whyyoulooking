@@ -8005,11 +8005,11 @@ If you are just answering a question (not updating the letter), just respond nor
         ],
         credentials: {
           note: "API credentials are stored as Replit secrets. Never hardcoded.",
-          adminLogin: { email: "admin@scoreshift.com", password: "admin123", note: "Change this in production!" },
+          adminLogin: { email: "admin@scoreshift.com", note: "Contact your administrator for login credentials." },
           openclawApiKey: "See your X-Api-Key — stored as OPENCLAW_API_KEY env var",
         },
         howToUse: {
-          browseApp: "Navigate to the live URL. Admin login: admin@scoreshift.com / admin123",
+          browseApp: "Navigate to the live URL and log in with your admin credentials.",
           apiAccess: "Include header X-Api-Key: <your key> on all /api/v1/* requests",
           uploadCreditReport: "POST /api/v1/credit-reports/upload with { userId, fileName, fileContent (base64 or text), bureau }",
           generateLetter: "POST /api/v1/generate-letter with { clientId, issueType, creditor, description }",

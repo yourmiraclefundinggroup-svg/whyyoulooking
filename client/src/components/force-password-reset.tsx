@@ -14,8 +14,10 @@ interface ForcePasswordResetProps {
 }
 
 export function ForcePasswordReset({ onPasswordReset }: ForcePasswordResetProps) {
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -72,9 +74,13 @@ export function ForcePasswordReset({ onPasswordReset }: ForcePasswordResetProps)
     e.preventDefault();
     
     const validationErrors: string[] = [];
+
+    if (!currentPassword) {
+      validationErrors.push("Temporary password is required");
+    }
     
     if (!newPassword) {
-      validationErrors.push("Password is required");
+      validationErrors.push("New password is required");
     }
     
     if (!confirmPassword) {
@@ -84,9 +90,9 @@ export function ForcePasswordReset({ onPasswordReset }: ForcePasswordResetProps)
     if (newPassword && newPassword !== confirmPassword) {
       validationErrors.push("Passwords do not match");
     }
-    
-    if (newPassword && newPassword === "client123") {
-      validationErrors.push("You must choose a different password than the temporary one");
+
+    if (currentPassword && newPassword && currentPassword === newPassword) {
+      validationErrors.push("New password must be different from your temporary password");
     }
     
     // Validate password strength
@@ -102,7 +108,7 @@ export function ForcePasswordReset({ onPasswordReset }: ForcePasswordResetProps)
     
     setErrors([]);
     resetPasswordMutation.mutate({
-      currentPassword: "Ervinward123", // Use current user password
+      currentPassword,
       newPassword,
     });
   };
@@ -125,6 +131,31 @@ export function ForcePasswordReset({ onPasswordReset }: ForcePasswordResetProps)
           </Alert>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Temporary / Current Password */}
+            <div>
+              <Label htmlFor="currentPassword">Temporary Password</Label>
+              <div className="relative">
+                <Input
+                  id="currentPassword"
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter the temporary password you were given"
+                  className="pr-10"
+                  autoFocus
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                >
+                  {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+
             {/* New Password */}
             <div>
               <Label htmlFor="newPassword">Create New Password</Label>
@@ -136,7 +167,6 @@ export function ForcePasswordReset({ onPasswordReset }: ForcePasswordResetProps)
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter your new secure password"
                   className="pr-10"
-                  autoFocus
                 />
                 <Button
                   type="button"
