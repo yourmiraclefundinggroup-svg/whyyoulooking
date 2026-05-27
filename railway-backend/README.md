@@ -85,6 +85,7 @@ No auth required. Returns:
 
 ### `GET /array/credit-report?userToken=<token>`
 **Auth:** `Authorization: Bearer <INTERNAL_API_SECRET>`  
+**Query param:** `userToken` — the short-lived user token returned by `POST /array/token`  
 **Returns:** Raw Array credit-report JSON
 
 ---

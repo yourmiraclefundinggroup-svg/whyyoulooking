@@ -29,10 +29,11 @@ async function getUserToken(arrayUserId, appKey) {
   });
 
   const raw = await resp.text();
-  console.log(`[Array] Token response ${resp.status}:`, raw.slice(0, 200));
+  console.log(`[Array] Token response status: ${resp.status}`);
 
   if (!resp.ok) {
-    return { error: `HTTP ${resp.status}: ${raw.slice(0, 200)}` };
+    // Log status only — never log response body which may contain partial token data
+    return { error: `HTTP ${resp.status}` };
   }
 
   let data = {};
@@ -64,10 +65,11 @@ async function getCreditReport(userToken) {
   });
 
   const raw = await resp.text();
-  console.log(`[Array] Credit report ${resp.status}:`, raw.slice(0, 300));
+  // Log status only — never log response body which contains user credit/PII data
+  console.log(`[Array] Credit report status: ${resp.status}, size: ${raw.length} bytes`);
 
   if (!resp.ok) {
-    return { error: `HTTP ${resp.status}: ${raw.slice(0, 200)}`, status: resp.status };
+    return { error: `HTTP ${resp.status}`, status: resp.status };
   }
 
   let data;
