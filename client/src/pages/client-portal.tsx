@@ -445,7 +445,7 @@ function PlanPage({ goal, timeline, onNavigate }: { goal: OnboardingGoal | null;
   const SECTIONS: { id: PlanSection; label: string; color: string; badge?: string }[] = [
     { id: "high",        label: "High Priority",  color: "var(--cp-red)",    badge: "Act Now" },
     { id: "medium",      label: "Medium Priority", color: "var(--cp-amber)",  badge: "This Week" },
-    { id: "recommended", label: "Recommended",     color: "var(--cp-accent)" },
+    { id: "recommended", label: "Low Priority",     color: "var(--cp-accent)" },
     { id: "completed",   label: "Completed",       color: "var(--cp-green)" },
   ];
 
@@ -1247,7 +1247,7 @@ export default function ClientPortal() {
   }
 
   /* ── Sandbox props for Array components ───────────────────────── */
-  const sbx: Record<string, string> = sandboxMode && apiUrl ? { "api-url": apiUrl, sandbox: "true" } : {};
+  const sbx: Record<string, string> = sandboxMode && apiUrl ? { apiUrl, sandbox: "true" } : {};
 
   /* ── Array page props ─────────────────────────────────────────── */
   const arrayProps: ArrayPageProps = { appKey, userToken, sbx, scriptReady, tokenReady, tokenError };
