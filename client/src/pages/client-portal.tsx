@@ -606,6 +606,8 @@ function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageP
             { icon: "🔔", label: "Credit Alerts", detail: "Get notified of new inquiries or changes on your report between bureau responses.", color: "var(--cp-clay)", page: "report" as PageId },
             { icon: "🎓", label: "Student Loan Aid", detail: "Review possible student loan options that may support your monthly affordability.", color: "var(--cp-accent)", page: "progress" as PageId },
             { icon: "💰", label: "Subscription Manager", detail: "Identify potential monthly savings that could be redirected toward payoff goals.", color: "var(--cp-sage)", page: "debt" as PageId },
+            { icon: "🔍", label: "PIP Scan", detail: "Scan for personally identifiable information exposures that may affect your credit file.", color: "var(--cp-accent)", page: "protection" as PageId },
+            { icon: "🆔", label: "Identity Protection", detail: "Monitor for signs of identity theft and new account fraud across the major bureaus.", color: "var(--cp-sage)", page: "protection" as PageId },
           ] as { icon: string; label: string; detail: string; color: string; page: PageId }[]).map((a, i) => (
             <div
               key={i}
@@ -738,22 +740,22 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
           <div className="cp-welcome-sub">
             {disputesLoading ? "Loading your plan…" :
              activeDisputes.length > 0
-               ? <><strong style={{ color: "var(--cp-teal)" }}>{activeDisputes.length} dispute{activeDisputes.length !== 1 ? "s" : ""} in progress</strong> — check Dispute IQ for updates.</>
+               ? <><strong style={{ color: "var(--cp-accent)" }}>{activeDisputes.length} dispute{activeDisputes.length !== 1 ? "s" : ""} in progress</strong> — check Dispute IQ for updates.</>
                : "Pull your credit report to start identifying issues and building your action plan."}
           </div>
         </div>
         <div className="cp-home-hero-scores">
           {!scriptReady || (!tokenReady && !tokenError) ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <div className="cp-array-spinner" style={{ borderColor: "rgba(255,255,255,0.2)", borderTopColor: "rgba(255,255,255,0.85)", width: 28, height: 28, borderWidth: 2.5 }} />
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>Loading scores…</span>
+              <div className="cp-array-spinner" style={{ width: 28, height: 28, borderWidth: 2.5 }} />
+              <span style={{ fontSize: 11, color: "var(--cp-text-muted)" }}>Loading scores…</span>
             </div>
           ) : tokenError ? (
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.65)", marginBottom: 10, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 11.5, color: "var(--cp-text-muted)", marginBottom: 10, lineHeight: 1.5 }}>
                 Credit data not connected yet.<br />Pull your report to see live scores.
               </div>
-              <button className="cp-btn cp-btn-sm" style={{ background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.24)", color: "white", fontSize: 12 }} onClick={() => onNavigate("report")}>
+              <button className="cp-btn cp-btn-secondary cp-btn-sm" style={{ fontSize: 12 }} onClick={() => onNavigate("report")}>
                 Get Started →
               </button>
             </div>
@@ -785,40 +787,69 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
         </div>
       )}
 
-      {/* Next Best Action */}
-      <div className="cp-nba-card cp-mb-24">
-        <div className="cp-nba-label">
-          <span style={{ background: "var(--cp-accent)", width: 7, height: 7, borderRadius: "50%", display: "inline-block", marginRight: 6, animation: "cp-pulse-dot 2s infinite" }} />
-          NEXT BEST ACTION
-        </div>
-        {disputesLoading ? (
-          <div style={{ color: "var(--cp-text-muted)", fontSize: 13 }}>Loading your action plan…</div>
-        ) : topDispute ? (
-          <>
-            <div className="cp-nba-title">Dispute in progress: {topDispute.issueTitle}</div>
-            <div className="cp-nba-detail">{topDispute.creditor} · {topDispute.bureau} · {topDispute.status === "SENT" ? "Awaiting delivery" : topDispute.status === "FOLLOW_UP_REQUIRED" ? "Follow-up required" : topDispute.status === "DELIVERED" ? "Bureau reviewing" : topDispute.status}</div>
-            <div className="cp-nba-footer">
-              <button className="cp-btn cp-btn-primary" onClick={() => onNavigate("dispute-iq")}>
-                Track in Dispute IQ
-                <Icon size={15}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
-              </button>
-              <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate("plan")}>View full plan</button>
+      {/* Next Best Action — goal-based routing */}
+      {(() => {
+        const GOAL_NBA: Record<OnboardingGoal, { title: string; detail: string; cta: string; page: PageId; secondary?: string; secondaryPage?: PageId }> = {
+          "remove-negatives": {
+            title: "Analyze your report for disputable items",
+            detail: "Dispute IQ scans for FCRA violations and Metro 2 errors, then generates a personalized dispute strategy and certified letters.",
+            cta: "Open Dispute IQ", page: "dispute-iq", secondary: "View My Plan", secondaryPage: "plan",
+          },
+          "reduce-debt": {
+            title: "Review your utilization and debt plan",
+            detail: "Debt Navigator shows your live account balances, calculates a payoff strategy, and identifies which accounts to prioritize.",
+            cta: "Open Debt Navigator", page: "debt", secondary: "Review My Scores", secondaryPage: "report",
+          },
+          "build-credit": {
+            title: "Pull your 3-bureau credit report",
+            detail: "See your full credit file, identify thin-file gaps, and get personalized guidance on building a strong credit profile from scratch.",
+            cta: "Open Credit Report", page: "report", secondary: "View My Plan", secondaryPage: "plan",
+          },
+          "improve-score": {
+            title: "Analyze your report for score-impact issues",
+            detail: "Dispute IQ identifies the reporting errors and derogatory items most likely to be dragging your score down across all three bureaus.",
+            cta: "Open Dispute IQ", page: "dispute-iq", secondary: "Check Scores", secondaryPage: "report",
+          },
+        };
+        const nba = goal ? GOAL_NBA[goal] : GOAL_NBA["remove-negatives"];
+        return (
+          <div className="cp-nba-card cp-mb-24">
+            <div className="cp-nba-label">
+              <span style={{ background: "var(--cp-accent)", width: 7, height: 7, borderRadius: "50%", display: "inline-block", marginRight: 6, animation: "cp-pulse-dot 2s infinite" }} />
+              NEXT BEST ACTION
             </div>
-          </>
-        ) : (
-          <>
-            <div className="cp-nba-title">Analyze your credit report for disputes</div>
-            <div className="cp-nba-detail">Dispute IQ scans your report for FCRA violations and Metro 2 errors, then generates a personalized dispute strategy and letters.</div>
-            <div className="cp-nba-footer">
-              <button className="cp-btn cp-btn-primary" onClick={() => onNavigate("dispute-iq")}>
-                Open Dispute IQ
-                <Icon size={15}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
-              </button>
-              <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate("report")}>Review My Scores</button>
-            </div>
-          </>
-        )}
-      </div>
+            {disputesLoading ? (
+              <div style={{ color: "var(--cp-text-muted)", fontSize: 13 }}>Loading your action plan…</div>
+            ) : topDispute ? (
+              <>
+                <div className="cp-nba-title">Dispute in progress: {topDispute.issueTitle}</div>
+                <div className="cp-nba-detail">{topDispute.creditor} · {topDispute.bureau} · {topDispute.status === "SENT" ? "Awaiting delivery" : topDispute.status === "FOLLOW_UP_REQUIRED" ? "Follow-up required" : topDispute.status === "DELIVERED" ? "Bureau reviewing" : topDispute.status}</div>
+                <div className="cp-nba-footer">
+                  <button className="cp-btn cp-btn-primary" onClick={() => onNavigate("dispute-iq")}>
+                    Track in Dispute IQ
+                    <Icon size={15}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
+                  </button>
+                  <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate("plan")}>View full plan</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="cp-nba-title">{nba.title}</div>
+                <div className="cp-nba-detail">{nba.detail}</div>
+                <div className="cp-nba-footer">
+                  <button className="cp-btn cp-btn-primary" onClick={() => onNavigate(nba.page)}>
+                    {nba.cta}
+                    <Icon size={15}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
+                  </button>
+                  {nba.secondary && nba.secondaryPage && (
+                    <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate(nba.secondaryPage!)}>{nba.secondary}</button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Active disputes + Recommended tools */}
       <div className="cp-grid-2 cp-mb-24">

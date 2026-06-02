@@ -345,42 +345,44 @@
 
 /* ── Home page ───────────────────────────────────────────────── */
 .cp-home-hero {
-  background: linear-gradient(135deg, #2C2926 0%, #3E3633 60%, #524845 100%);
+  background: linear-gradient(135deg, #FFFCF6 0%, #F7EFE4 55%, #F1E8DA 100%);
   border-radius: var(--cp-radius); padding: 26px 30px;
   display: flex; align-items: center; justify-content: space-between; gap: 20px;
-  color: white; box-shadow: 0 6px 28px rgba(0,0,0,0.18);
-  border: 1px solid rgba(176,166,223,0.18);
+  box-shadow: var(--cp-shadow-md);
+  border: 1px solid var(--cp-border);
+  border-top: 3px solid var(--cp-accent);
 }
 
 .cp-home-hero-left { flex: 1; min-width: 0; }
 
 .cp-welcome-eyebrow {
   font-size: 9.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-  color: rgba(176,166,223,0.85); margin-bottom: 5px;
+  color: var(--cp-accent); margin-bottom: 5px;
 }
 
 .cp-welcome-name {
   font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 800;
-  color: white; letter-spacing: -0.5px; margin-bottom: 6px;
+  color: var(--cp-text-primary); letter-spacing: -0.5px; margin-bottom: 6px;
 }
 
-.cp-welcome-sub { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.5; }
+.cp-welcome-sub { font-size: 13px; color: var(--cp-text-muted); line-height: 1.5; }
 
 .cp-home-hero-scores { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
 .cp-home-score-chip {
-  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15);
+  background: var(--cp-surface); border: 1px solid var(--cp-border);
   border-radius: 11px; padding: 10px 14px; text-align: center; min-width: 68px;
+  box-shadow: var(--cp-shadow-sm);
 }
 
 .cp-home-score-bureau {
   font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-  color: rgba(255,255,255,0.5); margin-bottom: 4px;
+  color: var(--cp-text-muted); margin-bottom: 4px;
 }
 
 .cp-home-score-val {
   font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 800;
-  color: white; letter-spacing: -1px; line-height: 1;
+  color: var(--cp-text-primary); letter-spacing: -1px; line-height: 1;
 }
 
 .cp-home-score-change { font-size: 10.5px; font-weight: 600; color: var(--cp-sage); margin-top: 3px; }

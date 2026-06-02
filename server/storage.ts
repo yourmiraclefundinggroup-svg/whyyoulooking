@@ -1123,6 +1123,57 @@ export class DatabaseStorage implements IStorage {
 
     return { ptsGained, itemsRemoved: resolvedIssues, topScore, activeIssues, disputesInProgress, itemsResolved, identityProtectionActive };
   }
+
+  // ── Managed Client ──────────────────────────────────────────────────────────
+
+  async getManagedClientPackage(userId: number): Promise<ManagedClientPackage | undefined> {
+    const [pkg] = await db.select().from(managedClientPackages).where(eq(managedClientPackages.userId, userId));
+    return pkg || undefined;
+  }
+
+  async upsertManagedClientPackage(userId: number, data: Partial<InsertManagedClientPackage>): Promise<ManagedClientPackage> {
+    const existing = await this.getManagedClientPackage(userId);
+    if (existing) {
+      const [updated] = await db.update(managedClientPackages).set(data as any).where(eq(managedClientPackages.userId, userId)).returning();
+      return updated;
+    }
+    const [created] = await db.insert(managedClientPackages).values({ userId, ...(data as any) }).returning();
+    return created;
+  }
+
+  async getClientCaseActivities(userId: number): Promise<ClientCaseActivity[]> {
+    return await db.select().from(clientCaseActivities)
+      .where(eq(clientCaseActivities.userId, userId))
+      .orderBy(desc(clientCaseActivities.occurredAt));
+  }
+
+  async createClientCaseActivity(activity: InsertClientCaseActivity): Promise<ClientCaseActivity> {
+    const [created] = await db.insert(clientCaseActivities).values(activity as any).returning();
+    return created;
+  }
+
+  async updateClientCaseActivity(id: number, updates: Partial<ClientCaseActivity>): Promise<ClientCaseActivity | undefined> {
+    const [updated] = await db.update(clientCaseActivities).set(updates as any).where(eq(clientCaseActivities.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deleteClientCaseActivity(id: number): Promise<void> {
+    await db.delete(clientCaseActivities).where(eq(clientCaseActivities.id, id));
+  }
+
+  async getClientDocuments(userId: number): Promise<ClientDocument[]> {
+    return await db.select().from(clientDocuments).where(eq(clientDocuments.userId, userId));
+  }
+
+  async createClientDocument(doc: InsertClientDocument): Promise<ClientDocument> {
+    const [created] = await db.insert(clientDocuments).values(doc as any).returning();
+    return created;
+  }
+
+  async updateClientDocument(id: number, updates: Partial<ClientDocument>): Promise<ClientDocument | undefined> {
+    const [updated] = await db.update(clientDocuments).set(updates as any).where(eq(clientDocuments.id, id)).returning();
+    return updated || undefined;
+  }
 }
 
 export class MemStorage implements IStorage {
