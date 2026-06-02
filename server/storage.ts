@@ -1117,11 +1117,13 @@ export class DatabaseStorage implements IStorage {
 
     const scores = scoreHistory.map((h) => h.score);
     const topScore = scores.length > 0 ? Math.max(...scores) : null;
+    const startingScore = scores.length > 0 ? scores[0] : null;
+    const currentScore = scores.length > 0 ? scores[scores.length - 1] : null;
     const ptsGained = scores.length >= 2 ? scores[scores.length - 1] - scores[0] : null;
 
     const identityProtectionActive = subscriptionTier === "pro" || subscriptionTier === "elite";
 
-    return { ptsGained, itemsRemoved: resolvedIssues, topScore, activeIssues, disputesInProgress, itemsResolved, identityProtectionActive };
+    return { ptsGained, itemsRemoved: resolvedIssues, topScore, startingScore, currentScore, activeIssues, disputesInProgress, itemsResolved, identityProtectionActive };
   }
 
   // ── Managed Client ──────────────────────────────────────────────────────────
@@ -2696,11 +2698,13 @@ export class MemStorage implements IStorage {
 
     const scores = scoreHistory.map((h) => h.score);
     const topScore = scores.length > 0 ? Math.max(...scores) : null;
+    const startingScore = scores.length > 0 ? scores[0] : null;
+    const currentScore = scores.length > 0 ? scores[scores.length - 1] : null;
     const ptsGained = scores.length >= 2 ? scores[scores.length - 1] - scores[0] : null;
 
     const identityProtectionActive = subscriptionTier === "pro" || subscriptionTier === "elite";
 
-    return { ptsGained, itemsRemoved: resolvedIssues, topScore, activeIssues, disputesInProgress, itemsResolved, identityProtectionActive };
+    return { ptsGained, itemsRemoved: resolvedIssues, topScore, startingScore, currentScore, activeIssues, disputesInProgress, itemsResolved, identityProtectionActive };
   }
 
   // ── Managed Client ──────────────────────────────────────────────────────────

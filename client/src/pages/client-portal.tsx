@@ -270,7 +270,7 @@ function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageP
   const { data: pkg, isLoading: pkgLoading } = useQuery<any>({ queryKey: ["/api/me/managed-package"] });
   const { data: activities = [], isLoading: activitiesLoading } = useQuery<any[]>({ queryKey: ["/api/me/case-activities"] });
   const { data: documents = [] } = useQuery<any[]>({ queryKey: ["/api/me/documents"] });
-  const { data: clientStats } = useQuery<{ ptsGained: number | null; itemsRemoved: number; topScore: number | null; activeIssues: number; disputesInProgress: number; itemsResolved: number }>({ queryKey: ["/api/client/stats"] });
+  const { data: clientStats } = useQuery<{ ptsGained: number | null; itemsRemoved: number; topScore: number | null; startingScore: number | null; currentScore: number | null; activeIssues: number; disputesInProgress: number; itemsResolved: number }>({ queryKey: ["/api/client/stats"] });
 
   useEffect(() => {
     if (scrollToPayment) {
@@ -702,13 +702,19 @@ function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageP
                     color: readinessPct >= 75 ? "var(--cp-sage)" : readinessPct >= 40 ? "var(--cp-accent)" : "var(--cp-clay)",
                   },
                   {
+                    label: "Starting Score",
+                    val: clientStats?.startingScore ? `${clientStats.startingScore}` : "—",
+                    sub: clientStats?.startingScore ? "when enrolled" : "Not yet recorded",
+                    color: "var(--cp-text-muted)",
+                  },
+                  {
                     label: "Current Score",
-                    val: clientStats?.topScore ? `${clientStats.topScore}` : "—",
+                    val: clientStats?.currentScore ? `${clientStats.currentScore}` : "—",
                     sub: clientStats?.ptsGained != null && clientStats.ptsGained !== 0
-                      ? `${clientStats.ptsGained > 0 ? "+" : ""}${clientStats.ptsGained} pts since start`
-                      : clientStats?.topScore ? "as of latest pull" : "Pull report to track",
-                    color: clientStats?.topScore
-                      ? (clientStats.topScore >= 740 ? "var(--cp-sage)" : clientStats.topScore >= 580 ? "var(--cp-accent)" : "var(--cp-clay)")
+                      ? `${clientStats.ptsGained > 0 ? "▲ +" : "▼ "}${clientStats.ptsGained} pts`
+                      : clientStats?.currentScore ? "as of latest pull" : "Pull report to track",
+                    color: clientStats?.currentScore
+                      ? (clientStats.currentScore >= 740 ? "var(--cp-sage)" : clientStats.currentScore >= 580 ? "var(--cp-accent)" : "var(--cp-clay)")
                       : "var(--cp-text-muted)",
                   },
                 ].map(s => (
@@ -741,7 +747,7 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
   const activeDisputes: EnrichedDispute[] = Array.isArray(activeRaw) ? activeRaw : [];
   const topDispute = activeDisputes[0] ?? null;
 
-  const { data: ssStats } = useQuery<{ ptsGained: number | null; itemsRemoved: number; topScore: number | null; activeIssues: number; disputesInProgress: number; itemsResolved: number }>({
+  const { data: ssStats } = useQuery<{ ptsGained: number | null; itemsRemoved: number; topScore: number | null; startingScore: number | null; currentScore: number | null; activeIssues: number; disputesInProgress: number; itemsResolved: number }>({
     queryKey: ["/api/client/stats"],
   });
   const totalKnownItems = (ssStats?.itemsResolved ?? 0) + (ssStats?.disputesInProgress ?? 0) + (ssStats?.activeIssues ?? 0);
