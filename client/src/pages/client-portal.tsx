@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import scoreshiftLogo from "@assets/scoreshift-logo.png";
 import { useQuery } from "@tanstack/react-query";
 import { useUserContext } from "@/hooks/use-user-context";
@@ -1186,7 +1186,7 @@ function ProfilePage({ user, logout, featureAccess }: { user: any; logout: () =>
 export default function ClientPortal() {
   const { user, logout } = useUserContext();
   const featureAccess = useFeatureAccess();
-  const { appKey, userToken, tokenReady, tokenError } = useArrayToken();
+  const { appKey, token: userToken, isReady: tokenReady, error: tokenError, apiUrl, sandboxMode } = useArrayToken();
   const { loaded: scriptReady } = useArrayScript(appKey || undefined);
 
   const [activePage, setActivePage] = useState<PageId>("home");
@@ -1210,14 +1210,10 @@ export default function ClientPortal() {
   }
 
   /* ── Sandbox props for Array components ───────────────────────── */
-  const sbx: Record<string, string> = {};
+  const sbx: Record<string, string> = sandboxMode && apiUrl ? { "api-url": apiUrl, sandbox: "true" } : {};
 
   /* ── Array page props ─────────────────────────────────────────── */
   const arrayProps: ArrayPageProps = { appKey, userToken, sbx, scriptReady, tokenReady, tokenError };
-
-  /* ── Portal client ID for disputes ───────────────────────────── */
-  const { data: sessionData } = useQuery<{ id: number }>({ queryKey: ["/api/session/user"] });
-  const portalClientId = sessionData?.id ?? null;
 
   /* ── User info ────────────────────────────────────────────────── */
   const initials = user
