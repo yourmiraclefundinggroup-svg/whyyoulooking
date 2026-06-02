@@ -29,7 +29,7 @@ declare global {
 }
 
 /* ── Types ────────────────────────────────────────────────────────── */
-type PageId = "home" | "plan" | "dispute-iq" | "debt" | "protection" | "report" | "progress" | "profile";
+type PageId = "home" | "plan" | "dispute-iq" | "debt" | "protection" | "report" | "progress" | "profile" | "payment-center";
 
 type OnboardingGoal = "improve-score" | "remove-negatives" | "build-credit" | "reduce-debt";
 type OnboardingTimeline = "3-months" | "6-months" | "1-year" | "exploring";
@@ -257,237 +257,388 @@ type HomePageProps = {
   onNavigate: (page: PageId) => void;
   appKey: string | null; userToken: string | null; sbx: Record<string, string>;
   scriptReady: boolean; tokenReady: boolean; tokenError: boolean;
+  scrollToPayment?: boolean;
 };
 
 /* ── MANAGED CLIENT HOME ─────────────────────────────────────────── */
-function ManagedClientHome({ user, onNavigate }: Pick<HomePageProps, "user" | "onNavigate">) {
+function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageProps, "user" | "onNavigate"> & { scrollToPayment?: boolean }) {
   const displayName = user?.firstName || "there";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
-  const { data: pkg, isLoading: pkgLoading } = useQuery<any>({ queryKey: ["/api/portal/managed-package"] });
-  const { data: activities = [], isLoading: activitiesLoading } = useQuery<any[]>({ queryKey: ["/api/portal/case-activities"] });
-  const { data: documents = [] } = useQuery<any[]>({ queryKey: ["/api/portal/documents"] });
+  const { data: pkg, isLoading: pkgLoading } = useQuery<any>({ queryKey: ["/api/me/managed-package"] });
+  const { data: activities = [], isLoading: activitiesLoading } = useQuery<any[]>({ queryKey: ["/api/me/case-activities"] });
+  const { data: documents = [] } = useQuery<any[]>({ queryKey: ["/api/me/documents"] });
 
-  const statusColors: Record<string, string> = { active: "var(--cp-accent)", on_hold: "var(--cp-clay)", completed: "var(--cp-sage)", cancelled: "var(--cp-text-muted)" };
-  const docStatusColors: Record<string, string> = { needed: "var(--cp-clay)", uploaded: "var(--cp-text-muted)", reviewed: "var(--cp-accent)", approved: "var(--cp-sage)" };
-  const docStatusBg: Record<string, string> = { needed: "var(--cp-clay-light)", uploaded: "rgba(220,216,232,0.35)", reviewed: "var(--cp-accent-light)", approved: "var(--cp-sage-light)" };
-  const activityIcons: Record<string, string> = { letter_sent: "✉", dispute_filed: "📋", document_reviewed: "📄", call_completed: "📞", score_update: "📈", note_added: "📝", follow_up_scheduled: "📅" };
+  useEffect(() => {
+    if (scrollToPayment) {
+      const t = setTimeout(() => document.getElementById("payment-center")?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+      return () => clearTimeout(t);
+    }
+  }, [scrollToPayment]);
 
-  const caseStatus = pkg?.status || "active";
-  const statusColor = statusColors[caseStatus] || "var(--cp-accent)";
-  const progressPct = pkg?.itemsIdentified > 0 ? Math.round((pkg.itemsRemoved / pkg.itemsIdentified) * 100) : 0;
+  const caseStatus = pkg?.caseStatus || "active";
+  const statusBadge: Record<string, { color: string; bg: string }> = {
+    active: { color: "var(--cp-accent)", bg: "var(--cp-accent-light)" },
+    completed: { color: "var(--cp-sage)", bg: "var(--cp-sage-light)" },
+    waiting_on_client: { color: "var(--cp-clay)", bg: "var(--cp-clay-light)" },
+    pending: { color: "var(--cp-text-muted)", bg: "rgba(110,106,99,0.1)" },
+    on_hold: { color: "var(--cp-clay)", bg: "var(--cp-clay-light)" },
+    cancelled: { color: "#ef4444", bg: "rgba(239,68,68,0.1)" },
+  };
+  const statusStyle = statusBadge[caseStatus] || statusBadge.active;
+
+  const activityStatusBadge: Record<string, { color: string; bg: string }> = {
+    completed: { color: "var(--cp-sage)", bg: "var(--cp-sage-light)" },
+    in_progress: { color: "var(--cp-accent)", bg: "var(--cp-accent-light)" },
+    pending: { color: "var(--cp-text-muted)", bg: "rgba(110,106,99,0.1)" },
+    waiting: { color: "var(--cp-clay)", bg: "var(--cp-clay-light)" },
+  };
+  const activityIcons: Record<string, string> = {
+    letter_sent: "✉", dispute_filed: "📋", document_reviewed: "📄",
+    call_completed: "📞", score_update: "📈", note_added: "📝", follow_up_scheduled: "📅",
+  };
+
+  const completedCount = (activities as any[]).filter((a: any) => a.status === "completed").length;
+  const totalActivities = activities.length;
+  const readinessPct = totalActivities > 0 ? Math.round((completedCount / totalActivities) * 100) : 0;
+
+  const totalInvestment = parseFloat(pkg?.totalInvestment || "0");
+  const amountPaid = parseFloat(pkg?.amountPaid || "0");
+  const remaining = Math.max(0, totalInvestment - amountPaid);
+  const paidPct = totalInvestment > 0 ? Math.round((amountPaid / totalInvestment) * 100) : 0;
+
+  const docStatusBadge: Record<string, { color: string; bg: string }> = {
+    needed: { color: "var(--cp-clay)", bg: "var(--cp-clay-light)" },
+    uploaded: { color: "var(--cp-text-muted)", bg: "rgba(110,106,99,0.1)" },
+    reviewed: { color: "var(--cp-accent)", bg: "var(--cp-accent-light)" },
+    approved: { color: "var(--cp-sage)", bg: "var(--cp-sage-light)" },
+  };
 
   return (
     <div>
-      {/* Managed hero */}
+      {/* Hero */}
       <div className="cp-home-hero cp-mb-24">
         <div className="cp-home-hero-left">
           <div className="cp-welcome-eyebrow">{greeting.toUpperCase()} · MANAGED CLIENT</div>
           <div className="cp-welcome-name">{greeting}, {displayName}.</div>
           <div className="cp-welcome-sub">
             {pkgLoading ? "Loading your case…" : pkg
-              ? <>Your plan is <strong style={{ color: "rgba(255,255,255,0.95)" }}>{pkg.packageName}</strong>{pkg.itemsInProgress > 0 ? ` — ${pkg.itemsInProgress} item${pkg.itemsInProgress !== 1 ? "s" : ""} in progress` : ""}.</>
+              ? <>Your program is <strong style={{ color: "rgba(255,255,255,0.95)" }}>{pkg.packageName}</strong>{pkg.assignedSpecialist ? ` · Specialist: ${pkg.assignedSpecialist}` : ""}.</>
               : "Your managed credit repair program is being set up. We'll reach out soon."}
           </div>
-        </div>
-        {pkg ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
-            <span style={{ background: "rgba(255,255,255,0.16)", border: "1px solid rgba(255,255,255,0.22)", borderRadius: 20, padding: "4px 12px", fontSize: 11, fontWeight: 700, color: "white", textTransform: "uppercase", letterSpacing: "0.07em" }}>
-              {caseStatus.replace("_", " ")}
-            </span>
-            <div style={{ display: "flex", gap: 18 }}>
-              {[{ label: "Found", val: pkg.itemsIdentified }, { label: "Removed", val: pkg.itemsRemoved }, { label: "Active", val: pkg.itemsInProgress }].map(s => (
-                <div key={s.label} style={{ textAlign: "center" }}>
-                  <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 24, fontWeight: 800, color: "white", letterSpacing: -1.5 }}>{s.val}</div>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.07em" }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", lineHeight: 1.5 }}>Your specialist is<br />setting up your plan.</div>
-          </div>
-        )}
-      </div>
-
-      {/* Plan card + Activity log */}
-      <div className="cp-grid-2 cp-mb-24">
-        <div className="cp-card">
-          <div className="cp-card-header">
-            <div>
-              <div className="cp-card-title">Credit Success Plan</div>
-              <div className="cp-card-subtitle">{pkg?.packageName || "Setting up your plan…"}</div>
-            </div>
-            {pkg && <span className="cp-badge" style={{ background: `${statusColor}18`, color: statusColor, border: `1px solid ${statusColor}30` }}>{caseStatus.replace("_", " ")}</span>}
-          </div>
-          {pkgLoading ? <div style={{ padding: "20px 0", textAlign: "center" }}><div className="cp-array-spinner" style={{ margin: "0 auto" }} /></div>
-          : !pkg ? (
-            <div className="cp-empty-state" style={{ padding: "24px 12px" }}>
-              <div className="cp-empty-title" style={{ fontSize: 13 }}>Plan being configured</div>
-              <div className="cp-empty-desc" style={{ fontSize: 12 }}>Your dedicated credit specialist will set up your plan shortly.</div>
-            </div>
-          ) : (
-            <div>
-              <div className="cp-grid-3" style={{ gap: 10, marginBottom: 16 }}>
-                {[
-                  { label: "Items Found", val: pkg.itemsIdentified, color: "var(--cp-clay)" },
-                  { label: "Removed", val: pkg.itemsRemoved, color: "var(--cp-sage)" },
-                  { label: "In Progress", val: pkg.itemsInProgress, color: "var(--cp-accent)" },
-                ].map(s => (
-                  <div key={s.label} style={{ background: "var(--cp-bg)", borderRadius: 10, padding: "12px 14px", textAlign: "center" }}>
-                    <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 800, color: s.color, letterSpacing: -1.5 }}>{s.val}</div>
-                    <div style={{ fontSize: 10, color: "var(--cp-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-              {pkg.itemsIdentified > 0 && (
-                <div style={{ marginBottom: 14 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                    <span style={{ fontSize: 12, color: "var(--cp-text-muted)" }}>Overall progress</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--cp-accent)" }}>{progressPct}%</span>
-                  </div>
-                  <div className="cp-progress-bar"><div className="cp-progress-fill" style={{ width: `${progressPct}%` }} /></div>
-                </div>
-              )}
-              {pkg.nextActionNote && (
-                <div style={{ background: "var(--cp-accent-light)", border: "1px solid var(--cp-accent-mid)", borderRadius: 9, padding: "10px 13px" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--cp-accent)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 3 }}>Next Action</div>
-                  <div style={{ fontSize: 13, color: "var(--cp-text-primary)", lineHeight: 1.4 }}>{pkg.nextActionNote}</div>
-                  {pkg.nextActionDate && <div style={{ fontSize: 11, color: "var(--cp-text-muted)", marginTop: 4 }}>Due: {new Date(pkg.nextActionDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>}
-                </div>
+          {pkg && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+              <span style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 20, padding: "3px 12px", fontSize: 11, fontWeight: 700, color: "white", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                {caseStatus.replace(/_/g, " ")}
+              </span>
+              {totalActivities > 0 && (
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.65)" }}>
+                  {readinessPct}% complete · {completedCount}/{totalActivities} tasks done
+                </span>
               )}
             </div>
           )}
         </div>
+        {pkg ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+            {totalActivities > 0 && (
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase" }}>Readiness</div>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 30, fontWeight: 800, color: "white", letterSpacing: -1.5, lineHeight: 1 }}>
+                  {readinessPct}<span style={{ fontSize: 14, fontWeight: 500, letterSpacing: 0 }}>%</span>
+                </div>
+              </div>
+            )}
+            {pkg.casesSummary && (
+              <div style={{ maxWidth: 200, fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, textAlign: "right" }}>{pkg.casesSummary}</div>
+            )}
+          </div>
+        ) : (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>Your specialist is<br />setting up your plan.</div>
+          </div>
+        )}
+      </div>
 
+      {/* Team Activity + Case Overview */}
+      <div className="cp-grid-2 cp-mb-24">
         <div className="cp-card">
           <div className="cp-card-header">
             <div><div className="cp-card-title">Team Activity</div><div className="cp-card-subtitle">Recent work on your case</div></div>
           </div>
-          {activitiesLoading ? <div style={{ padding: "20px 0", textAlign: "center" }}><div className="cp-array-spinner" style={{ margin: "0 auto" }} /></div>
-          : activities.length === 0 ? (
+          {activitiesLoading ? (
+            <div style={{ padding: "20px 0", textAlign: "center" }}><div className="cp-array-spinner" style={{ margin: "0 auto" }} /></div>
+          ) : activities.length === 0 ? (
             <div className="cp-empty-state" style={{ padding: "24px 12px" }}>
               <div className="cp-empty-title" style={{ fontSize: 13 }}>No activity yet</div>
               <div className="cp-empty-desc" style={{ fontSize: 12 }}>Your team will start working on your case soon.</div>
             </div>
           ) : (
-            <div>
-              {(activities as any[]).slice(0, 6).map((a: any) => (
-                <div key={a.id} className="cp-alert-item">
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--cp-accent-light)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{activityIcons[a.activityType] || "✦"}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="cp-alert-text">{a.title}</div>
-                    {a.description && <div className="cp-alert-meta">{a.description}</div>}
-                    <div className="cp-alert-meta">{a.performedBy} · {new Date(a.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {(activities as any[]).slice(0, 8).map((a: any) => {
+                const s = activityStatusBadge[a.status] || activityStatusBadge.pending;
+                return (
+                  <div key={a.id} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>
+                      {activityIcons[a.activityType] || "✦"}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--cp-text-primary)", lineHeight: 1.3 }}>{a.description}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 20, background: s.bg, color: s.color, textTransform: "capitalize" }}>
+                          {a.status.replace(/_/g, " ")}
+                        </span>
+                        <span style={{ fontSize: 10, color: "var(--cp-text-muted)" }}>
+                          {new Date(a.occurredAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
-      </div>
-
-      {/* Payment Center + Documents */}
-      <div className="cp-grid-2 cp-mb-24">
-        <div className="cp-card">
-          <div className="cp-card-header">
-            <div><div className="cp-card-title">Payment Center</div><div className="cp-card-subtitle">Your current plan</div></div>
-          </div>
-          <div style={{ background: "var(--cp-bg)", borderRadius: 10, padding: "14px 16px", marginBottom: 14 }}>
-            <div style={{ fontSize: 10, color: "var(--cp-text-muted)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Monthly Fee</div>
-            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 32, fontWeight: 800, color: "var(--cp-text-primary)", letterSpacing: -2 }}>
-              ${pkg?.monthlyFee || "—"}<span style={{ fontSize: 14, fontWeight: 500, color: "var(--cp-text-muted)", letterSpacing: 0 }}>/mo</span>
-            </div>
-            <div style={{ fontSize: 12, color: "var(--cp-text-muted)", marginTop: 2 }}>{pkg?.packageName || "Managed Credit Repair"}</div>
-          </div>
-          <button className="cp-btn cp-btn-primary" style={{ width: "100%", justifyContent: "center", opacity: 0.7 }} disabled>
-            <Icon size={13}><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></Icon>
-            Make Payment <span style={{ fontSize: 10, marginLeft: 4 }}>(coming soon)</span>
-          </button>
-          <p style={{ fontSize: 11, color: "var(--cp-text-muted)", marginTop: 10, textAlign: "center", lineHeight: 1.4 }}>
-            To update billing, contact your credit specialist.
-          </p>
-        </div>
 
         <div className="cp-card">
           <div className="cp-card-header">
-            <div><div className="cp-card-title">My Documents</div><div className="cp-card-subtitle">Requested & uploaded files</div></div>
-            {(documents as any[]).filter((d: any) => d.status === "needed").length > 0 && (
-              <span className="cp-badge warning">{(documents as any[]).filter((d: any) => d.status === "needed").length} needed</span>
-            )}
+            <div><div className="cp-card-title">Case Overview</div><div className="cp-card-subtitle">Your program at a glance</div></div>
+            {pkg && <span className="cp-badge" style={{ background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.color}30` }}>{caseStatus.replace(/_/g, " ")}</span>}
           </div>
-          {(documents as any[]).length === 0 ? (
-            <div className="cp-empty-state" style={{ padding: "20px 12px" }}>
-              <div className="cp-empty-title" style={{ fontSize: 13 }}>No documents requested yet</div>
-              <div className="cp-empty-desc" style={{ fontSize: 12 }}>Your team will request documents as needed.</div>
+          {pkgLoading ? (
+            <div style={{ padding: "20px 0", textAlign: "center" }}><div className="cp-array-spinner" style={{ margin: "0 auto" }} /></div>
+          ) : !pkg ? (
+            <div className="cp-empty-state" style={{ padding: "24px 12px" }}>
+              <div className="cp-empty-title" style={{ fontSize: 13 }}>Plan being configured</div>
+              <div className="cp-empty-desc" style={{ fontSize: 12 }}>Your credit specialist will set up your plan shortly.</div>
             </div>
           ) : (
             <div>
-              {(documents as any[]).map((doc: any) => (
-                <div key={doc.id} className="cp-action-row" style={{ alignItems: "center" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="cp-action-label">{doc.label || doc.fileName}</div>
-                    <div className="cp-action-detail" style={{ textTransform: "capitalize" }}>{(doc.documentType || "").replace("_", " ")}</div>
+              {pkg.assignedSpecialist && (
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, padding: "10px 12px", background: "var(--cp-bg)", borderRadius: 10 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, var(--cp-accent), #7B6AAB)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "white", fontWeight: 700, flexShrink: 0 }}>
+                    {pkg.assignedSpecialist.charAt(0).toUpperCase()}
                   </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: docStatusBg[doc.status] || "var(--cp-accent-light)", color: docStatusColors[doc.status] || "var(--cp-accent)", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>
-                    {doc.status}
-                  </span>
+                  <div>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--cp-text-primary)" }}>{pkg.assignedSpecialist}</div>
+                    <div style={{ fontSize: 11, color: "var(--cp-text-muted)" }}>Assigned specialist</div>
+                  </div>
                 </div>
-              ))}
+              )}
+              {totalActivities > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                    <span style={{ fontSize: 12, color: "var(--cp-text-muted)" }}>Overall readiness</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--cp-accent)" }}>{readinessPct}%</span>
+                  </div>
+                  <div className="cp-progress-bar"><div className="cp-progress-fill" style={{ width: `${readinessPct}%` }} /></div>
+                </div>
+              )}
+              {pkg.casesSummary && (
+                <div style={{ fontSize: 13, color: "var(--cp-text-muted)", lineHeight: 1.6, marginBottom: 12 }}>{pkg.casesSummary}</div>
+              )}
+              {pkg.enrollmentDate && (
+                <div style={{ fontSize: 11, color: "var(--cp-text-muted)", marginBottom: 10 }}>
+                  Enrolled: <strong style={{ color: "var(--cp-text-primary)" }}>{new Date(pkg.enrollmentDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</strong>
+                </div>
+              )}
+              {Array.isArray(pkg.servicesIncluded) && pkg.servicesIncluded.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--cp-text-muted)", letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 6 }}>Services Included</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                    {(pkg.servicesIncluded as string[]).map((s, i) => (
+                      <span key={i} style={{ background: "var(--cp-accent-light)", color: "var(--cp-accent)", fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 12 }}>{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* My Results */}
-      {pkg && (pkg.itemsRemoved > 0 || pkg.pointsGained > 0) && (
+      {/* Payment Center */}
+      <div id="payment-center" className="cp-card cp-mb-24">
+        <div className="cp-card-header">
+          <div><div className="cp-card-title">Payment Center</div><div className="cp-card-subtitle">{pkg?.packageName || "Managed Credit Repair"}</div></div>
+          {pkg?.paymentStatus && (
+            <span className="cp-badge" style={{
+              background: pkg.paymentStatus === "current" ? "var(--cp-sage-light)" : pkg.paymentStatus === "paid_off" ? "var(--cp-accent-light)" : "var(--cp-clay-light)",
+              color: pkg.paymentStatus === "current" ? "var(--cp-sage)" : pkg.paymentStatus === "paid_off" ? "var(--cp-accent)" : "var(--cp-clay)",
+            }}>{pkg.paymentStatus.replace(/_/g, " ")}</span>
+          )}
+        </div>
+        {!pkg ? (
+          <div className="cp-empty-state" style={{ padding: "20px 12px" }}>
+            <div className="cp-empty-title" style={{ fontSize: 13 }}>No billing information yet</div>
+            <div className="cp-empty-desc" style={{ fontSize: 12 }}>Your specialist will configure your payment plan shortly.</div>
+          </div>
+        ) : (
+          <div>
+            <div className="cp-grid-3" style={{ gap: 12, marginBottom: 16 }}>
+              {[
+                { label: "Total Investment", val: totalInvestment > 0 ? `$${totalInvestment.toLocaleString("en-US", { minimumFractionDigits: 0 })}` : "—", color: "var(--cp-text-primary)" },
+                { label: "Amount Paid", val: amountPaid > 0 ? `$${amountPaid.toLocaleString("en-US", { minimumFractionDigits: 0 })}` : "$0", color: "var(--cp-sage)" },
+                { label: "Remaining", val: totalInvestment > 0 ? `$${remaining.toLocaleString("en-US", { minimumFractionDigits: 0 })}` : "—", color: remaining > 0 ? "var(--cp-clay)" : "var(--cp-sage)" },
+              ].map(s => (
+                <div key={s.label} style={{ background: "var(--cp-bg)", borderRadius: 10, padding: "14px 16px" }}>
+                  <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 22, fontWeight: 800, color: s.color, letterSpacing: -1 }}>{s.val}</div>
+                  <div style={{ fontSize: 10, color: "var(--cp-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+            {totalInvestment > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                  <span style={{ fontSize: 11, color: "var(--cp-text-muted)" }}>Payment progress</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--cp-sage)" }}>{paidPct}% paid</span>
+                </div>
+                <div className="cp-progress-bar"><div className="cp-progress-fill" style={{ width: `${paidPct}%`, background: "var(--cp-sage)" }} /></div>
+              </div>
+            )}
+            {pkg.nextPaymentAmount && pkg.nextPaymentDue && (
+              <div style={{ background: "var(--cp-clay-light)", border: "1px solid rgba(239,162,111,0.3)", borderRadius: 9, padding: "10px 14px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--cp-clay)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 2 }}>Next Payment Due</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--cp-text-primary)" }}>
+                    ${parseFloat(pkg.nextPaymentAmount).toLocaleString("en-US", { minimumFractionDigits: 0 })} · {new Date(pkg.nextPaymentDue).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                  </div>
+                </div>
+                {pkg.paymentPlanType && <span style={{ fontSize: 11, color: "var(--cp-clay)", fontWeight: 600, textTransform: "capitalize" }}>{pkg.paymentPlanType.replace(/_/g, " ")}</span>}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button className="cp-btn cp-btn-primary cp-btn-sm" disabled style={{ opacity: 0.7 }}>
+                <Icon size={12}><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></Icon>
+                Make Payment
+              </button>
+              <button className="cp-btn cp-btn-secondary cp-btn-sm" disabled style={{ opacity: 0.7 }}>
+                <Icon size={12}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></Icon>
+                View Agreement
+              </button>
+              <button className="cp-btn cp-btn-secondary cp-btn-sm" disabled style={{ opacity: 0.7 }}>
+                <Icon size={12}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></Icon>
+                Download Receipt
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Documents Needed */}
+      <div className="cp-card cp-mb-24">
+        <div className="cp-card-header">
+          <div><div className="cp-card-title">My Documents</div><div className="cp-card-subtitle">Files requested for your case</div></div>
+          {(documents as any[]).filter((d: any) => d.status === "needed").length > 0 && (
+            <span className="cp-badge warning">{(documents as any[]).filter((d: any) => d.status === "needed").length} needed</span>
+          )}
+        </div>
+        {(documents as any[]).length === 0 ? (
+          <div className="cp-empty-state" style={{ padding: "20px 12px" }}>
+            <div className="cp-empty-title" style={{ fontSize: 13 }}>No documents requested yet</div>
+            <div className="cp-empty-desc" style={{ fontSize: 12 }}>Your specialist will request documents as your case progresses.</div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            {(documents as any[]).map((doc: any, i) => {
+              const ds = docStatusBadge[doc.status] || docStatusBadge.needed;
+              return (
+                <div key={doc.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < documents.length - 1 ? "1px solid var(--cp-border-light)" : "none" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--cp-text-primary)" }}>{doc.label}</div>
+                    <div style={{ fontSize: 11, color: "var(--cp-text-muted)", textTransform: "capitalize" }}>{(doc.documentType || "").replace(/_/g, " ")}</div>
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: ds.bg, color: ds.color, textTransform: "capitalize", flexShrink: 0 }}>
+                    {doc.status.replace(/_/g, " ")}
+                  </span>
+                  {doc.status === "needed" && (
+                    <button className="cp-btn cp-btn-primary cp-btn-sm" disabled style={{ flexShrink: 0, fontSize: 11, padding: "4px 12px", opacity: 0.75 }}>Upload</button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Ways to Improve Faster */}
+      <div className="cp-card cp-mb-24">
+        <div className="cp-card-header">
+          <div><div className="cp-card-title">Ways to Improve Faster</div><div className="cp-card-subtitle">Participate actively to accelerate your results</div></div>
+        </div>
+        <div className="cp-grid-2" style={{ gap: 10 }}>
+          {[
+            { icon: "📅", label: "Respond quickly", detail: "Reply to your specialist within 24 hrs to keep your case moving", color: "var(--cp-accent)" },
+            { icon: "💳", label: "Keep utilization low", detail: "Aim to stay under 30% of your credit card limits", color: "var(--cp-sage)" },
+            { icon: "✅", label: "Pay on time every month", detail: "Payment history is 35% of your FICO — don't miss a single payment", color: "var(--cp-sage)" },
+            { icon: "🚫", label: "Avoid new hard inquiries", detail: "Hold off on applying for credit while disputes are active", color: "var(--cp-clay)" },
+            { icon: "📄", label: "Upload documents promptly", detail: "Missing documents stall the process — respond to all requests", color: "var(--cp-clay)" },
+            { icon: "💬", label: "Communicate changes", detail: "Notify your specialist if your address, income, or goals change", color: "var(--cp-accent)" },
+          ].map((a, i) => (
+            <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", background: "var(--cp-bg)", borderRadius: 10, padding: "12px 14px" }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: `${a.color}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>{a.icon}</div>
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--cp-text-primary)", marginBottom: 2 }}>{a.label}</div>
+                <div style={{ fontSize: 11.5, color: "var(--cp-text-muted)", lineHeight: 1.5 }}>{a.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Case Timeline */}
+      {activities.length > 0 && (
+        <div className="cp-card cp-mb-24">
+          <div className="cp-card-header">
+            <div><div className="cp-card-title">Case Timeline</div><div className="cp-card-subtitle">Full chronological history of your case</div></div>
+          </div>
+          <div style={{ position: "relative", paddingLeft: 22 }}>
+            <div style={{ position: "absolute", left: 8, top: 6, bottom: 6, width: 1, background: "var(--cp-border)" }} />
+            {(activities as any[]).map((a: any, i) => {
+              const s = activityStatusBadge[a.status] || activityStatusBadge.pending;
+              return (
+                <div key={a.id} style={{ position: "relative", paddingBottom: i < activities.length - 1 ? 16 : 0 }}>
+                  <div style={{ position: "absolute", left: -18, top: 4, width: 8, height: 8, borderRadius: "50%", background: s.color, border: "2px solid var(--cp-surface)", zIndex: 1 }} />
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--cp-text-primary)", lineHeight: 1.35 }}>{a.description}</div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 3, alignItems: "center" }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: s.color, textTransform: "capitalize" }}>{a.status.replace(/_/g, " ")}</span>
+                    <span style={{ fontSize: 10, color: "var(--cp-text-muted)" }}>· {new Date(a.occurredAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* My Results — only shown when there is real data */}
+      {pkg && (amountPaid > 0 || completedCount > 0) && (
         <div className="cp-card cp-mb-24">
           <div className="cp-card-header">
             <div><div className="cp-card-title">My Results</div><div className="cp-card-subtitle">What we've achieved together</div></div>
           </div>
           <div className="cp-grid-3" style={{ gap: 12 }}>
             {[
-              { label: "Items Removed", val: pkg.itemsRemoved, color: "var(--cp-sage)" },
-              { label: "Points Gained", val: pkg.pointsGained > 0 ? `+${pkg.pointsGained}` : "—", color: "var(--cp-accent)" },
-              { label: "Start Date", val: new Date(pkg.startDate).toLocaleDateString("en-US", { month: "short", year: "numeric" }), color: "var(--cp-text-primary)" },
+              { label: "Tasks Completed", val: `${completedCount}`, color: "var(--cp-sage)" },
+              { label: "Amount Paid", val: amountPaid > 0 ? `$${amountPaid.toLocaleString("en-US", { minimumFractionDigits: 0 })}` : "—", color: "var(--cp-accent)" },
+              { label: "Program", val: pkg.packageName || "Credit Repair", color: "var(--cp-text-primary)" },
             ].map(s => (
               <div key={s.label} style={{ background: "var(--cp-bg)", borderRadius: 10, padding: "14px 16px" }}>
-                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 22, fontWeight: 800, color: s.color, letterSpacing: -1 }}>{s.val}</div>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 800, color: s.color, letterSpacing: -0.5 }}>{s.val}</div>
                 <div style={{ fontSize: 10, color: "var(--cp-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{s.label}</div>
               </div>
             ))}
           </div>
         </div>
       )}
-
-      {/* Ways to improve — always shown */}
-      <div className="cp-card">
-        <div className="cp-card-header">
-          <div><div className="cp-card-title">Ways to Improve</div><div className="cp-card-subtitle">While your team works on disputes</div></div>
-        </div>
-        {[
-          { label: "Pay on time every month", detail: "Payment history is 35% of your FICO score", color: "var(--cp-sage)" },
-          { label: "Keep utilization below 30%", detail: "Lower credit card balances boost your score fast", color: "var(--cp-accent)" },
-          { label: "Avoid hard inquiries", detail: "Don't apply for new credit while disputes are active", color: "var(--cp-clay)" },
-        ].map((a, i) => (
-          <div key={i} className="cp-action-row">
-            <div className="cp-action-rank" style={{ background: `${a.color}15`, borderColor: `${a.color}40`, color: a.color }}>{i + 1}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="cp-action-label">{a.label}</div>
-              <div className="cp-action-detail">{a.detail}</div>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
 
-function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, scriptReady, tokenReady, tokenError }: HomePageProps) {
+function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, scriptReady, tokenReady, tokenError, scrollToPayment }: HomePageProps) {
   if (user?.accountType === "MANAGED_CLIENT") {
-    return <ManagedClientHome user={user} onNavigate={onNavigate} />;
+    return <ManagedClientHome user={user} onNavigate={onNavigate} scrollToPayment={scrollToPayment} />;
   }
   const displayName = user?.firstName || user?.username || "there";
   const hour = new Date().getHours();
@@ -1299,9 +1450,11 @@ export default function ClientPortal() {
   const displayName = user ? (user.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : user.username) : "User";
 
   /* ── Nav items ────────────────────────────────────────────────── */
-  const NAV: { id: PageId; label: string; icon: React.ReactNode; badge?: string }[] = [
-    { id: "home", label: "Home", icon: <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></> },
-    { id: "plan", label: "My Plan", icon: <><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></>, badge: "2" },
+  const isManaged = user?.accountType === "MANAGED_CLIENT";
+  const NAV: { id: PageId; label: string; icon: React.ReactNode; badge?: string; customClick?: () => void }[] = [
+    { id: "home", label: isManaged ? "My Plan" : "Home", icon: <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></> },
+    ...(!isManaged ? [{ id: "plan" as PageId, label: "My Plan", icon: <><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></> as React.ReactNode, badge: "2" }] : []),
+    ...(isManaged ? [{ id: "payment-center" as PageId, label: "Payment Center", icon: <><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></> as React.ReactNode }] : []),
     { id: "dispute-iq", label: "Dispute IQ", icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></> },
     { id: "debt", label: "Debt Navigator", icon: <><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></> },
     { id: "protection", label: "Protection Center", icon: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></> },
@@ -1311,7 +1464,7 @@ export default function ClientPortal() {
   ];
 
   const PAGE_TITLES: Record<PageId, string> = {
-    home: "Home",
+    home: isManaged ? "My Plan" : "Home",
     plan: "My Plan",
     "dispute-iq": "Dispute IQ",
     debt: "Debt Navigator",
@@ -1319,6 +1472,7 @@ export default function ClientPortal() {
     report: "Credit Report",
     progress: "Progress",
     profile: "Profile & Settings",
+    "payment-center": "Payment Center",
   };
 
   /* ── Render ───────────────────────────────────────────────────── */
@@ -1391,7 +1545,7 @@ export default function ClientPortal() {
 
         {/* Content */}
         <div className="cp-content">
-          {activePage === "home" && <HomePage user={user} goal={onboardingGoal} timeline={onboardingTimeline} onNavigate={setActivePage} appKey={appKey} userToken={userToken} sbx={sbx} scriptReady={scriptReady} tokenReady={tokenReady} tokenError={tokenError} />}
+          {(activePage === "home" || activePage === "payment-center") && <HomePage user={user} goal={onboardingGoal} timeline={onboardingTimeline} onNavigate={setActivePage} appKey={appKey} userToken={userToken} sbx={sbx} scriptReady={scriptReady} tokenReady={tokenReady} tokenError={tokenError} scrollToPayment={activePage === "payment-center"} />}
           {activePage === "plan" && <PlanPage goal={onboardingGoal} timeline={onboardingTimeline} onNavigate={setActivePage} />}
           {activePage === "dispute-iq" && <RealDisputeIQPage />}
           {activePage === "debt" && <DebtPage {...arrayProps} />}

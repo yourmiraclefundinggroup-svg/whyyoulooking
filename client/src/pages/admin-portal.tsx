@@ -990,42 +990,44 @@ function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetc
   const queryClient = useQueryClient();
 
   const { data: pkg, isLoading: pkgLoading } = useQuery<any>({
-    queryKey: ["/api/admin/managed/package", client.id],
+    queryKey: ["/api/admin/users/managed-package", client.id],
     queryFn: () =>
-      fetch(`/api/admin/managed/package/${client.id}`, {
+      fetch(`/api/admin/users/${client.id}/managed-package`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
       }).then(r => r.json()),
   });
 
   const { data: activities = [] } = useQuery<any[]>({
-    queryKey: ["/api/admin/managed/activities", client.id],
+    queryKey: ["/api/admin/users/case-activities", client.id],
     queryFn: () =>
-      fetch(`/api/admin/managed/activities/${client.id}`, {
+      fetch(`/api/admin/users/${client.id}/case-activities`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
       }).then(r => r.json()),
   });
 
   const { data: documents = [] } = useQuery<any[]>({
-    queryKey: ["/api/admin/managed/documents", client.id],
+    queryKey: ["/api/admin/users/documents", client.id],
     queryFn: () =>
-      fetch(`/api/admin/managed/documents/${client.id}`, {
+      fetch(`/api/admin/users/${client.id}/documents`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
       }).then(r => r.json()),
   });
 
   const [pkgForm, setPkgForm] = useState({
     packageName: pkg?.packageName ?? "",
-    status: pkg?.status ?? "active",
-    monthlyFee: pkg?.monthlyFee ? String(pkg.monthlyFee) : "",
-    itemsIdentified: pkg?.itemsIdentified ? String(pkg.itemsIdentified) : "0",
-    itemsRemoved: pkg?.itemsRemoved ? String(pkg.itemsRemoved) : "0",
-    itemsInProgress: pkg?.itemsInProgress ? String(pkg.itemsInProgress) : "0",
-    pointsGained: pkg?.pointsGained ? String(pkg.pointsGained) : "0",
-    nextActionNote: pkg?.nextActionNote ?? "",
+    caseStatus: pkg?.caseStatus ?? "active",
+    casesSummary: pkg?.casesSummary ?? "",
+    assignedSpecialist: pkg?.assignedSpecialist ?? "",
+    totalInvestment: pkg?.totalInvestment ? String(pkg.totalInvestment) : "",
+    amountPaid: pkg?.amountPaid ? String(pkg.amountPaid) : "0",
+    paymentPlanType: pkg?.paymentPlanType ?? "monthly",
+    nextPaymentAmount: pkg?.nextPaymentAmount ? String(pkg.nextPaymentAmount) : "",
+    nextPaymentDue: pkg?.nextPaymentDue ? String(pkg.nextPaymentDue).slice(0, 10) : "",
+    paymentStatus: pkg?.paymentStatus ?? "current",
   });
   const [pkgSaving, setPkgSaving] = useState(false);
 
-  const [actForm, setActForm] = useState({ activityType: "note_added", title: "", description: "" });
+  const [actForm, setActForm] = useState({ activityType: "note_added", description: "", status: "completed" });
   const [actSaving, setActSaving] = useState(false);
 
   const [docForm, setDocForm] = useState({ label: "", documentType: "id" });
@@ -1036,13 +1038,15 @@ function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetc
     if (pkg) {
       setPkgForm({
         packageName: pkg.packageName ?? "",
-        status: pkg.status ?? "active",
-        monthlyFee: pkg.monthlyFee ? String(pkg.monthlyFee) : "",
-        itemsIdentified: String(pkg.itemsIdentified ?? 0),
-        itemsRemoved: String(pkg.itemsRemoved ?? 0),
-        itemsInProgress: String(pkg.itemsInProgress ?? 0),
-        pointsGained: String(pkg.pointsGained ?? 0),
-        nextActionNote: pkg.nextActionNote ?? "",
+        caseStatus: pkg.caseStatus ?? "active",
+        casesSummary: pkg.casesSummary ?? "",
+        assignedSpecialist: pkg.assignedSpecialist ?? "",
+        totalInvestment: pkg.totalInvestment ? String(pkg.totalInvestment) : "",
+        amountPaid: pkg.amountPaid ? String(pkg.amountPaid) : "0",
+        paymentPlanType: pkg.paymentPlanType ?? "monthly",
+        nextPaymentAmount: pkg.nextPaymentAmount ? String(pkg.nextPaymentAmount) : "",
+        nextPaymentDue: pkg.nextPaymentDue ? String(pkg.nextPaymentDue).slice(0, 10) : "",
+        paymentStatus: pkg.paymentStatus ?? "current",
       });
     }
   }, [pkg]);
@@ -1052,20 +1056,20 @@ function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetc
     try {
       const body = {
         ...pkgForm,
-        monthlyFee: pkgForm.monthlyFee ? parseFloat(pkgForm.monthlyFee) : null,
-        itemsIdentified: parseInt(pkgForm.itemsIdentified) || 0,
-        itemsRemoved: parseInt(pkgForm.itemsRemoved) || 0,
-        itemsInProgress: parseInt(pkgForm.itemsInProgress) || 0,
-        pointsGained: parseInt(pkgForm.pointsGained) || 0,
+        totalInvestment: pkgForm.totalInvestment ? parseFloat(pkgForm.totalInvestment) : null,
+        amountPaid: pkgForm.amountPaid ? parseFloat(pkgForm.amountPaid) : 0,
+        nextPaymentAmount: pkgForm.nextPaymentAmount ? parseFloat(pkgForm.nextPaymentAmount) : null,
+        nextPaymentDue: pkgForm.nextPaymentDue ? new Date(pkgForm.nextPaymentDue).toISOString() : null,
+        paymentPlanType: pkgForm.paymentPlanType || null,
       };
-      const resp = await fetch(`/api/admin/managed/package/${client.id}`, {
+      const resp = await fetch(`/api/admin/users/${client.id}/managed-package`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
         body: JSON.stringify(body),
       });
       if (!resp.ok) throw new Error("Failed to save");
       toast({ title: "Package saved" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/managed/package", client.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/managed-package", client.id] });
     } catch {
       toast({ title: "Save failed", variant: "destructive" });
     } finally {
@@ -1074,18 +1078,18 @@ function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetc
   };
 
   const addActivity = async () => {
-    if (!actForm.title.trim()) return;
+    if (!actForm.description.trim()) return;
     setActSaving(true);
     try {
-      const resp = await fetch(`/api/admin/managed/activity/${client.id}`, {
+      const resp = await fetch(`/api/admin/users/${client.id}/case-activities`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
         body: JSON.stringify(actForm),
       });
       if (!resp.ok) throw new Error("Failed");
       toast({ title: "Activity added" });
-      setActForm({ activityType: "note_added", title: "", description: "" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/managed/activities", client.id] });
+      setActForm({ activityType: "note_added", description: "", status: "completed" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/case-activities", client.id] });
     } catch {
       toast({ title: "Failed to add activity", variant: "destructive" });
     } finally {
@@ -1097,7 +1101,7 @@ function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetc
     if (!docForm.label.trim()) return;
     setDocSaving(true);
     try {
-      const resp = await fetch(`/api/admin/managed/documents/${client.id}`, {
+      const resp = await fetch(`/api/admin/users/${client.id}/documents`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
         body: JSON.stringify(docForm),
@@ -1105,7 +1109,7 @@ function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetc
       if (!resp.ok) throw new Error("Failed");
       toast({ title: "Document requested" });
       setDocForm({ label: "", documentType: "id" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/managed/documents", client.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/documents", client.id] });
     } catch {
       toast({ title: "Failed to request document", variant: "destructive" });
     } finally {
@@ -1144,13 +1148,15 @@ function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetc
                 />
               </div>
               <div>
-                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Status</Label>
-                <Select value={pkgForm.status} onValueChange={v => setPkgForm(p => ({ ...p, status: v }))}>
+                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Case Status</Label>
+                <Select value={pkgForm.caseStatus} onValueChange={v => setPkgForm(p => ({ ...p, caseStatus: v }))}>
                   <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="waiting_on_client">Waiting on Client</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="on_hold">On Hold</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -1158,37 +1164,83 @@ function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetc
                 </Select>
               </div>
               <div>
-                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Monthly Fee ($)</Label>
+                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Assigned Specialist</Label>
                 <Input
                   className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm"
-                  type="number" min="0" step="1" placeholder="99"
-                  value={pkgForm.monthlyFee}
-                  onChange={e => setPkgForm(p => ({ ...p, monthlyFee: e.target.value }))}
+                  placeholder="Specialist name"
+                  value={pkgForm.assignedSpecialist}
+                  onChange={e => setPkgForm(p => ({ ...p, assignedSpecialist: e.target.value }))}
                 />
               </div>
-              {[
-                { key: "itemsIdentified", label: "Items Found" },
-                { key: "itemsRemoved", label: "Items Removed" },
-                { key: "itemsInProgress", label: "In Progress" },
-                { key: "pointsGained", label: "Points Gained" },
-              ].map(f => (
-                <div key={f.key}>
-                  <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">{f.label}</Label>
-                  <Input
-                    className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm"
-                    type="number" min="0"
-                    value={(pkgForm as any)[f.key]}
-                    onChange={e => setPkgForm(p => ({ ...p, [f.key]: e.target.value }))}
-                  />
-                </div>
-              ))}
+              <div>
+                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Total Investment ($)</Label>
+                <Input
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm"
+                  type="number" min="0" step="1" placeholder="1499"
+                  value={pkgForm.totalInvestment}
+                  onChange={e => setPkgForm(p => ({ ...p, totalInvestment: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Amount Paid ($)</Label>
+                <Input
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm"
+                  type="number" min="0" step="1" placeholder="0"
+                  value={pkgForm.amountPaid}
+                  onChange={e => setPkgForm(p => ({ ...p, amountPaid: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Payment Plan Type</Label>
+                <Select value={pkgForm.paymentPlanType} onValueChange={v => setPkgForm(p => ({ ...p, paymentPlanType: v }))}>
+                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="upfront">Upfront</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Payment Status</Label>
+                <Select value={pkgForm.paymentStatus} onValueChange={v => setPkgForm(p => ({ ...p, paymentStatus: v }))}>
+                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="current">Current</SelectItem>
+                    <SelectItem value="overdue">Overdue</SelectItem>
+                    <SelectItem value="paid_off">Paid Off</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Next Payment ($)</Label>
+                <Input
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm"
+                  type="number" min="0" step="1" placeholder="199"
+                  value={pkgForm.nextPaymentAmount}
+                  onChange={e => setPkgForm(p => ({ ...p, nextPaymentAmount: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Next Payment Due</Label>
+                <Input
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm"
+                  type="date"
+                  value={pkgForm.nextPaymentDue}
+                  onChange={e => setPkgForm(p => ({ ...p, nextPaymentDue: e.target.value }))}
+                />
+              </div>
               <div className="col-span-2">
-                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Next Action Note</Label>
+                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Case Summary (shown to client)</Label>
                 <Textarea
                   className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] text-sm min-h-[60px]"
-                  placeholder="What's the next step for this client?"
-                  value={pkgForm.nextActionNote}
-                  onChange={e => setPkgForm(p => ({ ...p, nextActionNote: e.target.value }))}
+                  placeholder="Brief summary of the case and current status…"
+                  value={pkgForm.casesSummary}
+                  onChange={e => setPkgForm(p => ({ ...p, casesSummary: e.target.value }))}
                 />
               </div>
             </div>
@@ -1217,21 +1269,26 @@ function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetc
                   <SelectItem value="follow_up_scheduled">Follow-Up Scheduled</SelectItem>
                 </SelectContent>
               </Select>
-              <Input
-                className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm"
-                placeholder="Activity title (required)"
-                value={actForm.title}
-                onChange={e => setActForm(p => ({ ...p, title: e.target.value }))}
-              />
+              <Select value={actForm.status} onValueChange={v => setActForm(p => ({ ...p, status: v }))}>
+                <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="waiting">Waiting</SelectItem>
+                </SelectContent>
+              </Select>
               <Textarea
-                className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] text-sm min-h-[52px]"
-                placeholder="Optional description"
+                className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] text-sm min-h-[60px]"
+                placeholder="Activity description (required)"
                 value={actForm.description}
                 onChange={e => setActForm(p => ({ ...p, description: e.target.value }))}
               />
               <Button size="sm"
                 className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white w-full"
-                disabled={actSaving || !actForm.title.trim()}
+                disabled={actSaving || !actForm.description.trim()}
                 onClick={addActivity}>
                 {actSaving ? "Adding…" : "Add Activity"}
               </Button>
@@ -1241,9 +1298,9 @@ function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetc
                 ? <p className="text-xs text-[hsl(var(--admin-text-muted))]">No activities yet.</p>
                 : (activities as any[]).map((a: any) => (
                   <div key={a.id} className="flex gap-2 text-xs py-1 border-b border-[hsl(var(--admin-border))]">
-                    <span className="text-[hsl(var(--admin-text-muted))] shrink-0">{new Date(a.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-                    <span className="text-[hsl(var(--admin-text))] font-medium truncate">{a.title}</span>
-                    <span className="text-[hsl(var(--admin-text-muted))] ml-auto shrink-0">{a.activityType.replace("_", " ")}</span>
+                    <span className="text-[hsl(var(--admin-text-muted))] shrink-0">{new Date(a.occurredAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                    <span className="text-[hsl(var(--admin-text))] font-medium truncate">{a.description}</span>
+                    <span className="text-[hsl(var(--admin-text-muted))] ml-auto shrink-0 capitalize">{(a.status || "").replace(/_/g, " ")}</span>
                   </div>
                 ))}
             </div>

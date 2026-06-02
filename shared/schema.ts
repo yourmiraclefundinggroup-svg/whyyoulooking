@@ -1340,17 +1340,17 @@ export const managedClientPackages = pgTable("managed_client_packages", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull().unique(),
   packageName: text("package_name").notNull().default("Standard Credit Repair"),
-  status: text("status").notNull().default("active"), // active | on_hold | completed | cancelled
-  startDate: timestamp("start_date").defaultNow().notNull(),
-  estimatedCompletionDate: timestamp("estimated_completion_date"),
-  itemsIdentified: integer("items_identified").notNull().default(0),
-  itemsRemoved: integer("items_removed").notNull().default(0),
-  itemsInProgress: integer("items_in_progress").notNull().default(0),
-  pointsGained: integer("points_gained").notNull().default(0),
-  nextActionDate: timestamp("next_action_date"),
-  nextActionNote: text("next_action_note"),
-  internalNotes: text("internal_notes"),
-  monthlyFee: decimal("monthly_fee", { precision: 10, scale: 2 }).default("199.00"),
+  totalInvestment: decimal("total_investment", { precision: 10, scale: 2 }),
+  amountPaid: decimal("amount_paid", { precision: 10, scale: 2 }).default("0"),
+  paymentPlanType: text("payment_plan_type"), // monthly | upfront | custom
+  nextPaymentAmount: decimal("next_payment_amount", { precision: 10, scale: 2 }),
+  nextPaymentDue: timestamp("next_payment_due"),
+  paymentStatus: text("payment_status").default("current"), // current | overdue | paid_off
+  assignedSpecialist: text("assigned_specialist"),
+  enrollmentDate: timestamp("enrollment_date").defaultNow(),
+  caseStatus: text("case_status").notNull().default("active"), // active | waiting_on_client | pending | completed | on_hold | cancelled
+  casesSummary: text("cases_summary"),
+  servicesIncluded: jsonb("services_included"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -1359,32 +1359,23 @@ export const clientCaseActivities = pgTable("client_case_activities", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   activityType: text("activity_type").notNull(), // letter_sent | dispute_filed | document_reviewed | call_completed | score_update | note_added | follow_up_scheduled
-  title: text("title").notNull(),
-  description: text("description"),
-  performedBy: text("performed_by").notNull().default("ScoreShift Team"),
-  isVisibleToClient: boolean("is_visible_to_client").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  description: text("description").notNull(),
+  status: text("status").notNull().default("completed"), // completed | in_progress | pending | waiting
+  occurredAt: timestamp("occurred_at").defaultNow().notNull(),
 });
 
 // Documents requested/uploaded for managed client case
 export const clientDocuments = pgTable("client_documents", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  fileName: text("file_name").notNull(),
-  fileSize: integer("file_size"),
-  mimeType: text("mime_type"),
-  filePath: text("file_path").notNull().default(""),
-  documentType: text("document_type").notNull(), // id | ssn_card | bank_statement | bureau_response | other
-  label: text("label").notNull().default("Document"),
+  documentType: text("document_type").notNull(), // id | ssn | proof_of_address | bank_statement | dispute_response | other
+  label: text("label").notNull(),
   status: text("status").notNull().default("needed"), // needed | uploaded | reviewed | approved
-  requestedAt: timestamp("requested_at").defaultNow(),
   uploadedAt: timestamp("uploaded_at"),
-  reviewedAt: timestamp("reviewed_at"),
-  adminNotes: text("admin_notes"),
 });
 
 export const insertManagedClientPackageSchema = createInsertSchema(managedClientPackages).omit({ id: true, createdAt: true });
-export const insertClientCaseActivitySchema = createInsertSchema(clientCaseActivities).omit({ id: true, createdAt: true });
+export const insertClientCaseActivitySchema = createInsertSchema(clientCaseActivities).omit({ id: true });
 export const insertClientDocumentSchema = createInsertSchema(clientDocuments).omit({ id: true });
 
 export type ManagedClientPackage = typeof managedClientPackages.$inferSelect;

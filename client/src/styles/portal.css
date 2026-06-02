@@ -28,6 +28,12 @@
   --cp-clay: #EFA26F;
   --cp-clay-light: rgba(239,162,111,0.1);
   --cp-subtle: #DCD8E8;
+
+  /* Spec-canonical aliases */
+  --cp-text: var(--cp-text-primary);
+  --cp-muted: var(--cp-text-muted);
+  --cp-success: #7B8A7A;
+  --cp-warning: #EFA26F;
   --cp-green: #22c55e;
   --cp-green-light: rgba(34,197,94,0.1);
   --cp-teal: #14b8a6;

@@ -337,6 +337,7 @@ export interface IStorage {
   upsertManagedClientPackage(userId: number, data: Partial<InsertManagedClientPackage>): Promise<ManagedClientPackage>;
   getClientCaseActivities(userId: number): Promise<ClientCaseActivity[]>;
   createClientCaseActivity(activity: InsertClientCaseActivity): Promise<ClientCaseActivity>;
+  updateClientCaseActivity(id: number, updates: Partial<ClientCaseActivity>): Promise<ClientCaseActivity | undefined>;
   getClientDocuments(userId: number): Promise<ClientDocument[]>;
   createClientDocument(doc: InsertClientDocument): Promise<ClientDocument>;
   updateClientDocument(id: number, updates: Partial<ClientDocument>): Promise<ClientDocument | undefined>;
@@ -2670,12 +2671,17 @@ export class MemStorage implements IStorage {
   async getClientCaseActivities(userId: number): Promise<ClientCaseActivity[]> {
     return await db.select().from(clientCaseActivities)
       .where(eq(clientCaseActivities.userId, userId))
-      .orderBy(desc(clientCaseActivities.createdAt));
+      .orderBy(desc(clientCaseActivities.occurredAt));
   }
 
   async createClientCaseActivity(activity: InsertClientCaseActivity): Promise<ClientCaseActivity> {
-    const [created] = await db.insert(clientCaseActivities).values(activity).returning();
+    const [created] = await db.insert(clientCaseActivities).values(activity as any).returning();
     return created;
+  }
+
+  async updateClientCaseActivity(id: number, updates: Partial<ClientCaseActivity>): Promise<ClientCaseActivity | undefined> {
+    const [updated] = await db.update(clientCaseActivities).set(updates as any).where(eq(clientCaseActivities.id, id)).returning();
+    return updated || undefined;
   }
 
   async getClientDocuments(userId: number): Promise<ClientDocument[]> {
