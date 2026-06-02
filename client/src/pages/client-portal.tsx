@@ -286,16 +286,23 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
         </div>
         <div className="cp-home-hero-scores">
           {!scriptReady || (!tokenReady && !tokenError) ? (
-            <div className="cp-array-spinner" style={{ borderColor: "rgba(255,255,255,0.2)", borderTopColor: "rgba(255,255,255,0.85)", width: 28, height: 28, borderWidth: 2.5 }} />
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              <div className="cp-array-spinner" style={{ borderColor: "rgba(255,255,255,0.2)", borderTopColor: "rgba(255,255,255,0.85)", width: 28, height: 28, borderWidth: 2.5 }} />
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>Loading scores…</span>
+            </div>
           ) : tokenError ? (
-            <button className="cp-btn cp-btn-sm" style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.22)", color: "white", fontSize: 12 }} onClick={() => onNavigate("report")}>
-              Connect credit data
-            </button>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.65)", marginBottom: 10, lineHeight: 1.5 }}>
+                Credit data not connected yet.<br />Pull your report to see live scores.
+              </div>
+              <button className="cp-btn cp-btn-sm" style={{ background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.24)", color: "white", fontSize: 12 }} onClick={() => onNavigate("report")}>
+                Get Started →
+              </button>
+            </div>
           ) : (
-            <button className="cp-btn cp-btn-sm" style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.22)", color: "white", fontSize: 12, gap: 6 }} onClick={() => onNavigate("report")}>
-              <Icon size={13}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></Icon>
-              Review My Scores
-            </button>
+            <div style={{ minWidth: 160, maxWidth: 240 }}>
+              <array-credit-score appKey={appKey} userToken={userToken} bureau="all" {...sbx} />
+            </div>
           )}
         </div>
       </div>
@@ -428,10 +435,16 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
 
 /* ── MY PLAN PAGE ────────────────────────────────────────────────── */
 function PlanPage({ goal, timeline, onNavigate }: { goal: OnboardingGoal | null; timeline: OnboardingTimeline | null; onNavigate: (page: PageId) => void }) {
-  const { data: activeRaw, isLoading } = useQuery<EnrichedDispute[]>({
+  const { data: activeRaw, isLoading: loadingActive } = useQuery<EnrichedDispute[]>({
     queryKey: ["/api/client/disputes?status=active"],
   });
-  const active: EnrichedDispute[] = Array.isArray(activeRaw) ? activeRaw : [];
+  const { data: pendingRaw, isLoading: loadingPending } = useQuery<EnrichedDispute[]>({
+    queryKey: ["/api/client/disputes?status=pending"],
+  });
+  const isLoading = loadingActive || loadingPending;
+  const activeArr: EnrichedDispute[] = Array.isArray(activeRaw) ? activeRaw : [];
+  const pendingArr: EnrichedDispute[] = Array.isArray(pendingRaw) ? pendingRaw : [];
+  const active: EnrichedDispute[] = [...activeArr, ...pendingArr];
   const goalLabel = goal ? GOALS.find(g => g.id === goal)?.label : null;
   const timelineLabel = timeline ? TIMELINES.find(t => t.id === timeline)?.label : null;
 
@@ -694,14 +707,73 @@ function ReportPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenErro
 }
 
 /* ── PROGRESS PAGE ───────────────────────────────────────────────── */
+type LifecycleEvent = {
+  id: string;
+  date: string | null;
+  label: string;
+  desc: string;
+  kind: "filed" | "sent" | "delivered" | "followup" | "resolved" | "rejected" | "pending";
+};
+
+function buildLifecycleEvents(disputes: EnrichedDispute[]): LifecycleEvent[] {
+  const events: LifecycleEvent[] = [];
+  for (const d of disputes) {
+    const prefix = `${d.creditor} · ${d.bureau}`;
+    const title = d.issueTitle || "Dispute";
+    // Filed / Letter Generated
+    events.push({ id: `${d.id}-filed`, date: d.dateSent, label: `Letter generated: ${title}`, desc: `${prefix} — dispute letter created and ready to send`, kind: "filed" });
+    // Sent
+    if (d.status === "SENT" || d.status === "DELIVERED" || d.status === "FOLLOW_UP_REQUIRED" || d.status === "RESOLVED" || d.status === "REJECTED") {
+      events.push({ id: `${d.id}-sent`, date: d.dateSent, label: `Letter sent: ${title}`, desc: `${prefix} — certified mail dispatched to bureau`, kind: "sent" });
+    }
+    // Delivered
+    if (d.status === "DELIVERED" || d.status === "FOLLOW_UP_REQUIRED" || d.status === "RESOLVED" || d.status === "REJECTED") {
+      events.push({ id: `${d.id}-delivered`, date: d.dateDelivered ?? d.dateSent, label: `Letter delivered: ${title}`, desc: `${prefix} — bureau received certified mail; 30-day review window started`, kind: "delivered" });
+    }
+    // Follow-up required
+    if (d.status === "FOLLOW_UP_REQUIRED") {
+      events.push({ id: `${d.id}-followup`, date: d.dateDelivered ?? d.dateSent, label: `Follow-up required: ${title}`, desc: `${prefix} — 30 days elapsed, escalation letter may be needed`, kind: "followup" });
+    }
+    // Resolved
+    if (d.status === "RESOLVED") {
+      const outcomeText = d.outcome === "removed" ? "✓ Item removed from report" : d.outcome === "verified" ? "Bureau verified item (not removed)" : "Case closed";
+      events.push({ id: `${d.id}-resolved`, date: d.dateDelivered ?? d.dateSent, label: `Resolved: ${title}`, desc: `${prefix} — ${outcomeText}`, kind: d.outcome === "removed" ? "resolved" : "rejected" });
+    }
+    // Rejected
+    if (d.status === "REJECTED") {
+      events.push({ id: `${d.id}-rejected`, date: d.dateDelivered ?? d.dateSent, label: `Rejected: ${title}`, desc: `${prefix} — bureau rejected dispute; consider escalation`, kind: "rejected" });
+    }
+  }
+  // Sort by date desc (most recent first), nulls last
+  events.sort((a, b) => {
+    if (!a.date && !b.date) return 0;
+    if (!a.date) return 1;
+    if (!b.date) return -1;
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
+  return events;
+}
+
 function ProgressPage() {
-  const { data: activeRaw = [] } = useQuery<EnrichedDispute[]>({ queryKey: ["/api/client/disputes?status=active"] });
-  const { data: resolvedRaw = [] } = useQuery<EnrichedDispute[]>({ queryKey: ["/api/client/disputes?status=resolved"] });
+  const { data: activeRaw = [], isLoading: loadA } = useQuery<EnrichedDispute[]>({ queryKey: ["/api/client/disputes?status=active"] });
+  const { data: resolvedRaw = [], isLoading: loadR } = useQuery<EnrichedDispute[]>({ queryKey: ["/api/client/disputes?status=resolved"] });
+  const isLoading = loadA || loadR;
   const active: EnrichedDispute[] = Array.isArray(activeRaw) ? activeRaw : [];
   const resolved: EnrichedDispute[] = Array.isArray(resolvedRaw) ? resolvedRaw : [];
   const allDisputes = [...active, ...resolved];
   const removedCount = resolved.filter(d => d.outcome === "removed").length;
   const hasData = allDisputes.length > 0;
+  const events = buildLifecycleEvents(allDisputes);
+
+  const eventKindDot: Record<string, { bg: string; icon: React.ReactNode }> = {
+    filed:    { bg: "var(--cp-accent)",  icon: <Icon size={11}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></Icon> },
+    sent:     { bg: "var(--cp-blue)",    icon: <Icon size={11}><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></Icon> },
+    delivered:{ bg: "var(--cp-teal)",    icon: <Icon size={11}><polyline points="20 6 9 17 4 12" /></Icon> },
+    followup: { bg: "var(--cp-amber)",   icon: <Icon size={11}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></Icon> },
+    resolved: { bg: "var(--cp-green)",   icon: <Icon size={11}><polyline points="20 6 9 17 4 12" /></Icon> },
+    rejected: { bg: "var(--cp-red)",     icon: <Icon size={11}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon> },
+    pending:  { bg: "var(--cp-text-muted)", icon: <Icon size={11}><circle cx="12" cy="12" r="10" /></Icon> },
+  };
 
   return (
     <div>
@@ -715,10 +787,10 @@ function ProgressPage() {
 
       <div className="cp-grid-4 cp-mb-24">
         {[
-          { label: "Total Disputes", val: allDisputes.length.toString(), color: "var(--cp-accent)" },
-          { label: "Active", val: active.length.toString(), color: "var(--cp-amber)" },
-          { label: "Items Removed", val: removedCount.toString(), color: "var(--cp-green)" },
-          { label: "Resolved", val: resolved.length.toString(), color: "var(--cp-teal)" },
+          { label: "Total Disputes", val: isLoading ? "—" : allDisputes.length.toString(), color: "var(--cp-accent)" },
+          { label: "Active", val: isLoading ? "—" : active.length.toString(), color: "var(--cp-amber)" },
+          { label: "Items Removed", val: isLoading ? "—" : removedCount.toString(), color: "var(--cp-green)" },
+          { label: "Resolved", val: isLoading ? "—" : resolved.length.toString(), color: "var(--cp-teal)" },
         ].map(s => (
           <div key={s.label} className="cp-stat-card">
             <div>
@@ -732,36 +804,36 @@ function ProgressPage() {
       <div className="cp-card">
         <div className="cp-card-header">
           <div className="cp-card-title">Dispute Timeline</div>
-          {hasData && <span className="cp-badge success">{allDisputes.length} dispute{allDisputes.length !== 1 ? "s" : ""} filed</span>}
+          {hasData && <span className="cp-badge success">{events.length} event{events.length !== 1 ? "s" : ""}</span>}
         </div>
-        {!hasData ? (
+        {isLoading ? (
+          <div style={{ padding: "32px 0", textAlign: "center" }}>
+            <div className="cp-array-spinner" style={{ margin: "0 auto 10px" }} />
+            <div style={{ fontSize: 12.5, color: "var(--cp-text-muted)" }}>Loading your timeline…</div>
+          </div>
+        ) : !hasData ? (
           <div className="cp-empty-state">
             <div className="cp-empty-icon">
               <Icon size={28}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></Icon>
             </div>
             <div className="cp-empty-title">Your timeline starts here</div>
-            <div className="cp-empty-desc">Once disputes are filed, your full credit repair journey will be tracked here — every action, every improvement.</div>
+            <div className="cp-empty-desc">Once disputes are filed, your full credit repair journey will be tracked here — every letter sent, every delivery confirmed, every item resolved.</div>
           </div>
         ) : (
           <div className="cp-milestone-list">
-            {allDisputes.map((d, i) => {
-              const isDone = d.status === "RESOLVED" || d.status === "REJECTED";
+            {events.map((ev, i) => {
+              const dot = eventKindDot[ev.kind] ?? eventKindDot.pending;
+              const isDone = ev.kind === "resolved" || ev.kind === "delivered" || ev.kind === "sent";
               return (
-                <div key={d.id} className={`cp-milestone${isDone ? " done" : " upcoming"}`}>
-                  <div className="cp-milestone-dot">
-                    {isDone
-                      ? <Icon size={12}><polyline points="20 6 9 17 4 12" /></Icon>
-                      : <Icon size={12}><circle cx="12" cy="12" r="10" /></Icon>}
+                <div key={ev.id} className={`cp-milestone${isDone || ev.kind === "rejected" ? " done" : " upcoming"}`}>
+                  <div className="cp-milestone-dot" style={{ background: dot.bg, border: "none" }}>
+                    {dot.icon}
                   </div>
-                  {i < allDisputes.length - 1 && <div className="cp-milestone-line" />}
+                  {i < events.length - 1 && <div className="cp-milestone-line" />}
                   <div className="cp-milestone-content">
-                    <div className="cp-milestone-date">{fmtDate(d.dateSent)}</div>
-                    <div className="cp-milestone-label">{d.issueTitle}</div>
-                    <div className="cp-milestone-desc">
-                      {d.creditor} · {d.bureau}
-                      {d.outcome === "removed" && <span style={{ marginLeft: 8, fontWeight: 700, color: "var(--cp-green)" }}>✓ Removed</span>}
-                      {d.outcome === "verified" && <span style={{ marginLeft: 8, fontWeight: 700, color: "var(--cp-red)" }}>Verified (not removed)</span>}
-                    </div>
+                    {ev.date && <div className="cp-milestone-date">{fmtDate(ev.date)}</div>}
+                    <div className="cp-milestone-label">{ev.label}</div>
+                    <div className="cp-milestone-desc">{ev.desc}</div>
                   </div>
                 </div>
               );
