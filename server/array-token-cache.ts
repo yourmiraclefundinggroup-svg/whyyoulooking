@@ -151,6 +151,10 @@ export async function getOrRefreshArrayToken(
 
   if (RAILWAY_BACKEND_URL) {
     result = await fetchTokenViaRailway(arrayUserId, appKey, RAILWAY_BACKEND_URL, INTERNAL_API_SECRET);
+    if (result.error || !result.token) {
+      console.warn(`[ArrayToken] Railway failed (${result.error}) — falling back to direct Array call for user ${userId}`);
+      result = await fetchTokenDirect(userId, arrayUserId, apiKey, appKey, isSandbox);
+    }
   } else {
     result = await fetchTokenDirect(userId, arrayUserId, apiKey, appKey, isSandbox);
   }

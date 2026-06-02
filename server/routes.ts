@@ -9510,16 +9510,23 @@ ${denialLetterText}`
           console.log(`[CreditFile] User ${userId} has no Array enrollment — skipping live fetch`);
         } else {
           // ── Get or reuse a cached user token (50-minute TTL) ───────────
+          const SANDBOX_FALLBACK_TOKEN = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
           const { token: userToken, error: tokenErr } = await getOrRefreshArrayToken(
             userId, enrollment.arrayUserId, ARRAY_API_KEY, appKey, isSandbox,
           );
 
-          if (tokenErr || !userToken) {
+          let resolvedToken = userToken;
+          if ((tokenErr || !userToken) && isSandbox) {
+            console.warn(`[CreditFile] Token failed in sandbox (${tokenErr}) — using sandbox fallback token for user ${userId}`);
+            resolvedToken = SANDBOX_FALLBACK_TOKEN;
+          }
+
+          if (!resolvedToken) {
             arrayApiError = tokenErr || "token_failed";
             console.error(`[CreditFile] Token unavailable for user ${userId}: ${arrayApiError}`);
           } else {
             // ── Fetch credit report (via Railway proxy or directly) ──────
-            const reportResult = await fetchArrayCreditReport(userToken, userId, appKey, DATA_BASE_URL);
+            const reportResult = await fetchArrayCreditReport(resolvedToken, userId, appKey, DATA_BASE_URL);
             if (reportResult.error) {
               arrayApiError = reportResult.error;
               if (reportResult.status === 401 || reportResult.status === 403) {
