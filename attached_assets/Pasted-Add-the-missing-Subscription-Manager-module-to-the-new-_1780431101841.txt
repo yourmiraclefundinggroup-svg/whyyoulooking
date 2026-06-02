@@ -1,0 +1,238 @@
+Add the missing Subscription Manager module to the new ScoreShift portal.
+
+Do NOT redesign the portal from scratch.
+Do NOT remove or change the new guided portal experience.
+Do NOT remove existing navigation, account type logic, managed client logic, Dispute IQ, Debt Navigator, Protection Center, Credit Report, Student Loan Aid, or Progress.
+
+Only add and integrate Subscription Manager correctly.
+
+1. Restore/Add Subscription Manager
+
+Subscription Manager must be available in the authenticated portal navigation.
+
+Add it to the main portal navigation as:
+
+Subscription Manager
+
+It should also appear inside:
+
+* Managed Client: “Ways To Improve Faster”
+* Self-Service: Recommended tools when recurring expenses affect debt payoff or financial goals
+* Debt Navigator: as a savings source that can accelerate payoff plans
+
+2. Purpose
+
+Subscription Manager is not just a budgeting tool.
+
+It should function as a ScoreShift financial optimization tool that helps users identify recurring charges and redirect savings toward their credit or financial goals.
+
+Core purpose:
+Find monthly subscription waste
+→ show savings opportunity
+→ connect savings to Debt Navigator
+→ help user accelerate readiness/progress
+
+3. Subscription Manager Screen
+
+Create a Subscription Manager page with:
+
+Header:
+Subscription Manager
+
+Subheadline:
+“Find recurring expenses that may be slowing down your financial progress.”
+
+Main summary cards:
+
+* Monthly subscription spend
+* Annual subscription spend
+* Potential monthly savings
+* Number of recurring subscriptions found
+
+Example:
+Monthly Spend: $184
+Annual Spend: $2,208
+Potential Savings: $92/month
+Subscriptions Found: 8
+
+4. Subscription List
+
+Show subscription cards or table rows for recurring subscriptions.
+
+Each item should include:
+
+* Merchant name
+* Monthly amount
+* Billing frequency
+* Last billed date
+* Status
+* Category
+* Suggested action
+
+Example:
+Netflix
+$22/month
+Entertainment
+Last billed: May 28
+Suggested action: Review
+
+Adobe
+$65/month
+Software
+Last billed: May 21
+Suggested action: Consider canceling if unused
+
+Spotify
+$12/month
+Music
+Last billed: May 15
+Suggested action: Keep or review
+
+5. ScoreShift Insight Card
+
+Add an insight card that connects subscription savings to the user’s goal.
+
+Examples:
+
+For Mortgage Ready:
+“Redirecting $184/month toward revolving balances could help improve utilization and may accelerate mortgage readiness.”
+
+For Credit Growth:
+“Reducing recurring expenses can free up cash for payoff strategies that support your ScoreShift Plan.”
+
+For Managed Client:
+“While our team works on your file, reducing unnecessary subscriptions may help you move faster toward your credit goal.”
+
+6. Debt Navigator Integration
+
+Subscription Manager should connect directly to Debt Navigator.
+
+Add CTA:
+Apply Savings To Debt Navigator
+
+When clicked, route user to Debt Navigator with subscription savings amount passed as a suggested monthly contribution.
+
+Example:
+Potential savings: $92/month
+Debt Navigator should show:
+“Apply $92/month toward your highest-impact balance?”
+
+7. Managed Client Integration
+
+For MANAGED_CLIENT accounts, add Subscription Manager to the “Ways To Improve Faster” section.
+
+Managed client card copy:
+
+Subscription Manager
+“We found recurring expenses that may be redirected toward your credit goals while our team works on your file.”
+
+CTA:
+Review Subscriptions
+
+If potential savings exist, show:
+“Potential savings: $92/month”
+
+8. Self-Service Integration
+
+For SELF_SERVICE accounts, Subscription Manager should appear when:
+
+* User has high utilization
+* User has open balances
+* User has Debt Navigator recommendations
+* User selected Mortgage Ready, Credit Growth, or Debt Recovery goals
+
+Self-service card copy:
+
+Subscription Manager
+“Find monthly savings that can help fund your payoff strategy.”
+
+CTA:
+Review Subscriptions
+
+9. Empty/Loading States
+
+Do not use fake subscriptions in production.
+
+Use this data rule:
+
+Real data first.
+Loading state second.
+Empty state third.
+Demo data only if explicitly in demo/development mode.
+
+Loading state:
+“Scanning for recurring subscriptions…”
+
+Empty state:
+“No recurring subscriptions found yet. Connect a financial account or check back after more transaction history is available.”
+
+If subscription data integration is not available yet:
+Show a clean placeholder module with:
+“Subscription data is not connected yet.”
+and keep the UI ready for future data.
+
+10. Data Model / Placeholder Structure
+
+Create the UI and data structure so it can later connect to real financial transaction data.
+
+Use fields:
+
+* id
+* merchantName
+* amount
+* billingFrequency
+* lastBilledDate
+* category
+* status
+* suggestedAction
+* canCancel
+* monthlySavingsPotential
+
+Do not hard-code fake user subscriptions unless behind a demo flag.
+
+11. Visual Design
+
+Keep the existing new ScoreShift portal design.
+
+Use approved ScoreShift brand colors only:
+
+* Bone Ledger: #F1E8DA
+* Ceramic White: #FFFCF6
+* Mineral Charcoal: #383838
+* Aura Indigo: #B0A6DF
+* Warm Slate: #6E6A63
+* Sage Slate: #7B8A7A
+* Clay Apricot: #EFA26F
+* Indigo Grey: #DCD8E8
+
+Do not introduce random Tailwind colors, random gradients, bright blues, reds, greens, or oranges.
+
+Subscription Manager should feel:
+
+* premium
+* calm
+* useful
+* financial guidance focused
+* part of ScoreShift’s Credit Action Intelligence system
+
+Not:
+
+* a generic budgeting app
+* a cheap expense tracker
+* a random disconnected feature
+
+12. Final UX Rule
+
+Subscription Manager should answer:
+
+“How can I free up money to move faster toward my credit or financial goal?”
+
+It should always connect back to:
+
+* ScoreShift Plan
+* Debt Navigator
+* Managed Client Success Plan
+* Financial certainty
+
+Final result:
+Subscription Manager becomes part of the ScoreShift guided ecosystem, not a standalone page.

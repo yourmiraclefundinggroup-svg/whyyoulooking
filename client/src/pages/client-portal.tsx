@@ -29,7 +29,7 @@ declare global {
 }
 
 /* ── Types ────────────────────────────────────────────────────────── */
-type PageId = "home" | "plan" | "dispute-iq" | "debt" | "protection" | "report" | "progress" | "profile" | "payment-center";
+type PageId = "home" | "plan" | "dispute-iq" | "debt" | "subscriptions" | "protection" | "report" | "progress" | "profile" | "payment-center";
 
 type OnboardingGoal = "improve-score" | "remove-negatives" | "build-credit" | "reduce-debt";
 type OnboardingTimeline = "3-months" | "6-months" | "1-year" | "exploring";
@@ -612,7 +612,7 @@ function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageP
             { icon: "📈", label: "Score Simulator", detail: "See how paying off balances or removing items could affect your scores.", color: "var(--cp-clay)", page: "report" as PageId },
             { icon: "🔔", label: "Credit Alerts", detail: "Get notified of new inquiries or changes on your report between bureau responses.", color: "var(--cp-clay)", page: "report" as PageId },
             { icon: "🎓", label: "Student Loan Aid", detail: "Review possible student loan options that may support your monthly affordability.", color: "var(--cp-accent)", page: "progress" as PageId },
-            { icon: "💰", label: "Subscription Manager", detail: "Identify potential monthly savings that could be redirected toward payoff goals.", color: "var(--cp-sage)", page: "debt" as PageId },
+            { icon: "💰", label: "Subscription Manager", detail: "We found recurring expenses that may be redirected toward your credit goals while our team works on your file.", color: "var(--cp-sage)", page: "subscriptions" as PageId },
             { icon: "🔍", label: "PIP Scan", detail: "Scan for personally identifiable information exposures that may affect your credit file.", color: "var(--cp-accent)", page: "protection" as PageId },
             { icon: "🆔", label: "Identity Protection", detail: "Monitor for signs of identity theft and new account fraud across the major bureaus.", color: "var(--cp-sage)", page: "protection" as PageId },
           ] as { icon: string; label: string; detail: string; color: string; page: PageId }[]).map((a, i) => (
@@ -770,25 +770,14 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
           </div>
         </div>
         <div className="cp-home-hero-scores">
-          {!scriptReady || (!tokenReady && !tokenError) ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <div className="cp-array-spinner" style={{ width: 28, height: 28, borderWidth: 2.5 }} />
-              <span style={{ fontSize: 11, color: "var(--cp-text-muted)" }}>Loading scores…</span>
-            </div>
-          ) : tokenError ? (
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 11.5, color: "var(--cp-text-muted)", marginBottom: 10, lineHeight: 1.5 }}>
-                Credit data not connected yet.<br />Pull your report to see live scores.
-              </div>
-              <button className="cp-btn cp-btn-secondary cp-btn-sm" style={{ fontSize: 12 }} onClick={() => onNavigate("report")}>
-                Get Started →
-              </button>
-            </div>
-          ) : (
-            <div style={{ minWidth: 160, maxWidth: 240 }}>
-              <array-credit-score appKey={appKey} userToken={userToken} bureau="all" {...sbx} />
-            </div>
-          )}
+          <button
+            className="cp-btn cp-btn-secondary cp-btn-sm"
+            style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}
+            onClick={() => onNavigate("report")}
+          >
+            <Icon size={13}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></Icon>
+            Check your scores →
+          </button>
         </div>
       </div>
 
@@ -999,6 +988,7 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
           {([
             { label: "Dispute IQ", detail: "Fix FCRA violations & Metro 2 errors", page: "dispute-iq" as PageId },
             { label: "Debt Navigator", detail: "Reduce utilization and build payoff strategy", page: "debt" as PageId },
+            { label: "Subscription Manager", detail: "Find monthly savings to fund your payoff strategy", page: "subscriptions" as PageId },
             { label: "Protection Center", detail: "Guard identity and monitor for fraud alerts", page: "protection" as PageId },
             { label: "Credit Report", detail: "Review 3-bureau scores, alerts & simulator", page: "report" as PageId },
             { label: "Progress", detail: "Track your score history and repair milestones", page: "progress" as PageId },
@@ -1159,7 +1149,110 @@ function fmtDate(val: string | null | undefined): string {
 // (placeholder removed — real DisputeIQ lives in dispute-iq.tsx)
 
 /* ── DEBT NAVIGATOR PAGE ─────────────────────────────────────────── */
-function DebtPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenError }: ArrayPageProps) {
+/* ── SUBSCRIPTION MANAGER ────────────────────────────────────────── */
+function SubscriptionManagerPage({
+  goal,
+  isManaged,
+  onNavigate,
+  onSavingsApply,
+}: {
+  goal: OnboardingGoal | null;
+  isManaged: boolean;
+  onNavigate: (page: PageId) => void;
+  onSavingsApply: (amount: number) => void;
+}) {
+  const insightText = isManaged
+    ? "While our team works on your file, reducing unnecessary subscriptions may help you move faster toward your credit goal."
+    : goal === "reduce-debt" || goal === "improve-score"
+    ? "Redirecting monthly subscription spend toward revolving balances could help improve your utilization and accelerate your ScoreShift Plan."
+    : goal === "build-credit"
+    ? "Reducing recurring expenses can free up cash for payoff strategies that support your ScoreShift credit-building plan."
+    : "Freeing up recurring monthly spend can accelerate your financial readiness and support your credit repair progress.";
+
+  return (
+    <div>
+      <div className="cp-page-header">
+        <div>
+          <span className="cp-page-eyebrow">Financial Optimization</span>
+          <h1 className="cp-page-title">Subscription Manager</h1>
+          <p className="cp-page-subtitle">Find recurring expenses that may be slowing down your financial progress.</p>
+        </div>
+        <span className="cp-badge" style={{ background: "var(--cp-sage)15", color: "var(--cp-sage)", borderColor: "var(--cp-sage)30" }}>Connected Soon</span>
+      </div>
+
+      {/* 4 stat tiles */}
+      <div className="cp-grid-4 cp-mb-24" style={{ gap: 14 }}>
+        {[
+          { label: "Monthly Spend", value: "—", sub: "not connected yet" },
+          { label: "Annual Spend", value: "—", sub: "not connected yet" },
+          { label: "Potential Savings", value: "—", sub: "per month" },
+          { label: "Subscriptions Found", value: "—", sub: "recurring charges" },
+        ].map((tile, i) => (
+          <div key={i} className="cp-card" style={{ textAlign: "center", padding: "18px 14px" }}>
+            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 800, letterSpacing: -1, color: "var(--cp-accent)", marginBottom: 4 }}>{tile.value}</div>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--cp-text-primary)", marginBottom: 2 }}>{tile.label}</div>
+            <div style={{ fontSize: 10.5, color: "var(--cp-text-muted)" }}>{tile.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ScoreShift Insight card */}
+      <div className="cp-card cp-mb-24" style={{ borderLeft: "4px solid var(--cp-sage)" }}>
+        <div className="cp-card-eyebrow" style={{ color: "var(--cp-sage)" }}>SCORESHIFT INSIGHT</div>
+        <div className="cp-card-title" style={{ margin: "6px 0 8px", fontSize: 14 }}>
+          How subscriptions connect to your goal
+        </div>
+        <p style={{ fontSize: 13, color: "var(--cp-text-secondary)", lineHeight: 1.65, margin: "0 0 16px" }}>
+          {insightText}
+        </p>
+        <button
+          className="cp-btn cp-btn-primary cp-btn-sm"
+          onClick={() => { onSavingsApply(0); onNavigate("debt"); }}
+        >
+          Go to Debt Navigator →
+        </button>
+      </div>
+
+      {/* Subscription list — not connected state */}
+      <div className="cp-card cp-mb-24">
+        <div className="cp-card-header">
+          <div>
+            <div className="cp-card-title">Recurring Subscriptions</div>
+            <div className="cp-card-subtitle">Your identified recurring charges and suggested actions</div>
+          </div>
+        </div>
+        <div className="cp-empty-state" style={{ padding: "36px 20px" }}>
+          <div style={{ fontSize: 30, marginBottom: 12 }}>💳</div>
+          <div className="cp-empty-title">Subscription data is not connected yet</div>
+          <div className="cp-empty-desc" style={{ maxWidth: 360, margin: "6px auto 0" }}>
+            Connect a financial account or wait until more transaction history is available. When connected, you'll see each subscription's merchant, amount, billing frequency, last billed date, category, and suggested action.
+          </div>
+        </div>
+      </div>
+
+      {/* Debt Navigator CTA */}
+      <div className="cp-card" style={{ background: "var(--cp-sage)10", border: "1px solid var(--cp-sage)30" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--cp-text-primary)", marginBottom: 4 }}>Apply Savings to Debt Navigator</div>
+            <div style={{ fontSize: 12.5, color: "var(--cp-text-muted)", lineHeight: 1.5 }}>
+              Once your subscriptions are analyzed, redirect your monthly savings toward your highest-impact balance.
+            </div>
+          </div>
+          <button
+            className="cp-btn cp-btn-secondary cp-btn-sm"
+            style={{ flexShrink: 0 }}
+            onClick={() => { onSavingsApply(0); onNavigate("debt"); }}
+          >
+            Open Debt Navigator →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DebtPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenError, suggestedSavings, onDismissSavings }: ArrayPageProps & { suggestedSavings?: number | null; onDismissSavings?: () => void }) {
   const [subTab, setSubTab] = useState("analysis");
   return (
     <div>
@@ -1171,6 +1264,21 @@ function DebtPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenError 
         </div>
         <span className="cp-badge live">Live</span>
       </div>
+
+      {suggestedSavings != null && suggestedSavings > 0 && (
+        <div style={{ marginBottom: 20, padding: "14px 18px", borderRadius: 12, background: "var(--cp-sage)15", border: "1px solid var(--cp-sage)35", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 20 }}>💰</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--cp-text-primary)" }}>
+                Apply <span style={{ color: "var(--cp-sage)" }}>${suggestedSavings}/month</span> toward your highest-impact balance?
+              </div>
+              <div style={{ fontSize: 11.5, color: "var(--cp-text-muted)" }}>Redirected from Subscription Manager savings</div>
+            </div>
+          </div>
+          <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={onDismissSavings} style={{ flexShrink: 0 }}>Dismiss</button>
+        </div>
+      )}
 
       <SubTabs
         tabs={[
@@ -1621,6 +1729,7 @@ export default function ClientPortal() {
 
   const [activePage, setActivePage] = useState<PageId>("home");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [suggestedSavings, setSuggestedSavings] = useState<number | null>(null);
 
   /* ── Onboarding state ─────────────────────────────────────────── */
   const [onboardingDone, setOnboardingDone] = useState(() =>
@@ -1663,6 +1772,7 @@ export default function ClientPortal() {
     ...(isManaged ? [{ id: "payment-center" as PageId, label: "Payment Center", icon: <><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></> as React.ReactNode }] : []),
     { id: "dispute-iq", label: "Dispute IQ", icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></> },
     { id: "debt", label: "Debt Navigator", icon: <><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></> },
+    { id: "subscriptions", label: "Subscription Manager", icon: <><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /><line x1="7" y1="15" x2="7" y2="15" /><line x1="11" y1="15" x2="13" y2="15" /></> },
     { id: "protection", label: "Protection Center", icon: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></> },
     { id: "report", label: "Credit Report", icon: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></> },
     { id: "progress", label: "Progress", icon: <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></> },
@@ -1674,6 +1784,7 @@ export default function ClientPortal() {
     plan: "My Plan",
     "dispute-iq": "Dispute IQ",
     debt: "Debt Navigator",
+    subscriptions: "Subscription Manager",
     protection: "Protection Center",
     report: "Credit Report",
     progress: "Progress",
@@ -1754,7 +1865,8 @@ export default function ClientPortal() {
           {(activePage === "home" || activePage === "payment-center") && <HomePage user={user} goal={onboardingGoal} timeline={onboardingTimeline} onNavigate={setActivePage} appKey={appKey} userToken={userToken} sbx={sbx} scriptReady={scriptReady} tokenReady={tokenReady} tokenError={tokenError} scrollToPayment={activePage === "payment-center"} />}
           {activePage === "plan" && <PlanPage goal={onboardingGoal} timeline={onboardingTimeline} onNavigate={setActivePage} />}
           {activePage === "dispute-iq" && <RealDisputeIQPage />}
-          {activePage === "debt" && <DebtPage {...arrayProps} />}
+          {activePage === "debt" && <DebtPage {...arrayProps} suggestedSavings={suggestedSavings} onDismissSavings={() => setSuggestedSavings(null)} />}
+          {activePage === "subscriptions" && <SubscriptionManagerPage goal={onboardingGoal} isManaged={isManaged} onNavigate={(p) => { setActivePage(p); }} onSavingsApply={(amt) => { setSuggestedSavings(amt > 0 ? amt : null); setActivePage("debt"); }} />}
           {activePage === "protection" && <ProtectionPage {...arrayProps} />}
           {activePage === "report" && <ReportPage {...arrayProps} />}
           {activePage === "progress" && <ProgressPage />}
