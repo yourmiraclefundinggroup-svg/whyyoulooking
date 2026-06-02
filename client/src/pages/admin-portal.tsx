@@ -1030,6 +1030,9 @@ function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetc
 
   const [actForm, setActForm] = useState({ activityType: "note_added", description: "", status: "completed" });
   const [actSaving, setActSaving] = useState(false);
+  const [editingActivityId, setEditingActivityId] = useState<number | null>(null);
+  const [editActForm, setEditActForm] = useState({ description: "", status: "completed" });
+  const [editActSaving, setEditActSaving] = useState(false);
 
   const [docForm, setDocForm] = useState({ label: "", documentType: "id" });
   const [docSaving, setDocSaving] = useState(false);
@@ -1095,6 +1098,26 @@ function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetc
       toast({ title: "Failed to add activity", variant: "destructive" });
     } finally {
       setActSaving(false);
+    }
+  };
+
+  const saveEditActivity = async (activityId: number) => {
+    if (!editActForm.description.trim()) return;
+    setEditActSaving(true);
+    try {
+      const resp = await fetch(`/api/admin/users/${client.id}/case-activities/${activityId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+        body: JSON.stringify(editActForm),
+      });
+      if (!resp.ok) throw new Error("Failed");
+      toast({ title: "Activity updated" });
+      setEditingActivityId(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/case-activities", client.id] });
+    } catch {
+      toast({ title: "Failed to update activity", variant: "destructive" });
+    } finally {
+      setEditActSaving(false);
     }
   };
 
@@ -1294,27 +1317,68 @@ function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetc
                 {actSaving ? "Adding…" : "Add Activity"}
               </Button>
             </div>
-            <div className="border-t border-[hsl(var(--admin-border))] pt-3 max-h-56 overflow-y-auto space-y-1">
+            <div className="border-t border-[hsl(var(--admin-border))] pt-3 max-h-64 overflow-y-auto space-y-1">
               {(activities as any[]).length === 0
                 ? <p className="text-xs text-[hsl(var(--admin-text-muted))]">No activities yet.</p>
                 : (activities as any[]).map((a: any) => (
-                  <div key={a.id} className="flex gap-2 items-start text-xs py-1.5 border-b border-[hsl(var(--admin-border))]">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[hsl(var(--admin-text))] font-medium truncate">{a.description}</div>
-                      <div className="text-[hsl(var(--admin-text-muted))] mt-0.5">{new Date(a.occurredAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · <span className="capitalize">{(a.status || "").replace(/_/g, " ")}</span></div>
-                    </div>
-                    <button
-                      className="shrink-0 text-red-400 hover:text-red-300 mt-0.5 transition-colors"
-                      title="Delete activity"
-                      onClick={async () => {
-                        if (!confirm("Delete this activity?")) return;
-                        await fetch(`/api/admin/users/${client.id}/case-activities/${a.id}`, {
-                          method: "DELETE",
-                          headers: { Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
-                        });
-                        queryClient.invalidateQueries({ queryKey: ["/api/admin/users/case-activities", client.id] });
-                      }}
-                    >✕</button>
+                  <div key={a.id} className="text-xs py-1.5 border-b border-[hsl(var(--admin-border))]">
+                    {editingActivityId === a.id ? (
+                      <div className="space-y-1.5 pr-1">
+                        <input
+                          className="w-full bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] rounded px-2 py-1 text-xs"
+                          value={editActForm.description}
+                          onChange={e => setEditActForm(p => ({ ...p, description: e.target.value }))}
+                          placeholder="Description"
+                        />
+                        <select
+                          className="w-full bg-[hsl(var(--admin-bg))] border border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] rounded px-2 py-1 text-xs"
+                          value={editActForm.status}
+                          onChange={e => setEditActForm(p => ({ ...p, status: e.target.value }))}
+                        >
+                          <option value="completed">Completed</option>
+                          <option value="in_progress">In Progress</option>
+                          <option value="pending">Pending</option>
+                          <option value="waiting">Waiting</option>
+                        </select>
+                        <div className="flex gap-1.5">
+                          <button
+                            className="flex-1 bg-[hsl(var(--admin-accent))] text-white rounded px-2 py-1 text-xs font-medium hover:opacity-90 disabled:opacity-50"
+                            disabled={editActSaving || !editActForm.description.trim()}
+                            onClick={() => saveEditActivity(a.id)}
+                          >{editActSaving ? "Saving…" : "Save"}</button>
+                          <button
+                            className="px-2 py-1 text-[hsl(var(--admin-text-muted))] border border-[hsl(var(--admin-border))] rounded text-xs hover:opacity-80"
+                            onClick={() => setEditingActivityId(null)}
+                          >Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 items-start">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[hsl(var(--admin-text))] font-medium truncate">{a.description}</div>
+                          <div className="text-[hsl(var(--admin-text-muted))] mt-0.5">{new Date(a.occurredAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · <span className="capitalize">{(a.status || "").replace(/_/g, " ")}</span></div>
+                        </div>
+                        <div className="flex gap-1.5 shrink-0 mt-0.5">
+                          <button
+                            className="text-[hsl(var(--admin-text-muted))] hover:text-[hsl(var(--admin-text))] transition-colors"
+                            title="Edit activity"
+                            onClick={() => { setEditingActivityId(a.id); setEditActForm({ description: a.description, status: a.status || "completed" }); }}
+                          >✎</button>
+                          <button
+                            className="text-red-400 hover:text-red-300 transition-colors"
+                            title="Delete activity"
+                            onClick={async () => {
+                              if (!confirm("Delete this activity?")) return;
+                              await fetch(`/api/admin/users/${client.id}/case-activities/${a.id}`, {
+                                method: "DELETE",
+                                headers: { Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+                              });
+                              queryClient.invalidateQueries({ queryKey: ["/api/admin/users/case-activities", client.id] });
+                            }}
+                          >✕</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
             </div>

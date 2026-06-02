@@ -10265,7 +10265,7 @@ ${pdfText.slice(0, 8000)}`;
     }
   });
 
-  // POST /api/me/documents/:docId/upload — client uploads a document file
+  // Shared multer setup for client document uploads
   const clientDocStorage = multer.diskStorage({
     destination: (_req, _file, cb) => {
       const dir = "uploads/client-docs";
@@ -10274,6 +10274,32 @@ ${pdfText.slice(0, 8000)}`;
     filename: (_req, file, cb) => { cb(null, `${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_")}`); },
   });
   const clientDocUpload = multer({ storage: clientDocStorage, limits: { fileSize: 20 * 1024 * 1024 } });
+
+  // POST /api/me/documents/upload — general upload: find "needed" doc by type or create new, mark uploaded
+  // Must be declared before :docId route so Express doesn't treat "upload" as a docId param
+  app.post("/api/me/documents/upload", authenticateToken, requireClientAccess, clientDocUpload.single("file"), async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const { documentType = "other", label } = req.body;
+      const docs = await storage.getClientDocuments(userId);
+      let doc = docs.find(d => d.documentType === documentType && d.status === "needed");
+      if (!doc) {
+        doc = await storage.createClientDocument({
+          userId,
+          documentType,
+          label: label || documentType.replace(/_/g, " "),
+          status: "needed",
+          uploadedAt: null,
+        });
+      }
+      const updated = await storage.updateClientDocument(doc.id, { status: "uploaded", uploadedAt: new Date() });
+      res.json(updated);
+    } catch {
+      res.status(500).json({ error: "Failed to upload document" });
+    }
+  });
+
+  // POST /api/me/documents/:docId/upload — client uploads to a specific document slot
   app.post("/api/me/documents/:docId/upload", authenticateToken, requireClientAccess, clientDocUpload.single("file"), async (req, res) => {
     try {
       const userId = (req as any).user.id;

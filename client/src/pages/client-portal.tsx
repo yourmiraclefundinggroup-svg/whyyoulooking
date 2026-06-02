@@ -594,25 +594,27 @@ function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageP
       {/* Ways to Improve Faster */}
       <div className="cp-card cp-mb-24">
         <div className="cp-card-header">
-          <div><div className="cp-card-title">Ways to Improve Faster</div><div className="cp-card-subtitle">Participate actively to accelerate your results</div></div>
+          <div><div className="cp-card-title">Ways to Improve Faster</div><div className="cp-card-subtitle">Tools available to you while our team works on your case</div></div>
         </div>
         <div className="cp-grid-2" style={{ gap: 10 }}>
           {([
-            { icon: "📄", label: "Review Your Credit Report", detail: "Check all three bureaus for items being disputed on your behalf", color: "var(--cp-accent)", page: "report" as PageId },
-            { icon: "⚡", label: "Dispute IQ Letters", detail: "View your generated dispute letters and track bureau responses", color: "var(--cp-accent)", page: "dispute-iq" as PageId },
-            { icon: "💳", label: "Keep Utilization Low", detail: "Aim to stay under 30% of your credit card limits while disputes are active", color: "var(--cp-sage)", page: null },
-            { icon: "✅", label: "Pay On Time Every Month", detail: "Payment history is 35% of your FICO — don't miss a single payment", color: "var(--cp-sage)", page: null },
-            { icon: "📅", label: "Upload Documents Promptly", detail: "Missing documents stall your case — scroll up to respond to all requests", color: "var(--cp-clay)", page: null },
-            { icon: "👤", label: "Keep Your Profile Current", detail: "Notify your specialist if your address, income, or goals change", color: "var(--cp-clay)", page: "profile" as PageId },
-          ] as { icon: string; label: string; detail: string; color: string; page: PageId | null }[]).map((a, i) => (
+            { icon: "💳", label: "Debt Navigator", detail: "Reducing utilization could improve your readiness while our team works on reporting issues.", color: "var(--cp-accent)", page: "debt" as PageId },
+            { icon: "📄", label: "Credit Report", detail: "Review all three bureaus for items being disputed and track reporting differences.", color: "var(--cp-accent)", page: "report" as PageId },
+            { icon: "🛡️", label: "Protection Center", detail: "Protect your identity and reduce future credit risks while your disputes are active.", color: "var(--cp-sage)", page: "protection" as PageId },
+            { icon: "🔒", label: "Privacy Protection", detail: "Monitor and remove your personal data from data broker sites to prevent new fraud.", color: "var(--cp-sage)", page: "protection" as PageId },
+            { icon: "📈", label: "Score Simulator", detail: "See how paying off balances or removing items could affect your scores.", color: "var(--cp-clay)", page: "report" as PageId },
+            { icon: "🔔", label: "Credit Alerts", detail: "Get notified of new inquiries or changes on your report between bureau responses.", color: "var(--cp-clay)", page: "report" as PageId },
+            { icon: "🎓", label: "Student Loan Aid", detail: "Review possible student loan options that may support your monthly affordability.", color: "var(--cp-accent)", page: "progress" as PageId },
+            { icon: "💰", label: "Subscription Manager", detail: "Identify potential monthly savings that could be redirected toward payoff goals.", color: "var(--cp-sage)", page: "debt" as PageId },
+          ] as { icon: string; label: string; detail: string; color: string; page: PageId }[]).map((a, i) => (
             <div
               key={i}
-              style={{ display: "flex", gap: 10, alignItems: "flex-start", background: "var(--cp-bg)", borderRadius: 10, padding: "12px 14px", cursor: a.page ? "pointer" : "default" }}
-              onClick={() => a.page && onNavigate(a.page)}
+              style={{ display: "flex", gap: 10, alignItems: "flex-start", background: "var(--cp-bg)", borderRadius: 10, padding: "12px 14px", cursor: "pointer" }}
+              onClick={() => onNavigate(a.page)}
             >
               <div style={{ width: 30, height: 30, borderRadius: 8, background: `${a.color}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>{a.icon}</div>
               <div>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--cp-text-primary)", marginBottom: 2 }}>{a.label}{a.page && <span style={{ fontSize: 10, marginLeft: 4, color: a.color }}>→</span>}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--cp-text-primary)", marginBottom: 2 }}>{a.label} <span style={{ fontSize: 10, color: a.color }}>→</span></div>
                 <div style={{ fontSize: 11.5, color: "var(--cp-text-muted)", lineHeight: 1.5 }}>{a.detail}</div>
               </div>
             </div>
@@ -645,40 +647,67 @@ function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageP
         </div>
       )}
 
-      {/* My Results — only shown when there is real data */}
-      {pkg && (amountPaid > 0 || completedCount > 0) && (
+      {/* My Results — always shown; empty states for unavailable data */}
+      {pkg && (
         <div className="cp-card cp-mb-24">
           <div className="cp-card-header">
-            <div><div className="cp-card-title">My Results</div><div className="cp-card-subtitle">What we've achieved together</div></div>
+            <div><div className="cp-card-title">My Results</div><div className="cp-card-subtitle">What we've achieved together so far</div></div>
           </div>
-          <div className="cp-grid-3" style={{ gap: 12 }}>
-            {[
-              {
-                label: "Activities Resolved",
-                val: `${completedCount}`,
-                sub: totalActivities > 0 ? `of ${totalActivities} total` : null,
-                color: "var(--cp-sage)",
-              },
-              {
-                label: "Amount Invested",
-                val: amountPaid > 0 ? `$${amountPaid.toLocaleString("en-US", { minimumFractionDigits: 0 })}` : "—",
-                sub: totalInvestment > 0 ? `of $${totalInvestment.toLocaleString("en-US", { minimumFractionDigits: 0 })} total` : null,
-                color: "var(--cp-accent)",
-              },
-              {
-                label: "Case Readiness",
-                val: `${readinessPct}%`,
-                sub: pkg.caseStatus ? pkg.caseStatus.replace(/_/g, " ") : "active",
-                color: readinessPct >= 75 ? "var(--cp-sage)" : readinessPct >= 40 ? "var(--cp-accent)" : "var(--cp-clay)",
-              },
-            ].map(s => (
-              <div key={s.label} style={{ background: "var(--cp-bg)", borderRadius: 10, padding: "14px 16px" }}>
-                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 800, color: s.color, letterSpacing: -0.5 }}>{s.val}</div>
-                <div style={{ fontSize: 10, color: "var(--cp-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{s.label}</div>
-                {s.sub && <div style={{ fontSize: 10, color: "var(--cp-text-muted)", marginTop: 2, textTransform: "capitalize" }}>{s.sub}</div>}
+          {(amountPaid === 0 && completedCount === 0) ? (
+            <div className="cp-empty-state" style={{ padding: "20px 0" }}>
+              <div className="cp-empty-title" style={{ fontSize: 13 }}>Results will appear here as your case progresses</div>
+              <div className="cp-empty-desc" style={{ fontSize: 12 }}>Your specialist is working on your file. Check back after your first round of activities is completed.</div>
+            </div>
+          ) : (
+            <>
+              <div className="cp-grid-3" style={{ gap: 10, marginBottom: 12 }}>
+                {[
+                  {
+                    label: "Activities Resolved",
+                    val: completedCount > 0 ? `${completedCount}` : "—",
+                    sub: totalActivities > 0 ? `of ${totalActivities} total` : null,
+                    color: "var(--cp-sage)",
+                  },
+                  {
+                    label: "Letters Sent",
+                    val: (() => { const n = (activities as any[]).filter((a: any) => a.activityType === "letter_sent").length; return n > 0 ? `${n}` : "—"; })(),
+                    sub: null,
+                    color: "var(--cp-accent)",
+                  },
+                  {
+                    label: "Bureau Responses",
+                    val: (() => { const n = (activities as any[]).filter((a: any) => a.activityType === "document_reviewed" || (a.description || "").toLowerCase().includes("response")).length; return n > 0 ? `${n}` : "—"; })(),
+                    sub: null,
+                    color: "var(--cp-accent)",
+                  },
+                  {
+                    label: "Amount Invested",
+                    val: amountPaid > 0 ? `$${amountPaid.toLocaleString("en-US", { minimumFractionDigits: 0 })}` : "—",
+                    sub: totalInvestment > 0 ? `of $${totalInvestment.toLocaleString("en-US", { minimumFractionDigits: 0 })} total` : null,
+                    color: "var(--cp-clay)",
+                  },
+                  {
+                    label: "Case Readiness",
+                    val: totalActivities > 0 ? `${readinessPct}%` : "—",
+                    sub: pkg.caseStatus ? pkg.caseStatus.replace(/_/g, " ") : "active",
+                    color: readinessPct >= 75 ? "var(--cp-sage)" : readinessPct >= 40 ? "var(--cp-accent)" : "var(--cp-clay)",
+                  },
+                  {
+                    label: "Starting Score",
+                    val: "—",
+                    sub: "Not yet recorded",
+                    color: "var(--cp-text-muted)",
+                  },
+                ].map(s => (
+                  <div key={s.label} style={{ background: "var(--cp-bg)", borderRadius: 10, padding: "12px 14px" }}>
+                    <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 18, fontWeight: 800, color: s.color, letterSpacing: -0.5 }}>{s.val}</div>
+                    <div style={{ fontSize: 9.5, color: "var(--cp-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{s.label}</div>
+                    {s.sub && <div style={{ fontSize: 10, color: "var(--cp-text-muted)", marginTop: 2, textTransform: "capitalize" }}>{s.sub}</div>}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -791,7 +820,7 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
         )}
       </div>
 
-      {/* Active disputes queue + Quick actions */}
+      {/* Active disputes + Recommended tools */}
       <div className="cp-grid-2 cp-mb-24">
         <div className="cp-card">
           <div className="cp-card-header">
@@ -837,18 +866,20 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
         <div className="cp-card">
           <div className="cp-card-header">
             <div>
-              <div className="cp-card-title">Quick Actions</div>
-              <div className="cp-card-subtitle">Tools for your credit journey</div>
+              <div className="cp-card-title">Recommended Tools</div>
+              <div className="cp-card-subtitle">Goal-based routing for your plan</div>
             </div>
           </div>
-          {[
-            { label: "Analyze report for disputes", detail: "Find FCRA violations and Metro 2 errors", page: "dispute-iq" as PageId, color: "var(--cp-red)" },
-            { label: "Review 3-bureau scores", detail: "Live VantageScore 3.0 across all bureaus", page: "report" as PageId, color: "var(--cp-accent)" },
-            { label: "Analyze debt & utilization", detail: "Payoff strategies and live account breakdown", page: "debt" as PageId, color: "var(--cp-amber)" },
-            { label: "Monitor identity & alerts", detail: "Real-time bureau monitoring", page: "protection" as PageId, color: "var(--cp-teal)" },
-          ].map((a, i) => (
+          {([
+            { label: "Dispute IQ", detail: "Fix FCRA violations & Metro 2 errors", page: "dispute-iq" as PageId },
+            { label: "Debt Navigator", detail: "Reduce utilization and build payoff strategy", page: "debt" as PageId },
+            { label: "Protection Center", detail: "Guard identity and monitor for fraud alerts", page: "protection" as PageId },
+            { label: "Credit Report", detail: "Review 3-bureau scores, alerts & simulator", page: "report" as PageId },
+            { label: "Progress", detail: "Track your score history and repair milestones", page: "progress" as PageId },
+            { label: "My Plan", detail: "See your personalized action list and timeline", page: "plan" as PageId },
+          ] as { label: string; detail: string; page: PageId }[]).map((a, i) => (
             <div key={i} className="cp-action-row" style={{ cursor: "pointer" }} onClick={() => onNavigate(a.page)}>
-              <div className="cp-action-rank" style={{ background: `${a.color}15`, borderColor: `${a.color}40`, color: a.color }}>{i + 1}</div>
+              <div className="cp-action-rank">{i + 1}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="cp-action-label">{a.label}</div>
                 <div className="cp-action-detail">{a.detail}</div>
