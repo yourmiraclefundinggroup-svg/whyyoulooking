@@ -259,7 +259,236 @@ type HomePageProps = {
   scriptReady: boolean; tokenReady: boolean; tokenError: boolean;
 };
 
+/* ── MANAGED CLIENT HOME ─────────────────────────────────────────── */
+function ManagedClientHome({ user, onNavigate }: Pick<HomePageProps, "user" | "onNavigate">) {
+  const displayName = user?.firstName || "there";
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+  const { data: pkg, isLoading: pkgLoading } = useQuery<any>({ queryKey: ["/api/portal/managed-package"] });
+  const { data: activities = [], isLoading: activitiesLoading } = useQuery<any[]>({ queryKey: ["/api/portal/case-activities"] });
+  const { data: documents = [] } = useQuery<any[]>({ queryKey: ["/api/portal/documents"] });
+
+  const statusColors: Record<string, string> = { active: "var(--cp-accent)", on_hold: "var(--cp-clay)", completed: "var(--cp-sage)", cancelled: "var(--cp-text-muted)" };
+  const docStatusColors: Record<string, string> = { needed: "var(--cp-clay)", uploaded: "var(--cp-text-muted)", reviewed: "var(--cp-accent)", approved: "var(--cp-sage)" };
+  const docStatusBg: Record<string, string> = { needed: "var(--cp-clay-light)", uploaded: "rgba(220,216,232,0.35)", reviewed: "var(--cp-accent-light)", approved: "var(--cp-sage-light)" };
+  const activityIcons: Record<string, string> = { letter_sent: "✉", dispute_filed: "📋", document_reviewed: "📄", call_completed: "📞", score_update: "📈", note_added: "📝", follow_up_scheduled: "📅" };
+
+  const caseStatus = pkg?.status || "active";
+  const statusColor = statusColors[caseStatus] || "var(--cp-accent)";
+  const progressPct = pkg?.itemsIdentified > 0 ? Math.round((pkg.itemsRemoved / pkg.itemsIdentified) * 100) : 0;
+
+  return (
+    <div>
+      {/* Managed hero */}
+      <div className="cp-home-hero cp-mb-24">
+        <div className="cp-home-hero-left">
+          <div className="cp-welcome-eyebrow">{greeting.toUpperCase()} · MANAGED CLIENT</div>
+          <div className="cp-welcome-name">{greeting}, {displayName}.</div>
+          <div className="cp-welcome-sub">
+            {pkgLoading ? "Loading your case…" : pkg
+              ? <>Your plan is <strong style={{ color: "rgba(255,255,255,0.95)" }}>{pkg.packageName}</strong>{pkg.itemsInProgress > 0 ? ` — ${pkg.itemsInProgress} item${pkg.itemsInProgress !== 1 ? "s" : ""} in progress` : ""}.</>
+              : "Your managed credit repair program is being set up. We'll reach out soon."}
+          </div>
+        </div>
+        {pkg ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
+            <span style={{ background: "rgba(255,255,255,0.16)", border: "1px solid rgba(255,255,255,0.22)", borderRadius: 20, padding: "4px 12px", fontSize: 11, fontWeight: 700, color: "white", textTransform: "uppercase", letterSpacing: "0.07em" }}>
+              {caseStatus.replace("_", " ")}
+            </span>
+            <div style={{ display: "flex", gap: 18 }}>
+              {[{ label: "Found", val: pkg.itemsIdentified }, { label: "Removed", val: pkg.itemsRemoved }, { label: "Active", val: pkg.itemsInProgress }].map(s => (
+                <div key={s.label} style={{ textAlign: "center" }}>
+                  <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 24, fontWeight: 800, color: "white", letterSpacing: -1.5 }}>{s.val}</div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.07em" }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", lineHeight: 1.5 }}>Your specialist is<br />setting up your plan.</div>
+          </div>
+        )}
+      </div>
+
+      {/* Plan card + Activity log */}
+      <div className="cp-grid-2 cp-mb-24">
+        <div className="cp-card">
+          <div className="cp-card-header">
+            <div>
+              <div className="cp-card-title">Credit Success Plan</div>
+              <div className="cp-card-subtitle">{pkg?.packageName || "Setting up your plan…"}</div>
+            </div>
+            {pkg && <span className="cp-badge" style={{ background: `${statusColor}18`, color: statusColor, border: `1px solid ${statusColor}30` }}>{caseStatus.replace("_", " ")}</span>}
+          </div>
+          {pkgLoading ? <div style={{ padding: "20px 0", textAlign: "center" }}><div className="cp-array-spinner" style={{ margin: "0 auto" }} /></div>
+          : !pkg ? (
+            <div className="cp-empty-state" style={{ padding: "24px 12px" }}>
+              <div className="cp-empty-title" style={{ fontSize: 13 }}>Plan being configured</div>
+              <div className="cp-empty-desc" style={{ fontSize: 12 }}>Your dedicated credit specialist will set up your plan shortly.</div>
+            </div>
+          ) : (
+            <div>
+              <div className="cp-grid-3" style={{ gap: 10, marginBottom: 16 }}>
+                {[
+                  { label: "Items Found", val: pkg.itemsIdentified, color: "var(--cp-clay)" },
+                  { label: "Removed", val: pkg.itemsRemoved, color: "var(--cp-sage)" },
+                  { label: "In Progress", val: pkg.itemsInProgress, color: "var(--cp-accent)" },
+                ].map(s => (
+                  <div key={s.label} style={{ background: "var(--cp-bg)", borderRadius: 10, padding: "12px 14px", textAlign: "center" }}>
+                    <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 800, color: s.color, letterSpacing: -1.5 }}>{s.val}</div>
+                    <div style={{ fontSize: 10, color: "var(--cp-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              {pkg.itemsIdentified > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                    <span style={{ fontSize: 12, color: "var(--cp-text-muted)" }}>Overall progress</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--cp-accent)" }}>{progressPct}%</span>
+                  </div>
+                  <div className="cp-progress-bar"><div className="cp-progress-fill" style={{ width: `${progressPct}%` }} /></div>
+                </div>
+              )}
+              {pkg.nextActionNote && (
+                <div style={{ background: "var(--cp-accent-light)", border: "1px solid var(--cp-accent-mid)", borderRadius: 9, padding: "10px 13px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--cp-accent)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 3 }}>Next Action</div>
+                  <div style={{ fontSize: 13, color: "var(--cp-text-primary)", lineHeight: 1.4 }}>{pkg.nextActionNote}</div>
+                  {pkg.nextActionDate && <div style={{ fontSize: 11, color: "var(--cp-text-muted)", marginTop: 4 }}>Due: {new Date(pkg.nextActionDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="cp-card">
+          <div className="cp-card-header">
+            <div><div className="cp-card-title">Team Activity</div><div className="cp-card-subtitle">Recent work on your case</div></div>
+          </div>
+          {activitiesLoading ? <div style={{ padding: "20px 0", textAlign: "center" }}><div className="cp-array-spinner" style={{ margin: "0 auto" }} /></div>
+          : activities.length === 0 ? (
+            <div className="cp-empty-state" style={{ padding: "24px 12px" }}>
+              <div className="cp-empty-title" style={{ fontSize: 13 }}>No activity yet</div>
+              <div className="cp-empty-desc" style={{ fontSize: 12 }}>Your team will start working on your case soon.</div>
+            </div>
+          ) : (
+            <div>
+              {(activities as any[]).slice(0, 6).map((a: any) => (
+                <div key={a.id} className="cp-alert-item">
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--cp-accent-light)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{activityIcons[a.activityType] || "✦"}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="cp-alert-text">{a.title}</div>
+                    {a.description && <div className="cp-alert-meta">{a.description}</div>}
+                    <div className="cp-alert-meta">{a.performedBy} · {new Date(a.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Payment Center + Documents */}
+      <div className="cp-grid-2 cp-mb-24">
+        <div className="cp-card">
+          <div className="cp-card-header">
+            <div><div className="cp-card-title">Payment Center</div><div className="cp-card-subtitle">Your current plan</div></div>
+          </div>
+          <div style={{ background: "var(--cp-bg)", borderRadius: 10, padding: "14px 16px", marginBottom: 14 }}>
+            <div style={{ fontSize: 10, color: "var(--cp-text-muted)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Monthly Fee</div>
+            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 32, fontWeight: 800, color: "var(--cp-text-primary)", letterSpacing: -2 }}>
+              ${pkg?.monthlyFee || "—"}<span style={{ fontSize: 14, fontWeight: 500, color: "var(--cp-text-muted)", letterSpacing: 0 }}>/mo</span>
+            </div>
+            <div style={{ fontSize: 12, color: "var(--cp-text-muted)", marginTop: 2 }}>{pkg?.packageName || "Managed Credit Repair"}</div>
+          </div>
+          <button className="cp-btn cp-btn-primary" style={{ width: "100%", justifyContent: "center", opacity: 0.7 }} disabled>
+            <Icon size={13}><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></Icon>
+            Make Payment <span style={{ fontSize: 10, marginLeft: 4 }}>(coming soon)</span>
+          </button>
+          <p style={{ fontSize: 11, color: "var(--cp-text-muted)", marginTop: 10, textAlign: "center", lineHeight: 1.4 }}>
+            To update billing, contact your credit specialist.
+          </p>
+        </div>
+
+        <div className="cp-card">
+          <div className="cp-card-header">
+            <div><div className="cp-card-title">My Documents</div><div className="cp-card-subtitle">Requested & uploaded files</div></div>
+            {(documents as any[]).filter((d: any) => d.status === "needed").length > 0 && (
+              <span className="cp-badge warning">{(documents as any[]).filter((d: any) => d.status === "needed").length} needed</span>
+            )}
+          </div>
+          {(documents as any[]).length === 0 ? (
+            <div className="cp-empty-state" style={{ padding: "20px 12px" }}>
+              <div className="cp-empty-title" style={{ fontSize: 13 }}>No documents requested yet</div>
+              <div className="cp-empty-desc" style={{ fontSize: 12 }}>Your team will request documents as needed.</div>
+            </div>
+          ) : (
+            <div>
+              {(documents as any[]).map((doc: any) => (
+                <div key={doc.id} className="cp-action-row" style={{ alignItems: "center" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="cp-action-label">{doc.label || doc.fileName}</div>
+                    <div className="cp-action-detail" style={{ textTransform: "capitalize" }}>{(doc.documentType || "").replace("_", " ")}</div>
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: docStatusBg[doc.status] || "var(--cp-accent-light)", color: docStatusColors[doc.status] || "var(--cp-accent)", textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>
+                    {doc.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* My Results */}
+      {pkg && (pkg.itemsRemoved > 0 || pkg.pointsGained > 0) && (
+        <div className="cp-card cp-mb-24">
+          <div className="cp-card-header">
+            <div><div className="cp-card-title">My Results</div><div className="cp-card-subtitle">What we've achieved together</div></div>
+          </div>
+          <div className="cp-grid-3" style={{ gap: 12 }}>
+            {[
+              { label: "Items Removed", val: pkg.itemsRemoved, color: "var(--cp-sage)" },
+              { label: "Points Gained", val: pkg.pointsGained > 0 ? `+${pkg.pointsGained}` : "—", color: "var(--cp-accent)" },
+              { label: "Start Date", val: new Date(pkg.startDate).toLocaleDateString("en-US", { month: "short", year: "numeric" }), color: "var(--cp-text-primary)" },
+            ].map(s => (
+              <div key={s.label} style={{ background: "var(--cp-bg)", borderRadius: 10, padding: "14px 16px" }}>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 22, fontWeight: 800, color: s.color, letterSpacing: -1 }}>{s.val}</div>
+                <div style={{ fontSize: 10, color: "var(--cp-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Ways to improve — always shown */}
+      <div className="cp-card">
+        <div className="cp-card-header">
+          <div><div className="cp-card-title">Ways to Improve</div><div className="cp-card-subtitle">While your team works on disputes</div></div>
+        </div>
+        {[
+          { label: "Pay on time every month", detail: "Payment history is 35% of your FICO score", color: "var(--cp-sage)" },
+          { label: "Keep utilization below 30%", detail: "Lower credit card balances boost your score fast", color: "var(--cp-accent)" },
+          { label: "Avoid hard inquiries", detail: "Don't apply for new credit while disputes are active", color: "var(--cp-clay)" },
+        ].map((a, i) => (
+          <div key={i} className="cp-action-row">
+            <div className="cp-action-rank" style={{ background: `${a.color}15`, borderColor: `${a.color}40`, color: a.color }}>{i + 1}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="cp-action-label">{a.label}</div>
+              <div className="cp-action-detail">{a.detail}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, scriptReady, tokenReady, tokenError }: HomePageProps) {
+  if (user?.accountType === "MANAGED_CLIENT") {
+    return <ManagedClientHome user={user} onNavigate={onNavigate} />;
+  }
   const displayName = user?.firstName || user?.username || "there";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";

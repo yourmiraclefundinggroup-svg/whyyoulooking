@@ -10230,6 +10230,177 @@ ${pdfText.slice(0, 8000)}`;
   // which enforces tier (lob_mail), derives address from profile, and guards letterId
   // updates with ownership check (clientId = user.id for non-admin callers).
 
+  // ── Managed Client Portal API ────────────────────────────────────────────────
+
+  // GET /api/portal/managed-package — client views their managed package
+  app.get("/api/portal/managed-package", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const pkg = await storage.getManagedClientPackage(userId);
+      res.json(pkg || null);
+    } catch {
+      res.status(500).json({ error: "Failed to fetch managed package" });
+    }
+  });
+
+  // GET /api/portal/case-activities — client views team activity log
+  app.get("/api/portal/case-activities", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const activities = await storage.getClientCaseActivities(userId);
+      res.json(activities);
+    } catch {
+      res.status(500).json({ error: "Failed to fetch activities" });
+    }
+  });
+
+  // GET /api/portal/documents — client views their documents
+  app.get("/api/portal/documents", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const docs = await storage.getClientDocuments(userId);
+      res.json(docs);
+    } catch {
+      res.status(500).json({ error: "Failed to fetch documents" });
+    }
+  });
+
+  // ── Admin Managed Client API ──────────────────────────────────────────────
+
+  // PATCH /api/admin/users/:id/account-type — set accountType + programType
+  app.patch("/api/admin/users/:id/account-type", authenticateToken, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      if (requestingUser.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin only" });
+      const userId = parseInt(req.params.id);
+      const { accountType, programType } = req.body;
+      if (!accountType || !["SELF_SERVICE", "MANAGED_CLIENT"].includes(accountType)) {
+        return res.status(400).json({ error: "Invalid accountType" });
+      }
+      const updated = await storage.updateUser(userId, { accountType, programType: programType || null });
+      if (!updated) return res.status(404).json({ error: "User not found" });
+      res.json(updated);
+    } catch {
+      res.status(500).json({ error: "Failed to update account type" });
+    }
+  });
+
+  // GET /api/admin/managed/package/:userId
+  app.get("/api/admin/managed/package/:userId", authenticateToken, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      if (requestingUser.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin only" });
+      const userId = parseInt(req.params.userId);
+      const pkg = await storage.getManagedClientPackage(userId);
+      res.json(pkg || null);
+    } catch {
+      res.status(500).json({ error: "Failed to fetch package" });
+    }
+  });
+
+  // PUT /api/admin/managed/package/:userId — create or update managed package
+  app.put("/api/admin/managed/package/:userId", authenticateToken, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      if (requestingUser.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin only" });
+      const userId = parseInt(req.params.userId);
+      const pkg = await storage.upsertManagedClientPackage(userId, req.body);
+      res.json(pkg);
+    } catch (e: any) {
+      res.status(500).json({ error: "Failed to save package", detail: e?.message });
+    }
+  });
+
+  // POST /api/admin/managed/activity/:userId — add case activity entry
+  app.post("/api/admin/managed/activity/:userId", authenticateToken, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      if (requestingUser.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin only" });
+      const userId = parseInt(req.params.userId);
+      const activity = await storage.createClientCaseActivity({
+        userId,
+        activityType: req.body.activityType || "note_added",
+        title: req.body.title,
+        description: req.body.description || null,
+        performedBy: req.body.performedBy || "ScoreShift Team",
+        isVisibleToClient: req.body.isVisibleToClient !== false,
+      });
+      res.json(activity);
+    } catch {
+      res.status(500).json({ error: "Failed to add activity" });
+    }
+  });
+
+  // POST /api/admin/managed/documents/:userId — request a document from client
+  app.post("/api/admin/managed/documents/:userId", authenticateToken, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      if (requestingUser.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin only" });
+      const userId = parseInt(req.params.userId);
+      const doc = await storage.createClientDocument({
+        userId,
+        fileName: req.body.label || req.body.documentType,
+        fileSize: null,
+        mimeType: null,
+        filePath: "",
+        documentType: req.body.documentType || "other",
+        label: req.body.label || "Document",
+        status: "needed",
+        requestedAt: new Date(),
+        uploadedAt: null,
+        reviewedAt: null,
+        adminNotes: req.body.adminNotes || null,
+      });
+      res.json(doc);
+    } catch (e: any) {
+      res.status(500).json({ error: "Failed to create document request", detail: e?.message });
+    }
+  });
+
+  // PATCH /api/admin/managed/documents/:docId/status — update doc status/notes
+  app.patch("/api/admin/managed/documents/:docId/status", authenticateToken, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      if (requestingUser.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin only" });
+      const docId = parseInt(req.params.docId);
+      const updates: any = {};
+      if (req.body.status) updates.status = req.body.status;
+      if (req.body.adminNotes !== undefined) updates.adminNotes = req.body.adminNotes;
+      if (req.body.status === "reviewed") updates.reviewedAt = new Date();
+      const updated = await storage.updateClientDocument(docId, updates);
+      if (!updated) return res.status(404).json({ error: "Document not found" });
+      res.json(updated);
+    } catch {
+      res.status(500).json({ error: "Failed to update document" });
+    }
+  });
+
+  // GET /api/admin/managed/activities/:userId — list all activities for a client
+  app.get("/api/admin/managed/activities/:userId", authenticateToken, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      if (requestingUser.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin only" });
+      const userId = parseInt(req.params.userId);
+      const activities = await storage.getClientCaseActivities(userId);
+      res.json(activities);
+    } catch {
+      res.status(500).json({ error: "Failed to fetch activities" });
+    }
+  });
+
+  // GET /api/admin/managed/documents/:userId — list all documents for a client
+  app.get("/api/admin/managed/documents/:userId", authenticateToken, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      if (requestingUser.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin only" });
+      const userId = parseInt(req.params.userId);
+      const docs = await storage.getClientDocuments(userId);
+      res.json(docs);
+    } catch {
+      res.status(500).json({ error: "Failed to fetch documents" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

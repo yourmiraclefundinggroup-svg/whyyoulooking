@@ -915,6 +915,386 @@ function ClientTierOverride({ client, onUpdated }: { client: User; onUpdated: ()
   );
 }
 
+// ─── Account Type Card ───────────────────────────────────────────────────────
+function ClientAccountTypeCard({ client, onUpdated }: { client: User; onUpdated: () => void }) {
+  const { toast } = useToast();
+  const [accountType, setAccountType] = useState<string>((client as any).accountType ?? "SELF_SERVICE");
+  const [programType, setProgramType] = useState<string>((client as any).programType ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const original = { accountType: (client as any).accountType ?? "SELF_SERVICE", programType: (client as any).programType ?? "" };
+  const isDirty = accountType !== original.accountType || programType !== original.programType;
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const resp = await fetch(`/api/admin/users/${client.id}/account-type`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+        body: JSON.stringify({ accountType, programType }),
+      });
+      if (!resp.ok) throw new Error((await resp.json()).error || "Failed to update");
+      toast({ title: "Account type updated" });
+      onUpdated();
+    } catch (err) {
+      toast({ title: "Update failed", description: err instanceof Error ? err.message : "Unknown error", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="pt-2 border-t border-[hsl(var(--admin-border))]">
+      <Label className="text-xs font-medium text-[hsl(var(--admin-text-muted))] mb-2 block">Portal Experience</Label>
+      <div className="flex flex-col gap-2">
+        <Select value={accountType} onValueChange={setAccountType}>
+          <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="SELF_SERVICE">Self-Service — DIY portal</SelectItem>
+            <SelectItem value="MANAGED_CLIENT">Managed Client — concierge</SelectItem>
+          </SelectContent>
+        </Select>
+        {accountType === "MANAGED_CLIENT" && (
+          <Select value={programType || "standard"} onValueChange={setProgramType}>
+            <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="standard">Standard Credit Repair</SelectItem>
+              <SelectItem value="premium_managed">Premium Managed</SelectItem>
+              <SelectItem value="identity_theft">Identity Theft Recovery</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+        <Button size="sm"
+          className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white gap-1.5"
+          disabled={saving || !isDirty}
+          onClick={handleSave}>
+          {saving ? "Saving..." : "Apply"}
+        </Button>
+      </div>
+      {accountType === "MANAGED_CLIENT" && (
+        <p className="text-xs text-[hsl(var(--admin-text-subtle))] mt-1.5">
+          Managed clients see a concierge home: case plan, team activity, payments, and documents.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─── Managed Client Setup Panel ──────────────────────────────────────────────
+function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetch: () => void }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: pkg, isLoading: pkgLoading } = useQuery<any>({
+    queryKey: ["/api/admin/managed/package", client.id],
+    queryFn: () =>
+      fetch(`/api/admin/managed/package/${client.id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+      }).then(r => r.json()),
+  });
+
+  const { data: activities = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/managed/activities", client.id],
+    queryFn: () =>
+      fetch(`/api/admin/managed/activities/${client.id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+      }).then(r => r.json()),
+  });
+
+  const { data: documents = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/managed/documents", client.id],
+    queryFn: () =>
+      fetch(`/api/admin/managed/documents/${client.id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+      }).then(r => r.json()),
+  });
+
+  const [pkgForm, setPkgForm] = useState({
+    packageName: pkg?.packageName ?? "",
+    status: pkg?.status ?? "active",
+    monthlyFee: pkg?.monthlyFee ? String(pkg.monthlyFee) : "",
+    itemsIdentified: pkg?.itemsIdentified ? String(pkg.itemsIdentified) : "0",
+    itemsRemoved: pkg?.itemsRemoved ? String(pkg.itemsRemoved) : "0",
+    itemsInProgress: pkg?.itemsInProgress ? String(pkg.itemsInProgress) : "0",
+    pointsGained: pkg?.pointsGained ? String(pkg.pointsGained) : "0",
+    nextActionNote: pkg?.nextActionNote ?? "",
+  });
+  const [pkgSaving, setPkgSaving] = useState(false);
+
+  const [actForm, setActForm] = useState({ activityType: "note_added", title: "", description: "" });
+  const [actSaving, setActSaving] = useState(false);
+
+  const [docForm, setDocForm] = useState({ label: "", documentType: "id" });
+  const [docSaving, setDocSaving] = useState(false);
+
+  // Sync form when pkg loads
+  useEffect(() => {
+    if (pkg) {
+      setPkgForm({
+        packageName: pkg.packageName ?? "",
+        status: pkg.status ?? "active",
+        monthlyFee: pkg.monthlyFee ? String(pkg.monthlyFee) : "",
+        itemsIdentified: String(pkg.itemsIdentified ?? 0),
+        itemsRemoved: String(pkg.itemsRemoved ?? 0),
+        itemsInProgress: String(pkg.itemsInProgress ?? 0),
+        pointsGained: String(pkg.pointsGained ?? 0),
+        nextActionNote: pkg.nextActionNote ?? "",
+      });
+    }
+  }, [pkg]);
+
+  const savePkg = async () => {
+    setPkgSaving(true);
+    try {
+      const body = {
+        ...pkgForm,
+        monthlyFee: pkgForm.monthlyFee ? parseFloat(pkgForm.monthlyFee) : null,
+        itemsIdentified: parseInt(pkgForm.itemsIdentified) || 0,
+        itemsRemoved: parseInt(pkgForm.itemsRemoved) || 0,
+        itemsInProgress: parseInt(pkgForm.itemsInProgress) || 0,
+        pointsGained: parseInt(pkgForm.pointsGained) || 0,
+      };
+      const resp = await fetch(`/api/admin/managed/package/${client.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+        body: JSON.stringify(body),
+      });
+      if (!resp.ok) throw new Error("Failed to save");
+      toast({ title: "Package saved" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/managed/package", client.id] });
+    } catch {
+      toast({ title: "Save failed", variant: "destructive" });
+    } finally {
+      setPkgSaving(false);
+    }
+  };
+
+  const addActivity = async () => {
+    if (!actForm.title.trim()) return;
+    setActSaving(true);
+    try {
+      const resp = await fetch(`/api/admin/managed/activity/${client.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+        body: JSON.stringify(actForm),
+      });
+      if (!resp.ok) throw new Error("Failed");
+      toast({ title: "Activity added" });
+      setActForm({ activityType: "note_added", title: "", description: "" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/managed/activities", client.id] });
+    } catch {
+      toast({ title: "Failed to add activity", variant: "destructive" });
+    } finally {
+      setActSaving(false);
+    }
+  };
+
+  const requestDoc = async () => {
+    if (!docForm.label.trim()) return;
+    setDocSaving(true);
+    try {
+      const resp = await fetch(`/api/admin/managed/documents/${client.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+        body: JSON.stringify(docForm),
+      });
+      if (!resp.ok) throw new Error("Failed");
+      toast({ title: "Document requested" });
+      setDocForm({ label: "", documentType: "id" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/managed/documents", client.id] });
+    } catch {
+      toast({ title: "Failed to request document", variant: "destructive" });
+    } finally {
+      setDocSaving(false);
+    }
+  };
+
+  const statusDocColor: Record<string, string> = {
+    needed: "text-amber-400", uploaded: "text-blue-400", reviewed: "text-violet-400", approved: "text-green-400",
+  };
+
+  return (
+    <AdminCard>
+      <AdminCardHeader>
+        <AdminCardTitle>Managed Client Setup</AdminCardTitle>
+      </AdminCardHeader>
+      <AdminCardContent>
+        <Tabs defaultValue="plan">
+          <TabsList className="bg-[hsl(var(--admin-surface))] w-full grid grid-cols-3">
+            <TabsTrigger value="plan">Case Plan</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="docs">Documents</TabsTrigger>
+          </TabsList>
+
+          {/* Case Plan Tab */}
+          <TabsContent value="plan" className="mt-3 space-y-3">
+            {pkgLoading ? <p className="text-xs text-[hsl(var(--admin-text-muted))]">Loading…</p> : null}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="col-span-2">
+                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Package Name</Label>
+                <Input
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm"
+                  value={pkgForm.packageName}
+                  placeholder="e.g. Platinum Credit Repair"
+                  onChange={e => setPkgForm(p => ({ ...p, packageName: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Status</Label>
+                <Select value={pkgForm.status} onValueChange={v => setPkgForm(p => ({ ...p, status: v }))}>
+                  <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="on_hold">On Hold</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Monthly Fee ($)</Label>
+                <Input
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm"
+                  type="number" min="0" step="1" placeholder="99"
+                  value={pkgForm.monthlyFee}
+                  onChange={e => setPkgForm(p => ({ ...p, monthlyFee: e.target.value }))}
+                />
+              </div>
+              {[
+                { key: "itemsIdentified", label: "Items Found" },
+                { key: "itemsRemoved", label: "Items Removed" },
+                { key: "itemsInProgress", label: "In Progress" },
+                { key: "pointsGained", label: "Points Gained" },
+              ].map(f => (
+                <div key={f.key}>
+                  <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">{f.label}</Label>
+                  <Input
+                    className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm"
+                    type="number" min="0"
+                    value={(pkgForm as any)[f.key]}
+                    onChange={e => setPkgForm(p => ({ ...p, [f.key]: e.target.value }))}
+                  />
+                </div>
+              ))}
+              <div className="col-span-2">
+                <Label className="text-xs mb-1 block text-[hsl(var(--admin-text-muted))]">Next Action Note</Label>
+                <Textarea
+                  className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] text-sm min-h-[60px]"
+                  placeholder="What's the next step for this client?"
+                  value={pkgForm.nextActionNote}
+                  onChange={e => setPkgForm(p => ({ ...p, nextActionNote: e.target.value }))}
+                />
+              </div>
+            </div>
+            <Button size="sm"
+              className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white w-full"
+              disabled={pkgSaving}
+              onClick={savePkg}>
+              {pkgSaving ? "Saving…" : "Save Case Plan"}
+            </Button>
+          </TabsContent>
+
+          {/* Activity Tab */}
+          <TabsContent value="activity" className="mt-3 space-y-3">
+            <div className="space-y-2">
+              <Select value={actForm.activityType} onValueChange={v => setActForm(p => ({ ...p, activityType: v }))}>
+                <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="note_added">Note Added</SelectItem>
+                  <SelectItem value="letter_sent">Letter Sent</SelectItem>
+                  <SelectItem value="dispute_filed">Dispute Filed</SelectItem>
+                  <SelectItem value="document_reviewed">Document Reviewed</SelectItem>
+                  <SelectItem value="call_completed">Call Completed</SelectItem>
+                  <SelectItem value="score_update">Score Update</SelectItem>
+                  <SelectItem value="follow_up_scheduled">Follow-Up Scheduled</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm"
+                placeholder="Activity title (required)"
+                value={actForm.title}
+                onChange={e => setActForm(p => ({ ...p, title: e.target.value }))}
+              />
+              <Textarea
+                className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] text-sm min-h-[52px]"
+                placeholder="Optional description"
+                value={actForm.description}
+                onChange={e => setActForm(p => ({ ...p, description: e.target.value }))}
+              />
+              <Button size="sm"
+                className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white w-full"
+                disabled={actSaving || !actForm.title.trim()}
+                onClick={addActivity}>
+                {actSaving ? "Adding…" : "Add Activity"}
+              </Button>
+            </div>
+            <div className="border-t border-[hsl(var(--admin-border))] pt-3 max-h-48 overflow-y-auto space-y-1">
+              {(activities as any[]).length === 0
+                ? <p className="text-xs text-[hsl(var(--admin-text-muted))]">No activities yet.</p>
+                : (activities as any[]).map((a: any) => (
+                  <div key={a.id} className="flex gap-2 text-xs py-1 border-b border-[hsl(var(--admin-border))]">
+                    <span className="text-[hsl(var(--admin-text-muted))] shrink-0">{new Date(a.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                    <span className="text-[hsl(var(--admin-text))] font-medium truncate">{a.title}</span>
+                    <span className="text-[hsl(var(--admin-text-muted))] ml-auto shrink-0">{a.activityType.replace("_", " ")}</span>
+                  </div>
+                ))}
+            </div>
+          </TabsContent>
+
+          {/* Documents Tab */}
+          <TabsContent value="docs" className="mt-3 space-y-3">
+            <div className="space-y-2">
+              <Input
+                className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm"
+                placeholder="Document label (e.g. Photo ID)"
+                value={docForm.label}
+                onChange={e => setDocForm(p => ({ ...p, label: e.target.value }))}
+              />
+              <Select value={docForm.documentType} onValueChange={v => setDocForm(p => ({ ...p, documentType: v }))}>
+                <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="id">Government ID</SelectItem>
+                  <SelectItem value="ssn">SSN Document</SelectItem>
+                  <SelectItem value="proof_of_address">Proof of Address</SelectItem>
+                  <SelectItem value="bank_statement">Bank Statement</SelectItem>
+                  <SelectItem value="dispute_response">Bureau Response</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm"
+                className="bg-[hsl(var(--admin-accent))] hover:bg-[hsl(var(--admin-accent-deep))] text-white w-full"
+                disabled={docSaving || !docForm.label.trim()}
+                onClick={requestDoc}>
+                {docSaving ? "Requesting…" : "Request Document"}
+              </Button>
+            </div>
+            <div className="border-t border-[hsl(var(--admin-border))] pt-3 max-h-48 overflow-y-auto space-y-1">
+              {(documents as any[]).length === 0
+                ? <p className="text-xs text-[hsl(var(--admin-text-muted))]">No documents requested yet.</p>
+                : (documents as any[]).map((d: any) => (
+                  <div key={d.id} className="flex gap-2 items-center text-xs py-1 border-b border-[hsl(var(--admin-border))]">
+                    <span className="text-[hsl(var(--admin-text))] font-medium flex-1 truncate">{d.label}</span>
+                    <span className={`shrink-0 font-semibold ${statusDocColor[d.status] || "text-slate-400"}`}>{d.status}</span>
+                  </div>
+                ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </AdminCardContent>
+    </AdminCard>
+  );
+}
+
 function ClientIntakeCard({ client, onUpdated }: { client: User; onUpdated: () => void }) {
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
@@ -1472,6 +1852,21 @@ function ClientManagementPage({
             client={selectedClient}
             onUpdated={onRefetchUsers}
           />
+
+          {/* Account Type */}
+          <AdminCard>
+            <AdminCardHeader>
+              <AdminCardTitle>Account Type</AdminCardTitle>
+            </AdminCardHeader>
+            <AdminCardContent>
+              <ClientAccountTypeCard client={selectedClient} onUpdated={onRefetchUsers} />
+            </AdminCardContent>
+          </AdminCard>
+
+          {/* Managed Client Setup — shown only for managed clients */}
+          {(selectedClient as any).accountType === "MANAGED_CLIENT" && (
+            <ManagedClientSetupPanel client={selectedClient} onRefetch={onRefetchUsers} />
+          )}
         </>
       )}
     </div>

@@ -10,6 +10,10 @@ import {
   creditReportUploads, creditReportAccounts, creditReportInquiries, creditReportCollections,
   creditReportPublicRecords, disputeItems, disputeLettersNew, disputeCalendarEvents,
   leads, affiliates, affiliateSignups, deletionEvents, creditScoreHistory, creditReportCache,
+  managedClientPackages, clientCaseActivities, clientDocuments,
+  type ManagedClientPackage, type InsertManagedClientPackage,
+  type ClientCaseActivity, type InsertClientCaseActivity,
+  type ClientDocument, type InsertClientDocument,
   type CreditScoreHistory, type InsertCreditScoreHistory,
   type CreditReportCacheEntry,
   type User,
@@ -63,7 +67,7 @@ import {
   type DeletionEvent, type InsertDeletionEvent
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -327,6 +331,15 @@ export interface IStorage {
   getAllDeletionEvents(): Promise<DeletionEvent[]>;
   createDeletionEvent(event: InsertDeletionEvent): Promise<DeletionEvent>;
   updateDeletionEvent(id: number, updates: Partial<DeletionEvent>): Promise<DeletionEvent | undefined>;
+
+  // Managed Client
+  getManagedClientPackage(userId: number): Promise<ManagedClientPackage | undefined>;
+  upsertManagedClientPackage(userId: number, data: Partial<InsertManagedClientPackage>): Promise<ManagedClientPackage>;
+  getClientCaseActivities(userId: number): Promise<ClientCaseActivity[]>;
+  createClientCaseActivity(activity: InsertClientCaseActivity): Promise<ClientCaseActivity>;
+  getClientDocuments(userId: number): Promise<ClientDocument[]>;
+  createClientDocument(doc: InsertClientDocument): Promise<ClientDocument>;
+  updateClientDocument(id: number, updates: Partial<ClientDocument>): Promise<ClientDocument | undefined>;
 
   // Credit Score History
   createCreditScoreHistory(entry: InsertCreditScoreHistory): Promise<CreditScoreHistory>;
@@ -2635,6 +2648,48 @@ export class MemStorage implements IStorage {
     const identityProtectionActive = subscriptionTier === "pro" || subscriptionTier === "elite";
 
     return { ptsGained, itemsRemoved: resolvedIssues, topScore, activeIssues, disputesInProgress, itemsResolved, identityProtectionActive };
+  }
+
+  // ── Managed Client ──────────────────────────────────────────────────────────
+
+  async getManagedClientPackage(userId: number): Promise<ManagedClientPackage | undefined> {
+    const [pkg] = await db.select().from(managedClientPackages).where(eq(managedClientPackages.userId, userId));
+    return pkg || undefined;
+  }
+
+  async upsertManagedClientPackage(userId: number, data: Partial<InsertManagedClientPackage>): Promise<ManagedClientPackage> {
+    const existing = await this.getManagedClientPackage(userId);
+    if (existing) {
+      const [updated] = await db.update(managedClientPackages).set(data as any).where(eq(managedClientPackages.userId, userId)).returning();
+      return updated;
+    }
+    const [created] = await db.insert(managedClientPackages).values({ userId, ...(data as any) }).returning();
+    return created;
+  }
+
+  async getClientCaseActivities(userId: number): Promise<ClientCaseActivity[]> {
+    return await db.select().from(clientCaseActivities)
+      .where(eq(clientCaseActivities.userId, userId))
+      .orderBy(desc(clientCaseActivities.createdAt));
+  }
+
+  async createClientCaseActivity(activity: InsertClientCaseActivity): Promise<ClientCaseActivity> {
+    const [created] = await db.insert(clientCaseActivities).values(activity).returning();
+    return created;
+  }
+
+  async getClientDocuments(userId: number): Promise<ClientDocument[]> {
+    return await db.select().from(clientDocuments).where(eq(clientDocuments.userId, userId));
+  }
+
+  async createClientDocument(doc: InsertClientDocument): Promise<ClientDocument> {
+    const [created] = await db.insert(clientDocuments).values(doc as any).returning();
+    return created;
+  }
+
+  async updateClientDocument(id: number, updates: Partial<ClientDocument>): Promise<ClientDocument | undefined> {
+    const [updated] = await db.update(clientDocuments).set(updates as any).where(eq(clientDocuments.id, id)).returning();
+    return updated || undefined;
   }
 }
 

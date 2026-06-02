@@ -52,6 +52,9 @@ export const users = pgTable("users", {
   payPerDeleteRate: decimal("pay_per_delete_rate", { precision: 10, scale: 2 }).default("99.00"),
   // Subscription tier for feature gating: none | starter | pro | elite
   subscriptionTier: text("subscription_tier").default("none"), // none, starter, pro, elite
+  // Account model: SELF_SERVICE (DIY portal) or MANAGED_CLIENT (concierge/done-for-you)
+  accountType: text("account_type").notNull().default("SELF_SERVICE"),
+  programType: text("program_type"), // e.g. "standard", "premium_managed", "identity_theft"
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -1329,3 +1332,64 @@ export type AffiliateSignup = typeof affiliateSignups.$inferSelect;
 export type InsertAffiliateSignup = z.infer<typeof insertAffiliateSignupSchema>;
 export type DeletionEvent = typeof deletionEvents.$inferSelect;
 export type InsertDeletionEvent = z.infer<typeof insertDeletionEventSchema>;
+
+// ─── Managed Client Tables ────────────────────────────────────────────────────
+
+// Service package assigned by admin for a managed (done-for-you) client
+export const managedClientPackages = pgTable("managed_client_packages", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  packageName: text("package_name").notNull().default("Standard Credit Repair"),
+  status: text("status").notNull().default("active"), // active | on_hold | completed | cancelled
+  startDate: timestamp("start_date").defaultNow().notNull(),
+  estimatedCompletionDate: timestamp("estimated_completion_date"),
+  itemsIdentified: integer("items_identified").notNull().default(0),
+  itemsRemoved: integer("items_removed").notNull().default(0),
+  itemsInProgress: integer("items_in_progress").notNull().default(0),
+  pointsGained: integer("points_gained").notNull().default(0),
+  nextActionDate: timestamp("next_action_date"),
+  nextActionNote: text("next_action_note"),
+  internalNotes: text("internal_notes"),
+  monthlyFee: decimal("monthly_fee", { precision: 10, scale: 2 }).default("199.00"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Activity log entries visible to client on the managed home
+export const clientCaseActivities = pgTable("client_case_activities", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  activityType: text("activity_type").notNull(), // letter_sent | dispute_filed | document_reviewed | call_completed | score_update | note_added | follow_up_scheduled
+  title: text("title").notNull(),
+  description: text("description"),
+  performedBy: text("performed_by").notNull().default("ScoreShift Team"),
+  isVisibleToClient: boolean("is_visible_to_client").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Documents requested/uploaded for managed client case
+export const clientDocuments = pgTable("client_documents", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  fileName: text("file_name").notNull(),
+  fileSize: integer("file_size"),
+  mimeType: text("mime_type"),
+  filePath: text("file_path").notNull().default(""),
+  documentType: text("document_type").notNull(), // id | ssn_card | bank_statement | bureau_response | other
+  label: text("label").notNull().default("Document"),
+  status: text("status").notNull().default("needed"), // needed | uploaded | reviewed | approved
+  requestedAt: timestamp("requested_at").defaultNow(),
+  uploadedAt: timestamp("uploaded_at"),
+  reviewedAt: timestamp("reviewed_at"),
+  adminNotes: text("admin_notes"),
+});
+
+export const insertManagedClientPackageSchema = createInsertSchema(managedClientPackages).omit({ id: true, createdAt: true });
+export const insertClientCaseActivitySchema = createInsertSchema(clientCaseActivities).omit({ id: true, createdAt: true });
+export const insertClientDocumentSchema = createInsertSchema(clientDocuments).omit({ id: true });
+
+export type ManagedClientPackage = typeof managedClientPackages.$inferSelect;
+export type InsertManagedClientPackage = z.infer<typeof insertManagedClientPackageSchema>;
+export type ClientCaseActivity = typeof clientCaseActivities.$inferSelect;
+export type InsertClientCaseActivity = z.infer<typeof insertClientCaseActivitySchema>;
+export type ClientDocument = typeof clientDocuments.$inferSelect;
+export type InsertClientDocument = z.infer<typeof insertClientDocumentSchema>;
