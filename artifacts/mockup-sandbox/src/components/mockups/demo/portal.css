@@ -680,6 +680,7 @@
 .cp-pill.pending { background: var(--cp-amber-light); color: #b45309; }
 .cp-pill.resolved { background: var(--cp-teal-light); color: #0d9488; }
 .cp-pill.negative { background: var(--cp-red-light); color: #dc2626; }
+.cp-pill.warning { background: #fff7ed; color: #c2410c; }
 .cp-pill.info { background: var(--cp-accent-light); color: var(--cp-accent); }
 
 /* ── Buttons ─────────────────────────────────────────────────── */

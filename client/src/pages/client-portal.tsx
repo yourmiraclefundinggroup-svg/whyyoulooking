@@ -557,8 +557,15 @@ const PIPELINE_STAGES = [
 ];
 
 function getPipelineState(status: string, idx: number): "done" | "active" | "pending" {
-  const doneThrough: Record<string, number> = { sent: 3, in_review: 4, resolved: 6 };
-  const done = doneThrough[status] ?? 0;
+  const doneThrough: Record<string, number> = {
+    PENDING: 2,
+    SENT: 3,
+    DELIVERED: 4,
+    FOLLOW_UP_REQUIRED: 5,
+    RESOLVED: 6,
+    REJECTED: 6,
+  };
+  const done = doneThrough[status.toUpperCase()] ?? 2;
   if (idx < done) return "done";
   if (idx === done) return "active";
   return "pending";
@@ -572,8 +579,8 @@ function DisputeIQPage() {
   const history: EnrichedDispute[] = Array.isArray(historyRaw) ? historyRaw : [];
 
   const SAMPLE_ACTIVE: EnrichedDispute[] = [
-    { id: 1, bureau: "Equifax", status: "sent", dateSent: "2026-04-28", expectedResponse: "2026-05-28", actualResponse: null, creditor: "Capital One", issueType: "late_payment", issueTitle: "30-Day Late Payment", outcome: null },
-    { id: 2, bureau: "TransUnion", status: "in_review", dateSent: "2026-04-22", expectedResponse: "2026-05-22", actualResponse: null, creditor: "Midland Credit Mgmt", issueType: "collection", issueTitle: "Unverified Collection $847", outcome: null },
+    { id: 1, bureau: "Equifax", status: "SENT", dateSent: "2026-04-28", expectedResponse: "2026-05-28", actualResponse: null, creditor: "Capital One", issueType: "late_payment", issueTitle: "30-Day Late Payment", outcome: null },
+    { id: 2, bureau: "TransUnion", status: "FOLLOW_UP_REQUIRED", dateSent: "2026-04-22", expectedResponse: "2026-05-22", actualResponse: null, creditor: "Midland Credit Mgmt", issueType: "collection", issueTitle: "Unverified Collection $847", outcome: null },
   ];
 
   const TRACKING: Record<number, string> = { 1: "9400 1118 9922 3456 7890 12", 2: "9400 1118 9922 3456 7890 34" };
@@ -622,8 +629,20 @@ function DisputeIQPage() {
                     <div className="cp-dispute-meta">{d.creditor} · Sent {fmtDate(d.dateSent)}</div>
                   </div>
                 </div>
-                <span className={`cp-pill ${d.status === "sent" ? "pending" : d.status === "in_review" ? "active" : "resolved"}`}>
-                  {d.status === "sent" ? "Awaiting Delivery" : d.status === "in_review" ? "Bureau Reviewing" : "Resolved"}
+                <span className={`cp-pill ${
+                  d.status === "PENDING" ? "pending" :
+                  d.status === "SENT" ? "pending" :
+                  d.status === "DELIVERED" ? "active" :
+                  d.status === "FOLLOW_UP_REQUIRED" ? "warning" :
+                  d.status === "RESOLVED" ? "resolved" :
+                  d.status === "REJECTED" ? "negative" : "pending"
+                }`}>
+                  {d.status === "PENDING" ? "Letter Ready" :
+                   d.status === "SENT" ? "Awaiting Delivery" :
+                   d.status === "DELIVERED" ? "Bureau Reviewing" :
+                   d.status === "FOLLOW_UP_REQUIRED" ? "Follow-up Required" :
+                   d.status === "RESOLVED" ? "Resolved" :
+                   d.status === "REJECTED" ? "Rejected" : d.status}
                 </span>
               </div>
 
@@ -634,9 +653,9 @@ function DisputeIQPage() {
                   const isLast = i === PIPELINE_STAGES.length - 1;
                   let detail: string | null = null;
                   if (i === 0) detail = `${d.issueType.replace("_", " ")} · ${d.bureau}`;
-                  if (i === 2 && state !== "pending") detail = `USPS #${(TRACKING[d.id] ?? "").replace(/\s/g, "").slice(-8)}`;
-                  if (i === 4 && state !== "pending") detail = `30-day deadline: ${fmtDate(d.expectedResponse)}`;
-                  if (i === 5 && d.status === "in_review") detail = "Escalation letter ready if bureau doesn't respond";
+                  if (i === 2 && ["SENT","DELIVERED","FOLLOW_UP_REQUIRED","RESOLVED","REJECTED"].includes(d.status)) detail = `USPS #${(TRACKING[d.id] ?? "").replace(/\s/g, "").slice(-8)}`;
+                  if (i === 4 && ["DELIVERED","FOLLOW_UP_REQUIRED","RESOLVED","REJECTED"].includes(d.status)) detail = `30-day deadline: ${fmtDate(d.expectedResponse)}`;
+                  if (i === 5 && d.status === "FOLLOW_UP_REQUIRED") detail = "Escalation letter ready if bureau doesn't respond";
                   return (
                     <div key={i} className={`cp-pipeline-stage ${state}`}>
                       <div className="cp-pipeline-dot-col">
@@ -656,7 +675,7 @@ function DisputeIQPage() {
                 })}
               </div>
 
-              {d.status === "in_review" && (
+              {d.status === "FOLLOW_UP_REQUIRED" && (
                 <div className="cp-dispute-recommendation">
                   <Icon size={13}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></Icon>
                   <span>If no bureau response by <strong>{fmtDate(d.expectedResponse)}</strong>, an escalation letter will be prepared automatically.</span>
