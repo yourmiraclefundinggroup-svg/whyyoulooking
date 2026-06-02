@@ -1,0 +1,170 @@
+Fix the ScoreShift portal redesign without removing existing core functionality.
+
+The previous redesign direction was correct visually, but several important issues must be corrected.
+
+DO NOT rebuild from scratch.
+DO NOT remove working product features.
+DO NOT replace real credit data with fake placeholder data.
+DO NOT remove the original Dispute IQ engine.
+
+Fix the following:
+
+1. Restore the real Dispute IQ functionality
+
+Dispute IQ is not just a status tracker.
+
+Restore the actual Dispute IQ workflow that:
+
+* Reads the full credit report
+* Identifies disputable accounts/items
+* Reviews bureau-level reporting differences
+* Allows dispute selection
+* Generates dispute strategy
+* Creates Smart Letters
+* Allows letter preview
+* Sends letters through ScoreShift Mail
+* Tracks mail/delivery/status
+* Tracks bureau response/follow-up
+
+Smart Letter and ScoreShift Mail should live inside Dispute IQ, but the full Dispute IQ engine must remain functional.
+
+Keep the improved Dispute IQ visual layout, but reconnect it to the real dispute workflow.
+
+2. Use real credit report data
+
+Do not use hardcoded/fake scores such as:
+
+* 638
+* 621
+* 644
+  unless those are coming from the real pulled report.
+
+Credit scores, bureau names, accounts, alerts, collections, inquiries, utilization, and report data must come from the actual Array credit report data already available in the app.
+
+If real data is unavailable, show a graceful empty/loading state:
+“Credit data is not available yet. Refresh report or complete verification.”
+
+Do not invent user scores, accounts, or point gains.
+
+3. Keep the guided plan but base it on real data
+
+The ScoreShift Plan is good, but it must be generated from real report data.
+
+The plan should analyze:
+
+* Utilization
+* Late payments
+* Collections
+* Charge-offs
+* Public records
+* Bankruptcy reporting
+* Inquiries
+* Bureau reporting differences
+* Alerts
+* Identity/protection risk data if available
+
+Each recommended action should point to the correct real tool:
+
+* Dispute-related issues → Dispute IQ
+* Utilization/open debt → Debt Navigator
+* Identity/privacy issues → Protection Center
+* Scores/full report/alerts/simulator → Credit Report
+
+4. Restore consistent ScoreShift brand colors
+
+The colors are currently inconsistent.
+
+Use the existing ScoreShift brand color system already defined in the project.
+
+Do not introduce random reds, oranges, blues, greens, or gradients unless they are part of the approved brand palette.
+
+Status colors are allowed only when necessary:
+
+* Critical/high priority
+* Warning/medium priority
+* Success/completed
+* Neutral/inactive
+
+But keep them subtle and consistent with the ScoreShift design system.
+
+5. Keep portal design separate from landing page design
+
+This is still the authenticated portal only.
+
+Do not add:
+
+* Landing page hero sections
+* Marketing page layouts
+* Sales sections
+* Public website storytelling
+* Generic feature grids
+
+This portal should remain an application interface.
+
+6. Preserve existing working routes and features
+
+Do not remove or break existing routes/components for:
+
+* Dispute IQ
+* Smart Letter generation
+* ScoreShift Mail
+* Credit Report
+* Scores
+* Debt Navigator
+* Protection Center
+* Privacy Protection
+* PIP Scan
+* Identity Protection
+* Credit Alerts
+* Score Simulator
+* Subscription Manager
+* Debt Analysis
+
+The redesign should reorganize and restyle these features, not delete them.
+
+7. Improve the current layout
+
+The new portal direction is close. Keep:
+
+* Sidebar navigation
+* Home / My Plan / Dispute IQ / Debt Navigator / Protection Center / Credit Report / Progress / Profile
+* Guided action plan concept
+* Next Best Action
+* Action Queue
+* Progress tracking
+
+But make these changes:
+
+* Reduce fake/placeholder content
+* Pull actual user/report data
+* Make the Next Best Action visually stronger
+* Make Credit Snapshot compact and real
+* Make My Plan actions generated from report issues
+* Make Dispute IQ the full dispute workflow, not just a timeline
+
+8. Data rule
+
+Use this rule throughout the portal:
+
+Real data first.
+Loading state second.
+Empty state third.
+Never fake report data in production UI.
+
+If placeholder data is needed for development, clearly isolate it behind a demo/dev flag and do not show it when real user credit data exists.
+
+9. Final goal
+
+Keep the improved guided Credit Action Intelligence experience, but restore the real product logic.
+
+The portal should feel like:
+
+Real Array credit data
+→ ScoreShift analysis
+→ Prioritized real issues
+→ Recommended ScoreShift tool
+→ Real workflow execution
+→ Progress tracking
+
+Do not make it a mock dashboard.
+Make it a functional guided portal powered by the actual credit report data.
