@@ -6,6 +6,7 @@ import { useArrayScript } from "@/hooks/use-array-script";
 import { useArrayToken } from "@/hooks/use-array-token";
 import { useFeatureAccess } from "@/hooks/use-feature-access";
 import "@/styles/portal.css";
+import { DisputeIQPage as RealDisputeIQPage } from "@/pages/dispute-iq";
 
 /* ── Custom element declarations ──────────────────────────────────── */
 declare global {
@@ -114,17 +115,10 @@ const TIMELINES: { id: OnboardingTimeline; label: string; sub: string }[] = [
 ];
 
 const GOAL_SUMMARIES: Record<OnboardingGoal, string> = {
-  "improve-score": "Your score is up 56 pts since you joined. Resolving the Capital One dispute could push you past 680. Focus: disputes + utilization.",
-  "remove-negatives": "1 of 3 negative items removed. The Midland collection was eliminated in 30 days. 2 items still remain — act on them now.",
-  "build-credit": "Your oldest account is 4 years — a solid foundation. Diversify your credit mix and keep utilization below 30% to accelerate growth.",
-  "reduce-debt": "Total debt: $14,820 across 4 accounts. Chase Sapphire at 74% utilization is your highest-leverage target — paying it to 30% gains ~18 pts.",
-};
-
-const GOAL_READINESS: Record<OnboardingGoal, number> = {
-  "improve-score": 22,
-  "remove-negatives": 33,
-  "build-credit": 18,
-  "reduce-debt": 8,
+  "improve-score": "Focus on removing negative items and lowering utilization. Each dispute resolved and each balance paid down brings your score closer to your target.",
+  "remove-negatives": "Dispute inaccurate collections, late payments, and charge-offs. Removing even one negative item can produce a meaningful score jump.",
+  "build-credit": "Keep all accounts in good standing, diversify your credit mix, and avoid unnecessary hard inquiries. Consistency builds lasting credit health.",
+  "reduce-debt": "Target high-utilization accounts first. Paying each card below 30% utilization typically produces the fastest score gains.",
 };
 
 function OnboardingScreen({ onDone }: { onDone: (goal: OnboardingGoal, timeline: OnboardingTimeline) => void }) {
@@ -258,20 +252,23 @@ function OnboardingScreen({ onDone }: { onDone: (goal: OnboardingGoal, timeline:
 }
 
 /* ── HOME PAGE ───────────────────────────────────────────────────── */
-function HomePage({ user, goal, timeline, onNavigate }: { user: any; goal: OnboardingGoal | null; timeline: OnboardingTimeline | null; onNavigate: (page: PageId) => void }) {
+type HomePageProps = {
+  user: any; goal: OnboardingGoal | null; timeline: OnboardingTimeline | null;
+  onNavigate: (page: PageId) => void;
+  appKey: string | null; userToken: string | null; sbx: Record<string, string>;
+  scriptReady: boolean; tokenReady: boolean; tokenError: boolean;
+};
+
+function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, scriptReady, tokenReady, tokenError }: HomePageProps) {
   const displayName = user?.firstName || user?.username || "there";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
-  const actions = [
-    { id: 1, priority: "high", label: "Dispute Capital One late payment", detail: "30-day late reported on Equifax — potential +28 pts", page: "dispute-iq" as PageId, color: "#ef4444" },
-    { id: 2, priority: "high", label: "Validate Midland Credit collection", detail: "Unverified $847 collection on TransUnion — dispute now", page: "dispute-iq" as PageId, color: "#ef4444" },
-    { id: 3, priority: "medium", label: "Reduce Chase card utilization", detail: "Current 74% utilization — target below 30% to gain ~18 pts", page: "debt" as PageId, color: "#f59e0b" },
-    { id: 4, priority: "medium", label: "Review your full credit report", detail: "Last reviewed 14 days ago — new data available", page: "report" as PageId, color: "#6366f1" },
-    { id: 5, priority: "low", label: "Enable identity protection", detail: "Monitor for new accounts opened in your name", page: "protection" as PageId, color: "#14b8a6" },
-  ];
-
-  const topAction = actions[0];
+  const { data: activeRaw, isLoading: disputesLoading } = useQuery<EnrichedDispute[]>({
+    queryKey: ["/api/client/disputes?status=active"],
+  });
+  const activeDisputes: EnrichedDispute[] = Array.isArray(activeRaw) ? activeRaw : [];
+  const topDispute = activeDisputes[0] ?? null;
 
   return (
     <div>
@@ -280,24 +277,30 @@ function HomePage({ user, goal, timeline, onNavigate }: { user: any; goal: Onboa
         <div className="cp-home-hero-left">
           <div className="cp-welcome-eyebrow">{greeting.toUpperCase()}</div>
           <div className="cp-welcome-name">{greeting}, {displayName}.</div>
-          <div className="cp-welcome-sub">Your credit plan has <strong style={{ color: "#2dd4bf" }}>2 urgent actions</strong> ready. Let's move.</div>
+          <div className="cp-welcome-sub">
+            {disputesLoading ? "Loading your plan…" :
+             activeDisputes.length > 0
+               ? <><strong style={{ color: "var(--cp-teal)" }}>{activeDisputes.length} dispute{activeDisputes.length !== 1 ? "s" : ""} in progress</strong> — check Dispute IQ for updates.</>
+               : "Pull your credit report to start identifying issues and building your action plan."}
+          </div>
         </div>
         <div className="cp-home-hero-scores">
-          {[
-            { bureau: "EQ", score: 638, change: "+22", tier: "fair" },
-            { bureau: "TU", score: 621, change: "+8", tier: "fair" },
-            { bureau: "EX", score: 644, change: "+14", tier: "fair" },
-          ].map(s => (
-            <div key={s.bureau} className="cp-home-score-chip">
-              <div className="cp-home-score-bureau">{s.bureau}</div>
-              <div className="cp-home-score-val">{s.score}</div>
-              <div className="cp-home-score-change">↑ {s.change}</div>
-            </div>
-          ))}
+          {!scriptReady || (!tokenReady && !tokenError) ? (
+            <div className="cp-array-spinner" style={{ borderColor: "rgba(255,255,255,0.2)", borderTopColor: "rgba(255,255,255,0.85)", width: 28, height: 28, borderWidth: 2.5 }} />
+          ) : tokenError ? (
+            <button className="cp-btn cp-btn-sm" style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.22)", color: "white", fontSize: 12 }} onClick={() => onNavigate("report")}>
+              Connect credit data
+            </button>
+          ) : (
+            <button className="cp-btn cp-btn-sm" style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.22)", color: "white", fontSize: 12, gap: 6 }} onClick={() => onNavigate("report")}>
+              <Icon size={13}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></Icon>
+              Review My Scores
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Goal readiness banner */}
+      {/* Goal banner */}
       {goal && (
         <div className="cp-card cp-mb-24" style={{ borderLeft: "4px solid var(--cp-accent)" }}>
           <div className="cp-flex-between cp-mb-18">
@@ -310,113 +313,111 @@ function HomePage({ user, goal, timeline, onNavigate }: { user: any; goal: Onboa
                 <div className="cp-card-subtitle">Timeline: {TIMELINES.find(t => t.id === timeline)?.label}</div>
               )}
             </div>
-            <div style={{ textAlign: "right", flexShrink: 0, paddingLeft: 16 }}>
-              <div style={{ fontSize: 30, fontWeight: 800, color: "var(--cp-accent)", fontFamily: "'Sora', sans-serif", letterSpacing: -1, lineHeight: 1 }}>{GOAL_READINESS[goal]}%</div>
-              <div style={{ fontSize: 11, color: "var(--cp-text-muted)", marginTop: 2 }}>plan complete</div>
-            </div>
           </div>
-          <p style={{ fontSize: 13.5, color: "var(--cp-text-secondary)", lineHeight: 1.6, margin: "0 0 14px" }}>
+          <p style={{ fontSize: 13.5, color: "var(--cp-text-secondary)", lineHeight: 1.6, margin: 0 }}>
             {GOAL_SUMMARIES[goal]}
           </p>
-          <div className="cp-progress-bar" style={{ height: 7 }}>
-            <div style={{ width: `${GOAL_READINESS[goal]}%`, height: "100%", borderRadius: 4, background: "linear-gradient(90deg, var(--cp-accent), var(--cp-teal))", transition: "width 1s ease" }} />
-          </div>
         </div>
       )}
 
       {/* Next Best Action */}
       <div className="cp-nba-card cp-mb-24">
         <div className="cp-nba-label">
-          <span style={{ background: "#ef4444", width: 7, height: 7, borderRadius: "50%", display: "inline-block", marginRight: 6, animation: "cp-pulse-dot 2s infinite" }} />
+          <span style={{ background: "var(--cp-accent)", width: 7, height: 7, borderRadius: "50%", display: "inline-block", marginRight: 6, animation: "cp-pulse-dot 2s infinite" }} />
           NEXT BEST ACTION
         </div>
-        <div className="cp-nba-title">{topAction.label}</div>
-        <div className="cp-nba-detail">{topAction.detail}</div>
-        <div className="cp-nba-footer">
-          <button className="cp-btn cp-btn-primary" onClick={() => onNavigate(topAction.page)}>
-            Take Action
-            <Icon size={15}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
-          </button>
-          <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate("plan")}>View full plan</button>
-        </div>
+        {disputesLoading ? (
+          <div style={{ color: "var(--cp-text-muted)", fontSize: 13 }}>Loading your action plan…</div>
+        ) : topDispute ? (
+          <>
+            <div className="cp-nba-title">Dispute in progress: {topDispute.issueTitle}</div>
+            <div className="cp-nba-detail">{topDispute.creditor} · {topDispute.bureau} · {topDispute.status === "SENT" ? "Awaiting delivery" : topDispute.status === "FOLLOW_UP_REQUIRED" ? "Follow-up required" : topDispute.status === "DELIVERED" ? "Bureau reviewing" : topDispute.status}</div>
+            <div className="cp-nba-footer">
+              <button className="cp-btn cp-btn-primary" onClick={() => onNavigate("dispute-iq")}>
+                Track in Dispute IQ
+                <Icon size={15}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
+              </button>
+              <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate("plan")}>View full plan</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="cp-nba-title">Analyze your credit report for disputes</div>
+            <div className="cp-nba-detail">Dispute IQ scans your report for FCRA violations and Metro 2 errors, then generates a personalized dispute strategy and letters.</div>
+            <div className="cp-nba-footer">
+              <button className="cp-btn cp-btn-primary" onClick={() => onNavigate("dispute-iq")}>
+                Open Dispute IQ
+                <Icon size={15}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
+              </button>
+              <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate("report")}>Review My Scores</button>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Action queue */}
+      {/* Active disputes queue + Quick actions */}
       <div className="cp-grid-2 cp-mb-24">
         <div className="cp-card">
           <div className="cp-card-header">
             <div>
-              <div className="cp-card-title">Your Action Queue</div>
-              <div className="cp-card-subtitle">Ranked by credit impact</div>
+              <div className="cp-card-title">Active Disputes</div>
+              <div className="cp-card-subtitle">Ranked by priority</div>
             </div>
-            <span className="cp-badge warning">5 actions</span>
+            {activeDisputes.length > 0 && <span className="cp-badge warning">{activeDisputes.length} active</span>}
           </div>
-          {actions.map((a, i) => (
-            <div key={a.id} className="cp-action-row" onClick={() => onNavigate(a.page)}>
-              <div className="cp-action-rank">{i + 1}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="cp-action-label">{a.label}</div>
-                <div className="cp-action-detail">{a.detail}</div>
+          {disputesLoading ? (
+            <div style={{ padding: "24px 0", textAlign: "center" }}><div className="cp-array-spinner" style={{ margin: "0 auto" }} /></div>
+          ) : activeDisputes.length === 0 ? (
+            <div className="cp-empty-state" style={{ padding: "28px 12px" }}>
+              <div className="cp-empty-title" style={{ fontSize: 13 }}>No active disputes yet</div>
+              <div className="cp-empty-desc" style={{ fontSize: 12 }}>Open Dispute IQ to analyze your report and file your first dispute.</div>
+              <button className="cp-btn cp-btn-primary cp-btn-sm" style={{ marginTop: 14 }} onClick={() => onNavigate("dispute-iq")}>Open Dispute IQ</button>
+            </div>
+          ) : (
+            <>
+              {activeDisputes.slice(0, 5).map((d, i) => (
+                <div key={d.id} className="cp-action-row" style={{ cursor: "pointer" }} onClick={() => onNavigate("dispute-iq")}>
+                  <div className="cp-action-rank">{i + 1}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="cp-action-label">{d.issueTitle}</div>
+                    <div className="cp-action-detail">{d.creditor} · {d.bureau}</div>
+                  </div>
+                  <span className={`cp-pill ${
+                    d.status === "FOLLOW_UP_REQUIRED" ? "warning" :
+                    d.status === "RESOLVED" ? "resolved" :
+                    d.status === "REJECTED" ? "negative" : "pending"
+                  }`} style={{ flexShrink: 0, fontSize: 10 }}>
+                    {d.status === "PENDING" ? "Letter Ready" : d.status === "SENT" ? "Sent" : d.status === "DELIVERED" ? "Delivered" : d.status === "FOLLOW_UP_REQUIRED" ? "Follow-up" : d.status}
+                  </span>
+                </div>
+              ))}
+              <div style={{ marginTop: 14 }}>
+                <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate("dispute-iq")}>View all in Dispute IQ →</button>
               </div>
-              <span className={`cp-priority-dot ${a.priority}`} />
-            </div>
-          ))}
-          <div style={{ marginTop: 14 }}>
-            <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate("plan")}>View full plan →</button>
-          </div>
+            </>
+          )}
         </div>
 
         <div className="cp-card">
           <div className="cp-card-header">
             <div>
-              <div className="cp-card-title">Recent Activity</div>
-              <div className="cp-card-subtitle">Changes across all 3 bureaus</div>
+              <div className="cp-card-title">Quick Actions</div>
+              <div className="cp-card-subtitle">Tools for your credit journey</div>
             </div>
-            <span className="cp-badge live">Live</span>
           </div>
           {[
-            { type: "positive", text: "Score increased +22 pts on Equifax", meta: "Today, 8:14 AM" },
-            { type: "negative", text: "New inquiry — Capital One", meta: "Yesterday, 3:40 PM · TransUnion" },
-            { type: "positive", text: "Midland collection removed", meta: "May 4, 2026 · All Bureaus" },
-            { type: "neutral", text: "Certified mail delivered", meta: "May 3, 2026 · Experian" },
-            { type: "positive", text: "Chase utilization fell to 71%", meta: "May 1, 2026" },
-          ].map((alert, i) => (
-            <div key={i} className="cp-alert-item">
-              <div className={`cp-alert-dot ${alert.type}`} />
-              <div>
-                <div className="cp-alert-text">{alert.text}</div>
-                <div className="cp-alert-meta">{alert.meta}</div>
+            { label: "Analyze report for disputes", detail: "Find FCRA violations and Metro 2 errors", page: "dispute-iq" as PageId, color: "var(--cp-red)" },
+            { label: "Review 3-bureau scores", detail: "Live VantageScore 3.0 across all bureaus", page: "report" as PageId, color: "var(--cp-accent)" },
+            { label: "Analyze debt & utilization", detail: "Payoff strategies and live account breakdown", page: "debt" as PageId, color: "var(--cp-amber)" },
+            { label: "Monitor identity & alerts", detail: "Real-time bureau monitoring", page: "protection" as PageId, color: "var(--cp-teal)" },
+          ].map((a, i) => (
+            <div key={i} className="cp-action-row" style={{ cursor: "pointer" }} onClick={() => onNavigate(a.page)}>
+              <div className="cp-action-rank" style={{ background: `${a.color}15`, borderColor: `${a.color}40`, color: a.color }}>{i + 1}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="cp-action-label">{a.label}</div>
+                <div className="cp-action-detail">{a.detail}</div>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Credit readiness */}
-      <div className="cp-card cp-card-accent-top">
-        <div className="cp-card-header">
-          <div>
-            <div className="cp-card-title">Credit Readiness Score</div>
-            <div className="cp-card-subtitle">How your profile stacks up across 5 key factors</div>
-          </div>
-          <span className="cp-badge info">Updated today</span>
-        </div>
-        <div className="cp-readiness-grid">
-          {[
-            { label: "Payment History", pct: 85, color: "#22c55e" },
-            { label: "Credit Utilization", pct: 34, color: "#f59e0b" },
-            { label: "Account Age", pct: 60, color: "#6366f1" },
-            { label: "Credit Mix", pct: 70, color: "#14b8a6" },
-            { label: "New Credit", pct: 55, color: "#8b5cf6" },
-          ].map(f => (
-            <div key={f.label} className="cp-readiness-item">
-              <div className="cp-flex-between" style={{ marginBottom: 6 }}>
-                <span style={{ fontSize: 12.5, fontWeight: 500, color: "var(--cp-text-secondary)" }}>{f.label}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: f.color }}>{f.pct}%</span>
-              </div>
-              <div className="cp-progress-bar" style={{ height: 6 }}>
-                <div style={{ width: `${f.pct}%`, height: "100%", borderRadius: 3, background: f.color, transition: "width 0.8s ease" }} />
-              </div>
+              <Icon size={12}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
             </div>
           ))}
         </div>
@@ -427,109 +428,115 @@ function HomePage({ user, goal, timeline, onNavigate }: { user: any; goal: Onboa
 
 /* ── MY PLAN PAGE ────────────────────────────────────────────────── */
 function PlanPage({ goal, timeline, onNavigate }: { goal: OnboardingGoal | null; timeline: OnboardingTimeline | null; onNavigate: (page: PageId) => void }) {
-  type PlanSection = "high" | "medium" | "recommended" | "completed";
-  const allActions: {
-    section: PlanSection; category: string; title: string; impact: string;
-    bureau: string; detail: string; difficulty: string; timeEst: string;
-    tool: string; page: PageId; color: string;
-  }[] = [
-    { section: "high", category: "Dispute", title: "Dispute Capital One 30-day late payment", impact: "+22–34 pts", bureau: "Equifax", detail: "30-day late from Jan 2024. Dispute under FCRA §1681i — bureau must verify within 30 days or remove.", difficulty: "Easy", timeEst: "1–2 days", tool: "Dispute IQ", page: "dispute-iq", color: "var(--cp-red)" },
-    { section: "high", category: "Dispute", title: "Validate Midland Credit $847 collection", impact: "+18–28 pts", bureau: "TransUnion", detail: "Debt validation letter required. If Midland can't validate, they must remove the tradeline.", difficulty: "Easy", timeEst: "1–2 days", tool: "Dispute IQ", page: "dispute-iq", color: "var(--cp-red)" },
-    { section: "medium", category: "Debt", title: "Pay Chase card utilization from 74% → 30%", impact: "+15–22 pts", bureau: "All", detail: "High utilization is the #1 drag on your score. Paying $1,100 would bring Chase to 29% utilization.", difficulty: "Medium", timeEst: "1–3 weeks", tool: "Debt Navigator", page: "debt", color: "var(--cp-amber)" },
-    { section: "medium", category: "Dispute", title: "Challenge Chase hard inquiry on Experian", impact: "+3–6 pts", bureau: "Experian", detail: "Hard inquiries 12+ months old have minimal impact but can be disputed if unauthorized.", difficulty: "Easy", timeEst: "1 day", tool: "Dispute IQ", page: "dispute-iq", color: "var(--cp-amber)" },
-    { section: "recommended", category: "Protection", title: "Enable identity protection monitoring", impact: "Preventive", bureau: "All", detail: "Continuous monitoring for new accounts, address changes, and dark web data exposure.", difficulty: "Easy", timeEst: "5 min", tool: "Protection Center", page: "protection", color: "var(--cp-teal)" },
-    { section: "recommended", category: "Credit", title: "Review full 3-bureau credit report", impact: "Audit", bureau: "All", detail: "New report data available. Check for additional errors, duplicate accounts, or outdated info.", difficulty: "Easy", timeEst: "10 min", tool: "Credit Report", page: "report", color: "var(--cp-accent)" },
-    { section: "completed", category: "Dispute", title: "Midland collection removed from TransUnion", impact: "+18 pts earned", bureau: "TransUnion", detail: "Successfully removed April 2026. Score improved +18 pts on TransUnion.", difficulty: "Easy", timeEst: "Done", tool: "Dispute IQ", page: "dispute-iq", color: "var(--cp-green)" },
-  ];
-
-  const SECTIONS: { id: PlanSection; label: string; color: string; badge?: string }[] = [
-    { id: "high",        label: "High Priority",  color: "var(--cp-red)",    badge: "Act Now" },
-    { id: "medium",      label: "Medium Priority", color: "var(--cp-amber)",  badge: "This Week" },
-    { id: "recommended", label: "Low Priority",     color: "var(--cp-accent)" },
-    { id: "completed",   label: "Completed",       color: "var(--cp-green)" },
-  ];
-
+  const { data: activeRaw, isLoading } = useQuery<EnrichedDispute[]>({
+    queryKey: ["/api/client/disputes?status=active"],
+  });
+  const active: EnrichedDispute[] = Array.isArray(activeRaw) ? activeRaw : [];
+  const goalLabel = goal ? GOALS.find(g => g.id === goal)?.label : null;
   const timelineLabel = timeline ? TIMELINES.find(t => t.id === timeline)?.label : null;
+
+  const RECOMMENDED = [
+    { title: "Review your full 3-bureau report", detail: "Check for new items, inquiries, and bureau reporting differences.", tool: "Credit Report", page: "report" as PageId, color: "var(--cp-accent)" },
+    { title: "Analyze debt and utilization", detail: "High utilization is one of the biggest score drags. Review your current levels.", tool: "Debt Navigator", page: "debt" as PageId, color: "var(--cp-amber)" },
+    { title: "Monitor for new alerts", detail: "Check credit alerts and identity protection for any new bureau activity.", tool: "Protection Center", page: "protection" as PageId, color: "var(--cp-teal)" },
+  ];
 
   return (
     <div>
       <div className="cp-page-header">
         <div>
-          <span className="cp-page-eyebrow">Credit Action Intelligence</span>
-          <h1 className="cp-page-title">Your ScoreShift Plan</h1>
-          <p className="cp-page-subtitle">{timelineLabel ? `${timelineLabel} plan — ` : ""}Actions ranked by credit impact. Tackle in order for fastest results.</p>
+          <span className="cp-page-eyebrow">Personalized Strategy</span>
+          <h1 className="cp-page-title">My Action Plan</h1>
+          <p className="cp-page-subtitle">
+            {goalLabel ? `Goal: ${goalLabel}${timelineLabel ? ` · ${timelineLabel}` : ""}` : "Your prioritized credit repair action list."}
+          </p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <span className="cp-badge warning">2 High Priority</span>
-          <span className="cp-badge info">5 Actions</span>
-        </div>
+        {active.length > 0 && <span className="cp-badge warning">{active.length} active</span>}
       </div>
 
-      <div className="cp-grid-4 cp-mb-24">
-        {[
-          { label: "Estimated gain", val: "+65–90 pts", color: "var(--cp-green)", icon: <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></> },
-          { label: "Items to dispute", val: "3", color: "var(--cp-red)", icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></> },
-          { label: "Debt to target", val: "$1,100", color: "var(--cp-amber)", icon: <><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></> },
-          { label: "Plan progress", val: "1 / 6", color: "var(--cp-teal)", icon: <><polyline points="20 6 9 17 4 12" /></> },
-        ].map(s => (
-          <div key={s.label} className="cp-stat-card">
-            <div className="cp-stat-icon" style={{ background: `${s.color}18`, color: s.color }}>
-              <Icon size={20}>{s.icon}</Icon>
+      {isLoading ? (
+        <div className="cp-card" style={{ padding: "48px 20px", textAlign: "center" }}>
+          <div className="cp-array-spinner" style={{ margin: "0 auto 12px" }} />
+          <div style={{ fontSize: 13, color: "var(--cp-text-muted)" }}>Loading your plan…</div>
+        </div>
+      ) : active.length === 0 ? (
+        <div className="cp-card cp-mb-24">
+          <div className="cp-empty-state">
+            <div className="cp-empty-icon">
+              <Icon size={22}><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></Icon>
             </div>
-            <div>
-              <div className="cp-stat-value" style={{ fontSize: 20, color: s.color }}>{s.val}</div>
-              <div className="cp-stat-label">{s.label}</div>
+            <div className="cp-empty-title">No active disputes yet</div>
+            <div className="cp-empty-desc">Open Dispute IQ to pull your credit report, identify disputable items, and generate your first dispute letters. Your plan will build automatically.</div>
+            <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+              <button className="cp-btn cp-btn-primary" onClick={() => onNavigate("dispute-iq")}>
+                Open Dispute IQ
+                <Icon size={14}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
+              </button>
+              <button className="cp-btn cp-btn-secondary" onClick={() => onNavigate("report")}>Review My Scores</button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="cp-mb-24">
+          <div className="cp-plan-section-header cp-mb-18">
+            <div style={{ width: 4, height: 18, borderRadius: 2, background: "var(--cp-red)", flexShrink: 0 }} />
+            <span className="cp-plan-section-title" style={{ color: "var(--cp-red)" }}>Active Disputes</span>
+            <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 9px", borderRadius: 20, background: "rgba(239,68,68,0.1)", color: "var(--cp-red)", border: "1px solid rgba(239,68,68,0.2)" }}>Act Now</span>
+            <span style={{ fontSize: 11.5, color: "var(--cp-text-muted)", marginLeft: "auto" }}>{active.length} dispute{active.length !== 1 ? "s" : ""}</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 10 }}>
+            {active.map(d => (
+              <div key={d.id} className="cp-plan-action-card" style={{ borderLeft: "4px solid var(--cp-red)" }}>
+                <div className="cp-plan-action-header">
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, flexWrap: "wrap" }}>
+                    <span className="cp-plan-category">Dispute</span>
+                    <span className="cp-plan-bureau">{d.bureau}</span>
+                    <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--cp-red)", background: "rgba(239,68,68,0.08)", padding: "1px 8px", borderRadius: 10 }}>Dispute IQ</span>
+                  </div>
+                  <span className={`cp-pill ${
+                    d.status === "PENDING" || d.status === "SENT" ? "pending" :
+                    d.status === "DELIVERED" ? "active" :
+                    d.status === "FOLLOW_UP_REQUIRED" ? "warning" :
+                    d.status === "RESOLVED" ? "resolved" : "negative"
+                  }`}>
+                    {d.status === "PENDING" ? "Letter Ready" : d.status === "SENT" ? "Awaiting Delivery" : d.status === "DELIVERED" ? "Bureau Reviewing" : d.status === "FOLLOW_UP_REQUIRED" ? "Follow-up Required" : d.status}
+                  </span>
+                </div>
+                <div className="cp-plan-action-title">{d.issueTitle}</div>
+                <div className="cp-plan-action-detail">{d.creditor} · Sent {fmtDate(d.dateSent)} · Deadline: {fmtDate(d.expectedResponse)}</div>
+                <div style={{ marginTop: 14 }}>
+                  <button className="cp-btn cp-btn-primary cp-btn-sm" onClick={() => onNavigate("dispute-iq")}>
+                    Track in Dispute IQ
+                    <Icon size={13}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="cp-plan-section-header cp-mb-18" style={{ marginTop: active.length > 0 ? 28 : 0 }}>
+        <div style={{ width: 4, height: 18, borderRadius: 2, background: "var(--cp-accent)", flexShrink: 0 }} />
+        <span className="cp-plan-section-title" style={{ color: "var(--cp-accent)" }}>Recommended Next Steps</span>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {RECOMMENDED.map((a, i) => (
+          <div key={i} className="cp-plan-action-card" style={{ borderLeft: `4px solid ${a.color}` }}>
+            <div className="cp-plan-action-header">
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: a.color, background: `${a.color}15`, padding: "1px 8px", borderRadius: 10 }}>{a.tool}</span>
+            </div>
+            <div className="cp-plan-action-title">{a.title}</div>
+            <div className="cp-plan-action-detail">{a.detail}</div>
+            <div style={{ marginTop: 14 }}>
+              <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate(a.page)}>
+                Open {a.tool}
+                <Icon size={13}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
+              </button>
             </div>
           </div>
         ))}
       </div>
-
-      {SECTIONS.map(sec => {
-        const items = allActions.filter(a => a.section === sec.id);
-        if (items.length === 0) return null;
-        return (
-          <div key={sec.id} className="cp-mb-24">
-            <div className="cp-plan-section-header">
-              <div style={{ width: 4, height: 18, borderRadius: 2, background: sec.color, flexShrink: 0 }} />
-              <span className="cp-plan-section-title" style={{ color: sec.color }}>{sec.label}</span>
-              {sec.badge && (
-                <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 9px", borderRadius: 20, background: `${sec.color}15`, color: sec.color, border: `1px solid ${sec.color}30` }}>{sec.badge}</span>
-              )}
-              <span style={{ fontSize: 11.5, color: "var(--cp-text-muted)", marginLeft: "auto" }}>{items.length} action{items.length !== 1 ? "s" : ""}</span>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 10 }}>
-              {items.map((action, i) => (
-                <div key={i} className="cp-plan-action-card" style={{ borderLeft: `4px solid ${action.color}`, opacity: action.section === "completed" ? 0.82 : 1 }}>
-                  <div className="cp-plan-action-header">
-                    <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, minWidth: 0, flexWrap: "wrap" }}>
-                      <span className="cp-plan-category">{action.category}</span>
-                      <span className="cp-plan-bureau">{action.bureau}</span>
-                      <span style={{ fontSize: 10.5, color: "var(--cp-text-muted)", background: "var(--cp-bg)", padding: "1px 7px", borderRadius: 10, border: "1px solid var(--cp-border)", whiteSpace: "nowrap" }}>{action.difficulty} · {action.timeEst}</span>
-                      <span style={{ fontSize: 10.5, fontWeight: 700, color: action.color, background: `${action.color}15`, padding: "1px 8px", borderRadius: 10, whiteSpace: "nowrap" }}>{action.tool}</span>
-                    </div>
-                    <span className="cp-plan-impact" style={{ color: action.color, flexShrink: 0 }}>{action.impact}</span>
-                  </div>
-                  <div className="cp-plan-action-title">{action.title}</div>
-                  <div className="cp-plan-action-detail">{action.detail}</div>
-                  {action.section !== "completed" ? (
-                    <div style={{ marginTop: 14 }}>
-                      <button className="cp-btn cp-btn-primary cp-btn-sm" onClick={() => onNavigate(action.page)}>
-                        Open {action.tool}
-                        <Icon size={13}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
-                      </button>
-                    </div>
-                  ) : (
-                    <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6, color: "var(--cp-green)", fontSize: 12.5, fontWeight: 600 }}>
-                      <Icon size={13}><polyline points="20 6 9 17 4 12" /></Icon>
-                      Completed
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -547,288 +554,43 @@ function fmtDate(val: string | null | undefined): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-const PIPELINE_STAGES = [
-  "Issue Identified",
-  "Letter Generated",
-  "Sent via Certified Mail",
-  "Delivery Confirmed",
-  "Bureau Response",
-  "Follow-up Recommendation",
-];
+// Local DisputeIQPage removed — using RealDisputeIQPage from dispute-iq.tsx instead.
+// EnrichedDispute type and fmtDate helper above are used by PlanPage/ProgressPage.
 
-function getPipelineState(status: string, idx: number): "done" | "active" | "pending" {
-  const doneThrough: Record<string, number> = {
-    PENDING: 2,
-    SENT: 3,
-    DELIVERED: 4,
-    FOLLOW_UP_REQUIRED: 5,
-    RESOLVED: 6,
-    REJECTED: 6,
-  };
-  const done = doneThrough[status.toUpperCase()] ?? 2;
-  if (idx < done) return "done";
-  if (idx === done) return "active";
-  return "pending";
-}
-
-function DisputeIQPage() {
-  const [subTab, setSubTab] = useState("tracker");
-  const { data: activeRaw = [] } = useQuery<EnrichedDispute[]>({ queryKey: ["/api/client/disputes?status=active"] });
-  const { data: historyRaw = [] } = useQuery<EnrichedDispute[]>({ queryKey: ["/api/client/disputes?status=resolved"] });
-  const active: EnrichedDispute[] = Array.isArray(activeRaw) ? activeRaw : [];
-  const history: EnrichedDispute[] = Array.isArray(historyRaw) ? historyRaw : [];
-
-  const SAMPLE_ACTIVE: EnrichedDispute[] = [
-    { id: 1, bureau: "Equifax", status: "SENT", dateSent: "2026-04-28", expectedResponse: "2026-05-28", actualResponse: null, creditor: "Capital One", issueType: "late_payment", issueTitle: "30-Day Late Payment", outcome: null },
-    { id: 2, bureau: "TransUnion", status: "FOLLOW_UP_REQUIRED", dateSent: "2026-04-22", expectedResponse: "2026-05-22", actualResponse: null, creditor: "Midland Credit Mgmt", issueType: "collection", issueTitle: "Unverified Collection $847", outcome: null },
-  ];
-
-  const TRACKING: Record<number, string> = { 1: "9400 1118 9922 3456 7890 12", 2: "9400 1118 9922 3456 7890 34" };
-  const displayActive = active.length > 0 ? active : SAMPLE_ACTIVE;
-
-  return (
-    <div>
-      <div className="cp-page-header">
-        <div>
-          <span className="cp-page-eyebrow">Dispute Management</span>
-          <h1 className="cp-page-title">Dispute IQ</h1>
-          <p className="cp-page-subtitle">End-to-end dispute workflow — from issue identified to resolution, tracked in one place.</p>
-        </div>
-        <span className="cp-badge warning">{displayActive.length} Active</span>
-      </div>
-
-      <SubTabs
-        tabs={[
-          { id: "tracker", label: "Active Disputes" },
-          { id: "history", label: "History" },
-          { id: "letters", label: "Smart Letters" },
-        ]}
-        active={subTab}
-        onChange={setSubTab}
-      />
-
-      {subTab === "tracker" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <div className="cp-flex-between">
-            <span style={{ fontSize: 13, color: "var(--cp-text-muted)" }}>{displayActive.length} dispute{displayActive.length !== 1 ? "s" : ""} in progress</span>
-            <button className="cp-btn cp-btn-primary cp-btn-sm">
-              <Icon size={13}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon>
-              Start New Dispute
-            </button>
-          </div>
-
-          {displayActive.map(d => (
-            <div key={d.id} className="cp-dispute-card">
-              <div className="cp-dispute-card-header">
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span className="cp-bureau-badge" data-bureau={d.bureau.toLowerCase().slice(0, 2)}>
-                    {d.bureau.slice(0, 2).toUpperCase()}
-                  </span>
-                  <div>
-                    <div className="cp-dispute-title">{d.issueTitle}</div>
-                    <div className="cp-dispute-meta">{d.creditor} · Sent {fmtDate(d.dateSent)}</div>
-                  </div>
-                </div>
-                <span className={`cp-pill ${
-                  d.status === "PENDING" ? "pending" :
-                  d.status === "SENT" ? "pending" :
-                  d.status === "DELIVERED" ? "active" :
-                  d.status === "FOLLOW_UP_REQUIRED" ? "warning" :
-                  d.status === "RESOLVED" ? "resolved" :
-                  d.status === "REJECTED" ? "negative" : "pending"
-                }`}>
-                  {d.status === "PENDING" ? "Letter Ready" :
-                   d.status === "SENT" ? "Awaiting Delivery" :
-                   d.status === "DELIVERED" ? "Bureau Reviewing" :
-                   d.status === "FOLLOW_UP_REQUIRED" ? "Follow-up Required" :
-                   d.status === "RESOLVED" ? "Resolved" :
-                   d.status === "REJECTED" ? "Rejected" : d.status}
-                </span>
-              </div>
-
-              {/* 6-stage end-to-end workflow pipeline */}
-              <div className="cp-dispute-pipeline">
-                {PIPELINE_STAGES.map((stageName, i) => {
-                  const state = getPipelineState(d.status, i);
-                  const isLast = i === PIPELINE_STAGES.length - 1;
-                  let detail: string | null = null;
-                  if (i === 0) detail = `${d.issueType.replace("_", " ")} · ${d.bureau}`;
-                  if (i === 2 && ["SENT","DELIVERED","FOLLOW_UP_REQUIRED","RESOLVED","REJECTED"].includes(d.status)) detail = `USPS #${(TRACKING[d.id] ?? "").replace(/\s/g, "").slice(-8)}`;
-                  if (i === 4 && ["DELIVERED","FOLLOW_UP_REQUIRED","RESOLVED","REJECTED"].includes(d.status)) detail = `30-day deadline: ${fmtDate(d.expectedResponse)}`;
-                  if (i === 5 && d.status === "FOLLOW_UP_REQUIRED") detail = "Escalation letter ready if bureau doesn't respond";
-                  return (
-                    <div key={i} className={`cp-pipeline-stage ${state}`}>
-                      <div className="cp-pipeline-dot-col">
-                        <div className="cp-pipeline-dot">
-                          {state === "done"
-                            ? <Icon size={10}><polyline points="20 6 9 17 4 12" /></Icon>
-                            : <span style={{ fontSize: 9, fontWeight: 800, lineHeight: 1 }}>{i + 1}</span>}
-                        </div>
-                        {!isLast && <div className="cp-pipeline-line" />}
-                      </div>
-                      <div className="cp-pipeline-content">
-                        <div className="cp-pipeline-label">{stageName}</div>
-                        {detail && <div className="cp-pipeline-detail">{detail}</div>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {d.status === "FOLLOW_UP_REQUIRED" && (
-                <div className="cp-dispute-recommendation">
-                  <Icon size={13}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></Icon>
-                  <span>If no bureau response by <strong>{fmtDate(d.expectedResponse)}</strong>, an escalation letter will be prepared automatically.</span>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {subTab === "history" && (
-        <div className="cp-card">
-          <div className="cp-card-header">
-            <div className="cp-card-title">Resolved Disputes</div>
-          </div>
-          {history.length === 0 ? (
-            <div className="cp-empty-state">
-              <div className="cp-empty-icon"><Icon size={24}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></Icon></div>
-              <div className="cp-empty-title">No resolved disputes yet</div>
-              <div className="cp-empty-desc">As your disputes are resolved, they'll appear here with outcomes and any score improvements.</div>
-            </div>
-          ) : (
-            <div className="cp-table-scroll">
-              <table className="cp-table">
-                <thead><tr><th>Item</th><th>Bureau</th><th>Sent</th><th>Outcome</th></tr></thead>
-                <tbody>
-                  {history.map(d => (
-                    <tr key={d.id}>
-                      <td><strong>{d.issueTitle}</strong><br /><span style={{ fontSize: 12, color: "var(--cp-text-muted)" }}>{d.creditor}</span></td>
-                      <td>{d.bureau}</td>
-                      <td>{fmtDate(d.dateSent)}</td>
-                      <td><span className={`cp-pill ${d.outcome === "removed" ? "resolved" : d.outcome === "verified" ? "negative" : "pending"}`}>{d.outcome || "Pending"}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {subTab === "letters" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div className="cp-info-banner">
-            <Icon size={15}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></Icon>
-            <span>AI-generated dispute letters are reviewed and sent by your advisor on your behalf via certified USPS mail.</span>
-          </div>
-          {[
-            { title: "Capital One — Late Payment Dispute", bureau: "Equifax", date: "Apr 28, 2026", tracking: "9400 1118 9922 3456 7890 12" },
-            { title: "Midland Credit — Debt Validation", bureau: "TransUnion", date: "Apr 22, 2026", tracking: "9400 1118 9922 3456 7890 34" },
-          ].map((letter, i) => (
-            <div key={i} className="cp-card" style={{ borderLeft: "4px solid var(--cp-accent)" }}>
-              <div className="cp-flex-between cp-mb-18">
-                <div>
-                  <div className="cp-card-title">{letter.title}</div>
-                  <div className="cp-card-subtitle">{letter.bureau} · Sent {letter.date}</div>
-                </div>
-                <span className="cp-pill pending">Sent</span>
-              </div>
-              <div style={{ background: "var(--cp-bg)", borderRadius: 9, padding: "10px 14px", fontSize: 12, color: "var(--cp-text-muted)", fontFamily: "monospace", marginBottom: 14 }}>
-                <span style={{ color: "var(--cp-text-secondary)", fontWeight: 600 }}>USPS Tracking: </span>{letter.tracking}
-              </div>
-              <button className="cp-btn cp-btn-secondary cp-btn-sm">View Letter</button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+// (placeholder removed — real DisputeIQ lives in dispute-iq.tsx)
 
 /* ── DEBT NAVIGATOR PAGE ─────────────────────────────────────────── */
 function DebtPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenError }: ArrayPageProps) {
-  const [subTab, setSubTab] = useState("overview");
+  const [subTab, setSubTab] = useState("analysis");
   return (
     <div>
       <div className="cp-page-header">
         <div>
           <span className="cp-page-eyebrow">Debt Intelligence</span>
           <h1 className="cp-page-title">Debt Navigator</h1>
-          <p className="cp-page-subtitle">Payoff strategies, utilization analysis, and personalized debt reduction plans.</p>
+          <p className="cp-page-subtitle">Live debt analysis, utilization breakdown, and personalized payoff strategies — powered by your real credit data.</p>
         </div>
-      </div>
-
-      <div className="cp-grid-4 cp-mb-24">
-        {[
-          { label: "Total Debt", val: "$14,820", color: "var(--cp-red)", icon: <><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></> },
-          { label: "Avg Utilization", val: "68%", color: "var(--cp-amber)", icon: <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></> },
-          { label: "Monthly Payments", val: "$387", color: "var(--cp-accent)", icon: <><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></> },
-          { label: "Pay-off Target", val: "28 mo", color: "var(--cp-teal)", icon: <><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></> },
-        ].map(s => (
-          <div key={s.label} className="cp-stat-card">
-            <div className="cp-stat-icon" style={{ background: `${s.color}18`, color: s.color }}>
-              <Icon size={20}>{s.icon}</Icon>
-            </div>
-            <div>
-              <div className="cp-stat-value" style={{ fontSize: 22, color: s.color }}>{s.val}</div>
-              <div className="cp-stat-label">{s.label}</div>
-            </div>
-          </div>
-        ))}
+        <span className="cp-badge live">Live</span>
       </div>
 
       <SubTabs
         tabs={[
-          { id: "overview", label: "Debt Overview" },
+          { id: "analysis", label: "Debt Analysis" },
           { id: "navigator", label: "Payoff Planner" },
-          { id: "analysis", label: "Utilization Analysis" },
         ]}
         active={subTab}
         onChange={setSubTab}
       />
 
-      {subTab === "overview" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {[
-            { name: "Chase Sapphire", type: "Credit Card", balance: 5840, limit: 7900, util: 74, status: "high", color: "#ef4444" },
-            { name: "Capital One Quicksilver", type: "Credit Card", balance: 2100, limit: 5000, util: 42, status: "medium", color: "#f59e0b" },
-            { name: "Discover It", type: "Credit Card", balance: 880, limit: 4500, util: 20, status: "good", color: "#22c55e" },
-            { name: "Auto Loan — Toyota", type: "Installment", balance: 6000, limit: 18000, util: 33, status: "good", color: "#22c55e" },
-          ].map((acct, i) => (
-            <div key={i} className="cp-debt-card">
-              <div className="cp-flex-between" style={{ marginBottom: 12 }}>
-                <div>
-                  <div className="cp-debt-name">{acct.name}</div>
-                  <div className="cp-debt-type">{acct.type}</div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: 18, color: acct.color }}>${acct.balance.toLocaleString()}</div>
-                  <div style={{ fontSize: 11, color: "var(--cp-text-muted)" }}>of ${acct.limit.toLocaleString()}</div>
-                </div>
-              </div>
-              <div className="cp-flex-between" style={{ marginBottom: 6 }}>
-                <span style={{ fontSize: 11.5, color: "var(--cp-text-muted)" }}>Utilization</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: acct.color }}>{acct.util}%</span>
-              </div>
-              <div className="cp-progress-bar" style={{ height: 6 }}>
-                <div style={{ width: `${acct.util}%`, height: "100%", borderRadius: 3, background: acct.color }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {subTab === "navigator" && (
-        <ArrayWrapper title="Debt Payoff Planner" sub="Avalanche, snowball, and custom payoff strategies" loading={!scriptReady || (!tokenReady && !tokenError)} locked={tokenError}>
-          <array-debt-navigator appKey={appKey} userToken={userToken} {...sbx} />
+      {subTab === "analysis" && (
+        <ArrayWrapper title="Debt & Utilization Breakdown" sub="Live account balances, utilization rates, and interest analysis" badge={<span className="cp-badge live">Live</span>} loading={!scriptReady || (!tokenReady && !tokenError)} locked={tokenError}>
+          <array-credit-debt-analysis appKey={appKey} userToken={userToken} {...sbx} />
         </ArrayWrapper>
       )}
 
-      {subTab === "analysis" && (
-        <ArrayWrapper title="Debt & Utilization Breakdown" sub="Live data from all open accounts" badge={<span className="cp-badge live">Live</span>} loading={!scriptReady || (!tokenReady && !tokenError)} locked={tokenError}>
-          <array-credit-debt-analysis appKey={appKey} userToken={userToken} {...sbx} />
+      {subTab === "navigator" && (
+        <ArrayWrapper title="Debt Payoff Planner" sub="Avalanche, snowball, and custom payoff strategies — based on your real balances" loading={!scriptReady || (!tokenReady && !tokenError)} locked={tokenError}>
+          <array-debt-navigator appKey={appKey} userToken={userToken} {...sbx} />
         </ArrayWrapper>
       )}
     </div>
@@ -847,24 +609,6 @@ function ProtectionPage({ appKey, userToken, sbx, scriptReady, tokenReady, token
           <p className="cp-page-subtitle">Identity monitoring, credit alerts, and privacy protection — all in one place.</p>
         </div>
         <span className="cp-badge live">Monitoring Active</span>
-      </div>
-
-      <div className="cp-grid-3 cp-mb-24">
-        {[
-          { label: "Identity Protection", val: "Active", color: "var(--cp-teal)", icon: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></> },
-          { label: "Credit Alerts", val: "4 new", color: "var(--cp-amber)", icon: <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></> },
-          { label: "Privacy Score", val: "72/100", color: "var(--cp-accent)", icon: <><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></> },
-        ].map(s => (
-          <div key={s.label} className="cp-stat-card">
-            <div className="cp-stat-icon" style={{ background: `${s.color}18`, color: s.color }}>
-              <Icon size={20}>{s.icon}</Icon>
-            </div>
-            <div>
-              <div className="cp-stat-value" style={{ fontSize: 18, color: s.color }}>{s.val}</div>
-              <div className="cp-stat-label">{s.label}</div>
-            </div>
-          </div>
-        ))}
       </div>
 
       <SubTabs
@@ -918,27 +662,6 @@ function ReportPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenErro
         <span className="cp-badge blue-bureaus">All Bureaus</span>
       </div>
 
-      <div className="cp-grid-3 cp-mb-24">
-        {[
-          { bureau: "Equifax", score: 638, change: "+22", cls: "fair" },
-          { bureau: "TransUnion", score: 621, change: "+8", cls: "fair" },
-          { bureau: "Experian", score: 644, change: "+14", cls: "fair" },
-        ].map(s => (
-          <div key={s.bureau} className={`cp-score-card ${s.cls}`}>
-            <div className="cp-score-bureau">{s.bureau.toUpperCase()}</div>
-            <div className={`cp-score-number ${s.cls}`}>{s.score}</div>
-            <div className={`cp-score-rating ${s.cls}`}>Fair</div>
-            <div className="cp-score-bar">
-              <div className="cp-score-bar-fill" style={{ width: `${((s.score - 300) / 550) * 100}%` }} />
-            </div>
-            <div className="cp-score-change">
-              <Icon size={12}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /></Icon>
-              {s.change} this month
-            </div>
-          </div>
-        ))}
-      </div>
-
       <SubTabs
         tabs={[
           { id: "tracker", label: "Review My Scores" },
@@ -972,15 +695,13 @@ function ReportPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenErro
 
 /* ── PROGRESS PAGE ───────────────────────────────────────────────── */
 function ProgressPage() {
-  const milestones = [
-    { date: "Mar 15, 2026", label: "Joined ScoreShift", desc: "Starting score: 588", done: true, score: 588 },
-    { date: "Apr 1, 2026", label: "First dispute sent", desc: "Capital One late payment — Equifax", done: true, score: null },
-    { date: "Apr 22, 2026", label: "Collection dispute filed", desc: "Midland Credit $847 — TransUnion", done: true, score: null },
-    { date: "May 4, 2026", label: "Midland collection removed", desc: "Score jumped +18 pts on TransUnion", done: true, score: 621 },
-    { date: "May 10, 2026", label: "Equifax score reached 638", desc: "+22 pts since last check", done: true, score: 638 },
-    { date: "Estimated Jun, 2026", label: "Capital One dispute resolution", desc: "Awaiting bureau response", done: false, score: null },
-    { date: "Estimated Jul, 2026", label: "Target: 680+ on all bureaus", desc: "With current trajectory", done: false, score: 680 },
-  ];
+  const { data: activeRaw = [] } = useQuery<EnrichedDispute[]>({ queryKey: ["/api/client/disputes?status=active"] });
+  const { data: resolvedRaw = [] } = useQuery<EnrichedDispute[]>({ queryKey: ["/api/client/disputes?status=resolved"] });
+  const active: EnrichedDispute[] = Array.isArray(activeRaw) ? activeRaw : [];
+  const resolved: EnrichedDispute[] = Array.isArray(resolvedRaw) ? resolvedRaw : [];
+  const allDisputes = [...active, ...resolved];
+  const removedCount = resolved.filter(d => d.outcome === "removed").length;
+  const hasData = allDisputes.length > 0;
 
   return (
     <div>
@@ -988,16 +709,16 @@ function ProgressPage() {
         <div>
           <span className="cp-page-eyebrow">Your Journey</span>
           <h1 className="cp-page-title">Progress Tracker</h1>
-          <p className="cp-page-subtitle">Every action, every improvement — your full credit repair timeline.</p>
+          <p className="cp-page-subtitle">Every dispute action tracked — from filing to resolution.</p>
         </div>
       </div>
 
       <div className="cp-grid-4 cp-mb-24">
         {[
-          { label: "Score gain (since start)", val: "+56 pts", color: "var(--cp-green)" },
-          { label: "Items disputed", val: "2", color: "var(--cp-accent)" },
-          { label: "Items removed", val: "1", color: "var(--cp-teal)" },
-          { label: "Days on program", val: "79", color: "var(--cp-amber)" },
+          { label: "Total Disputes", val: allDisputes.length.toString(), color: "var(--cp-accent)" },
+          { label: "Active", val: active.length.toString(), color: "var(--cp-amber)" },
+          { label: "Items Removed", val: removedCount.toString(), color: "var(--cp-green)" },
+          { label: "Resolved", val: resolved.length.toString(), color: "var(--cp-teal)" },
         ].map(s => (
           <div key={s.label} className="cp-stat-card">
             <div>
@@ -1008,72 +729,45 @@ function ProgressPage() {
         ))}
       </div>
 
-      {/* Score chart */}
-      <div className="cp-card cp-mb-24">
-        <div className="cp-card-header">
-          <div className="cp-card-title">Score History</div>
-          <span className="cp-badge success">+56 pts total</span>
-        </div>
-        <div className="cp-score-chart">
-          {[
-            { month: "Mar", eq: 588, tu: 575, ex: 592 },
-            { month: "Apr", eq: 601, tu: 588, ex: 610 },
-            { month: "May", eq: 638, tu: 621, ex: 644 },
-          ].map((m, i) => (
-            <div key={i} className="cp-score-chart-col">
-              <div className="cp-score-chart-bars">
-                {[
-                  { score: m.eq, color: "#ef4444", label: "EQ" },
-                  { score: m.tu, color: "#a855f7", label: "TU" },
-                  { score: m.ex, color: "#3b82f6", label: "EX" },
-                ].map(b => (
-                  <div key={b.label} className="cp-score-chart-bar-wrap">
-                    <div style={{ fontSize: 10, fontWeight: 700, color: b.color, marginBottom: 3 }}>{b.score}</div>
-                    <div className="cp-score-chart-bar-bg">
-                      <div className="cp-score-chart-bar-fill" style={{ height: `${((b.score - 550) / 200) * 100}%`, background: b.color }} />
-                    </div>
-                    <div style={{ fontSize: 9, color: "var(--cp-text-muted)", marginTop: 3 }}>{b.label}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="cp-score-chart-month">{m.month}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ display: "flex", gap: 18, marginTop: 14 }}>
-          {[{ color: "#ef4444", label: "Equifax" }, { color: "#a855f7", label: "TransUnion" }, { color: "#3b82f6", label: "Experian" }].map(b => (
-            <div key={b.label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--cp-text-muted)" }}>
-              <span style={{ width: 10, height: 10, borderRadius: 2, background: b.color, display: "inline-block" }} />{b.label}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Timeline */}
       <div className="cp-card">
         <div className="cp-card-header">
-          <div className="cp-card-title">Repair Timeline</div>
+          <div className="cp-card-title">Dispute Timeline</div>
+          {hasData && <span className="cp-badge success">{allDisputes.length} dispute{allDisputes.length !== 1 ? "s" : ""} filed</span>}
         </div>
-        <div className="cp-milestone-list">
-          {milestones.map((m, i) => (
-            <div key={i} className={`cp-milestone${m.done ? " done" : " upcoming"}`}>
-              <div className="cp-milestone-dot">
-                {m.done
-                  ? <Icon size={12}><polyline points="20 6 9 17 4 12" /></Icon>
-                  : <Icon size={12}><circle cx="12" cy="12" r="10" /></Icon>}
-              </div>
-              {i < milestones.length - 1 && <div className="cp-milestone-line" />}
-              <div className="cp-milestone-content">
-                <div className="cp-milestone-date">{m.date}</div>
-                <div className="cp-milestone-label">{m.label}</div>
-                <div className="cp-milestone-desc">
-                  {m.desc}
-                  {m.score && <span style={{ marginLeft: 8, fontWeight: 700, color: "var(--cp-green)" }}>→ {m.score}</span>}
-                </div>
-              </div>
+        {!hasData ? (
+          <div className="cp-empty-state">
+            <div className="cp-empty-icon">
+              <Icon size={28}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></Icon>
             </div>
-          ))}
-        </div>
+            <div className="cp-empty-title">Your timeline starts here</div>
+            <div className="cp-empty-desc">Once disputes are filed, your full credit repair journey will be tracked here — every action, every improvement.</div>
+          </div>
+        ) : (
+          <div className="cp-milestone-list">
+            {allDisputes.map((d, i) => {
+              const isDone = d.status === "RESOLVED" || d.status === "REJECTED";
+              return (
+                <div key={d.id} className={`cp-milestone${isDone ? " done" : " upcoming"}`}>
+                  <div className="cp-milestone-dot">
+                    {isDone
+                      ? <Icon size={12}><polyline points="20 6 9 17 4 12" /></Icon>
+                      : <Icon size={12}><circle cx="12" cy="12" r="10" /></Icon>}
+                  </div>
+                  {i < allDisputes.length - 1 && <div className="cp-milestone-line" />}
+                  <div className="cp-milestone-content">
+                    <div className="cp-milestone-date">{fmtDate(d.dateSent)}</div>
+                    <div className="cp-milestone-label">{d.issueTitle}</div>
+                    <div className="cp-milestone-desc">
+                      {d.creditor} · {d.bureau}
+                      {d.outcome === "removed" && <span style={{ marginLeft: 8, fontWeight: 700, color: "var(--cp-green)" }}>✓ Removed</span>}
+                      {d.outcome === "verified" && <span style={{ marginLeft: 8, fontWeight: 700, color: "var(--cp-red)" }}>Verified (not removed)</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1112,11 +806,11 @@ function ProfilePage({ user, logout, featureAccess }: { user: any; logout: () =>
         <div className="cp-card">
           <div className="cp-card-header" style={{ marginBottom: 24 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 800, color: "white", flexShrink: 0 }}>{initials}</div>
+              <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg,#9B89C8,#7B6AAB)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 800, color: "white", flexShrink: 0 }}>{initials}</div>
               <div>
                 <div style={{ fontSize: 17, fontWeight: 700, color: "var(--cp-text-primary)" }}>{displayName}</div>
                 <div style={{ fontSize: 12.5, color: "var(--cp-text-muted)", marginTop: 2 }}>{user?.email ?? "No email on file"}</div>
-                <span style={{ display: "inline-block", marginTop: 6, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "white", fontSize: 10, fontWeight: 700, padding: "2px 10px", borderRadius: 20 }}>{featureAccess.tierLabel}</span>
+                <span style={{ display: "inline-block", marginTop: 6, background: "linear-gradient(135deg,#9B89C8,#7B6AAB)", color: "white", fontSize: 10, fontWeight: 700, padding: "2px 10px", borderRadius: 20 }}>{featureAccess.tierLabel}</span>
               </div>
             </div>
           </div>
@@ -1139,7 +833,7 @@ function ProfilePage({ user, logout, featureAccess }: { user: any; logout: () =>
                 <div className="cp-card-title">Current Plan</div>
                 <div className="cp-card-subtitle">Your active ScoreShift subscription</div>
               </div>
-              <span style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "white", fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 20 }}>
+              <span style={{ background: "linear-gradient(135deg,#9B89C8,#7B6AAB)", color: "white", fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 20 }}>
                 {featureAccess.tier === "none" ? "Free" : featureAccess.tier.charAt(0).toUpperCase() + featureAccess.tier.slice(1)}
               </span>
             </div>
@@ -1370,9 +1064,9 @@ export default function ClientPortal() {
 
         {/* Content */}
         <div className="cp-content">
-          {activePage === "home" && <HomePage user={user} goal={onboardingGoal} timeline={onboardingTimeline} onNavigate={setActivePage} />}
+          {activePage === "home" && <HomePage user={user} goal={onboardingGoal} timeline={onboardingTimeline} onNavigate={setActivePage} appKey={appKey} userToken={userToken} sbx={sbx} scriptReady={scriptReady} tokenReady={tokenReady} tokenError={tokenError} />}
           {activePage === "plan" && <PlanPage goal={onboardingGoal} timeline={onboardingTimeline} onNavigate={setActivePage} />}
-          {activePage === "dispute-iq" && <DisputeIQPage />}
+          {activePage === "dispute-iq" && <RealDisputeIQPage />}
           {activePage === "debt" && <DebtPage {...arrayProps} />}
           {activePage === "protection" && <ProtectionPage {...arrayProps} />}
           {activePage === "report" && <ReportPage {...arrayProps} />}
