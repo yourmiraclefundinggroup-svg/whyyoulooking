@@ -1,0 +1,422 @@
+Rebuild the authenticated ScoreShift portal into a guided Credit Action Intelligence application.
+
+IMPORTANT:
+This redesign is for the logged-in portal only.
+Do NOT redesign the public landing page.
+Do NOT create landing page sections, marketing hero sections, sales sections, or generic feature grids.
+
+The portal is an application interface.
+
+Core positioning:
+Array provides the credit data.
+ScoreShift turns that data into prioritized actions, guided workflows, execution tools, and progress tracking.
+
+The user should always know:
+“What should I do next?”
+
+PORTAL STRUCTURE
+
+Main navigation:
+
+* Home
+* My Plan
+* Dispute IQ
+* Debt Navigator
+* Protection Center
+* Credit Report
+* Progress
+* Profile
+
+OVERALL FLOW
+
+Login
+→ Goal Selection
+→ Timeline Selection
+→ Credit Analysis
+→ ScoreShift Plan
+→ Priority Actions
+→ Recommended Tool
+→ Tool Workflow
+→ Progress Tracking
+
+ONBOARDING FLOW
+
+After login and credit pull, guide the user through:
+
+Step 1:
+“What are you working toward?”
+
+Options:
+
+* Mortgage Ready
+* Auto Loan Ready
+* Business Funding
+* Rental Approval
+* Credit Growth
+* Credit Recovery
+
+Step 2:
+“When do you need results?”
+
+Options:
+
+* 30 days
+* 60 days
+* 90 days
+* 6 months
+* 12+ months
+
+Step 3:
+Show analysis animation:
+“Analyzing your credit profile…”
+
+Animate checkpoints:
+
+* Reviewing utilization
+* Reviewing payment history
+* Reviewing public records
+* Reviewing collections
+* Reviewing inquiries
+* Reviewing account age
+* Reviewing reporting accuracy
+* Building your ScoreShift Plan
+
+HOME SCREEN
+
+Title:
+Your ScoreShift Plan
+
+Top summary card:
+
+* Selected goal
+* Readiness percentage
+* Timeline
+* Progress bar
+* Plain-English summary
+
+Example:
+Goal: Mortgage Ready
+Readiness: 64%
+Timeline: 90 days
+Summary: “We found 3 high-impact areas that may be limiting your mortgage approval readiness.”
+
+Primary card:
+Next Best Action
+
+Example:
+“Reduce revolving utilization below 28%.”
+
+Show:
+
+* Why it matters
+* Estimated impact
+* Recommended tool
+* CTA button
+
+Secondary card:
+Credit Snapshot
+
+Show compact score access:
+
+* Experian score
+* TransUnion score
+* Equifax score
+* Last updated date
+
+Buttons:
+
+* Review My Scores
+* View Full Credit Report
+
+Scores should be easy to access, but they should not dominate the portal.
+
+MY PLAN SCREEN
+
+Show all prioritized recommendations.
+
+Sections:
+
+* High Priority
+* Medium Priority
+* Low Priority
+* Completed Actions
+
+Each action card must include:
+
+* Priority rank
+* Issue type
+* Why it matters
+* Estimated impact
+* Difficulty
+* Timeline
+* Recommended tool
+* CTA
+
+Tool logic:
+
+If issue relates to high utilization, balances, payoff planning, open debt, or debt analysis:
+Recommend Debt Navigator.
+
+If issue relates to collections, charge-offs, late payments, bankruptcy reporting, public records, inaccurate reporting, unverifiable information, or bureau reporting differences:
+Recommend Dispute IQ.
+
+If issue relates to identity risk, exposed personal information, privacy concerns, PIP scan, or monitoring:
+Recommend Protection Center.
+
+If user wants scores, alerts, score simulator, or full report:
+Send to Credit Report.
+
+DISPUTE IQ
+
+Dispute IQ is the parent workflow for disputes.
+
+Do NOT treat Smart Letter or ScoreShift Mail as separate main navigation products.
+
+Smart Letter and ScoreShift Mail live inside Dispute IQ.
+
+Dispute IQ handles:
+
+* Collections
+* Charge-offs
+* Late payments
+* Bankruptcy reporting
+* Public records
+* Inaccurate reporting
+* Unverifiable information
+* Reporting differences
+
+Dispute IQ workflow:
+
+Issue Selected
+→ Analyze Reporting
+→ Recommend Dispute Path
+→ Generate Smart Letter
+→ Preview Letter
+→ Send Through ScoreShift Mail
+→ Track Delivery
+→ Track Bureau Response
+→ Recommend Follow-Up
+
+Dispute IQ screen should include:
+
+* Issue summary
+* Reporting details
+* Bureau differences
+* Recommended dispute path
+* Smart Letter status
+* Mail delivery status
+* Response tracking
+* Follow-up recommendation
+
+CTA examples:
+
+* Analyze Issue
+* Generate Smart Letter
+* Preview Letter
+* Send Letter
+* Track Response
+
+DEBT NAVIGATOR
+
+Debt Navigator handles:
+
+* High utilization
+* Open balances
+* Debt payoff planning
+* Debt analysis
+* Paydown strategy
+
+Debt Navigator workflow:
+
+Debt Issue Selected
+→ Review Balances
+→ Identify Highest Impact Accounts
+→ Recommend Paydown Target
+→ Build Payoff Plan
+→ Track Progress
+→ Update Readiness
+
+Debt Navigator screen should include:
+
+* Account balances
+* Utilization percentage
+* Recommended target
+* Paydown priority
+* Estimated impact
+* Progress tracker
+
+PROTECTION CENTER
+
+Protection Center handles:
+
+* Identity protection
+* Privacy protection
+* PIP scan
+* Monitoring
+* Exposed personal information
+
+Protection Center workflow:
+
+Run Protection Scan
+→ Show Risk Areas
+→ Recommend Protection Action
+→ Track Protection Status
+
+CREDIT REPORT
+
+Credit Report gives users access to traditional credit data without making it the main dashboard experience.
+
+Credit Report should include two main actions:
+
+1. Review My Scores
+
+* Three bureau scores
+* Score history
+* Score changes
+* Credit alerts
+
+2. View Full Credit Report
+
+* Open accounts
+* Closed accounts
+* Collections
+* Public records
+* Inquiries
+* Utilization
+* Payment history
+* Personal information
+* Bureau reporting differences
+
+Mental model:
+Credit Report = “What happened?”
+ScoreShift Plan = “What should I do about it?”
+
+PROGRESS
+
+Progress should show the user’s journey.
+
+Milestones:
+
+* Goal Selected
+* Credit Profile Analyzed
+* Priority Issues Identified
+* Debt Navigator Started
+* Dispute IQ Started
+* Smart Letter Generated
+* Letter Sent
+* Bureau Response Tracked
+* Readiness Improved
+
+Design it as a clean progress timeline.
+
+VISUAL DESIGN
+
+Use a premium modern app interface inspired by Linear, Spade, and Cleo, but do not copy their landing page structures.
+
+Use inspiration only for:
+
+* Clean spacing
+* Product-first hierarchy
+* Smooth interaction
+* Premium card design
+* Calm guided experience
+
+Visual style:
+
+* Calm fintech aesthetic
+* Large whitespace
+* Rounded modern cards
+* Soft borders
+* Subtle shadows
+* Clean typography
+* Clear hierarchy
+* Minimal clutter
+* Smooth progressive reveal animations
+
+Avoid:
+
+* Generic AI cards
+* Giant credit score gauges
+* Loud credit repair visuals
+* Cheesy arrows
+* Overloaded dashboards
+* Too many charts
+* Traditional credit monitoring UI
+* Random icon grids
+* Landing page sections inside the portal
+
+CARD SYSTEM
+
+Use product/action cards, not marketing cards.
+
+Each card should have:
+
+* One purpose
+* One main CTA
+* Clear recommended tool
+* Minimal text
+* Strong hierarchy
+
+The “Next Best Action” card should be the most prominent card on the Home screen.
+
+MOBILE DESIGN
+
+Mobile must be designed as its own experience, not a shrunken desktop.
+
+Mobile order:
+
+1. Goal / readiness
+2. Next Best Action
+3. Recommended tool
+4. Credit Snapshot
+5. Priority actions
+6. Progress journey
+7. Solutions
+
+Mobile rules:
+
+* Stack cards vertically
+* Use large tappable CTAs
+* Avoid wide tables
+* Keep text short
+* Show one recommendation at a time
+* Keep Credit Report access available but secondary
+
+PLACEHOLDER DATA
+
+If live Array data is unavailable, use realistic placeholder data but keep the architecture ready for live data later.
+
+Example placeholders:
+
+* Goal: Mortgage Ready
+* Readiness: 64%
+* Timeline: 90 days
+* Experian: 642
+* TransUnion: 658
+* Equifax: 651
+* High utilization detected
+* Collection reporting review needed
+* Bankruptcy reporting review needed
+* Capital One utilization at 87%
+* Recommended target below 28%
+* Estimated impact: High
+
+FINAL UX RULE
+
+Every screen should answer:
+
+* What is happening?
+* Why does it matter?
+* What should I do next?
+* Which ScoreShift tool helps me do it?
+* How do I track progress?
+
+Final product experience:
+Credit data
+→ Credit intelligence
+→ Prioritized action
+→ ScoreShift tool
+→ Execution
+→ Progress
+
+This portal should feel like the operating system for credit improvement, not a credit monitoring dashboard.
