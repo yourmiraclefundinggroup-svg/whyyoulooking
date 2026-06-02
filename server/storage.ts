@@ -338,6 +338,7 @@ export interface IStorage {
   getClientCaseActivities(userId: number): Promise<ClientCaseActivity[]>;
   createClientCaseActivity(activity: InsertClientCaseActivity): Promise<ClientCaseActivity>;
   updateClientCaseActivity(id: number, updates: Partial<ClientCaseActivity>): Promise<ClientCaseActivity | undefined>;
+  deleteClientCaseActivity(id: number): Promise<void>;
   getClientDocuments(userId: number): Promise<ClientDocument[]>;
   createClientDocument(doc: InsertClientDocument): Promise<ClientDocument>;
   updateClientDocument(id: number, updates: Partial<ClientDocument>): Promise<ClientDocument | undefined>;
@@ -2682,6 +2683,10 @@ export class MemStorage implements IStorage {
   async updateClientCaseActivity(id: number, updates: Partial<ClientCaseActivity>): Promise<ClientCaseActivity | undefined> {
     const [updated] = await db.update(clientCaseActivities).set(updates as any).where(eq(clientCaseActivities.id, id)).returning();
     return updated || undefined;
+  }
+
+  async deleteClientCaseActivity(id: number): Promise<void> {
+    await db.delete(clientCaseActivities).where(eq(clientCaseActivities.id, id));
   }
 
   async getClientDocuments(userId: number): Promise<ClientDocument[]> {

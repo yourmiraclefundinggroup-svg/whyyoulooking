@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import scoreshiftLogo from "@assets/scoreshift-logo.png";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useArrayScript } from "@/hooks/use-array-script";
 import { useArrayToken } from "@/hooks/use-array-token";
@@ -265,6 +265,7 @@ function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageP
   const displayName = user?.firstName || "there";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const qc = useQueryClient();
 
   const { data: pkg, isLoading: pkgLoading } = useQuery<any>({ queryKey: ["/api/me/managed-package"] });
   const { data: activities = [], isLoading: activitiesLoading } = useQuery<any[]>({ queryKey: ["/api/me/case-activities"] });
@@ -553,7 +554,35 @@ function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageP
                     {doc.status.replace(/_/g, " ")}
                   </span>
                   {doc.status === "needed" && (
-                    <button className="cp-btn cp-btn-primary cp-btn-sm" disabled style={{ flexShrink: 0, fontSize: 11, padding: "4px 12px", opacity: 0.75 }}>Upload</button>
+                    <>
+                      <input
+                        type="file"
+                        id={`upload-${doc.id}`}
+                        style={{ display: "none" }}
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const fd = new FormData();
+                          fd.append("file", file);
+                          try {
+                            const r = await fetch(`/api/me/documents/${doc.id}/upload`, {
+                              method: "POST",
+                              headers: { Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+                              body: fd,
+                            });
+                            if (r.ok) {
+                              qc.invalidateQueries({ queryKey: ["/api/me/documents"] });
+                            }
+                          } catch { /* ignore */ }
+                        }}
+                      />
+                      <label
+                        htmlFor={`upload-${doc.id}`}
+                        className="cp-btn cp-btn-primary cp-btn-sm"
+                        style={{ flexShrink: 0, fontSize: 11, padding: "4px 12px", cursor: "pointer" }}
+                      >Upload</label>
+                    </>
                   )}
                 </div>
               );
@@ -568,18 +597,22 @@ function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageP
           <div><div className="cp-card-title">Ways to Improve Faster</div><div className="cp-card-subtitle">Participate actively to accelerate your results</div></div>
         </div>
         <div className="cp-grid-2" style={{ gap: 10 }}>
-          {[
-            { icon: "📅", label: "Respond quickly", detail: "Reply to your specialist within 24 hrs to keep your case moving", color: "var(--cp-accent)" },
-            { icon: "💳", label: "Keep utilization low", detail: "Aim to stay under 30% of your credit card limits", color: "var(--cp-sage)" },
-            { icon: "✅", label: "Pay on time every month", detail: "Payment history is 35% of your FICO — don't miss a single payment", color: "var(--cp-sage)" },
-            { icon: "🚫", label: "Avoid new hard inquiries", detail: "Hold off on applying for credit while disputes are active", color: "var(--cp-clay)" },
-            { icon: "📄", label: "Upload documents promptly", detail: "Missing documents stall the process — respond to all requests", color: "var(--cp-clay)" },
-            { icon: "💬", label: "Communicate changes", detail: "Notify your specialist if your address, income, or goals change", color: "var(--cp-accent)" },
-          ].map((a, i) => (
-            <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", background: "var(--cp-bg)", borderRadius: 10, padding: "12px 14px" }}>
+          {([
+            { icon: "📄", label: "Review Your Credit Report", detail: "Check all three bureaus for items being disputed on your behalf", color: "var(--cp-accent)", page: "report" as PageId },
+            { icon: "⚡", label: "Dispute IQ Letters", detail: "View your generated dispute letters and track bureau responses", color: "var(--cp-accent)", page: "dispute-iq" as PageId },
+            { icon: "💳", label: "Keep Utilization Low", detail: "Aim to stay under 30% of your credit card limits while disputes are active", color: "var(--cp-sage)", page: null },
+            { icon: "✅", label: "Pay On Time Every Month", detail: "Payment history is 35% of your FICO — don't miss a single payment", color: "var(--cp-sage)", page: null },
+            { icon: "📅", label: "Upload Documents Promptly", detail: "Missing documents stall your case — scroll up to respond to all requests", color: "var(--cp-clay)", page: null },
+            { icon: "👤", label: "Keep Your Profile Current", detail: "Notify your specialist if your address, income, or goals change", color: "var(--cp-clay)", page: "profile" as PageId },
+          ] as { icon: string; label: string; detail: string; color: string; page: PageId | null }[]).map((a, i) => (
+            <div
+              key={i}
+              style={{ display: "flex", gap: 10, alignItems: "flex-start", background: "var(--cp-bg)", borderRadius: 10, padding: "12px 14px", cursor: a.page ? "pointer" : "default" }}
+              onClick={() => a.page && onNavigate(a.page)}
+            >
               <div style={{ width: 30, height: 30, borderRadius: 8, background: `${a.color}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>{a.icon}</div>
               <div>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--cp-text-primary)", marginBottom: 2 }}>{a.label}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--cp-text-primary)", marginBottom: 2 }}>{a.label}{a.page && <span style={{ fontSize: 10, marginLeft: 4, color: a.color }}>→</span>}</div>
                 <div style={{ fontSize: 11.5, color: "var(--cp-text-muted)", lineHeight: 1.5 }}>{a.detail}</div>
               </div>
             </div>
@@ -620,13 +653,29 @@ function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageP
           </div>
           <div className="cp-grid-3" style={{ gap: 12 }}>
             {[
-              { label: "Tasks Completed", val: `${completedCount}`, color: "var(--cp-sage)" },
-              { label: "Amount Paid", val: amountPaid > 0 ? `$${amountPaid.toLocaleString("en-US", { minimumFractionDigits: 0 })}` : "—", color: "var(--cp-accent)" },
-              { label: "Program", val: pkg.packageName || "Credit Repair", color: "var(--cp-text-primary)" },
+              {
+                label: "Activities Resolved",
+                val: `${completedCount}`,
+                sub: totalActivities > 0 ? `of ${totalActivities} total` : null,
+                color: "var(--cp-sage)",
+              },
+              {
+                label: "Amount Invested",
+                val: amountPaid > 0 ? `$${amountPaid.toLocaleString("en-US", { minimumFractionDigits: 0 })}` : "—",
+                sub: totalInvestment > 0 ? `of $${totalInvestment.toLocaleString("en-US", { minimumFractionDigits: 0 })} total` : null,
+                color: "var(--cp-accent)",
+              },
+              {
+                label: "Case Readiness",
+                val: `${readinessPct}%`,
+                sub: pkg.caseStatus ? pkg.caseStatus.replace(/_/g, " ") : "active",
+                color: readinessPct >= 75 ? "var(--cp-sage)" : readinessPct >= 40 ? "var(--cp-accent)" : "var(--cp-clay)",
+              },
             ].map(s => (
               <div key={s.label} style={{ background: "var(--cp-bg)", borderRadius: 10, padding: "14px 16px" }}>
                 <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 800, color: s.color, letterSpacing: -0.5 }}>{s.val}</div>
                 <div style={{ fontSize: 10, color: "var(--cp-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{s.label}</div>
+                {s.sub && <div style={{ fontSize: 10, color: "var(--cp-text-muted)", marginTop: 2, textTransform: "capitalize" }}>{s.sub}</div>}
               </div>
             ))}
           </div>
@@ -1453,7 +1502,7 @@ export default function ClientPortal() {
   const isManaged = user?.accountType === "MANAGED_CLIENT";
   const NAV: { id: PageId; label: string; icon: React.ReactNode; badge?: string; customClick?: () => void }[] = [
     { id: "home", label: isManaged ? "My Plan" : "Home", icon: <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></> },
-    ...(!isManaged ? [{ id: "plan" as PageId, label: "My Plan", icon: <><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></> as React.ReactNode, badge: "2" }] : []),
+    { id: "plan" as PageId, label: isManaged ? "Action Plan" : "My Plan", icon: <><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></> as React.ReactNode, badge: isManaged ? undefined : "2" },
     ...(isManaged ? [{ id: "payment-center" as PageId, label: "Payment Center", icon: <><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></> as React.ReactNode }] : []),
     { id: "dispute-iq", label: "Dispute IQ", icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></> },
     { id: "debt", label: "Debt Navigator", icon: <><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></> },

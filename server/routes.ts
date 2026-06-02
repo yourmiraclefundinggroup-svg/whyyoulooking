@@ -10265,6 +10265,30 @@ ${pdfText.slice(0, 8000)}`;
     }
   });
 
+  // POST /api/me/documents/:docId/upload — client uploads a document file
+  const clientDocStorage = multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      const dir = "uploads/client-docs";
+      import("fs").then(fs => { fs.mkdirSync(dir, { recursive: true }); cb(null, dir); }).catch(() => cb(null, "uploads"));
+    },
+    filename: (_req, file, cb) => { cb(null, `${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_")}`); },
+  });
+  const clientDocUpload = multer({ storage: clientDocStorage, limits: { fileSize: 20 * 1024 * 1024 } });
+  app.post("/api/me/documents/:docId/upload", authenticateToken, requireClientAccess, clientDocUpload.single("file"), async (req, res) => {
+    try {
+      const userId = (req as any).user.id;
+      const docId = parseInt(req.params.docId);
+      const docs = await storage.getClientDocuments(userId);
+      const doc = docs.find(d => d.id === docId);
+      if (!doc) return res.status(404).json({ error: "Document not found" });
+      if (doc.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+      const updated = await storage.updateClientDocument(docId, { status: "uploaded", uploadedAt: new Date() });
+      res.json(updated);
+    } catch {
+      res.status(500).json({ error: "Failed to upload document" });
+    }
+  });
+
   // ── Admin Managed Client API ──────────────────────────────────────────────
 
   // PATCH /api/admin/users/:id/account-type — set accountType + programType
@@ -10331,6 +10355,19 @@ ${pdfText.slice(0, 8000)}`;
       res.json(activity);
     } catch {
       res.status(500).json({ error: "Failed to add activity" });
+    }
+  });
+
+  // DELETE /api/admin/users/:id/case-activities/:activityId — delete activity
+  app.delete("/api/admin/users/:id/case-activities/:activityId", authenticateToken, async (req, res) => {
+    try {
+      const requestingUser = (req as any).user;
+      if (requestingUser.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin only" });
+      const activityId = parseInt(req.params.activityId);
+      await storage.deleteClientCaseActivity(activityId);
+      res.json({ ok: true });
+    } catch {
+      res.status(500).json({ error: "Failed to delete activity" });
     }
   });
 

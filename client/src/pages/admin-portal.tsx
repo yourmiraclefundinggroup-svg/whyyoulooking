@@ -957,14 +957,15 @@ function ClientAccountTypeCard({ client, onUpdated }: { client: User; onUpdated:
           </SelectContent>
         </Select>
         {accountType === "MANAGED_CLIENT" && (
-          <Select value={programType || "standard"} onValueChange={setProgramType}>
+          <Select value={programType || "DISPUTE_STANDARD"} onValueChange={setProgramType}>
             <SelectTrigger className="bg-[hsl(var(--admin-bg))] border-[hsl(var(--admin-border))] text-[hsl(var(--admin-text))] h-8 text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="standard">Standard Credit Repair</SelectItem>
-              <SelectItem value="premium_managed">Premium Managed</SelectItem>
-              <SelectItem value="identity_theft">Identity Theft Recovery</SelectItem>
+              <SelectItem value="DISPUTE_STANDARD">Dispute Standard</SelectItem>
+              <SelectItem value="DISPUTE_RUSH">Dispute Rush</SelectItem>
+              <SelectItem value="MORTGAGE_FAST_TRACK">Mortgage Fast-Track</SelectItem>
+              <SelectItem value="CUSTOM">Custom</SelectItem>
             </SelectContent>
           </Select>
         )}
@@ -1293,14 +1294,27 @@ function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetc
                 {actSaving ? "Adding…" : "Add Activity"}
               </Button>
             </div>
-            <div className="border-t border-[hsl(var(--admin-border))] pt-3 max-h-48 overflow-y-auto space-y-1">
+            <div className="border-t border-[hsl(var(--admin-border))] pt-3 max-h-56 overflow-y-auto space-y-1">
               {(activities as any[]).length === 0
                 ? <p className="text-xs text-[hsl(var(--admin-text-muted))]">No activities yet.</p>
                 : (activities as any[]).map((a: any) => (
-                  <div key={a.id} className="flex gap-2 text-xs py-1 border-b border-[hsl(var(--admin-border))]">
-                    <span className="text-[hsl(var(--admin-text-muted))] shrink-0">{new Date(a.occurredAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-                    <span className="text-[hsl(var(--admin-text))] font-medium truncate">{a.description}</span>
-                    <span className="text-[hsl(var(--admin-text-muted))] ml-auto shrink-0 capitalize">{(a.status || "").replace(/_/g, " ")}</span>
+                  <div key={a.id} className="flex gap-2 items-start text-xs py-1.5 border-b border-[hsl(var(--admin-border))]">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[hsl(var(--admin-text))] font-medium truncate">{a.description}</div>
+                      <div className="text-[hsl(var(--admin-text-muted))] mt-0.5">{new Date(a.occurredAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · <span className="capitalize">{(a.status || "").replace(/_/g, " ")}</span></div>
+                    </div>
+                    <button
+                      className="shrink-0 text-red-400 hover:text-red-300 mt-0.5 transition-colors"
+                      title="Delete activity"
+                      onClick={async () => {
+                        if (!confirm("Delete this activity?")) return;
+                        await fetch(`/api/admin/users/${client.id}/case-activities/${a.id}`, {
+                          method: "DELETE",
+                          headers: { Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+                        });
+                        queryClient.invalidateQueries({ queryKey: ["/api/admin/users/case-activities", client.id] });
+                      }}
+                    >✕</button>
                   </div>
                 ))}
             </div>
@@ -1339,9 +1353,25 @@ function ManagedClientSetupPanel({ client, onRefetch }: { client: User; onRefetc
               {(documents as any[]).length === 0
                 ? <p className="text-xs text-[hsl(var(--admin-text-muted))]">No documents requested yet.</p>
                 : (documents as any[]).map((d: any) => (
-                  <div key={d.id} className="flex gap-2 items-center text-xs py-1 border-b border-[hsl(var(--admin-border))]">
+                  <div key={d.id} className="flex gap-2 items-center text-xs py-1.5 border-b border-[hsl(var(--admin-border))]">
                     <span className="text-[hsl(var(--admin-text))] font-medium flex-1 truncate">{d.label}</span>
-                    <span className={`shrink-0 font-semibold ${statusDocColor[d.status] || "text-slate-400"}`}>{d.status}</span>
+                    <select
+                      className={`shrink-0 text-xs bg-transparent border border-[hsl(var(--admin-border))] rounded px-1 py-0.5 ${statusDocColor[d.status] || "text-slate-400"}`}
+                      value={d.status}
+                      onChange={async (e) => {
+                        await fetch(`/api/admin/users/${client.id}/documents/${d.id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+                          body: JSON.stringify({ status: e.target.value }),
+                        });
+                        queryClient.invalidateQueries({ queryKey: ["/api/admin/users/documents", client.id] });
+                      }}
+                    >
+                      <option value="needed">needed</option>
+                      <option value="uploaded">uploaded</option>
+                      <option value="reviewed">reviewed</option>
+                      <option value="approved">approved</option>
+                    </select>
                   </div>
                 ))}
             </div>
