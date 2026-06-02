@@ -34,14 +34,15 @@
   --cp-muted: var(--cp-text-muted);
   --cp-success: #7B8A7A;
   --cp-warning: #EFA26F;
-  --cp-green: #22c55e;
-  --cp-green-light: rgba(34,197,94,0.1);
-  --cp-teal: #14b8a6;
-  --cp-teal-light: rgba(20,184,166,0.1);
-  --cp-amber: #f59e0b;
-  --cp-amber-light: rgba(245,158,11,0.1);
-  --cp-red: #ef4444;
-  --cp-red-light: rgba(239,68,68,0.08);
+  /* Bone Ledger semantic state palette — no generic bright colors */
+  --cp-green: #7B8A7A;             /* Sage Slate — positive / resolved / success */
+  --cp-green-light: rgba(123,138,122,0.12);
+  --cp-teal: #B0A6DF;              /* Aura Indigo alias — live / active / connected */
+  --cp-teal-light: rgba(176,166,223,0.12);
+  --cp-amber: #EFA26F;             /* Clay Apricot — caution / attention / follow-up */
+  --cp-amber-light: rgba(239,162,111,0.12);
+  --cp-red: #C07050;               /* Deep Terracotta — negative / rejected (warm, not generic red) */
+  --cp-red-light: rgba(192,112,80,0.08);
 
   --cp-radius: 13px;
   --cp-radius-sm: 9px;

@@ -270,6 +270,7 @@ function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageP
   const { data: pkg, isLoading: pkgLoading } = useQuery<any>({ queryKey: ["/api/me/managed-package"] });
   const { data: activities = [], isLoading: activitiesLoading } = useQuery<any[]>({ queryKey: ["/api/me/case-activities"] });
   const { data: documents = [] } = useQuery<any[]>({ queryKey: ["/api/me/documents"] });
+  const { data: clientStats } = useQuery<{ ptsGained: number | null; itemsRemoved: number; topScore: number | null; activeIssues: number; disputesInProgress: number; itemsResolved: number }>({ queryKey: ["/api/client/stats"] });
 
   useEffect(() => {
     if (scrollToPayment) {
@@ -318,48 +319,54 @@ function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageP
 
   return (
     <div>
-      {/* Hero */}
+      {/* Credit Success Plan hero card */}
       <div className="cp-home-hero cp-mb-24">
         <div className="cp-home-hero-left">
-          <div className="cp-welcome-eyebrow">{greeting.toUpperCase()} · MANAGED CLIENT</div>
+          <div className="cp-welcome-eyebrow">{greeting.toUpperCase()} · YOUR CREDIT SUCCESS PLAN</div>
           <div className="cp-welcome-name">{greeting}, {displayName}.</div>
           <div className="cp-welcome-sub">
             {pkgLoading ? "Loading your case…" : pkg
-              ? <>Your program is <strong style={{ color: "rgba(255,255,255,0.95)" }}>{pkg.packageName}</strong>{pkg.assignedSpecialist ? ` · Specialist: ${pkg.assignedSpecialist}` : ""}.</>
+              ? <>Program: <strong style={{ color: "var(--cp-text-primary)" }}>{pkg.packageName}</strong>{pkg.assignedSpecialist ? <> · Specialist: <strong style={{ color: "var(--cp-text-primary)" }}>{pkg.assignedSpecialist}</strong></> : ""}</>
               : "Your managed credit repair program is being set up. We'll reach out soon."}
           </div>
           {pkg && (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-              <span style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 20, padding: "3px 12px", fontSize: 11, fontWeight: 700, color: "white", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+              <span style={{ background: statusStyle.bg, border: `1px solid ${statusStyle.color}40`, borderRadius: 20, padding: "3px 12px", fontSize: 11, fontWeight: 700, color: statusStyle.color, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                 {caseStatus.replace(/_/g, " ")}
               </span>
               {totalActivities > 0 && (
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.65)" }}>
-                  {readinessPct}% complete · {completedCount}/{totalActivities} tasks done
+                <span style={{ fontSize: 11, color: "var(--cp-text-muted)", fontWeight: 500 }}>
+                  {readinessPct}% readiness · {completedCount} of {totalActivities} actions done
+                </span>
+              )}
+              {pkg.enrollmentDate && (
+                <span style={{ fontSize: 11, color: "var(--cp-text-muted)" }}>
+                  Enrolled {new Date(pkg.enrollmentDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                 </span>
               )}
             </div>
           )}
+          {pkg?.casesSummary && (
+            <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--cp-text-secondary)", lineHeight: 1.6, fontStyle: "italic", borderLeft: "3px solid var(--cp-accent)", paddingLeft: 10 }}>
+              "{pkg.casesSummary}"
+            </div>
+          )}
         </div>
-        {pkg ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
-            {totalActivities > 0 && (
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase" }}>Readiness</div>
-                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 30, fontWeight: 800, color: "white", letterSpacing: -1.5, lineHeight: 1 }}>
-                  {readinessPct}<span style={{ fontSize: 14, fontWeight: 500, letterSpacing: 0 }}>%</span>
-                </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10, flexShrink: 0 }}>
+          {totalActivities > 0 && (
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 10, color: "var(--cp-text-muted)", fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 2 }}>Readiness</div>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 30, fontWeight: 800, color: "var(--cp-accent)", letterSpacing: -1.5, lineHeight: 1 }}>
+                {readinessPct}<span style={{ fontSize: 14, fontWeight: 500, letterSpacing: 0, color: "var(--cp-text-muted)" }}>%</span>
               </div>
-            )}
-            {pkg.casesSummary && (
-              <div style={{ maxWidth: 200, fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.5, textAlign: "right" }}>{pkg.casesSummary}</div>
-            )}
-          </div>
-        ) : (
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>Your specialist is<br />setting up your plan.</div>
-          </div>
-        )}
+            </div>
+          )}
+          {!pkg && (
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 12, color: "var(--cp-text-muted)", lineHeight: 1.5 }}>Your specialist is<br />setting up your plan.</div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Team Activity + Case Overview */}
@@ -695,10 +702,14 @@ function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageP
                     color: readinessPct >= 75 ? "var(--cp-sage)" : readinessPct >= 40 ? "var(--cp-accent)" : "var(--cp-clay)",
                   },
                   {
-                    label: "Starting Score",
-                    val: "—",
-                    sub: "Not yet recorded",
-                    color: "var(--cp-text-muted)",
+                    label: "Current Score",
+                    val: clientStats?.topScore ? `${clientStats.topScore}` : "—",
+                    sub: clientStats?.ptsGained != null && clientStats.ptsGained !== 0
+                      ? `${clientStats.ptsGained > 0 ? "+" : ""}${clientStats.ptsGained} pts since start`
+                      : clientStats?.topScore ? "as of latest pull" : "Pull report to track",
+                    color: clientStats?.topScore
+                      ? (clientStats.topScore >= 740 ? "var(--cp-sage)" : clientStats.topScore >= 580 ? "var(--cp-accent)" : "var(--cp-clay)")
+                      : "var(--cp-text-muted)",
                   },
                 ].map(s => (
                   <div key={s.label} style={{ background: "var(--cp-bg)", borderRadius: 10, padding: "12px 14px" }}>
@@ -729,6 +740,14 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
   });
   const activeDisputes: EnrichedDispute[] = Array.isArray(activeRaw) ? activeRaw : [];
   const topDispute = activeDisputes[0] ?? null;
+
+  const { data: ssStats } = useQuery<{ ptsGained: number | null; itemsRemoved: number; topScore: number | null; activeIssues: number; disputesInProgress: number; itemsResolved: number }>({
+    queryKey: ["/api/client/stats"],
+  });
+  const totalKnownItems = (ssStats?.itemsResolved ?? 0) + (ssStats?.disputesInProgress ?? 0) + (ssStats?.activeIssues ?? 0);
+  const readinessPct = totalKnownItems > 0
+    ? Math.round(((ssStats?.itemsResolved ?? 0) / totalKnownItems) * 100)
+    : goal ? 5 : 0;
 
   return (
     <div>
@@ -767,25 +786,60 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
         </div>
       </div>
 
-      {/* Goal banner */}
-      {goal && (
-        <div className="cp-card cp-mb-24" style={{ borderLeft: "4px solid var(--cp-accent)" }}>
-          <div className="cp-flex-between cp-mb-18">
-            <div>
-              <div className="cp-card-eyebrow">YOUR GOAL</div>
-              <div className="cp-card-title" style={{ margin: "4px 0 2px" }}>
-                {GOALS.find(g => g.id === goal)?.icon} {GOALS.find(g => g.id === goal)?.label}
-              </div>
-              {timeline && (
-                <div className="cp-card-subtitle">Timeline: {TIMELINES.find(t => t.id === timeline)?.label}</div>
-              )}
-            </div>
+      {/* ScoreShift Plan — goal card + readiness */}
+      <div className="cp-card cp-mb-24" style={{ borderLeft: "4px solid var(--cp-accent)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 180 }}>
+            <div className="cp-card-eyebrow">YOUR SCORESHIFT PLAN</div>
+            {goal ? (
+              <>
+                <div className="cp-card-title" style={{ margin: "4px 0 2px" }}>
+                  {GOALS.find(g => g.id === goal)?.icon} {GOALS.find(g => g.id === goal)?.label}
+                </div>
+                {timeline && (
+                  <div className="cp-card-subtitle" style={{ marginBottom: 8 }}>Timeline: {TIMELINES.find(t => t.id === timeline)?.label}</div>
+                )}
+                <p style={{ fontSize: 13, color: "var(--cp-text-secondary)", lineHeight: 1.6, margin: 0 }}>
+                  {GOAL_SUMMARIES[goal]}
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="cp-card-title" style={{ margin: "4px 0 8px" }}>Set your credit goal</div>
+                <p style={{ fontSize: 13, color: "var(--cp-text-muted)", lineHeight: 1.6, margin: 0 }}>
+                  Tell us what you're working toward and we'll build a personalized action plan for you.
+                </p>
+                <button className="cp-btn cp-btn-secondary cp-btn-sm" style={{ marginTop: 10 }} onClick={() => onNavigate("plan")}>
+                  Set My Goal →
+                </button>
+              </>
+            )}
           </div>
-          <p style={{ fontSize: 13.5, color: "var(--cp-text-secondary)", lineHeight: 1.6, margin: 0 }}>
-            {GOAL_SUMMARIES[goal]}
-          </p>
+          {/* Readiness ring */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
+            <div style={{ position: "relative", width: 68, height: 68 }}>
+              <svg viewBox="0 0 68 68" style={{ width: 68, height: 68, transform: "rotate(-90deg)" }}>
+                <circle cx="34" cy="34" r="28" fill="none" stroke="var(--cp-border)" strokeWidth="6" />
+                <circle cx="34" cy="34" r="28" fill="none" stroke="var(--cp-accent)" strokeWidth="6"
+                  strokeDasharray={`${(readinessPct / 100) * 175.9} 175.9`}
+                  strokeLinecap="round" style={{ transition: "stroke-dasharray 0.6s ease" }} />
+              </svg>
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 800, color: "var(--cp-accent)", letterSpacing: -0.5 }}>{readinessPct}%</span>
+              </div>
+            </div>
+            <div style={{ fontSize: 9.5, color: "var(--cp-text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center" }}>
+              Plan<br />Readiness
+            </div>
+            {ssStats && (
+              <div style={{ fontSize: 10, color: "var(--cp-text-muted)", textAlign: "center", lineHeight: 1.4 }}>
+                {ssStats.itemsResolved > 0 && <div style={{ color: "var(--cp-sage)", fontWeight: 600 }}>{ssStats.itemsResolved} resolved</div>}
+                {ssStats.disputesInProgress > 0 && <div>{ssStats.disputesInProgress} in progress</div>}
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Next Best Action — goal-based routing */}
       {(() => {
@@ -850,6 +904,41 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
           </div>
         );
       })()}
+
+      {/* Priority Actions — top 3 from real dispute data */}
+      {!disputesLoading && activeDisputes.length > 0 && (
+        <div className="cp-card cp-mb-24">
+          <div className="cp-card-header" style={{ marginBottom: 14 }}>
+            <div>
+              <div className="cp-card-eyebrow">REQUIRES YOUR ATTENTION</div>
+              <div className="cp-card-title" style={{ marginTop: 2 }}>Priority Actions</div>
+            </div>
+            <span className="cp-badge warning">{activeDisputes.length} active</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {activeDisputes.slice(0, 3).map((d, i) => {
+              const isFollowUp = d.status === "FOLLOW_UP_REQUIRED";
+              const dotColor = isFollowUp ? "var(--cp-clay)" : d.status === "DELIVERED" ? "var(--cp-sage)" : "var(--cp-accent)";
+              const label = isFollowUp ? "Follow-up required" : d.status === "DELIVERED" ? "Bureau reviewing" : d.status === "SENT" ? "Awaiting delivery" : d.status;
+              return (
+                <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--cp-bg)", borderRadius: 10, padding: "11px 13px", cursor: "pointer", borderLeft: `3px solid ${dotColor}` }} onClick={() => onNavigate("dispute-iq")}>
+                  <div style={{ width: 7, height: 7, borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--cp-text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.issueTitle}</div>
+                    <div style={{ fontSize: 11.5, color: "var(--cp-text-muted)", marginTop: 2 }}>{d.creditor} · {d.bureau}</div>
+                  </div>
+                  <span style={{ fontSize: 10.5, fontWeight: 600, color: dotColor, background: `${dotColor}18`, padding: "2px 9px", borderRadius: 20, flexShrink: 0, whiteSpace: "nowrap" }}>{label}</span>
+                </div>
+              );
+            })}
+          </div>
+          {activeDisputes.length > 3 && (
+            <button className="cp-btn cp-btn-secondary cp-btn-sm" style={{ marginTop: 12 }} onClick={() => onNavigate("dispute-iq")}>
+              View all {activeDisputes.length} disputes →
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Active disputes + Recommended tools */}
       <div className="cp-grid-2 cp-mb-24">
