@@ -664,6 +664,8 @@ type ArrayPageProps = {
 
 function ReportPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenError }: ArrayPageProps) {
   const [subTab, setSubTab] = useState("tracker");
+  const scoreLoading = !scriptReady || (!tokenReady && !tokenError);
+
   return (
     <div>
       <div className="cp-page-header">
@@ -673,6 +675,30 @@ function ReportPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenErro
           <p className="cp-page-subtitle">Full 3-bureau report, score tracker, and score simulator — all live data.</p>
         </div>
         <span className="cp-badge blue-bureaus">All Bureaus</span>
+      </div>
+
+      {/* ── Live score header ──────────────────────────────────────── */}
+      <div className="cp-score-header cp-mb-24">
+        <div className="cp-score-header-label">
+          <span className="cp-score-header-dot" />
+          LIVE VANTAGESCORE 3.0
+        </div>
+        {scoreLoading ? (
+          <div className="cp-score-header-loading">
+            <div className="cp-array-spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
+            <span>Loading score data…</span>
+          </div>
+        ) : tokenError ? (
+          <div className="cp-score-header-locked">
+            <Icon size={15}><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></Icon>
+            <span>Credit data not yet connected — pull your report to see live scores.</span>
+            <button className="cp-btn cp-btn-primary cp-btn-sm" onClick={() => setSubTab("report")}>Pull My Report</button>
+          </div>
+        ) : (
+          <div className="cp-score-header-component">
+            <array-credit-score appKey={appKey} userToken={userToken} bureau="all" {...sbx} />
+          </div>
+        )}
       </div>
 
       <SubTabs

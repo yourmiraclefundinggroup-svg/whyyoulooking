@@ -1,0 +1,396 @@
+Update ScoreShift portal to support two account experiences:
+
+1. Self-Service SaaS Users
+2. Managed Credit Repair Clients
+
+Do NOT remove existing portal features.
+Do NOT remove Dispute IQ, Debt Navigator, Credit Report, Protection Center, Subscription Manager, Student Loan Aid, Score Simulator, Credit Alerts, Privacy Protection, PIP Scan, Identity Protection, Smart Letter, or ScoreShift Mail.
+
+This is still the authenticated portal only. Do not redesign the landing page.
+
+CORE ACCOUNT TYPES
+
+Add support for:
+
+account_type:
+
+* SELF_SERVICE
+* MANAGED_CLIENT
+
+For managed clients also support:
+
+program_type:
+
+* DISPUTE_STANDARD
+* DISPUTE_RUSH
+* MORTGAGE_FAST_TRACK
+* CUSTOM
+
+Managed client package details should support:
+
+* Package name
+* Total investment
+* Amount paid
+* Remaining balance
+* Payment plan status
+* Next payment due date
+* Services included
+* Assigned specialist
+* Enrollment date
+* Case status
+
+SELF-SERVICE EXPERIENCE
+
+Self-service users are driving their own process.
+
+Primary question:
+“What should I do next?”
+
+Self-service homepage should focus on:
+
+* Goal
+* Readiness percentage
+* Next Best Action
+* Recommended ScoreShift tool
+* Credit Snapshot
+* Priority Actions
+* Progress
+
+Self-service users should be routed to:
+
+* Dispute IQ for dispute-related issues
+* Debt Navigator for utilization/debt issues
+* Protection Center for identity/privacy issues
+* Credit Report for scores/report/alerts/simulator
+* Subscription Manager for recurring expense optimization
+* Student Loan Aid for student loan-related opportunities
+
+MANAGED CLIENT EXPERIENCE
+
+Managed clients hired ScoreShift to work on their behalf.
+
+Primary question:
+“What is ScoreShift doing for me, and what can I do to help results move faster?”
+
+Managed client homepage should feel premium, concierge, luxury, and high-trust.
+
+Managed client homepage title:
+Your Credit Success Plan
+
+Top card should show:
+
+* Client goal
+* Program/package name
+* Assigned specialist
+* Current case status
+* Readiness percentage
+* Current scores
+* Timeline
+* Plain-English case summary
+
+Example:
+Good Afternoon, Ebony
+
+Mortgage Fast Track
+Assigned Specialist: Ervin Ward
+Readiness: 72%
+Status: Active
+
+“Our team has completed 4 actions on your behalf and identified 3 opportunities that could help improve your approval profile faster.”
+
+MANAGED CLIENT CASE STATUS
+
+Create a “ScoreShift Team Activity” section.
+
+This section shows what the ScoreShift team is doing for the client.
+
+Examples:
+
+* Credit Report Reviewed
+* Strategy Created
+* Bankruptcy Review Started
+* Dispute IQ Analysis Completed
+* Smart Letter Generated
+* Letters Sent Through ScoreShift Mail
+* CFPB Complaint Filed
+* Awaiting Bureau Response
+* Follow-Up Round Scheduled
+* Results Updated
+
+Show statuses:
+
+* Completed
+* In Progress
+* Pending
+* Waiting on Bureau
+* Waiting on Client
+
+MANAGED CLIENT PAYMENT CENTER
+
+Add a Payment Center for managed clients.
+
+Show:
+
+* Package/program name
+* Total investment
+* Amount paid
+* Remaining balance
+* Payment plan type
+* Next payment amount
+* Next payment due date
+* Payment status
+* Payment history
+
+Buttons:
+
+* Make Payment
+* View Agreement
+* Download Receipt
+
+Example:
+Program: Mortgage Fast Track
+Total Investment: $2,500
+Paid: $1,250
+Remaining: $1,250
+Next Payment: $625 due June 15
+Status: On Track
+
+MANAGED CLIENT SERVICES INCLUDED
+
+Show what the client purchased.
+
+Examples:
+
+DISPUTE_STANDARD:
+
+* Credit report review
+* Dispute IQ analysis
+* Smart Letter generation
+* ScoreShift Mail sending
+* Response tracking
+
+DISPUTE_RUSH:
+
+* Priority processing
+* Credit report review
+* Dispute IQ analysis
+* Smart Letter generation
+* ScoreShift Mail sending
+* Expedited follow-up review
+* Response tracking
+
+MORTGAGE_FAST_TRACK:
+
+* Priority processing
+* Mortgage readiness tracking
+* Credit report review
+* Dispute IQ analysis
+* Smart Letter generation
+* ScoreShift Mail sending
+* Debt Navigator guidance
+* Tradeline/build strategy if included
+* Expedited follow-up review
+* Response tracking
+
+CUSTOM:
+Allow admin-configured services.
+
+MANAGED CLIENT PARTICIPATION TOOLS
+
+Managed clients should still have access to helpful tools.
+
+These tools should be framed as:
+“Ways To Improve Faster”
+
+Show:
+
+* Debt Navigator
+* Subscription Manager
+* Student Loan Aid
+* Protection Center
+* Privacy Protection
+* PIP Scan
+* Identity Protection
+* Credit Report
+* Score Simulator
+* Credit Alerts
+
+These should not replace the team activity section.
+
+They should support it.
+
+Example:
+Ways To Improve Faster
+
+Debt Navigator:
+“Reducing utilization could improve your readiness while our team works on reporting issues.”
+
+Subscription Manager:
+“We found potential monthly savings that could be redirected toward payoff goals.”
+
+Student Loan Aid:
+“Review possible student loan options that may support your monthly affordability.”
+
+Protection Center:
+“Protect your identity and reduce future credit risks.”
+
+MANAGED CLIENT DOCUMENTS NEEDED
+
+Create a Documents Needed section.
+
+Show:
+
+* Driver’s license
+* Utility bill
+* Social Security card if needed
+* Proof of address
+* Creditor letters
+* Mortgage/preapproval documents if applicable
+* Other custom requested documents
+
+Statuses:
+
+* Needed
+* Uploaded
+* Reviewed
+* Approved
+
+Button:
+Upload Document
+
+MANAGED CLIENT CASE TIMELINE
+
+Create a timeline for managed clients.
+
+Example:
+May 12 — Client Enrolled
+May 13 — Credit Report Reviewed
+May 14 — Strategy Created
+May 15 — Letters Sent
+May 25 — Bureau Response Received
+May 27 — Follow-Up Submitted
+
+This timeline should reduce client confusion and support requests.
+
+MANAGED CLIENT RESULTS
+
+Create a My Results section.
+
+Show:
+
+* Starting scores
+* Current scores
+* Score changes
+* Items removed
+* Items updated
+* Letters sent
+* Bureau responses received
+* Readiness improvement
+
+Do not fake results.
+Use real data when available.
+If unavailable, show empty states.
+
+DATA RULE
+
+Real data first.
+Loading state second.
+Empty state third.
+Never fake user scores, payments, account data, or case progress in production UI.
+
+If demo data is needed, isolate it behind a development/demo flag only.
+
+DISPUTE IQ ARCHITECTURE
+
+Dispute IQ remains the parent dispute workflow.
+
+Smart Letter and ScoreShift Mail live inside Dispute IQ.
+
+Do not create Smart Letter or ScoreShift Mail as main navigation items.
+
+Dispute IQ workflow:
+Issue Selected
+→ Analyze Reporting
+→ Recommend Dispute Path
+→ Generate Smart Letter
+→ Preview Letter
+→ Send Through ScoreShift Mail
+→ Track Delivery
+→ Track Bureau Response
+→ Recommend Follow-Up
+
+NAVIGATION
+
+Use the same core navigation, but adapt homepage content by account type.
+
+Navigation:
+
+* Home
+* My Plan
+* Dispute IQ
+* Debt Navigator
+* Protection Center
+* Credit Report
+* Subscription Manager
+* Student Loan Aid
+* Progress
+* Profile
+
+For managed clients, Home should show:
+
+* Credit Success Plan
+* ScoreShift Team Activity
+* Payment Center
+* Documents Needed
+* Ways To Improve Faster
+* Case Timeline
+* My Results
+
+For self-service users, Home should show:
+
+* ScoreShift Plan
+* Next Best Action
+* Credit Snapshot
+* Priority Actions
+* Recommended Tools
+* Progress
+
+VISUAL DESIGN
+
+Managed client experience should feel more premium and concierge than self-service.
+
+Use:
+
+* Calm fintech aesthetic
+* Clean whitespace
+* Premium card hierarchy
+* Soft borders
+* Subtle shadows
+* Clean typography
+* Strong section hierarchy
+* Minimal clutter
+* One clear action per card
+
+Avoid:
+
+* Generic AI cards
+* Cheap credit repair visuals
+* Giant credit gauges
+* Loud colors
+* Random icon grids
+* Fake placeholder results
+* Landing page sections inside the portal
+
+FINAL PRODUCT LOGIC
+
+Self-service users should feel:
+“ScoreShift is guiding me on what to do next.”
+
+Managed clients should feel:
+“ScoreShift is actively working on my file, and I know exactly what I can do to help results move faster.”
+
+Final goal:
+One portal.
+Two experiences.
+Same ScoreShift intelligence engine.
+Different homepage logic based on account type.
