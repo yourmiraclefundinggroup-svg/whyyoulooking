@@ -5,6 +5,7 @@ import { useUserContext } from "@/hooks/use-user-context";
 import { useArrayScript } from "@/hooks/use-array-script";
 import { useArrayToken } from "@/hooks/use-array-token";
 import { useFeatureAccess } from "@/hooks/use-feature-access";
+import { useArrayThemeInjector } from "@/hooks/use-array-theme-injector";
 import { useScoreShiftProfile, type PlanSuggestion, type ProfileDispute } from "@/hooks/use-score-shift-profile";
 import "@/styles/portal.css";
 import { DisputeIQPage as RealDisputeIQPage } from "@/pages/dispute-iq";
@@ -2245,6 +2246,7 @@ export default function ClientPortal() {
   const featureAccess = useFeatureAccess();
   const { appKey, token: userToken, isReady: tokenReady, error: tokenError, apiUrl, sandboxMode } = useArrayToken();
   const { loaded: scriptReady } = useArrayScript(appKey || undefined);
+  useArrayThemeInjector();
 
   const [activePage, setActivePage] = useState<PageId>("home");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
