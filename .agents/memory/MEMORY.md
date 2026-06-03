@@ -1,3 +1,4 @@
 - [Managed client schema](managed-client-schema.md) — spec-correct fields: caseStatus, casesSummary, totalInvestment, amountPaid, paymentPlanType, assignedSpecialist; activities use description+status+occurredAt.
 - [Portal API paths](portal-api-paths.md) — client portal uses /api/me/*; admin managed uses /api/admin/users/:id/* (not /api/admin/managed/*).
 - [DB push interactive](db-push-interactive.md) — drizzle-kit push --force still prompts for rename detection; drop tables first then push to avoid interactive mode.
+- [Array DO proxy setup](array-proxy-setup.md) — DO droplet on port 3001, auth via Authorization Bearer header, INTERNAL_API_SECRET must match both sides, pm2 needs --update-env flag.
