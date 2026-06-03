@@ -369,115 +369,239 @@ function portalTiltLeave(e: React.MouseEvent<HTMLDivElement>) {
   e.currentTarget.style.boxShadow = '';
 }
 
-// ── Mock Portal (hero visual) ──────────────────────────────
+// ── Interactive Mock Portal ────────────────────────────────
+
 const PORTAL_NAV = [
-  { label: "Dashboard",    active: true,  badge: null,
-    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
-  { label: "My Plan",      active: false, badge: null,
-    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h18M3 6c3 0 5 2 9 2s6-2 9-2M3 18c3 0 5-2 9-2s6 2 9 2"/></svg> },
-  { label: "Credit Report", active: false, badge: null,
-    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg> },
-  { label: "Dispute IQ",   active: false, badge: "3",
-    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> },
-  { label: "Smart Letters", active: false, badge: null,
-    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> },
-  { label: "Progress",     active: false, badge: null,
-    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> },
-  { label: "Identity",     active: false, badge: null,
-    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> },
+  { id: "dashboard", label: "Dashboard",    badge: null,
+    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
+  { id: "plan",      label: "My Plan",      badge: null,
+    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
+  { id: "report",    label: "Credit Report", badge: null,
+    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg> },
+  { id: "disputes",  label: "Dispute IQ",   badge: "3",
+    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> },
+  { id: "letters",   label: "Smart Letters", badge: null,
+    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> },
+  { id: "progress",  label: "Progress",     badge: null,
+    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> },
+  { id: "identity",  label: "Identity Guard", badge: null,
+    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> },
 ];
 
+const SCREEN_TITLES: Record<string, string> = {
+  dashboard: "My Dashboard", plan: "My Plan",
+  report: "Credit Report",   disputes: "Dispute IQ",
+  letters: "Smart Letters",  progress: "Progress Tracker",
+  identity: "Identity Guard",
+};
+
+// ── Screen: Dashboard ──────────────────────────────────────
+function PSDashboard() {
+  return (
+    <div className="lp2-pscreen">
+      <div className="lp2-portal-scores">
+        {([["712","Experian","#3B82F6"],["705","Equifax","#EF4444"],["718","TransUnion","#8B5CF6"]] as const).map(([v,n,c]) => (
+          <div key={n} className="lp2-portal-score-chip">
+            <div className="lp2-portal-score-num" style={{ color: c }}>{v}</div>
+            <div className="lp2-portal-score-bur">{n}</div>
+          </div>
+        ))}
+      </div>
+      <div className="lp2-portal-cards-row">
+        <div className="lp2-portal-action-card">
+          <div className="lp2-portal-card-label">Next Best Action</div>
+          <div className="lp2-portal-action-body">
+            <span className="lp2-portal-action-icon">⚡</span>
+            <div>
+              <div className="lp2-portal-action-title">Dispute MIDLAND CREDIT</div>
+              <div className="lp2-portal-action-sub">Est. +18 pts · Ready to send</div>
+            </div>
+          </div>
+        </div>
+        <div className="lp2-portal-prog-card">
+          <div className="lp2-portal-card-label">Plan Progress</div>
+          <div className="lp2-portal-prog-val">68%</div>
+          <div className="lp2-portal-prog-track"><div className="lp2-portal-prog-fill" style={{ width:"68%" }}/></div>
+          <div className="lp2-portal-prog-note">4 of 6 complete</div>
+        </div>
+      </div>
+      <div className="lp2-portal-disputes">
+        <div className="lp2-portal-disp-header">Open Disputes</div>
+        {[
+          { dot:"pending", name:"Capital One — Late Payment",     meta:"Sent · Day 12 of 30",      bur:"EQ · TU", green: false },
+          { dot:"won",     name:"Midland Credit Management",      meta:"Removed · +18 pts gained ✓", bur:"EX",      green: true  },
+        ].map(d => (
+          <div key={d.name} className="lp2-portal-disp-item">
+            <span className={`lp2-portal-disp-dot ${d.dot}`}/>
+            <div className="lp2-portal-disp-body">
+              <div className="lp2-portal-disp-name">{d.name}</div>
+              <div className="lp2-portal-disp-meta" style={d.green ? { color:"#6BAE8A" } : {}}>{d.meta}</div>
+            </div>
+            <span className="lp2-portal-disp-bureau">{d.bur}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Screen: Dispute IQ ─────────────────────────────────────
+function PSDisputes() {
+  const rows = [
+    { name:"MIDLAND CREDIT MGMT",       type:"Collections",  bureaus:["EX","EQ"], pts:"+18", status:"ready"   },
+    { name:"Capital One — 30-Day Late",  type:"Late Payment", bureaus:["TU","EQ"], pts:"+11", status:"pending" },
+    { name:"Synchrony Bank Charge-off",  type:"Derogatory",   bureaus:["EX"],      pts:"+9",  status:"draft"   },
+  ];
+  const bcolor: Record<string,string> = { EX:"#3B82F6", EQ:"#EF4444", TU:"#8B5CF6" };
+  return (
+    <div className="lp2-pscreen">
+      <div className="lp2-pscreen-hdr">
+        <span className="lp2-pscreen-count">3 disputes found</span>
+        <span className="lp2-pscreen-pill indigo">AI Ready</span>
+      </div>
+      {rows.map(r => (
+        <div key={r.name} className={`lp2-pdrow lp2-pdr-${r.status}`}>
+          <div className="lp2-pdrow-main">
+            <div className="lp2-pdrow-name">{r.name}</div>
+            <div className="lp2-pdrow-type">{r.type}</div>
+          </div>
+          <div className="lp2-pdrow-bureaus">
+            {r.bureaus.map(b => <span key={b} className="lp2-pbur" style={{ color: bcolor[b], borderColor: bcolor[b]+"33" }}>{b}</span>)}
+          </div>
+          <span className="lp2-pdrow-pts">{r.pts} pts</span>
+          <span className={`lp2-pdrow-status lp2-pst-${r.status}`}>
+            {r.status === "ready" ? "Ready" : r.status === "pending" ? "Sent" : "Draft"}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Screen: My Plan ────────────────────────────────────────
+function PSPlan() {
+  const steps = [
+    { n:"01", title:"Dispute MIDLAND CREDIT",       sub:"Est. +18 pts · Certified mail ready", active:true  },
+    { n:"02", title:"Dispute Capital One Late Pay",  sub:"Est. +11 pts · Letters drafted",      active:false },
+    { n:"03", title:"Lower utilization below 30%",  sub:"Pay $340 on Chase — currently 32%",    active:false },
+    { n:"04", title:"Open secured credit builder",  sub:"Add positive history to thin file",    active:false },
+  ];
+  return (
+    <div className="lp2-pscreen">
+      <div className="lp2-pscreen-hdr">
+        <span className="lp2-pscreen-count">4 priority actions</span>
+        <span className="lp2-pscreen-pill sage">68% done</span>
+      </div>
+      {steps.map(s => (
+        <div key={s.n} className={`lp2-pstep${s.active ? " active" : ""}`}>
+          <div className={`lp2-pstep-num${s.active ? " active" : ""}`}>{s.n}</div>
+          <div className="lp2-pstep-body">
+            <div className="lp2-pstep-title">{s.title}</div>
+            <div className="lp2-pstep-sub">{s.sub}</div>
+          </div>
+          {s.active && <span className="lp2-pstep-arrow">→</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Screen: Credit Report ──────────────────────────────────
+function PSReport() {
+  const factors = [
+    { label:"On-time payments",  val:"98%",    color:"#6BAE8A", pct:98 },
+    { label:"Credit utilization",val:"32%",    color:"#EFA26F", pct:32 },
+    { label:"Account age",       val:"6.2 yrs",color:"#8F7AFF", pct:72 },
+    { label:"Derogatory marks",  val:"2 items",color:"#EF4444", pct:18 },
+  ];
+  return (
+    <div className="lp2-pscreen">
+      <div className="lp2-preport-scores">
+        {([["712","Experian","#3B82F6"],["705","Equifax","#EF4444"],["718","TransUnion","#8B5CF6"]] as const).map(([v,n,c]) => (
+          <div key={n} className="lp2-portal-score-chip">
+            <div className="lp2-portal-score-num" style={{ color:c, fontSize:"18px" }}>{v}</div>
+            <div className="lp2-portal-score-bur">{n}</div>
+          </div>
+        ))}
+      </div>
+      <div className="lp2-preport-factors">
+        {factors.map(f => (
+          <div key={f.label} className="lp2-pfactor">
+            <div className="lp2-pfactor-row">
+              <span className="lp2-pfactor-label">{f.label}</span>
+              <span className="lp2-pfactor-val" style={{ color:f.color }}>{f.val}</span>
+            </div>
+            <div className="lp2-pfactor-bar">
+              <div className="lp2-pfactor-fill" style={{ width:`${f.pct}%`, background:f.color }}/>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Mock Portal shell ──────────────────────────────────────
 function MockPortal() {
+  const [activeNav, setActiveNav] = useState("dashboard");
+  const screenNav = new Set(["dashboard","plan","report","disputes"]);
+  const screen = screenNav.has(activeNav) ? activeNav : "dashboard";
+
   return (
     <div className="lp2-portal-wrap">
       <div className="lp2-portal-ambient-a"/>
       <div className="lp2-portal-ambient-b"/>
       <div className="lp2-portal-frame" onMouseMove={portalTiltMove} onMouseLeave={portalTiltLeave}>
 
-        {/* ── Frosted sidebar ─── */}
+        {/* ── Sidebar ── */}
         <aside className="lp2-portal-sb">
+          {/* Logo row */}
           <div className="lp2-portal-sb-logo">
-            <img src={scoreshiftLogo} alt="" width={20} height={20} style={{ objectFit: "contain" }}/>
+            <img src={scoreshiftLogo} alt="" width={18} height={18} style={{ objectFit:"contain", flexShrink:0 }}/>
+            <span className="lp2-portal-sb-brand">ScoreShift</span>
           </div>
+
+          {/* Nav */}
           <nav className="lp2-portal-sb-nav">
-            {PORTAL_NAV.map((item) => (
-              <div key={item.label} className={`lp2-portal-nav-item${item.active ? " active" : ""}`} title={item.label}>
-                {item.icon}
+            {PORTAL_NAV.map(item => (
+              <button
+                key={item.id}
+                className={`lp2-portal-nav-item${activeNav === item.id ? " active" : ""}`}
+                onClick={() => setActiveNav(item.id)}
+              >
+                <span className="lp2-portal-nav-icon">{item.icon}</span>
+                <span className="lp2-portal-nav-label">{item.label}</span>
                 {item.badge && <span className="lp2-portal-nav-badge">{item.badge}</span>}
-              </div>
+              </button>
             ))}
           </nav>
-          <div className="lp2-portal-sb-footer">
+
+          {/* User row */}
+          <div className="lp2-portal-sb-user">
             <div className="lp2-portal-user-av">JK</div>
+            <div className="lp2-portal-user-info">
+              <div className="lp2-portal-user-name">Jordan K.</div>
+              <div className="lp2-portal-user-plan">Pro Plan</div>
+            </div>
           </div>
         </aside>
 
-        {/* ── Main content ─── */}
+        {/* ── Main ── */}
         <div className="lp2-portal-main">
-          {/* Topbar */}
           <div className="lp2-portal-topbar">
-            <div className="lp2-portal-topbar-title">My Dashboard</div>
+            <div className="lp2-portal-topbar-title">{SCREEN_TITLES[activeNav]}</div>
             <div className="lp2-portal-topbar-chip">
-              <span className="lp2-portal-chip-dot"/>Financial Readiness Active
+              <span className="lp2-portal-chip-dot"/>Active
             </div>
           </div>
-
-          {/* Body */}
           <div className="lp2-portal-body">
-            {/* 3-bureau scores */}
-            <div className="lp2-portal-scores">
-              {([["712","Experian","#3B82F6"],["705","Equifax","#EF4444"],["718","TransUnion","#8B5CF6"]] as const).map(([val,name,color]) => (
-                <div key={name} className="lp2-portal-score-chip">
-                  <div className="lp2-portal-score-num" style={{ color }}>{val}</div>
-                  <div className="lp2-portal-score-bur">{name}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Action card + Progress card */}
-            <div className="lp2-portal-cards-row">
-              <div className="lp2-portal-action-card">
-                <div className="lp2-portal-card-label">Next Best Action</div>
-                <div className="lp2-portal-action-body">
-                  <span className="lp2-portal-action-icon">⚡</span>
-                  <div>
-                    <div className="lp2-portal-action-title">Dispute MIDLAND CREDIT</div>
-                    <div className="lp2-portal-action-sub">Est. +18 pts · Ready to send</div>
-                  </div>
-                </div>
-              </div>
-              <div className="lp2-portal-prog-card">
-                <div className="lp2-portal-card-label">Plan Progress</div>
-                <div className="lp2-portal-prog-val">68%</div>
-                <div className="lp2-portal-prog-track">
-                  <div className="lp2-portal-prog-fill" style={{ width: "68%" }}/>
-                </div>
-                <div className="lp2-portal-prog-note">4 of 6 complete</div>
-              </div>
-            </div>
-
-            {/* Open disputes */}
-            <div className="lp2-portal-disputes">
-              <div className="lp2-portal-disp-header">Open Disputes</div>
-              <div className="lp2-portal-disp-item">
-                <span className="lp2-portal-disp-dot pending"/>
-                <div className="lp2-portal-disp-body">
-                  <div className="lp2-portal-disp-name">Capital One — Late Payment</div>
-                  <div className="lp2-portal-disp-meta">Sent · Day 12 of 30</div>
-                </div>
-                <span className="lp2-portal-disp-bureau">EQ · TU</span>
-              </div>
-              <div className="lp2-portal-disp-item">
-                <span className="lp2-portal-disp-dot won"/>
-                <div className="lp2-portal-disp-body">
-                  <div className="lp2-portal-disp-name">Midland Credit Management</div>
-                  <div className="lp2-portal-disp-meta" style={{ color: "#6BAE8A" }}>Removed · +18 pts gained ✓</div>
-                </div>
-                <span className="lp2-portal-disp-bureau">EX</span>
-              </div>
-            </div>
+            {screen === "dashboard" && <PSDashboard key="dashboard"/>}
+            {screen === "disputes"  && <PSDisputes  key="disputes"/>}
+            {screen === "plan"      && <PSPlan      key="plan"/>}
+            {screen === "report"    && <PSReport    key="report"/>}
           </div>
         </div>
+
       </div>
     </div>
   );
