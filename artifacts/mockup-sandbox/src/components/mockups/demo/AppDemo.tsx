@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import "./portal.css";
 
 // ── Array sandbox constants ───────────────────────────────────────────────────
-const ARRAY_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
+const ARRAY_APP_KEY = "EA23400D-C8B0-4D2D-834B-355C8D86BA0D";
 const ARRAY_API_URL = "https://mock.array.io";
 const ARRAY_TOKEN   = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
 
