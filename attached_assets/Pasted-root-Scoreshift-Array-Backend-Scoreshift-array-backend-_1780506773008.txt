@@ -1,0 +1,45 @@
+root@Scoreshift-Array-Backend:~/Scoreshift-array-backend# pm2 logs scoreshift-array-backend --lines 20 --nostream
+[TAILING] Tailing last 20 lines for [scoreshift-array-backend] process (change the value with --lines option)
+/root/.pm2/logs/scoreshift-array-backend-out.log last 20 lines:
+0|scoreshi | [Array] Fetching credit report from https://sandbox.array.io/v2/user/credit-report
+0|scoreshi | [Array] Credit report status: 404, size: 74 bytes
+0|scoreshi | [Array] Requesting token for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU env=sandbox
+0|scoreshi | [Array] Token response status: 404
+0|scoreshi | [Array] Fetching credit report from https://sandbox.array.io/v2/user/credit-report
+0|scoreshi | [Array] Credit report status: 404, size: 74 bytes
+0|scoreshi | [Array] Requesting token for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU env=sandbox
+0|scoreshi | [Array] Token response status: 404
+0|scoreshi | [Array] Fetching credit report from https://sandbox.array.io/v2/user/credit-report
+0|scoreshi | [Array] Credit report status: 404, size: 74 bytes
+0|scoreshi | [scoreshift-array-proxy] Listening on port 3001
+0|scoreshi | [scoreshift-array-proxy] Mode: sandbox
+0|scoreshi | [scoreshift-array-proxy] CORS origins: https://creditboostpro.replit.app
+0|scoreshi | [scoreshift-array-proxy] Listening on port 3001
+0|scoreshi | [scoreshift-array-proxy] Mode: sandbox
+0|scoreshi | [scoreshift-array-proxy] CORS origins: https://creditboostpro.replit.app
+0|scoreshi | [Array] Requesting token for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU env=sandbox
+0|scoreshi | [Array] Token response status: 404
+0|scoreshi | [Array] Fetching credit report from https://sandbox.array.io/v2/user/credit-report
+0|scoreshi | [Array] Credit report status: 404, size: 74 bytes
+
+/root/.pm2/logs/scoreshift-array-backend-error.log last 20 lines:
+0|scoreshi | [/array/token] Failed for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU: HTTP 403
+0|scoreshi | [/array/credit-report] Failed: HTTP 404
+0|scoreshi | [/array/token] Failed for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU: HTTP 403
+0|scoreshi | [/array/credit-report] Failed: HTTP 404
+0|scoreshi | [/array/token] Failed for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU: HTTP 403
+0|scoreshi | [/array/credit-report] Failed: HTTP 404
+0|scoreshi | [/array/token] Failed for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU: HTTP 403
+0|scoreshi | [/array/credit-report] Failed: HTTP 404
+0|scoreshi | [/array/token] Failed for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU: HTTP 403
+0|scoreshi | [/array/credit-report] Failed: HTTP 404
+0|scoreshi | [/array/token] Failed for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU: HTTP 404
+0|scoreshi | [/array/credit-report] Failed: HTTP 404
+0|scoreshi | [/array/token] Failed for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU: HTTP 404
+0|scoreshi | [/array/credit-report] Failed: HTTP 404
+0|scoreshi | [/array/token] Failed for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU: HTTP 404
+0|scoreshi | [/array/credit-report] Failed: HTTP 404
+0|scoreshi | [/array/token] Failed for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU: HTTP 404
+0|scoreshi | [/array/credit-report] Failed: HTTP 404
+0|scoreshi | [/array/token] Failed for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU: HTTP 404
+0|scoreshi | [/array/credit-report] Failed: HTTP 404
