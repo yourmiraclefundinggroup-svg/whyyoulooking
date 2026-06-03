@@ -1,0 +1,163 @@
+Update the portal before visual redesign.
+
+Do not redesign the full UI yet. Add the missing functional pieces first.
+
+1. My Plan top white area
+
+Replace the empty white state on My Plan with a “Credit Readiness Snapshot” card.
+
+Move the 3-bureau Live VantageScore card from the Credit Report page into the top of My Plan, or recreate it there using the same live score data.
+
+My Plan should show:
+
+* TransUnion score
+* Equifax score
+* Experian score
+* Report date
+* Score type: VantageScore 3.0
+* Plan goal: Improve my score
+* Timeline: 3 months
+* Plan readiness percentage
+
+Below the score row, show:
+
+Next Best Action:
+Use scoreShiftProfile.planSuggestions[0]
+
+Example layout:
+
+Credit Readiness Snapshot
+TU 802 | EQ 729 | EX 786
+
+Next Best Action:
+Analyze your report for score-impact issues
+
+Estimated Impact:
+Use projected gain if available, otherwise show “Impact depends on bureau response”
+
+Primary CTA:
+Open Dispute IQ
+
+Secondary CTA:
+Review Full Credit Report
+
+Important:
+Do not remove the Credit Report page scores entirely unless the same score section still exists somewhere else. The Credit Report page can keep a simpler version, but My Plan should become the main guided overview.
+
+2. Student Loan Aid
+
+Add a new sidebar item:
+
+Student Loan Aid
+
+Place it under Debt Navigator or Optimization.
+
+Create a new portal page for Array student loan tools.
+
+Use Array embedded components from:
+
+https://array.com/developers/embedded-demos?component=studentLoanNavigator
+
+and
+
+https://array.com/developers/embedded-demos?component=studentLoanAid
+
+The Student Loan Aid page should include:
+
+Header:
+Student Loan Aid
+
+Subtitle:
+Understand your student loan options, repayment paths, and potential aid opportunities.
+
+Tabs:
+
+* Student Loan Navigator
+* Student Loan Aid
+
+Each tab should embed the correct Array component.
+
+Use the same authenticated Array user/session flow as the other Array embedded components.
+
+If the Array component cannot load because the user is not connected, show a premium empty state:
+
+Student loan tools are not connected yet.
+Connect your credit profile to unlock loan navigation and aid options.
+
+CTA:
+Review My Scores
+
+3. Subscription Manager
+
+Verify the current Subscription Manager page is using the actual Array Subscription Manager embedded component, not a custom placeholder UI.
+
+Use:
+
+https://array.com/developers/embedded-demos?component=subscriptionManager&api=mock
+
+The Subscription Manager should use the real Array component where possible.
+
+Keep the current ScoreShift insight card above or below the embedded component:
+
+How subscriptions connect to your goal:
+Redirecting monthly subscription spend toward revolving balances could help improve utilization and accelerate your ScoreShift Plan.
+
+If the Array component is not connected, show:
+Subscription data is not connected yet.
+
+But do not fake subscription data.
+
+4. scoreShiftProfile updates
+
+Add these fields if not already included:
+
+studentLoans: {
+connected: boolean;
+accounts: [];
+repaymentOptions: [];
+aidOpportunities: [];
+}
+
+subscriptions: {
+connected: boolean;
+monthlySpend: number | null;
+annualSpend: number | null;
+potentialSavings: number | null;
+subscriptionsFound: number | null;
+}
+
+nextBestAction:
+Derived from planSuggestions[0]
+
+5. Sidebar organization
+
+Update sidebar grouping visually later, but for now make sure navigation includes:
+
+Home
+My Plan
+Dispute IQ
+Debt Navigator
+Student Loan Aid
+Subscription Manager
+Protection Center
+Credit Report
+Progress
+Profile
+
+6. Rules
+
+Do not create fake data.
+Do not hardcode scores.
+Do not use PDF data if live Array data is available.
+Array full credit report/live data wins.
+PDF upload is fallback only.
+Keep all existing routes working.
+Do not redesign the portal yet.
+Only add missing product functionality and wire the correct Array components.
+
+After completion, tell me:
+
+* Where the Student Loan Aid page was added
+* Whether Subscription Manager is using the Array embedded component
+* Whether My Plan now shows the 3-bureau score snapshot
+* Whether the score data comes from scoreShiftProfile or another source
