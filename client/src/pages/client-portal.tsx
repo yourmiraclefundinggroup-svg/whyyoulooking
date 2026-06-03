@@ -30,7 +30,7 @@ declare global {
 }
 
 /* ── Types ────────────────────────────────────────────────────────── */
-type PageId = "home" | "plan" | "dispute-iq" | "debt" | "subscriptions" | "protection" | "report" | "progress" | "profile" | "payment-center";
+type PageId = "home" | "plan" | "dispute-iq" | "debt" | "subscriptions" | "student-loans" | "protection" | "report" | "progress" | "profile" | "payment-center";
 
 type OnboardingGoal = "improve-score" | "remove-negatives" | "build-credit" | "reduce-debt";
 type OnboardingTimeline = "3-months" | "6-months" | "1-year" | "exploring";
@@ -1157,6 +1157,95 @@ function PlanPage({ goal, timeline, onNavigate }: { goal: OnboardingGoal | null;
         </div>
       ) : (
         <>
+          {/* ── Credit Readiness Snapshot ─────────────────────────── */}
+          {(() => {
+            const sc = profile?.scores;
+            const hasAnyScore = sc && (sc.transunion !== null || sc.equifax !== null || sc.experian !== null || sc.vantage !== null);
+            const topSug = (profile?.planSuggestions ?? []).find(s => s.status === "open" || s.status === "in_progress");
+            const SUG_CTA: Record<string, { cta: string; page: PageId }> = {
+              "dispute": { cta: "Open Dispute IQ", page: "dispute-iq" },
+              "charge-off": { cta: "Open Dispute IQ", page: "dispute-iq" },
+              "paydown": { cta: "Open Debt Navigator", page: "debt" },
+              "inquiry-dispute": { cta: "Open Dispute IQ", page: "dispute-iq" },
+              "public-record": { cta: "Open Dispute IQ", page: "dispute-iq" },
+            };
+            const sugCta = topSug ? (SUG_CTA[topSug.type] ?? { cta: "View Full Plan", page: "plan" as PageId }) : null;
+            const projGain = topSug ? (profile?.scoreSimulator?.projectedGains?.[0]?.estimatedPts ?? null) : null;
+            return (
+              <div className="cp-card cp-mb-24" style={{ borderTop: "3px solid var(--cp-accent)" }}>
+                <div className="cp-card-header" style={{ marginBottom: 14 }}>
+                  <div>
+                    <div className="cp-card-eyebrow">CREDIT READINESS SNAPSHOT</div>
+                    <div className="cp-card-title" style={{ marginTop: 4 }}>
+                      {goalLabel ? `Goal: ${goalLabel}` : "Your Credit Overview"}
+                    </div>
+                    {timelineLabel && (
+                      <div style={{ fontSize: 12, color: "var(--cp-text-muted)", marginTop: 2 }}>Timeline: {timelineLabel}</div>
+                    )}
+                  </div>
+                  <span className="cp-badge" style={{ background: "var(--cp-accent)15", color: "var(--cp-accent)", border: "1px solid var(--cp-accent)30" }}>
+                    {profile?.meta?.isLive ? "Live" : profile?.meta?.source === "array_cache" ? "Cached" : "From File"}
+                  </span>
+                </div>
+
+                {hasAnyScore ? (
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
+                    {[
+                      { label: "TransUnion", key: "transunion" as const },
+                      { label: "Equifax", key: "equifax" as const },
+                      { label: "Experian", key: "experian" as const },
+                    ].map(({ label, key }) => (
+                      sc?.[key] !== null && sc?.[key] !== undefined ? (
+                        <div key={key} style={{ flex: 1, minWidth: 80, padding: "10px 12px", background: "var(--cp-bg)", borderRadius: 10, textAlign: "center" }}>
+                          <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 24, fontWeight: 800, color: "var(--cp-accent)", letterSpacing: -1 }}>{sc[key]}</div>
+                          <div style={{ fontSize: 10.5, color: "var(--cp-text-muted)", marginTop: 2, fontWeight: 600 }}>{label}</div>
+                          <div style={{ fontSize: 9.5, color: "var(--cp-text-muted)", opacity: 0.7 }}>VantageScore 3.0</div>
+                        </div>
+                      ) : null
+                    ))}
+                    {sc?.vantage !== null && sc?.vantage !== undefined && !sc?.transunion && !sc?.equifax && !sc?.experian && (
+                      <div style={{ flex: 1, minWidth: 80, padding: "10px 12px", background: "var(--cp-bg)", borderRadius: 10, textAlign: "center" }}>
+                        <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 24, fontWeight: 800, color: "var(--cp-accent)", letterSpacing: -1 }}>{sc.vantage}</div>
+                        <div style={{ fontSize: 10.5, color: "var(--cp-text-muted)", marginTop: 2, fontWeight: 600 }}>VantageScore</div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ padding: "10px 0", marginBottom: 16, fontSize: 12.5, color: "var(--cp-text-muted)" }}>
+                    Score data loading — connect Array for live 3-bureau scores.
+                  </div>
+                )}
+
+                {topSug && sugCta && (
+                  <div style={{ padding: "12px 14px", background: "var(--cp-bg)", borderRadius: 10, marginBottom: 14 }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.06em", color: "var(--cp-text-muted)", textTransform: "uppercase", marginBottom: 6 }}>Next Best Action</div>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--cp-text-primary)", marginBottom: 4 }}>{topSug.title}</div>
+                    <div style={{ fontSize: 12, color: "var(--cp-text-secondary)", lineHeight: 1.55, marginBottom: 10 }}>
+                      {topSug.detail}
+                    </div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                      <button className="cp-btn cp-btn-primary cp-btn-sm" onClick={() => onNavigate(sugCta.page)}>
+                        {sugCta.cta} →
+                      </button>
+                      {projGain !== null && (
+                        <span className="cp-badge success" style={{ fontSize: 10 }}>Est. +{projGain} pts</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate("report")}>
+                    Review Full Credit Report
+                  </button>
+                  <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate("dispute-iq")}>
+                    Open Dispute IQ
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* ── Act Now ──────────────────────────────────────────── */}
           {openSuggestions.length > 0 && (
             <div className="cp-mb-24">
@@ -1301,12 +1390,13 @@ function SubscriptionManagerPage({
   isManaged,
   onNavigate,
   onSavingsApply,
+  appKey, userToken, sbx, scriptReady, tokenReady, tokenError,
 }: {
   goal: OnboardingGoal | null;
   isManaged: boolean;
   onNavigate: (page: PageId) => void;
   onSavingsApply: (amount: number) => void;
-}) {
+} & ArrayPageProps) {
   const insightText = isManaged
     ? "While our team works on your file, reducing unnecessary subscriptions may help you move faster toward your credit goal."
     : goal === "reduce-debt" || goal === "improve-score"
@@ -1323,77 +1413,119 @@ function SubscriptionManagerPage({
           <h1 className="cp-page-title">Subscription Manager</h1>
           <p className="cp-page-subtitle">Find recurring expenses that may be slowing down your financial progress.</p>
         </div>
-        <span className="cp-badge" style={{ background: "var(--cp-sage)15", color: "var(--cp-sage)", borderColor: "var(--cp-sage)30" }}>Connected Soon</span>
-      </div>
-
-      {/* 4 stat tiles */}
-      <div className="cp-grid-4 cp-mb-24" style={{ gap: 14 }}>
-        {[
-          { label: "Monthly Spend", value: "—", sub: "not connected yet" },
-          { label: "Annual Spend", value: "—", sub: "not connected yet" },
-          { label: "Potential Savings", value: "—", sub: "per month" },
-          { label: "Subscriptions Found", value: "—", sub: "recurring charges" },
-        ].map((tile, i) => (
-          <div key={i} className="cp-card" style={{ textAlign: "center", padding: "18px 14px" }}>
-            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 800, letterSpacing: -1, color: "var(--cp-accent)", marginBottom: 4 }}>{tile.value}</div>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--cp-text-primary)", marginBottom: 2 }}>{tile.label}</div>
-            <div style={{ fontSize: 10.5, color: "var(--cp-text-muted)" }}>{tile.sub}</div>
-          </div>
-        ))}
+        <span className="cp-badge live">Live</span>
       </div>
 
       {/* ScoreShift Insight card */}
       <div className="cp-card cp-mb-24" style={{ borderLeft: "4px solid var(--cp-sage)" }}>
         <div className="cp-card-eyebrow" style={{ color: "var(--cp-sage)" }}>SCORESHIFT INSIGHT</div>
-        <div className="cp-card-title" style={{ margin: "6px 0 8px", fontSize: 14 }}>
-          How subscriptions connect to your goal
-        </div>
-        <p style={{ fontSize: 13, color: "var(--cp-text-secondary)", lineHeight: 1.65, margin: "0 0 16px" }}>
-          {insightText}
-        </p>
-        <button
-          className="cp-btn cp-btn-primary cp-btn-sm"
-          onClick={() => { onSavingsApply(0); onNavigate("debt"); }}
-        >
+        <div className="cp-card-title" style={{ margin: "6px 0 8px", fontSize: 14 }}>How subscriptions connect to your goal</div>
+        <p style={{ fontSize: 13, color: "var(--cp-text-secondary)", lineHeight: 1.65, margin: "0 0 16px" }}>{insightText}</p>
+        <button className="cp-btn cp-btn-primary cp-btn-sm" onClick={() => { onSavingsApply(0); onNavigate("debt"); }}>
           Go to Debt Navigator →
         </button>
       </div>
 
-      {/* Subscription list — not connected state */}
-      <div className="cp-card cp-mb-24">
-        <div className="cp-card-header">
-          <div>
-            <div className="cp-card-title">Recurring Subscriptions</div>
-            <div className="cp-card-subtitle">Your identified recurring charges and suggested actions</div>
+      {/* Array Subscription Manager component */}
+      <ArrayWrapper
+        title="Subscription Manager"
+        sub="Your recurring subscriptions identified from your credit profile"
+        badge={<span className="cp-badge live">Live</span>}
+        loading={!scriptReady || (!tokenReady && !tokenError)}
+        locked={tokenError}
+      >
+        {tokenError ? (
+          <div className="cp-empty-state" style={{ padding: "32px 20px" }}>
+            <div style={{ fontSize: 28, marginBottom: 12 }}>💳</div>
+            <div className="cp-empty-title">Subscription data is not connected yet</div>
+            <div className="cp-empty-desc" style={{ maxWidth: 340, margin: "6px auto 16px" }}>
+              Connect your credit profile to unlock subscription tracking and optimization.
+            </div>
+            <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate("report")}>
+              Connect Credit Profile
+            </button>
           </div>
+        ) : (
+          <array-subscription-manager appKey={appKey} userToken={userToken} {...sbx} />
+        )}
+      </ArrayWrapper>
+    </div>
+  );
+}
+
+/* ── STUDENT LOAN AID PAGE ────────────────────────────────────────── */
+function StudentLoanPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenError }: ArrayPageProps) {
+  const [subTab, setSubTab] = useState("navigator");
+
+  return (
+    <div>
+      <div className="cp-page-header">
+        <div>
+          <span className="cp-page-eyebrow">Student Loan Tools</span>
+          <h1 className="cp-page-title">Student Loan Aid</h1>
+          <p className="cp-page-subtitle">Understand your student loan options, repayment paths, and potential aid opportunities.</p>
         </div>
-        <div className="cp-empty-state" style={{ padding: "36px 20px" }}>
-          <div style={{ fontSize: 30, marginBottom: 12 }}>💳</div>
-          <div className="cp-empty-title">Subscription data is not connected yet</div>
-          <div className="cp-empty-desc" style={{ maxWidth: 360, margin: "6px auto 0" }}>
-            Connect a financial account or wait until more transaction history is available. When connected, you'll see each subscription's merchant, amount, billing frequency, last billed date, category, and suggested action.
-          </div>
-        </div>
+        <span className="cp-badge live">Live</span>
       </div>
 
-      {/* Debt Navigator CTA */}
-      <div className="cp-card" style={{ background: "var(--cp-sage)10", border: "1px solid var(--cp-sage)30" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-          <div>
-            <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--cp-text-primary)", marginBottom: 4 }}>Apply Savings to Debt Navigator</div>
-            <div style={{ fontSize: 12.5, color: "var(--cp-text-muted)", lineHeight: 1.5 }}>
-              Once your subscriptions are analyzed, redirect your monthly savings toward your highest-impact balance.
+      <SubTabs
+        tabs={[
+          { id: "navigator", label: "Student Loan Navigator" },
+          { id: "aid", label: "Student Loan Aid" },
+        ]}
+        active={subTab}
+        onChange={setSubTab}
+      />
+
+      {subTab === "navigator" && (
+        <ArrayWrapper
+          title="Student Loan Navigator"
+          sub="Explore your repayment options, income-driven plans, and forgiveness programs"
+          badge={<span className="cp-badge live">Live</span>}
+          loading={!scriptReady || (!tokenReady && !tokenError)}
+          locked={false}
+        >
+          {tokenError ? (
+            <div className="cp-empty-state" style={{ padding: "40px 20px" }}>
+              <div style={{ fontSize: 32, marginBottom: 14 }}>🎓</div>
+              <div className="cp-empty-title">Student loan tools are not connected yet</div>
+              <div className="cp-empty-desc" style={{ maxWidth: 360, margin: "6px auto 16px" }}>
+                Connect your credit profile to unlock loan navigation and aid options.
+              </div>
+              <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => {}}>
+                Review My Scores
+              </button>
             </div>
-          </div>
-          <button
-            className="cp-btn cp-btn-secondary cp-btn-sm"
-            style={{ flexShrink: 0 }}
-            onClick={() => { onSavingsApply(0); onNavigate("debt"); }}
-          >
-            Open Debt Navigator →
-          </button>
-        </div>
-      </div>
+          ) : (
+            <array-student-loan-aid appKey={appKey} userToken={userToken} {...sbx} />
+          )}
+        </ArrayWrapper>
+      )}
+
+      {subTab === "aid" && (
+        <ArrayWrapper
+          title="Student Loan Aid"
+          sub="Discover aid opportunities, grants, and loan forgiveness programs you may qualify for"
+          badge={<span className="cp-badge live">Live</span>}
+          loading={!scriptReady || (!tokenReady && !tokenError)}
+          locked={false}
+        >
+          {tokenError ? (
+            <div className="cp-empty-state" style={{ padding: "40px 20px" }}>
+              <div style={{ fontSize: 32, marginBottom: 14 }}>💰</div>
+              <div className="cp-empty-title">Student loan tools are not connected yet</div>
+              <div className="cp-empty-desc" style={{ maxWidth: 360, margin: "6px auto 16px" }}>
+                Connect your credit profile to unlock loan navigation and aid options.
+              </div>
+              <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => {}}>
+                Review My Scores
+              </button>
+            </div>
+          ) : (
+            <array-student-loan-aid appKey={appKey} userToken={userToken} {...sbx} />
+          )}
+        </ArrayWrapper>
+      )}
     </div>
   );
 }
@@ -2085,6 +2217,7 @@ export default function ClientPortal() {
     ...(isManaged ? [{ id: "payment-center" as PageId, label: "Payment Center", icon: <><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></> as React.ReactNode }] : []),
     { id: "dispute-iq", label: "Dispute IQ", icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></> },
     { id: "debt", label: "Debt Navigator", icon: <><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></> },
+    { id: "student-loans" as PageId, label: "Student Loan Aid", icon: <><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></> as React.ReactNode },
     { id: "subscriptions", label: "Subscription Manager", icon: <><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /><line x1="7" y1="15" x2="7" y2="15" /><line x1="11" y1="15" x2="13" y2="15" /></> },
     { id: "protection", label: "Protection Center", icon: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></> },
     { id: "report", label: "Credit Report", icon: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></> },
@@ -2097,6 +2230,7 @@ export default function ClientPortal() {
     plan: "My Plan",
     "dispute-iq": "Dispute IQ",
     debt: "Debt Navigator",
+    "student-loans": "Student Loan Aid",
     subscriptions: "Subscription Manager",
     protection: "Protection Center",
     report: "Credit Report",
@@ -2179,7 +2313,8 @@ export default function ClientPortal() {
           {activePage === "plan" && <PlanPage goal={onboardingGoal} timeline={onboardingTimeline} onNavigate={setActivePage} />}
           {activePage === "dispute-iq" && <RealDisputeIQPage />}
           {activePage === "debt" && <DebtPage {...arrayProps} suggestedSavings={suggestedSavings} onDismissSavings={() => setSuggestedSavings(null)} />}
-          {activePage === "subscriptions" && <SubscriptionManagerPage goal={onboardingGoal} isManaged={isManaged} onNavigate={(p) => { setActivePage(p); }} onSavingsApply={(amt) => { setSuggestedSavings(amt > 0 ? amt : null); setActivePage("debt"); }} />}
+          {activePage === "subscriptions" && <SubscriptionManagerPage goal={onboardingGoal} isManaged={isManaged} onNavigate={(p) => { setActivePage(p); }} onSavingsApply={(amt) => { setSuggestedSavings(amt > 0 ? amt : null); setActivePage("debt"); }} {...arrayProps} />}
+          {activePage === "student-loans" && <StudentLoanPage {...arrayProps} />}
           {activePage === "protection" && <ProtectionPage {...arrayProps} />}
           {activePage === "report" && <ReportPage {...arrayProps} />}
           {activePage === "progress" && <ProgressPage />}

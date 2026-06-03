@@ -123,6 +123,16 @@ export interface ScoreShiftProfile {
     projectedGains: { action: string; estimatedPts: number }[];
   };
   planSuggestions: PlanSuggestion[];
+  studentLoans: {
+    connected: boolean;
+  };
+  subscriptions: {
+    connected: boolean;
+    monthlySpend: number | null;
+    annualSpend: number | null;
+    potentialSavings: number | null;
+    subscriptionsFound: number | null;
+  };
   meta: {
     source: ScoreShiftSource;
     fetchedAt: string;

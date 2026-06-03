@@ -10018,6 +10018,10 @@ ${denialLetterText}`
         vantage: tlScores?.vantage ?? null,
       };
 
+      // ── Student loans ─────────────────────────────────────────────────────────
+      const studentLoanRows = await db.select({ id: studentLoans.id }).from(studentLoans).where(eq(studentLoans.userId, userId));
+      const studentLoansConnected = studentLoanRows.length > 0;
+
       return res.json({
         scores: profileScores,
         tradelines: allTl,
@@ -10032,6 +10036,8 @@ ${denialLetterText}`
         violations,
         scoreSimulator: { factors: simFactors, projectedGains: simGains },
         planSuggestions: suggestions,
+        studentLoans: { connected: studentLoansConnected },
+        subscriptions: { connected: false, monthlySpend: null, annualSpend: null, potentialSavings: null, subscriptionsFound: null },
         meta: { source: profileSource, fetchedAt: new Date().toISOString(), reportDate, isLive: profileSource === "array_live" },
       });
     } catch (err: any) {
