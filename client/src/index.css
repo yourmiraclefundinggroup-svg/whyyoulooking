@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+html, body {
+  background: #F7F3EC; /* cream fallback when portal video hasn't loaded */
+  margin: 0;
+  padding: 0;
+}
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
