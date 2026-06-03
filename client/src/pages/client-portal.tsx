@@ -44,6 +44,52 @@ function Icon({ children, size = 16 }: { children: React.ReactNode; size?: numbe
   );
 }
 
+/* ── Count-up animation ──────────────────────────────────────────── */
+// Module-level set persists across page navigation — animation fires once per session only
+const _cpAnimatedKeys = new Set<string>();
+
+function useCountUp(target: number | null, animKey: string, duration = 800): number | null {
+  const [display, setDisplay] = useState<number | null>(() => {
+    if (target === null) return null;
+    return _cpAnimatedKeys.has(animKey) ? target : 0;
+  });
+  useEffect(() => {
+    if (target === null) { setDisplay(null); return; }
+    if (_cpAnimatedKeys.has(animKey)) { setDisplay(target); return; }
+    _cpAnimatedKeys.add(animKey);
+    const t0 = performance.now();
+    let raf: number;
+    const tick = (now: number) => {
+      const prog = Math.min((now - t0) / duration, 1);
+      const eased = 1 - Math.pow(1 - prog, 3);
+      setDisplay(Math.round(target * eased));
+      if (prog < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, animKey, duration]);
+  return display;
+}
+
+function CountUp({ to, animKey, suffix = "", prefix = "" }: {
+  to: number | null; animKey: string; suffix?: string; prefix?: string;
+}) {
+  const val = useCountUp(to, animKey);
+  if (to === null || val === null) return <>—</>;
+  return <>{prefix}{val}{suffix}</>;
+}
+
+// For stat grids where values may be numeric strings or "—"
+function AnimatedStatVal({ val, label }: { val: string; label: string }) {
+  const pctMatch = val.match(/^(\d+)%$/);
+  const numOnly = !pctMatch && /^\d+$/.test(val);
+  const target = pctMatch ? parseInt(pctMatch[1]) : numOnly ? parseInt(val) : null;
+  const animated = useCountUp(target, `stat-val-${label}`);
+  if (target === null || animated === null) return <>{val}</>;
+  if (pctMatch) return <>{animated}%</>;
+  return <>{animated}</>;
+}
+
 /* ── Array Wrapper ───────────────────────────────────────────────── */
 function ArrayWrapper({
   title, sub, badge, accentTop, loading, locked, children,
@@ -358,7 +404,7 @@ function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageP
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 10, color: "var(--cp-text-muted)", fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 2 }}>Readiness</div>
               <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 30, fontWeight: 800, color: "var(--cp-accent)", letterSpacing: -1.5, lineHeight: 1 }}>
-                {readinessPct}<span style={{ fontSize: 14, fontWeight: 500, letterSpacing: 0, color: "var(--cp-text-muted)" }}>%</span>
+                <CountUp to={readinessPct} animKey="managed-hero-readiness" /><span style={{ fontSize: 14, fontWeight: 500, letterSpacing: 0, color: "var(--cp-text-muted)" }}>%</span>
               </div>
             </div>
           )}
@@ -720,7 +766,7 @@ function ManagedClientHome({ user, onNavigate, scrollToPayment }: Pick<HomePageP
                   },
                 ].map(s => (
                   <div key={s.label} style={{ background: "var(--cp-bg)", borderRadius: 10, padding: "12px 14px" }}>
-                    <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 18, fontWeight: 800, color: s.color, letterSpacing: -0.5 }}>{s.val}</div>
+                    <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 18, fontWeight: 800, color: s.color, letterSpacing: -0.5 }}><AnimatedStatVal val={s.val} label={s.label} /></div>
                     <div style={{ fontSize: 9.5, color: "var(--cp-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{s.label}</div>
                     {s.sub && <div style={{ fontSize: 10, color: "var(--cp-text-muted)", marginTop: 2, textTransform: "capitalize" }}>{s.sub}</div>}
                   </div>
@@ -825,7 +871,7 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
                   strokeLinecap="round" style={{ transition: "stroke-dasharray 0.6s ease" }} />
               </svg>
               <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 800, color: "var(--cp-accent)", letterSpacing: -0.5 }}>{readinessPct}%</span>
+                <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 800, color: "var(--cp-accent)", letterSpacing: -0.5 }}><CountUp to={readinessPct} animKey="home-hero-readiness" />%</span>
               </div>
             </div>
             <div style={{ fontSize: 9.5, color: "var(--cp-text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center" }}>
@@ -1928,20 +1974,20 @@ function ProgressPage() {
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
             {startingScore !== null && (
               <div style={{ flex: 1, minWidth: 100, padding: "10px 14px", background: "var(--cp-bg)", borderRadius: 10 }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "var(--cp-text-muted)" }}>{startingScore}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "var(--cp-text-muted)" }}><CountUp to={startingScore} animKey="progress-starting-score" /></div>
                 <div style={{ fontSize: 11, color: "var(--cp-text-muted)", marginTop: 2 }}>Starting Score</div>
               </div>
             )}
             {currentScore !== null && (
               <div style={{ flex: 1, minWidth: 100, padding: "10px 14px", background: "var(--cp-bg)", borderRadius: 10 }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "var(--cp-accent)" }}>{currentScore}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "var(--cp-accent)" }}><CountUp to={currentScore} animKey="progress-current-score" /></div>
                 <div style={{ fontSize: 11, color: "var(--cp-text-muted)", marginTop: 2 }}>Current Score</div>
               </div>
             )}
             {scoreDelta !== null && (
               <div style={{ flex: 1, minWidth: 100, padding: "10px 14px", background: scoreDelta >= 0 ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)", borderRadius: 10 }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: scoreDelta >= 0 ? "var(--cp-green)" : "var(--cp-red)" }}>
-                  {scoreDelta >= 0 ? "+" : ""}{scoreDelta}
+                  {scoreDelta >= 0 ? "+" : "−"}<CountUp to={Math.abs(scoreDelta)} animKey="progress-score-delta" />
                 </div>
                 <div style={{ fontSize: 11, color: "var(--cp-text-muted)", marginTop: 2 }}>Points {scoreDelta >= 0 ? "Gained" : "Lost"}</div>
               </div>
@@ -1952,14 +1998,16 @@ function ProgressPage() {
 
       <div className="cp-grid-4 cp-mb-24">
         {[
-          { label: "Total Disputes", val: isLoading ? "—" : allDisputes.length.toString(), color: "var(--cp-accent)" },
-          { label: "Active", val: isLoading ? "—" : active.length.toString(), color: "var(--cp-amber)" },
-          { label: "Items Removed", val: isLoading ? "—" : removedCount.toString(), color: "var(--cp-green)" },
-          { label: "Resolved", val: isLoading ? "—" : resolved.length.toString(), color: "var(--cp-teal)" },
+          { label: "Total Disputes", num: isLoading ? null : allDisputes.length, color: "var(--cp-accent)" },
+          { label: "Active", num: isLoading ? null : active.length, color: "var(--cp-amber)" },
+          { label: "Items Removed", num: isLoading ? null : removedCount, color: "var(--cp-green)" },
+          { label: "Resolved", num: isLoading ? null : resolved.length, color: "var(--cp-teal)" },
         ].map(s => (
           <div key={s.label} className="cp-stat-card">
             <div>
-              <div className="cp-stat-value" style={{ color: s.color }}>{s.val}</div>
+              <div className="cp-stat-value" style={{ color: s.color }}>
+                <CountUp to={s.num} animKey={`progress-stat-${s.label}`} />
+              </div>
               <div className="cp-stat-label">{s.label}</div>
             </div>
           </div>
