@@ -1,0 +1,126 @@
+PORTAL VISUAL REDESIGN ONLY
+
+Do NOT modify business logic.
+Do NOT modify Array integrations.
+Do NOT modify backend routes.
+
+Goal:
+Transform the ScoreShift portal from a flat beige interface into a premium fintech experience inspired by Linear, Autonomous, Apple Wallet, Arc Browser, and modern SaaS dashboards.
+
+DESIGN CHANGES
+
+1. Reduce beige monotony
+
+* Keep warm cream background
+* Remove heavy sand borders
+* Use layered surfaces instead
+
+Background:
+#F7F3EC
+
+Primary cards:
+#FFFFFF
+
+Secondary cards:
+#FCFAF7
+
+2. Add ambient background lighting
+
+Create extremely subtle animated radial gradients:
+
+Aura Indigo glow:
+rgba(143,122,255,.08)
+
+Sage glow:
+rgba(130,180,160,.06)
+
+Animation:
+20-30 second slow drift
+
+The effect should feel atmospheric and calming.
+
+3. Bento card system
+
+Convert major modules into modern bento cards:
+
+* My Plan
+* Dispute IQ
+* Debt Navigator
+* Student Loan Aid
+* Subscription Manager
+* Protection Center
+
+Cards should:
+
+* Have larger padding
+* Rounded corners (24px)
+* Soft shadows
+* Clear hierarchy
+
+4. Premium shadows
+
+Default:
+0 8px 20px rgba(0,0,0,.04)
+
+Hover:
+0 20px 40px rgba(0,0,0,.08)
+
+5. Subtle 3D interactions
+
+On hover:
+
+translateY(-4px)
+rotateX(2deg)
+
+Motion must remain professional.
+
+6. Empty states
+
+Replace large blank white sections with:
+
+* Score cards
+* Progress cards
+* Quick actions
+* Credit insights placeholders
+
+Never show giant empty white rectangles.
+
+7. Typography
+
+Increase visual hierarchy.
+
+Headlines:
+bold, confident
+
+Descriptions:
+smaller, softer
+
+Improve spacing throughout.
+
+8. Glass panels
+
+For score cards and key metrics:
+backdrop-filter: blur(12px)
+
+Very subtle frosted-glass effect.
+
+9. Motion rules
+
+No floating particles.
+No distracting animations.
+No neon effects.
+
+Only:
+
+* slow ambient glow
+* hover elevation
+* fade-in transitions
+* card movement
+
+Target feeling:
+
+"Premium financial operating system"
+
+not
+
+"Credit repair software."
