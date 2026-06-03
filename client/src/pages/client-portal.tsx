@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import scoreshiftLogo from "@assets/scoreshift-logo.png";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUserContext } from "@/hooks/use-user-context";
@@ -1543,7 +1543,20 @@ function StudentLoanPage({ appKey, userToken, sbx, scriptReady, tokenReady, toke
               </button>
             </div>
           ) : (
-            <array-student-loan-aid appKey={appKey} userToken={userToken} {...sbx} />
+            <ArrayErrorBoundary fallback={
+              <div className="cp-empty-state" style={{ padding: "48px 20px", textAlign: "center" }}>
+                <div style={{ fontSize: 40, marginBottom: 14 }}>🎓</div>
+                <div className="cp-empty-title" style={{ marginBottom: 8 }}>Student Loan Navigator</div>
+                <div className="cp-empty-desc" style={{ maxWidth: 380, margin: "0 auto 20px" }}>
+                  This feature is being activated for your account. Please check back shortly or contact your credit advisor to enable student loan tools.
+                </div>
+                <button className="cp-btn cp-btn-primary cp-btn-sm" onClick={() => onNavigate("report")}>
+                  View My Credit Report
+                </button>
+              </div>
+            }>
+              <array-student-loan-aid appKey={appKey} userToken={userToken} {...sbx} />
+            </ArrayErrorBoundary>
           )}
         </ArrayWrapper>
       )}
@@ -2209,6 +2222,19 @@ function ProfilePage({ user, logout, featureAccess }: { user: any; logout: () =>
       )}
     </div>
   );
+}
+
+/* ── Array component error boundary ─────────────────────────────── */
+class ArrayErrorBoundary extends React.Component<
+  { fallback: React.ReactNode; children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { fallback: React.ReactNode; children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() { return this.state.hasError ? this.props.fallback : this.props.children; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════

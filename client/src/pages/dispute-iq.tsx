@@ -60,11 +60,11 @@ interface SavedLetter {
 
 /* ── Violation badge colours ────────────────────────────────────────────────── */
 function violationStyle(v: TradelineViolation): { bg: string; text: string; border: string } {
-  if (v.category === "metro2") return { bg: "#fffbeb", text: "#92400e", border: "#fcd34d" };
+  if (v.category === "metro2") return { bg: "rgba(239,162,111,0.12)", text: "#C07050", border: "#EFA26F" };
   if (v.code.includes("1681C") || v.code.includes("REAGING")) {
     return { bg: "#fef2f2", text: "#991b1b", border: "#fca5a5" };
   }
-  return { bg: "#eff6ff", text: "#1e40af", border: "#93c5fd" };
+  return { bg: "rgba(143,122,255,0.08)", text: "#8F7AFF", border: "rgba(143,122,255,0.30)" };
 }
 
 /* ── Status pill colour ─────────────────────────────────────────────────────── */
@@ -109,7 +109,7 @@ function LockedGate() {
         href="/pricing"
         style={{
           display: "inline-block", padding: "10px 24px", borderRadius: 8,
-          background: "#d97706", color: "#fff", fontWeight: 600, fontSize: 14,
+          background: "#EFA26F", color: "#fff", fontWeight: 600, fontSize: 14,
           textDecoration: "none",
         }}
       >
@@ -187,7 +187,7 @@ function AccountCard({
       onClick={!locked ? onToggle : undefined}
       style={{
         background: "#fff",
-        border: `2px solid ${selected ? "#d97706" : "#e5e7eb"}`,
+        border: `2px solid ${selected ? "#EFA26F" : "#e5e7eb"}`,
         borderRadius: 12,
         padding: "18px 20px",
         cursor: locked ? "default" : "pointer",
@@ -201,8 +201,8 @@ function AccountCard({
         <div
           style={{
             width: 20, height: 20, borderRadius: 4, flexShrink: 0, marginTop: 2,
-            border: `2px solid ${selected ? "#d97706" : "#d1d5db"}`,
-            background: selected ? "#d97706" : "#fff",
+            border: `2px solid ${selected ? "#EFA26F" : "#d1d5db"}`,
+            background: selected ? "#EFA26F" : "#fff",
             display: "flex", alignItems: "center", justifyContent: "center",
             transition: "all 0.15s",
           }}
@@ -281,10 +281,10 @@ function AccountCard({
         <div style={{
           flexShrink: 0, width: 38, height: 38, borderRadius: "50%",
           background: tradeline.violations.length > 0 ? "#fef3c7" : "#f3f4f6",
-          border: `1.5px solid ${tradeline.violations.length > 0 ? "#fcd34d" : "#e5e7eb"}`,
+          border: `1.5px solid ${tradeline.violations.length > 0 ? "#EFA26F" : "#e5e7eb"}`,
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
           fontSize: 14, fontWeight: 700,
-          color: tradeline.violations.length > 0 ? "#92400e" : "#9ca3af",
+          color: tradeline.violations.length > 0 ? "#C07050" : "#9ca3af",
         }}>
           {tradeline.violations.length}
           <span style={{ fontSize: 8, fontWeight: 400, lineHeight: 1 }}>issues</span>
@@ -292,7 +292,7 @@ function AccountCard({
       </div>
 
       {locked && !selected && (
-        <div style={{ marginTop: 8, fontSize: 11, color: "#d97706", textAlign: "right" }}>
+        <div style={{ marginTop: 8, fontSize: 11, color: "#EFA26F", textAlign: "right" }}>
           Upgrade to select more accounts
         </div>
       )}
@@ -326,7 +326,7 @@ function SelectBar({
           const limit = disputeLimit ?? items.length;
           setSelectedKeys(new Set(items.slice(0, limit).map((t, i) => getKey(t, i))));
         }}
-        style={{ fontSize: 12, color: "#d97706", background: "none", border: "none", cursor: "pointer", fontWeight: 600, padding: "4px 0" }}
+        style={{ fontSize: 12, color: "#EFA26F", background: "none", border: "none", cursor: "pointer", fontWeight: 600, padding: "4px 0" }}
       >
         Select {disputeLimit !== null ? `top ${disputeLimit}` : "all"}
       </button>
@@ -386,13 +386,13 @@ function DropZone({ onFile }: { onFile: (f: File) => void }) {
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
       style={{
-        border: `2px dashed ${dragging ? "#d97706" : "#d1d5db"}`,
+        border: `2px dashed ${dragging ? "#EFA26F" : "#d1d5db"}`,
         borderRadius: 12, padding: "48px 24px", textAlign: "center",
         cursor: "pointer", transition: "all 0.15s",
-        background: dragging ? "#fffbeb" : "#fafafa",
+        background: dragging ? "rgba(239,162,111,0.10)" : "#fafafa",
       }}
     >
-      <svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke={dragging ? "#d97706" : "#9ca3af"}
+      <svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke={dragging ? "#EFA26F" : "#9ca3af"}
         strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" style={{ margin: "0 auto 12px" }}>
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
         <polyline points="17 8 12 3 7 8" />
@@ -934,13 +934,13 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
   const ProfileNudgeBanner = profileMissingAddress ? (
     <div style={{
       display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
-      background: "#fffbeb", borderRadius: 10, border: "1px solid #fcd34d",
+      background: "rgba(239,162,111,0.10)", borderRadius: 10, border: "1px solid #EFA26F",
       marginBottom: 20, flexWrap: "wrap",
     }}>
       <span style={{ fontSize: 18 }}>📋</span>
       <div style={{ flex: 1, minWidth: 200 }}>
-        <span style={{ fontWeight: 600, fontSize: 13, color: "#92400e" }}>Complete your profile — </span>
-        <span style={{ fontSize: 13, color: "#b45309" }}>
+        <span style={{ fontWeight: 600, fontSize: 13, color: "#C07050" }}>Complete your profile — </span>
+        <span style={{ fontSize: 13, color: "#C07050" }}>
           Add your mailing address so it pre-fills automatically when you generate dispute letters.
         </span>
       </div>
@@ -948,7 +948,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
         <a
           href="/portal/profile"
           style={{
-            padding: "6px 14px", borderRadius: 8, background: "#d97706", color: "#fff",
+            padding: "6px 14px", borderRadius: 8, background: "#8F7AFF", color: "#fff",
             fontSize: 12, fontWeight: 700, textDecoration: "none", display: "inline-block",
           }}
         >
@@ -975,8 +975,8 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
           style={{
             padding: "10px 20px", fontSize: 13, fontWeight: 600, background: "none",
             border: "none", cursor: "pointer",
-            color: activeTab === tab ? "#d97706" : "#6b7280",
-            borderBottom: `2px solid ${activeTab === tab ? "#d97706" : "transparent"}`,
+            color: activeTab === tab ? "#EFA26F" : "#6b7280",
+            borderBottom: `2px solid ${activeTab === tab ? "#EFA26F" : "transparent"}`,
             marginBottom: -2,
           }}
         >
@@ -993,8 +993,8 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
   };
   const LETTER_STATUS_STYLE: Record<string, { bg: string; color: string }> = {
     draft: { bg: "#f3f4f6", color: "#374151" },
-    approved: { bg: "#eff6ff", color: "#1d4ed8" },
-    sent: { bg: "#fffbeb", color: "#92400e" },
+    approved: { bg: "rgba(143,122,255,0.10)", color: "#8F7AFF" },
+    sent: { bg: "rgba(239,162,111,0.10)", color: "#C07050" },
     mailed: { bg: "#f0fdf4", color: "#166534" },
     removed: { bg: "#fef2f2", color: "#b91c1c" },
     deleted: { bg: "#fef2f2", color: "#b91c1c" },
@@ -1010,7 +1010,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
             <p className="cp-page-subtitle">All dispute letters you've generated.</p>
           </div>
           {disputeLimit !== null && (
-            <div style={{ padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "#fffbeb", color: "#92400e", border: "1px solid #fcd34d" }}>
+            <div style={{ padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "rgba(239,162,111,0.10)", color: "#C07050", border: "1px solid #EFA26F" }}>
               {tier.charAt(0).toUpperCase() + tier.slice(1)} plan · up to {disputeLimit} accounts
             </div>
           )}
@@ -1020,7 +1020,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
 
         {lettersLoading && (
           <div style={{ textAlign: "center", padding: "60px 24px" }}>
-            <div style={{ width: 36, height: 36, border: "3px solid #e5e7eb", borderTopColor: "#d97706", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+            <div style={{ width: 36, height: 36, border: "3px solid #e5e7eb", borderTopColor: "#EFA26F", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
             <div style={{ color: "#6b7280", fontSize: 14 }}>Loading your letters…</div>
           </div>
         )}
@@ -1034,7 +1034,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
             </div>
             <button
               onClick={() => setActiveTab("analyze")}
-              style={{ padding: "9px 20px", borderRadius: 8, background: "#d97706", color: "#fff", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+              style={{ padding: "9px 20px", borderRadius: 8, background: "#EFA26F", color: "#fff", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
             >
               Start Analyzing →
             </button>
@@ -1129,7 +1129,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
             </p>
           </div>
           {disputeLimit !== null && (
-            <div style={{ padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "#fffbeb", color: "#92400e", border: "1px solid #fcd34d" }}>
+            <div style={{ padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "rgba(239,162,111,0.10)", color: "#C07050", border: "1px solid #EFA26F" }}>
               {tier.charAt(0).toUpperCase() + tier.slice(1)} plan · up to {disputeLimit} accounts
             </div>
           )}
@@ -1147,11 +1147,11 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
               transition: "all 0.15s", display: "flex", flexDirection: "column",
               alignItems: "center", gap: 12,
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#d97706"; (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 3px rgba(217,119,6,0.1)"; }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#EFA26F"; (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 3px rgba(217,119,6,0.1)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#e5e7eb"; (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
           >
-            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#fffbeb", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(239,162,111,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#EFA26F" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
               </svg>
             </div>
@@ -1159,7 +1159,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
               <div style={{ fontWeight: 700, fontSize: 16, color: "#111827", marginBottom: 4 }}>Pull from Credit File</div>
               <div style={{ fontSize: 13, color: "#6b7280" }}>Fetch live 3-bureau data from your connected ScoreShift credit monitoring account</div>
             </div>
-            <div style={{ padding: "4px 12px", borderRadius: 20, background: "#d97706", color: "#fff", fontSize: 11, fontWeight: 700 }}>RECOMMENDED</div>
+            <div style={{ padding: "4px 12px", borderRadius: 20, background: "#EFA26F", color: "#fff", fontSize: 11, fontWeight: 700 }}>RECOMMENDED</div>
           </button>
 
           <button
@@ -1170,11 +1170,11 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
               transition: "all 0.15s", display: "flex", flexDirection: "column",
               alignItems: "center", gap: 12,
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#6366f1"; (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 3px rgba(99,102,241,0.1)"; }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#8F7AFF"; (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 3px rgba(99,102,241,0.1)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#e5e7eb"; (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
           >
-            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#eef2ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(143,122,255,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#8F7AFF" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
                 <line x1="12" y1="11" x2="12" y2="17" />
@@ -1212,7 +1212,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
         <div style={{ maxWidth: 580, margin: "0 auto" }}>
           {uploadMutation.isPending ? (
             <div style={{ textAlign: "center", padding: "56px 24px" }}>
-              <div style={{ width: 40, height: 40, border: "3px solid #e5e7eb", borderTopColor: "#d97706", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+              <div style={{ width: 40, height: 40, border: "3px solid #e5e7eb", borderTopColor: "#EFA26F", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
               <div style={{ fontWeight: 600, color: "#374151" }}>Analyzing your credit report…</div>
               <div style={{ fontSize: 13, color: "#9ca3af", marginTop: 6 }}>This may take up to 30 seconds</div>
             </div>
@@ -1270,7 +1270,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           {disputeLimit !== null && (
-            <div style={{ padding: "5px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "#fffbeb", color: "#92400e", border: "1px solid #fcd34d" }}>
+            <div style={{ padding: "5px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "rgba(239,162,111,0.10)", color: "#C07050", border: "1px solid #EFA26F" }}>
               {tier.charAt(0).toUpperCase() + tier.slice(1)} · max {disputeLimit}
             </div>
           )}
@@ -1284,7 +1284,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
             <button
               onClick={() => { setBrowserExtracted(null); extractionAttempted.current = false; queryClient.invalidateQueries({ queryKey: ["/api/me/score-shift-profile"] }); }}
               disabled={isLoadingArray}
-              style={{ background: "#d97706", color: "#fff", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600, opacity: isLoadingArray ? 0.6 : 1 }}
+              style={{ background: "#EFA26F", color: "#fff", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600, opacity: isLoadingArray ? 0.6 : 1 }}
             >
               {isLoadingArray ? "Refreshing…" : "↻ Refresh"}
             </button>
@@ -1320,7 +1320,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
       {/* ── Loading ───────────────────────────────────────────────────────── */}
       {isLoading && (
         <div style={{ textAlign: "center", padding: "72px 24px" }}>
-          <div style={{ width: 40, height: 40, border: "3px solid #e5e7eb", borderTopColor: "#d97706", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+          <div style={{ width: 40, height: 40, border: "3px solid #e5e7eb", borderTopColor: "#EFA26F", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
           <div style={{ fontWeight: 600, color: "#374151" }}>Analyzing your credit file…</div>
           <div style={{ fontSize: 13, color: "#9ca3af", marginTop: 6 }}>This takes a few seconds…</div>
         </div>
@@ -1329,13 +1329,13 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
       {/* ── Not enrolled ─────────────────────────────────────────────────── */}
       {!isLoading && isError && notEnrolled && (
         <div style={{ maxWidth: 560, margin: "32px auto" }}>
-          <div style={{ background: "#fffbeb", border: "1.5px solid #fcd34d", borderRadius: 12, padding: 24, textAlign: "center" }}>
+          <div style={{ background: "rgba(239,162,111,0.10)", border: "1.5px solid #fcd34d", borderRadius: 12, padding: 24, textAlign: "center" }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>📡</div>
-            <div style={{ fontWeight: 700, fontSize: 16, color: "#92400e", marginBottom: 8 }}>Credit Monitoring Not Connected</div>
+            <div style={{ fontWeight: 700, fontSize: 16, color: "#C07050", marginBottom: 8 }}>Credit Monitoring Not Connected</div>
             <div style={{ fontSize: 13, color: "#78350f", marginBottom: 16 }}>
               Connect your ScoreShift credit monitoring account first to pull live 3-bureau data.
             </div>
-            <a href="/portal" style={{ color: "#d97706", fontWeight: 600, fontSize: 13 }}>Go to Credit Monitoring →</a>
+            <a href="/portal" style={{ color: "#EFA26F", fontWeight: 600, fontSize: 13 }}>Go to Credit Monitoring →</a>
           </div>
         </div>
       )}
@@ -1363,10 +1363,10 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
               {/* ── Stats cards ───────────────────────────────────────────── */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 20 }}>
                 {([
-                  { label: "Accounts",      value: allTradelines.length,      iconBg: "#3b82f6", color: "#1d4ed8", icon: "💳" },
+                  { label: "Accounts",      value: allTradelines.length,      iconBg: "#8F7AFF", color: "#8F7AFF", icon: "💳" },
                   { label: "Inquiries",     value: allInquiries.length,        iconBg: "#f59e0b", color: "#c2410c", icon: "🔍" },
                   { label: "Collections",   value: negCollections.length,       iconBg: "#ef4444", color: "#b91c1c", icon: "🏛" },
-                  { label: "Derogatory",    value: negativeTradelines.length,   iconBg: "#f59e0b", color: "#b45309", icon: "⚠️" },
+                  { label: "Derogatory",    value: negativeTradelines.length,   iconBg: "#EFA26F", color: "#C07050", icon: "⚠️" },
                   { label: "Late Payments", value: negLate.length,              iconBg: "#22c55e", color: "#166534", icon: "🕐" },
                 ] as const).map(({ label, value, iconBg, color, icon }) => (
                   <div key={label} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
@@ -1388,8 +1388,8 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                     style={{
                       padding: "9px 16px", fontSize: 12, fontWeight: 600, background: "none", border: "none",
                       cursor: "pointer", whiteSpace: "nowrap",
-                      color: resultTab === id ? "#d97706" : "#6b7280",
-                      borderBottom: `2px solid ${resultTab === id ? "#d97706" : "transparent"}`,
+                      color: resultTab === id ? "#EFA26F" : "#6b7280",
+                      borderBottom: `2px solid ${resultTab === id ? "#EFA26F" : "transparent"}`,
                       marginBottom: -2,
                     }}>
                     {label}
@@ -1411,9 +1411,9 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                         style={{
                           padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600,
                           cursor: "pointer", border: "1.5px solid", transition: "all 0.12s",
-                          background: isActive ? (clr?.bg || "#fffbeb") : "#f9fafb",
-                          color: isActive ? (clr?.text || "#92400e") : "#6b7280",
-                          borderColor: isActive ? (clr?.border || "#fcd34d") : "#e5e7eb",
+                          background: isActive ? (clr?.bg || "rgba(239,162,111,0.10)") : "#f9fafb",
+                          color: isActive ? (clr?.text || "#C07050") : "#6b7280",
+                          borderColor: isActive ? (clr?.border || "#EFA26F") : "#e5e7eb",
                         }}>
                         {label} <span style={{ opacity: 0.65, marginLeft: 2, fontWeight: 500 }}>{count}</span>
                       </button>
@@ -1443,15 +1443,15 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                       </div>
                     ))}
                     {source === "array" && activeData?.fromCache && (
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 18px", background: "#eff6ff", borderTop: "1px solid #dbeafe" }}>
-                        <span style={{ fontSize: 12, color: "#3b82f6", display: "flex", alignItems: "center", gap: 5 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 18px", background: "rgba(143,122,255,0.08)", borderTop: "1px solid #dbeafe" }}>
+                        <span style={{ fontSize: 12, color: "#8F7AFF", display: "flex", alignItems: "center", gap: 5 }}>
                           <span style={{ fontSize: 14 }}>⚡</span>
                           Loaded from cache
                         </span>
                         <button
                           onClick={handleRefreshCache}
                           disabled={isRefreshing}
-                          style={{ fontSize: 12, color: isRefreshing ? "#9ca3af" : "#2563eb", background: "none", border: "1px solid #bfdbfe", borderRadius: 6, padding: "3px 10px", cursor: isRefreshing ? "not-allowed" : "pointer", fontWeight: 500 }}
+                          style={{ fontSize: 12, color: isRefreshing ? "#9ca3af" : "#8F7AFF", background: "none", border: "1px solid rgba(143,122,255,0.25)", borderRadius: 6, padding: "3px 10px", cursor: isRefreshing ? "not-allowed" : "pointer", fontWeight: 500 }}
                         >
                           {isRefreshing ? "Refreshing…" : "↻ Refresh"}
                         </button>
@@ -1493,18 +1493,18 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                     {/* Late Payments */}
                     {negLate.length > 0 && (
                       <div style={{ border: "1px solid #fde68a", borderRadius: 14, overflow: "hidden" }}>
-                        <div style={{ background: "#fffbeb", padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ background: "rgba(239,162,111,0.10)", padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                            <span style={{ fontSize: 14, color: "#d97706" }}>🕐</span>
-                            <span style={{ fontWeight: 700, fontSize: 13, color: "#92400e" }}>Late Payments</span>
+                            <span style={{ fontSize: 14, color: "#EFA26F" }}>🕐</span>
+                            <span style={{ fontWeight: 700, fontSize: 13, color: "#C07050" }}>Late Payments</span>
                           </div>
-                          <span style={{ background: "#d97706", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{negLate.length}</span>
+                          <span style={{ background: "#EFA26F", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{negLate.length}</span>
                         </div>
                         {negLate.map((t, i) => (
-                          <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 16px", borderTop: "1px solid #fffbeb", background: "#fff" }}>
+                          <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 16px", borderTop: "1px solid rgba(239,162,111,0.15)", background: "#fff" }}>
                             <div>
                               <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
-                              <div style={{ fontSize: 11, color: "#b45309", marginTop: 1 }}>
+                              <div style={{ fontSize: 11, color: "#C07050", marginTop: 1 }}>
                                 {[
                                   (t.latePayments?.days30 || 0) > 0 ? `30-day: ${t.latePayments?.days30}` : null,
                                   (t.latePayments?.days60 || 0) > 0 ? `60-day: ${t.latePayments?.days60}` : null,
@@ -1522,16 +1522,16 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
 
                     {/* Hard Inquiries */}
                     {allInquiries.length > 0 && (
-                      <div style={{ border: "1px solid #bfdbfe", borderRadius: 14, overflow: "hidden" }}>
-                        <div style={{ background: "#eff6ff", padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ border: "1px solid rgba(143,122,255,0.25)", borderRadius: 14, overflow: "hidden" }}>
+                        <div style={{ background: "rgba(143,122,255,0.08)", padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                            <span style={{ fontSize: 14, color: "#2563eb" }}>🔍</span>
-                            <span style={{ fontWeight: 700, fontSize: 13, color: "#1e40af" }}>Hard Inquiries</span>
+                            <span style={{ fontSize: 14, color: "#8F7AFF" }}>🔍</span>
+                            <span style={{ fontWeight: 700, fontSize: 13, color: "#8F7AFF" }}>Hard Inquiries</span>
                           </div>
-                          <span style={{ background: "#2563eb", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{allInquiries.length}</span>
+                          <span style={{ background: "#8F7AFF", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{allInquiries.length}</span>
                         </div>
                         {allInquiries.map((inq, i) => (
-                          <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 16px", borderTop: "1px solid #eff6ff", background: "#fff" }}>
+                          <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 16px", borderTop: "1px solid rgba(143,122,255,0.10)", background: "#fff" }}>
                             <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{inq.creditor}</div>
                             <div style={{ fontSize: 12, color: "#6b7280" }}>{inq.inquiryDate}</div>
                           </div>
@@ -1573,7 +1573,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                         const isLocked = !isSelected && disputeLimit !== null && selectedKeys.size >= disputeLimit;
                         return (
                           <div key={i} onClick={isNeg && !isLocked ? () => toggleSelect(key) : undefined}
-                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 110px 140px 90px", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: isNeg ? "pointer" : "default" }}>
+                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 110px 140px 90px", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "rgba(239,162,111,0.10)" : "#fff", cursor: isNeg ? "pointer" : "default" }}>
                             <div>
                               {isNeg && <div style={{ width: 18, height: 18, borderRadius: "50%", border: isSelected ? "6px solid #d97706" : "2px solid #d1d5db", background: "#fff" }} />}
                             </div>
@@ -1631,7 +1631,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                         const sev = sl.includes("charge-off") || sl.includes("collection") ? "Critical" : "High";
                         return (
                           <div key={i} onClick={!isLocked ? () => toggleSelect(key) : undefined}
-                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 100px 140px 90px minmax(160px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: "pointer" }}>
+                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 100px 140px 90px minmax(160px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "rgba(239,162,111,0.10)" : "#fff", cursor: "pointer" }}>
                             <div style={{ width: 18, height: 18, borderRadius: "50%", border: isSelected ? "6px solid #d97706" : "2px solid #d1d5db", background: "#fff", flexShrink: 0 }} />
                             <div>
                               <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
@@ -1649,9 +1649,9 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                               <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "#fef2f2", color: "#991b1b" }}>{status.split(",")[0]}</span>
                             </div>
                             <div>
-                              <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: sev === "Critical" ? "#fef2f2" : "#fffbeb", color: sev === "Critical" ? "#991b1b" : "#92400e" }}>{sev}</span>
+                              <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: sev === "Critical" ? "#fef2f2" : "rgba(239,162,111,0.10)", color: sev === "Critical" ? "#991b1b" : "#C07050" }}>{sev}</span>
                             </div>
-                            <div style={{ fontSize: 12, color: "#d97706", fontWeight: 500 }}>Dispute Under FCRA § 1681i</div>
+                            <div style={{ fontSize: 12, color: "#EFA26F", fontWeight: 500 }}>Dispute Under FCRA § 1681i</div>
                           </div>
                         );
                       })}
@@ -1666,7 +1666,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                       <div style={{ padding: "13px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 16 }}>🕐</span>
                         <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Accounts with Late Payments</span>
-                        <span style={{ marginLeft: "auto", background: "#d97706", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{visibleLate.length}</span>
+                        <span style={{ marginLeft: "auto", background: "#EFA26F", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" }}>{visibleLate.length}</span>
                       </div>
                       <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 100px 70px 70px 70px minmax(180px,1fr)", padding: "9px 20px", background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
                         {["", "CREDITOR", "BUREAU", "BALANCE", "30 DAYS", "60 DAYS", "90+ DAYS", "STRATEGY"].map((h) => (
@@ -1688,7 +1688,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                         const d90 = t.latePayments?.days90 || 0;
                         return (
                           <div key={i} onClick={!isLocked ? () => toggleSelect(key) : undefined}
-                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 100px 70px 70px 70px minmax(180px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: "pointer" }}>
+                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 100px 70px 70px 70px minmax(180px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "rgba(239,162,111,0.10)" : "#fff", cursor: "pointer" }}>
                             <div style={{ width: 18, height: 18, borderRadius: "50%", border: isSelected ? "6px solid #d97706" : "2px solid #d1d5db", background: "#fff", flexShrink: 0 }} />
                             <div>
                               <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
@@ -1702,10 +1702,10 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                             <div style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
                               {t.balance && t.balance !== "0" ? `$${Number(t.balance).toLocaleString()}` : "--"}
                             </div>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: d30 > 0 ? "#d97706" : "#9ca3af" }}>{d30 || 0}</div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: d30 > 0 ? "#EFA26F" : "#9ca3af" }}>{d30 || 0}</div>
                             <div style={{ fontSize: 14, fontWeight: 700, color: d60 > 0 ? "#ef4444" : "#9ca3af" }}>{d60 || 0}</div>
                             <div style={{ fontSize: 14, fontWeight: 700, color: d90 > 0 ? "#dc2626" : "#9ca3af" }}>{d90 || 0}</div>
-                            <div style={{ fontSize: 12, color: "#d97706", fontWeight: 500 }}>Metro 2 Violation — Request DA Field Correction</div>
+                            <div style={{ fontSize: 12, color: "#EFA26F", fontWeight: 500 }}>Metro 2 Violation — Request DA Field Correction</div>
                           </div>
                         );
                       })}
@@ -1733,8 +1733,8 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                           <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{inq.creditor}</div>
                           <div><span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "#fef2f2", color: "#991b1b" }}>Hard</span></div>
                           <div style={{ fontSize: 13, color: "#374151" }}>{inq.inquiryDate}</div>
-                          <div><span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "#fffbeb", color: "#92400e" }}>Medium</span></div>
-                          <div style={{ fontSize: 12, color: "#d97706", fontWeight: 500 }}>Request Written Authorization</div>
+                          <div><span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "rgba(239,162,111,0.10)", color: "#C07050" }}>Medium</span></div>
+                          <div style={{ fontSize: 12, color: "#EFA26F", fontWeight: 500 }}>Request Written Authorization</div>
                         </div>
                       ))}
                     </div>
@@ -1770,7 +1770,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                         const strategy = bal >= 5000 ? "Dispute — Request Full Deletion" : "Validate then Pay-for-Delete";
                         return (
                           <div key={i} onClick={!isLocked ? () => toggleSelect(key) : undefined}
-                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 100px 80px 100px minmax(180px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "#fffbeb" : "#fff", cursor: "pointer" }}>
+                            style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 100px 80px 100px minmax(180px,1fr)", padding: "12px 20px", borderBottom: "1px solid #f3f4f6", alignItems: "center", background: isSelected ? "rgba(239,162,111,0.10)" : "#fff", cursor: "pointer" }}>
                             <div style={{ width: 18, height: 18, borderRadius: "50%", border: isSelected ? "6px solid #d97706" : "2px solid #d1d5db", background: "#fff", flexShrink: 0 }} />
                             <div>
                               <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>{t.creditor}</div>
@@ -1785,8 +1785,8 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                               {t.balance && t.balance !== "0" ? `$${Number(t.balance).toLocaleString()}` : "--"}
                             </div>
                             <div><span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: "#f0fdf4", color: "#166534" }}>Open</span></div>
-                            <div><span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: sev === "Critical" ? "#fef2f2" : "#fffbeb", color: sev === "Critical" ? "#991b1b" : "#92400e" }}>{sev}</span></div>
-                            <div style={{ fontSize: 12, color: "#d97706", fontWeight: 500 }}>{strategy}</div>
+                            <div><span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: sev === "Critical" ? "#fef2f2" : "rgba(239,162,111,0.10)", color: sev === "Critical" ? "#991b1b" : "#C07050" }}>{sev}</span></div>
+                            <div style={{ fontSize: 12, color: "#EFA26F", fontWeight: 500 }}>{strategy}</div>
                           </div>
                         );
                       })}
@@ -1795,19 +1795,19 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
 
               {/* ── Professional Dispute Packet bar ───────────────────────── */}
               {selectedKeys.size === 0 && resultTab !== "overview" && negativeTradelines.length > 0 && (
-                <div style={{ marginTop: 24, background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 14, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+                <div style={{ marginTop: 24, background: "rgba(239,162,111,0.10)", border: "1px solid #fcd34d", borderRadius: 14, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <span style={{ fontSize: 22 }}>📋</span>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: "#92400e" }}>Professional Dispute Packet</div>
-                      <div style={{ fontSize: 12, color: "#b45309" }}>AI auto-selects the top highest-severity items and generates a comprehensive FCRA-compliant dispute letter.</div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: "#C07050" }}>Professional Dispute Packet</div>
+                      <div style={{ fontSize: 12, color: "#C07050" }}>AI auto-selects the top highest-severity items and generates a comprehensive FCRA-compliant dispute letter.</div>
                     </div>
                   </div>
                   <button onClick={() => {
                     const limit = disputeLimit ?? negativeTradelines.length;
                     const keys = negativeTradelines.slice(0, limit).map((t, i) => `${t.creditor}_${i}`);
                     setSelectedKeys(new Set(keys));
-                  }} style={{ background: "#d97706", color: "#fff", border: "none", borderRadius: 10, padding: "10px 20px", fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
+                  }} style={{ background: "#EFA26F", color: "#fff", border: "none", borderRadius: 10, padding: "10px 20px", fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
                     ✦ Generate Packet
                   </button>
                 </div>
@@ -1842,7 +1842,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
             )}
           </div>
           <button onClick={handleGenerate} style={{
-            background: "#d97706", color: "#fff", border: "none", borderRadius: 10,
+            background: "#EFA26F", color: "#fff", border: "none", borderRadius: 10,
             padding: "10px 22px", fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
           }}>
             Generate Dispute Letters →
