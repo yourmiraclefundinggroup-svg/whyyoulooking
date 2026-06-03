@@ -23,18 +23,28 @@ export interface PlanSuggestion {
   disputeId?: number;
 }
 
+export interface ProfileViolation {
+  code: string;
+  label: string;
+  statute?: string;
+  category: string;
+  creditor?: string;
+  bureau?: string;
+}
+
 export interface ProfileTradeline {
   creditor: string;
   accountNumber: string;
   accountType: string;
   balance: string;
+  creditLimit?: number;
   status: string;
   dateOpened: string;
   dateOfFirstDelinquency?: string;
   latePayments: { days30: number; days60: number; days90: number };
   bureau?: string;
   isDerogatory: boolean;
-  violations: { code: string; label: string; statute?: string; category: string }[];
+  violations: ProfileViolation[];
 }
 
 export interface ProfileInquiry {
@@ -49,13 +59,43 @@ export interface ProfileDispute {
   issueId: number;
   bureau: string;
   status: string;
-  dateSent: string;
-  expectedResponse: string;
-  letterContent: string;
+  dateSent: string | null;
+  dateDelivered?: string | null;
+  expectedResponse: string | null;
+  letterContent: string | null;
+  trackingNumber?: string | null;
   creditor?: string;
   issueType?: string;
   issueTitle?: string;
   outcome?: string | null;
+}
+
+export interface ProfilePublicRecord {
+  type: string;
+  creditor: string;
+  balance?: number | null;
+  dateReported?: string | null;
+  bureau?: string | null;
+  description?: string | null;
+}
+
+export interface ProfileAlert {
+  type: string;
+  message: string;
+  severity: "high" | "medium" | "low";
+}
+
+export interface UtilizationByAccount {
+  creditor: string;
+  balance: number;
+  limit: number;
+  utilizationPct: number;
+}
+
+export interface ScoreFactor {
+  label: string;
+  impact: "high" | "medium" | "low";
+  weight: number;
 }
 
 export interface ScoreShiftProfile {
@@ -63,35 +103,52 @@ export interface ScoreShiftProfile {
     experian: number | null;
     equifax: number | null;
     transunion: number | null;
-    source: ScoreShiftSource;
+    vantage: number | null;
   };
   tradelines: ProfileTradeline[];
   negativeTradelines: ProfileTradeline[];
+  collections: ProfileTradeline[];
+  chargeOffs: ProfileTradeline[];
+  publicRecords: ProfilePublicRecord[];
   inquiries: ProfileInquiry[];
-  disputes: {
-    active: ProfileDispute[];
-    resolved: ProfileDispute[];
+  utilization: {
+    overallPercent: number | null;
+    byAccount: UtilizationByAccount[];
+  };
+  alerts: ProfileAlert[];
+  disputes: ProfileDispute[];
+  violations: ProfileViolation[];
+  scoreSimulator: {
+    factors: ScoreFactor[];
+    projectedGains: { action: string; estimatedPts: number }[];
   };
   planSuggestions: PlanSuggestion[];
   meta: {
     source: ScoreShiftSource;
     fetchedAt: string;
-    note?: string;
+    reportDate: string | null;
+    isLive: boolean;
   };
 }
 
-export function useScoreShiftProfile() {
+export function useScoreShiftProfile(clientId?: number | null) {
+  const url = clientId
+    ? `/api/me/score-shift-profile?clientId=${clientId}`
+    : "/api/me/score-shift-profile";
   return useQuery<ScoreShiftProfile>({
-    queryKey: ["/api/me/score-shift-profile"],
+    queryKey: clientId
+      ? ["/api/me/score-shift-profile", clientId]
+      : ["/api/me/score-shift-profile"],
     queryFn: async () => {
       const token = localStorage.getItem("auth_token");
-      const res = await fetch("/api/me/score-shift-profile", {
+      const res = await fetch(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error(`${res.status}`);
       return res.json();
     },
     staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     retry: false,
   });
 }

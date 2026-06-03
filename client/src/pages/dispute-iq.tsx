@@ -7,6 +7,7 @@ import { useUserContext } from "@/hooks/use-user-context";
 import { DisputeIQFlow, LetterPreviewDialog, BUREAU_COLORS, BUREAU_LABELS } from "@/components/dispute-iq-flow";
 import { useArrayToken } from "@/hooks/use-array-token";
 import { useArrayScript } from "@/hooks/use-array-script";
+import { useScoreShiftProfile } from "@/hooks/use-score-shift-profile";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
 interface TradelineViolation {
@@ -618,56 +619,52 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
   const [resultTab, setResultTab] = useState<"overview" | "all" | "derogatory" | "late" | "inquiries" | "collections">("overview");
   const [bureauFilter, setBureauFilter] = useState<string>("ALL");
 
-  // ── Credit file pull — server-side via /api/client/array/tradelines ─────────
-  // The server tries the live credit API first, then falls back to the client's
-  // most recently uploaded and parsed PDF credit report stored in the database.
+  // ── Credit file pull — via unified scoreShiftProfile hook ───────────────────
+  // Profile hook attempts live Array first, then falls back to PDF upload.
+  // The /api/client/array/tradelines endpoint remains in use server-side.
   const [isRefreshing, setIsRefreshing] = useState(false);
   const tradelinesUrl = clientId
     ? `/api/client/array/tradelines?clientId=${clientId}`
     : "/api/client/array/tradelines";
 
-  const cacheKey = ["/api/client/array/tradelines", clientId ?? "self"] as const;
+  const { data: profileData, isLoading: profileLoading } = useScoreShiftProfile(clientId);
 
-  const {
-    data: arrayData,
-    isLoading: arrayLoading,
-    error: arrayErrorRaw,
-  } = useQuery<TradelineResponse>({
-    queryKey: cacheKey,
-    queryFn: async () => {
-      const token = localStorage.getItem("auth_token");
-      const res = await fetch(tradelinesUrl, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!res.ok) throw new Error(`${res.status}`);
-      return res.json();
-    },
-    enabled: source === "array",
-    retry: false,
-    staleTime: 5 * 60 * 1000,
-  });
+  // Adapt profile to TradelineResponse shape for the rest of the component
+  const arrayData: TradelineResponse | null = profileData && profileData.meta.source !== "none"
+    ? {
+        enrolled: true,
+        tradelines: profileData.tradelines as any,
+        negativeTradelines: profileData.negativeTradelines as any,
+        inquiries: profileData.inquiries,
+        reportFetchedAt: profileData.meta.reportDate || profileData.meta.fetchedAt,
+        source: (profileData.meta.source === "array_live" || profileData.meta.source === "array_cache") ? "array" : "credit_file",
+        fromCache: profileData.meta.source === "array_cache",
+      }
+    : null;
+  const arrayLoading = profileLoading;
+  const arrayErrorRaw: Error | null = null;
 
   const handleRefreshCache = async () => {
     setIsRefreshing(true);
     try {
       const token = localStorage.getItem("auth_token");
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-      // Step 1: invalidate server-side cache so next fetch is guaranteed fresh
+      // Step 1: invalidate server-side cache and re-fetch via tradelines endpoint
       await fetch("/api/client/array/tradelines/cache", { method: "DELETE", headers }).catch(() => {});
-      // Step 2: fetch with explicit refresh=true (bypasses any remaining cache)
+      // Step 2: fetch fresh tradelines (warms the cache used by profile endpoint)
       const refreshUrl = `${tradelinesUrl}${tradelinesUrl.includes("?") ? "&" : "?"}refresh=true`;
       const res = await fetch(refreshUrl, { headers });
       if (!res.ok) throw new Error(`${res.status}`);
-      const fresh = await res.json() as TradelineResponse;
-      // Step 3: push fresh data into React Query cache immediately — no race possible
-      queryClient.setQueryData(cacheKey, fresh);
+      await res.json(); // warm the server-side tradeline cache
+      // Step 3: invalidate profile cache so it re-reads the newly warmed tradeline cache
+      await queryClient.invalidateQueries({ queryKey: ["/api/me/score-shift-profile"] });
     } catch {
       toast({ title: "Refresh failed", description: "Could not reload credit data. Try again.", variant: "destructive" });
     } finally {
       setIsRefreshing(false);
     }
   };
-  const arrayError = arrayErrorRaw ? (arrayErrorRaw instanceof Error ? arrayErrorRaw : new Error(String(arrayErrorRaw))) : null;
+  const arrayError: Error | null = arrayErrorRaw;
 
   // ── PDF upload mutation ───────────────────────────────────────────────────
   const uploadMutation = useMutation({
@@ -1230,7 +1227,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
   // ── Results screen ────────────────────────────────────────────────────────
   const isLoading = source === "array" && isLoadingArray && !browserExtracted;
   const isError = source === "array" && !!arrayError && !browserExtracted && !browserExtracting;
-  const errorMessage = arrayError instanceof Error ? arrayError.message : String(arrayError || "");
+  const errorMessage = arrayError?.message ?? String(arrayError || "");
   const notEnrolled = errorMessage.includes("enrolled") || errorMessage.includes("404");
 
   // Selectable subsets mapped into negativeTradelines for consistent key generation
@@ -1285,7 +1282,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
           </button>
           {source === "array" && (
             <button
-              onClick={() => { setBrowserExtracted(null); extractionAttempted.current = false; refetchArray(); }}
+              onClick={() => { setBrowserExtracted(null); extractionAttempted.current = false; queryClient.invalidateQueries({ queryKey: ["/api/me/score-shift-profile"] }); }}
               disabled={isLoadingArray}
               style={{ background: "#d97706", color: "#fff", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600, opacity: isLoadingArray ? 0.6 : 1 }}
             >

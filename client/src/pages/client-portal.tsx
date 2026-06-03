@@ -5,7 +5,7 @@ import { useUserContext } from "@/hooks/use-user-context";
 import { useArrayScript } from "@/hooks/use-array-script";
 import { useArrayToken } from "@/hooks/use-array-token";
 import { useFeatureAccess } from "@/hooks/use-feature-access";
-import { useScoreShiftProfile, type PlanSuggestion } from "@/hooks/use-score-shift-profile";
+import { useScoreShiftProfile, type PlanSuggestion, type ProfileDispute } from "@/hooks/use-score-shift-profile";
 import "@/styles/portal.css";
 import { DisputeIQPage as RealDisputeIQPage } from "@/pages/dispute-iq";
 
@@ -742,6 +742,10 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
+  const { data: profile } = useScoreShiftProfile();
+  const utilizationPct = profile?.utilization?.overallPercent ?? null;
+  const profileActiveDisputes = (profile?.disputes ?? []).filter(d => ["PENDING", "SENT", "DELIVERED", "FOLLOW_UP_REQUIRED"].includes(d.status));
+
   const { data: activeRaw, isLoading: disputesLoading } = useQuery<EnrichedDispute[]>({
     queryKey: ["/api/client/disputes?status=active"],
   });
@@ -901,8 +905,28 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
         );
       })()}
 
+      {/* Utilization callout — shown when profile data reveals > 30% utilization */}
+      {utilizationPct !== null && utilizationPct > 30 && (
+        <div className="cp-card cp-mb-24" style={{ borderLeft: "4px solid var(--cp-amber)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ flex: 1 }}>
+              <div className="cp-card-eyebrow">CREDIT UTILIZATION ALERT</div>
+              <div className="cp-card-title" style={{ margin: "4px 0 6px", color: "var(--cp-amber)" }}>
+                {utilizationPct}% utilization — above the 30% threshold
+              </div>
+              <p style={{ fontSize: 13, color: "var(--cp-text-secondary)", lineHeight: 1.6, margin: 0 }}>
+                High utilization can drag your score by 30–50 points. Paying down revolving balances is often the fastest score boost available.
+              </p>
+            </div>
+            <button className="cp-btn cp-btn-secondary cp-btn-sm" style={{ flexShrink: 0 }} onClick={() => onNavigate("debt")}>
+              View Debt Navigator →
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Priority Actions — top 3 from real dispute data */}
-      {!disputesLoading && activeDisputes.length > 0 && (
+      {!disputesLoading && (activeDisputes.length > 0 || profileActiveDisputes.length > 0) && (
         <div className="cp-card cp-mb-24">
           <div className="cp-card-header" style={{ marginBottom: 14 }}>
             <div>
@@ -1060,11 +1084,12 @@ function PlanPage({ goal, timeline, onNavigate }: { goal: OnboardingGoal | null;
   const goalLabel = goal ? GOALS.find(g => g.id === goal)?.label : null;
   const timelineLabel = timeline ? TIMELINES.find(t => t.id === timeline)?.label : null;
 
+  const PLAN_ACTIVE = ["PENDING", "SENT", "DELIVERED", "FOLLOW_UP_REQUIRED"];
+  const PLAN_RESOLVED = ["RESOLVED", "REJECTED"];
   const openSuggestions = (profile?.planSuggestions ?? []).filter(s => s.status === "open");
   const inProgressSuggestions = (profile?.planSuggestions ?? []).filter(s => s.status === "in_progress");
-  const activeDisputes = profile?.disputes?.active ?? [];
-  const resolvedDisputes = profile?.disputes?.resolved ?? [];
-  const hasAnyData = openSuggestions.length > 0 || inProgressSuggestions.length > 0 || activeDisputes.length > 0;
+  const activeDisputes: ProfileDispute[] = (profile?.disputes ?? []).filter(d => PLAN_ACTIVE.includes(d.status));
+  const resolvedDisputes: ProfileDispute[] = (profile?.disputes ?? []).filter(d => PLAN_RESOLVED.includes(d.status));
   const totalActions = openSuggestions.length + inProgressSuggestions.length;
 
   return (
@@ -1085,13 +1110,13 @@ function PlanPage({ goal, timeline, onNavigate }: { goal: OnboardingGoal | null;
           <div className="cp-array-spinner" style={{ margin: "0 auto 12px" }} />
           <div style={{ fontSize: 13, color: "var(--cp-text-muted)" }}>Loading your plan…</div>
         </div>
-      ) : !hasAnyData ? (
+      ) : profile?.meta?.source === "none" ? (
         <div className="cp-card cp-mb-24">
           <div className="cp-empty-state">
             <div className="cp-empty-icon">
               <Icon size={22}><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></Icon>
             </div>
-            <div className="cp-empty-title">No action items yet</div>
+            <div className="cp-empty-title">No credit data yet</div>
             <div className="cp-empty-desc">Open Dispute IQ to pull your credit report, identify disputable items, and generate your first dispute letters. Your plan will build automatically.</div>
             <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
               <button className="cp-btn cp-btn-primary" onClick={() => onNavigate("dispute-iq")}>
@@ -1194,7 +1219,7 @@ function PlanPage({ goal, timeline, onNavigate }: { goal: OnboardingGoal | null;
       )}
 
       {/* ── Recommended tools (always shown at bottom) ──────────── */}
-      <div className="cp-plan-section-header cp-mb-18" style={{ marginTop: hasAnyData ? 28 : 0 }}>
+      <div className="cp-plan-section-header cp-mb-18" style={{ marginTop: (totalActions > 0 || activeDisputes.length > 0) ? 28 : 0 }}>
         <div style={{ width: 4, height: 18, borderRadius: 2, background: "var(--cp-accent)", flexShrink: 0 }} />
         <span className="cp-plan-section-title" style={{ color: "var(--cp-accent)" }}>Recommended Next Steps</span>
       </div>
@@ -1347,6 +1372,10 @@ function SubscriptionManagerPage({
 
 function DebtPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenError, suggestedSavings, onDismissSavings }: ArrayPageProps & { suggestedSavings?: number | null; onDismissSavings?: () => void }) {
   const [subTab, setSubTab] = useState("analysis");
+  const { data: profile } = useScoreShiftProfile();
+  const utilization = profile?.utilization;
+  const showUtilPanel = utilization && (utilization.overallPercent !== null || utilization.byAccount.length > 0);
+
   return (
     <div>
       <div className="cp-page-header">
@@ -1357,6 +1386,48 @@ function DebtPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenError,
         </div>
         <span className="cp-badge live">Live</span>
       </div>
+
+      {/* Profile-derived utilization summary */}
+      {showUtilPanel && profile?.meta?.source !== "none" && (
+        <div className="cp-card cp-mb-24">
+          <div className="cp-card-header" style={{ marginBottom: 14 }}>
+            <div>
+              <div className="cp-card-eyebrow">FROM YOUR CREDIT PROFILE</div>
+              <div className="cp-card-title" style={{ marginTop: 2 }}>Utilization Snapshot</div>
+            </div>
+            {utilization.overallPercent !== null && (
+              <span className={`cp-badge ${utilization.overallPercent > 50 ? "negative" : utilization.overallPercent > 30 ? "warning" : "success"}`}>
+                {utilization.overallPercent}% overall
+              </span>
+            )}
+          </div>
+          {utilization.byAccount.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {utilization.byAccount.slice(0, 5).map((acct, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--cp-text-primary)" }}>{acct.creditor}</div>
+                    <div style={{ fontSize: 11, color: "var(--cp-text-muted)" }}>${acct.balance.toLocaleString()} of ${acct.limit.toLocaleString()} limit</div>
+                  </div>
+                  <div style={{ flexShrink: 0, textAlign: "right" }}>
+                    <div style={{ height: 4, width: 80, background: "var(--cp-border)", borderRadius: 2, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${Math.min(acct.utilizationPct, 100)}%`, background: acct.utilizationPct > 50 ? "var(--cp-red)" : acct.utilizationPct > 30 ? "var(--cp-amber)" : "var(--cp-sage)", borderRadius: 2 }} />
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: acct.utilizationPct > 50 ? "var(--cp-red)" : acct.utilizationPct > 30 ? "var(--cp-amber)" : "var(--cp-sage)", marginTop: 2 }}>{acct.utilizationPct}%</div>
+                  </div>
+                </div>
+              ))}
+              {utilization.overallPercent !== null && utilization.overallPercent > 30 && (
+                <div style={{ marginTop: 8, padding: "10px 12px", background: "rgba(245,158,11,0.08)", borderRadius: 8, fontSize: 12, color: "var(--cp-amber)" }}>
+                  Reducing to 30% could add an estimated <strong>+{Math.round((utilization.overallPercent - 30) * 0.8)} pts</strong> to your score.
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ fontSize: 12.5, color: "var(--cp-text-muted)" }}>Overall utilization: <strong>{utilization.overallPercent}%</strong> — no revolving account detail available.</div>
+          )}
+        </div>
+      )}
 
       {suggestedSavings != null && suggestedSavings > 0 && (
         <div style={{ marginBottom: 20, padding: "14px 18px", borderRadius: 12, background: "var(--cp-sage)15", border: "1px solid var(--cp-sage)35", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -1400,6 +1471,12 @@ function DebtPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenError,
 /* ── PROTECTION CENTER ───────────────────────────────────────────── */
 function ProtectionPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenError }: ArrayPageProps) {
   const [subTab, setSubTab] = useState("alerts");
+  const { data: profile } = useScoreShiftProfile();
+  const sixMonthsAgo = Date.now() - 6 * 30 * 24 * 60 * 60 * 1000;
+  const recentHardInquiries = (profile?.inquiries ?? []).filter(inq => (inq.inquiryType || "").toLowerCase() === "hard" && inq.inquiryDate && new Date(inq.inquiryDate).getTime() > sixMonthsAgo);
+  const publicRecords = profile?.publicRecords ?? [];
+  const hasProfileAlerts = (profile?.meta?.source !== "none") && (recentHardInquiries.length > 0 || publicRecords.length > 0);
+
   return (
     <div>
       <div className="cp-page-header">
@@ -1410,6 +1487,45 @@ function ProtectionPage({ appKey, userToken, sbx, scriptReady, tokenReady, token
         </div>
         <span className="cp-badge live">Monitoring Active</span>
       </div>
+
+      {/* Profile-derived risk panel */}
+      {hasProfileAlerts && (
+        <div className="cp-card cp-mb-24" style={{ borderLeft: "4px solid var(--cp-red)" }}>
+          <div className="cp-card-header" style={{ marginBottom: 14 }}>
+            <div>
+              <div className="cp-card-eyebrow">FROM YOUR CREDIT PROFILE</div>
+              <div className="cp-card-title" style={{ marginTop: 2 }}>Detected Risk Items</div>
+            </div>
+            <span className="cp-badge negative">{recentHardInquiries.length + publicRecords.length} item{(recentHardInquiries.length + publicRecords.length) !== 1 ? "s" : ""}</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {recentHardInquiries.map((inq, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px", background: "var(--cp-bg)", borderRadius: 8 }}>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--cp-amber)", flexShrink: 0, marginTop: 5 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--cp-text-primary)" }}>Hard Inquiry: {inq.creditor}</div>
+                  <div style={{ fontSize: 11, color: "var(--cp-text-muted)", marginTop: 2 }}>
+                    {inq.inquiryDate ? new Date(inq.inquiryDate).toLocaleDateString() : "Recent"} · Impacts score for 12 months
+                  </div>
+                </div>
+                <span className="cp-badge warning" style={{ flexShrink: 0, fontSize: 10 }}>Hard Pull</span>
+              </div>
+            ))}
+            {publicRecords.map((pr, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px", background: "var(--cp-bg)", borderRadius: 8 }}>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--cp-red)", flexShrink: 0, marginTop: 5 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--cp-text-primary)" }}>Public Record: {pr.creditor}</div>
+                  <div style={{ fontSize: 11, color: "var(--cp-text-muted)", marginTop: 2 }}>
+                    {pr.type}{pr.dateReported ? ` · ${new Date(pr.dateReported).toLocaleDateString()}` : ""}
+                  </div>
+                </div>
+                <span className="cp-badge negative" style={{ flexShrink: 0, fontSize: 10 }}>High Impact</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <SubTabs
         tabs={[
@@ -1452,6 +1568,10 @@ type ArrayPageProps = {
 function ReportPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenError }: ArrayPageProps) {
   const [subTab, setSubTab] = useState("tracker");
   const scoreLoading = !scriptReady || (!tokenReady && !tokenError);
+  const { data: profile } = useScoreShiftProfile();
+  const profileScore = profile?.scores?.vantage ?? profile?.scores?.experian ?? profile?.scores?.equifax ?? profile?.scores?.transunion ?? null;
+  const profileTradelineCount = (profile?.tradelines?.length ?? 0) + (profile?.negativeTradelines?.length ?? 0);
+  const hasProfileData = profile?.meta?.source !== "none" && (profileScore !== null || profileTradelineCount > 0);
 
   return (
     <div>
@@ -1478,7 +1598,14 @@ function ReportPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenErro
         ) : tokenError ? (
           <div className="cp-score-header-locked">
             <Icon size={15}><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></Icon>
-            <span>Credit data not yet connected — pull your report to see live scores.</span>
+            {hasProfileData ? (
+              <span>
+                Profile data loaded ({profileTradelineCount} account{profileTradelineCount !== 1 ? "s" : ""}
+                {profileScore !== null ? `, score ~${profileScore}` : ""}) — connect Array for live 3-bureau scores.
+              </span>
+            ) : (
+              <span>Credit data not yet connected — pull your report to see live scores.</span>
+            )}
             <button className="cp-btn cp-btn-primary cp-btn-sm" onClick={() => setSubTab("report")}>Pull My Report</button>
           </div>
         ) : (
@@ -1568,15 +1695,24 @@ function buildLifecycleEvents(disputes: EnrichedDispute[]): LifecycleEvent[] {
 }
 
 function ProgressPage() {
+  const { data: profile, isLoading: profileLoading } = useScoreShiftProfile();
   const { data: activeRaw = [], isLoading: loadA } = useQuery<EnrichedDispute[]>({ queryKey: ["/api/client/disputes?status=active"] });
   const { data: resolvedRaw = [], isLoading: loadR } = useQuery<EnrichedDispute[]>({ queryKey: ["/api/client/disputes?status=resolved"] });
-  const isLoading = loadA || loadR;
-  const active: EnrichedDispute[] = Array.isArray(activeRaw) ? activeRaw : [];
-  const resolved: EnrichedDispute[] = Array.isArray(resolvedRaw) ? resolvedRaw : [];
-  const allDisputes = [...active, ...resolved];
-  const removedCount = resolved.filter(d => d.outcome === "removed").length;
+  const isLoading = profileLoading || loadA || loadR;
+
+  const PROGRESS_ACTIVE = ["PENDING", "SENT", "DELIVERED", "FOLLOW_UP_REQUIRED"];
+  const PROGRESS_RESOLVED = ["RESOLVED", "REJECTED"];
+
+  // Prefer profile disputes (richer data); fall back to direct queries
+  const allDisputes: EnrichedDispute[] = (profile?.disputes && profile.disputes.length > 0)
+    ? (profile.disputes as any[])
+    : [...(Array.isArray(activeRaw) ? activeRaw : []), ...(Array.isArray(resolvedRaw) ? resolvedRaw : [])];
+
+  const active: EnrichedDispute[] = allDisputes.filter(d => PROGRESS_ACTIVE.includes(d.status));
+  const resolved: EnrichedDispute[] = allDisputes.filter(d => PROGRESS_RESOLVED.includes(d.status));
+  const removedCount = resolved.filter(d => (d as any).outcome === "removed").length;
   const hasData = allDisputes.length > 0;
-  const events = buildLifecycleEvents(allDisputes);
+  const events = buildLifecycleEvents(allDisputes as any[]);
 
   const eventKindDot: Record<string, { bg: string; icon: React.ReactNode }> = {
     filed:    { bg: "var(--cp-accent)",  icon: <Icon size={11}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></Icon> },
