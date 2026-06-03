@@ -841,30 +841,23 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
         </div>
       </div>
 
-      {/* Next Best Action — goal-based routing */}
+      {/* Next Best Action — profile.planSuggestions[0] → active dispute → goal static */}
       {(() => {
         const GOAL_NBA: Record<OnboardingGoal, { title: string; detail: string; cta: string; page: PageId; secondary?: string; secondaryPage?: PageId }> = {
-          "remove-negatives": {
-            title: "Analyze your report for disputable items",
-            detail: "Dispute IQ scans for FCRA violations and Metro 2 errors, then generates a personalized dispute strategy and certified letters.",
-            cta: "Open Dispute IQ", page: "dispute-iq", secondary: "View My Plan", secondaryPage: "plan",
-          },
-          "reduce-debt": {
-            title: "Review your utilization and debt plan",
-            detail: "Debt Navigator shows your live account balances, calculates a payoff strategy, and identifies which accounts to prioritize.",
-            cta: "Open Debt Navigator", page: "debt", secondary: "Review My Scores", secondaryPage: "report",
-          },
-          "build-credit": {
-            title: "Pull your 3-bureau credit report",
-            detail: "See your full credit file, identify thin-file gaps, and get personalized guidance on building a strong credit profile from scratch.",
-            cta: "Open Credit Report", page: "report", secondary: "View My Plan", secondaryPage: "plan",
-          },
-          "improve-score": {
-            title: "Analyze your report for score-impact issues",
-            detail: "Dispute IQ identifies the reporting errors and derogatory items most likely to be dragging your score down across all three bureaus.",
-            cta: "Open Dispute IQ", page: "dispute-iq", secondary: "Check Scores", secondaryPage: "report",
-          },
+          "remove-negatives": { title: "Analyze your report for disputable items", detail: "Dispute IQ scans for FCRA violations and Metro 2 errors, then generates a personalized dispute strategy and certified letters.", cta: "Open Dispute IQ", page: "dispute-iq", secondary: "View My Plan", secondaryPage: "plan" },
+          "reduce-debt": { title: "Review your utilization and debt plan", detail: "Debt Navigator shows your live account balances, calculates a payoff strategy, and identifies which accounts to prioritize.", cta: "Open Debt Navigator", page: "debt", secondary: "Review My Scores", secondaryPage: "report" },
+          "build-credit": { title: "Pull your 3-bureau credit report", detail: "See your full credit file, identify thin-file gaps, and get personalized guidance on building a strong credit profile from scratch.", cta: "Open Credit Report", page: "report", secondary: "View My Plan", secondaryPage: "plan" },
+          "improve-score": { title: "Analyze your report for score-impact issues", detail: "Dispute IQ identifies the reporting errors and derogatory items most likely to be dragging your score down across all three bureaus.", cta: "Open Dispute IQ", page: "dispute-iq", secondary: "Check Scores", secondaryPage: "report" },
         };
+        const SUG_CTA: Record<string, { cta: string; page: PageId }> = {
+          "dispute": { cta: "Open Dispute IQ", page: "dispute-iq" },
+          "charge-off": { cta: "Open Dispute IQ", page: "dispute-iq" },
+          "paydown": { cta: "Open Debt Navigator", page: "debt" },
+          "inquiry-dispute": { cta: "Open Dispute IQ", page: "dispute-iq" },
+          "public-record": { cta: "Open Dispute IQ", page: "dispute-iq" },
+        };
+        const topSuggestion = (profile?.planSuggestions ?? []).find(s => s.status === "open" || s.status === "in_progress");
+        const sugCta = topSuggestion ? (SUG_CTA[topSuggestion.type] ?? { cta: "View My Plan", page: "plan" as PageId }) : null;
         const nba = goal ? GOAL_NBA[goal] : GOAL_NBA["remove-negatives"];
         return (
           <div className="cp-nba-card cp-mb-24">
@@ -879,9 +872,17 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
                 <div className="cp-nba-title">Dispute in progress: {topDispute.issueTitle}</div>
                 <div className="cp-nba-detail">{topDispute.creditor} · {topDispute.bureau} · {topDispute.status === "SENT" ? "Awaiting delivery" : topDispute.status === "FOLLOW_UP_REQUIRED" ? "Follow-up required" : topDispute.status === "DELIVERED" ? "Bureau reviewing" : topDispute.status}</div>
                 <div className="cp-nba-footer">
-                  <button className="cp-btn cp-btn-primary" onClick={() => onNavigate("dispute-iq")}>
-                    Track in Dispute IQ
-                    <Icon size={15}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
+                  <button className="cp-btn cp-btn-primary" onClick={() => onNavigate("dispute-iq")}>Track in Dispute IQ <Icon size={15}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon></button>
+                  <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate("plan")}>View full plan</button>
+                </div>
+              </>
+            ) : topSuggestion && sugCta ? (
+              <>
+                <div className="cp-nba-title">{topSuggestion.title}</div>
+                <div className="cp-nba-detail">{topSuggestion.detail}</div>
+                <div className="cp-nba-footer">
+                  <button className="cp-btn cp-btn-primary" onClick={() => onNavigate(sugCta.page)}>
+                    {sugCta.cta} <Icon size={15}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
                   </button>
                   <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate("plan")}>View full plan</button>
                 </div>
@@ -892,8 +893,7 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
                 <div className="cp-nba-detail">{nba.detail}</div>
                 <div className="cp-nba-footer">
                   <button className="cp-btn cp-btn-primary" onClick={() => onNavigate(nba.page)}>
-                    {nba.cta}
-                    <Icon size={15}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
+                    {nba.cta} <Icon size={15}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
                   </button>
                   {nba.secondary && nba.secondaryPage && (
                     <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate(nba.secondaryPage!)}>{nba.secondary}</button>
@@ -901,6 +901,34 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
                 </div>
               </>
             )}
+          </div>
+        );
+      })()}
+
+      {/* Biggest score drag — profile.negativeTradelines[0] */}
+      {profile && profile.meta.source !== "none" && profile.negativeTradelines.length > 0 && (() => {
+        const drag = profile.negativeTradelines[0];
+        const lateTotal = (drag.latePayments?.days30 || 0) + (drag.latePayments?.days60 || 0) + (drag.latePayments?.days90 || 0);
+        const label = (drag.accountType || "").toLowerCase().includes("collection") ? "Collection" : (drag.status || "").toLowerCase().includes("charge") ? "Charge-off" : lateTotal > 0 ? `${lateTotal} Late Payment${lateTotal !== 1 ? "s" : ""}` : "Derogatory Item";
+        return (
+          <div className="cp-card cp-mb-24" style={{ borderLeft: "4px solid var(--cp-red)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ flex: 1 }}>
+                <div className="cp-card-eyebrow" style={{ color: "var(--cp-red)" }}>BIGGEST SCORE IMPACT</div>
+                <div className="cp-card-title" style={{ margin: "4px 0 6px" }}>{drag.creditor}</div>
+                <div style={{ fontSize: 12, color: "var(--cp-text-muted)", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <span className="cp-badge negative" style={{ fontSize: 10 }}>{label}</span>
+                  {drag.bureau && <span className="cp-badge" style={{ fontSize: 10 }}>{drag.bureau}</span>}
+                  {drag.violations.length > 0 && <span className="cp-badge warning" style={{ fontSize: 10 }}>{drag.violations.length} violation{drag.violations.length !== 1 ? "s" : ""}</span>}
+                </div>
+                <p style={{ fontSize: 12, color: "var(--cp-text-secondary)", marginTop: 6, marginBottom: 0, lineHeight: 1.5 }}>
+                  {drag.violations.length > 0 ? drag.violations[0].label : "This derogatory item is impacting your score. Filing a dispute may have it removed or corrected."}
+                </p>
+              </div>
+              <button className="cp-btn cp-btn-primary cp-btn-sm" style={{ flexShrink: 0 }} onClick={() => onNavigate("dispute-iq")}>
+                Dispute It →
+              </button>
+            </div>
           </div>
         );
       })()}
@@ -1475,7 +1503,9 @@ function ProtectionPage({ appKey, userToken, sbx, scriptReady, tokenReady, token
   const sixMonthsAgo = Date.now() - 6 * 30 * 24 * 60 * 60 * 1000;
   const recentHardInquiries = (profile?.inquiries ?? []).filter(inq => (inq.inquiryType || "").toLowerCase() === "hard" && inq.inquiryDate && new Date(inq.inquiryDate).getTime() > sixMonthsAgo);
   const publicRecords = profile?.publicRecords ?? [];
-  const hasProfileAlerts = (profile?.meta?.source !== "none") && (recentHardInquiries.length > 0 || publicRecords.length > 0);
+  // Profile alerts excluding types already shown above (inquiries, public records)
+  const extraAlerts = (profile?.alerts ?? []).filter(a => a.type !== "public_record" && a.type !== "hard_inquiry");
+  const hasProfileAlerts = (profile?.meta?.source !== "none") && (recentHardInquiries.length > 0 || publicRecords.length > 0 || extraAlerts.length > 0);
 
   return (
     <div>
@@ -1521,6 +1551,16 @@ function ProtectionPage({ appKey, userToken, sbx, scriptReady, tokenReady, token
                   </div>
                 </div>
                 <span className="cp-badge negative" style={{ flexShrink: 0, fontSize: 10 }}>High Impact</span>
+              </div>
+            ))}
+            {extraAlerts.map((alert, i) => (
+              <div key={`alert-${i}`} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px", background: "var(--cp-bg)", borderRadius: 8 }}>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: alert.severity === "high" ? "var(--cp-red)" : alert.severity === "medium" ? "var(--cp-amber)" : "var(--cp-blue)", flexShrink: 0, marginTop: 5 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--cp-text-primary)", textTransform: "capitalize" }}>{alert.type.replace(/_/g, " ")}</div>
+                  <div style={{ fontSize: 11, color: "var(--cp-text-muted)", marginTop: 2 }}>{alert.message}</div>
+                </div>
+                <span className={`cp-badge ${alert.severity === "high" ? "negative" : alert.severity === "medium" ? "warning" : ""}`} style={{ flexShrink: 0, fontSize: 10, textTransform: "capitalize" }}>{alert.severity}</span>
               </div>
             ))}
           </div>
@@ -1696,9 +1736,14 @@ function buildLifecycleEvents(disputes: EnrichedDispute[]): LifecycleEvent[] {
 
 function ProgressPage() {
   const { data: profile, isLoading: profileLoading } = useScoreShiftProfile();
+  const { data: ssStats } = useQuery<{ ptsGained: number | null; itemsRemoved: number; topScore: number | null; startingScore: number | null; currentScore: number | null; activeIssues: number; disputesInProgress: number; itemsResolved: number }>({ queryKey: ["/api/client/stats"] });
   const { data: activeRaw = [], isLoading: loadA } = useQuery<EnrichedDispute[]>({ queryKey: ["/api/client/disputes?status=active"] });
   const { data: resolvedRaw = [], isLoading: loadR } = useQuery<EnrichedDispute[]>({ queryKey: ["/api/client/disputes?status=resolved"] });
   const isLoading = profileLoading || loadA || loadR;
+
+  const currentScore = profile?.scores?.vantage ?? profile?.scores?.experian ?? profile?.scores?.equifax ?? profile?.scores?.transunion ?? ssStats?.currentScore ?? null;
+  const startingScore = ssStats?.startingScore ?? null;
+  const scoreDelta = currentScore !== null && startingScore !== null ? currentScore - startingScore : null;
 
   const PROGRESS_ACTIVE = ["PENDING", "SENT", "DELIVERED", "FOLLOW_UP_REQUIRED"];
   const PROGRESS_RESOLVED = ["RESOLVED", "REJECTED"];
@@ -1733,6 +1778,45 @@ function ProgressPage() {
           <p className="cp-page-subtitle">Every dispute action tracked — from filing to resolution.</p>
         </div>
       </div>
+
+      {/* Score delta row — sourced from profile + ssStats */}
+      {(startingScore !== null || currentScore !== null) && (
+        <div className="cp-card cp-mb-24">
+          <div className="cp-card-header" style={{ marginBottom: 14 }}>
+            <div>
+              <div className="cp-card-eyebrow">SCORE PROGRESS</div>
+              <div className="cp-card-title" style={{ marginTop: 2 }}>Credit Score Journey</div>
+            </div>
+            {scoreDelta !== null && (
+              <span className={`cp-badge ${scoreDelta >= 0 ? "success" : "negative"}`}>
+                {scoreDelta >= 0 ? "+" : ""}{scoreDelta} pts
+              </span>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            {startingScore !== null && (
+              <div style={{ flex: 1, minWidth: 100, padding: "10px 14px", background: "var(--cp-bg)", borderRadius: 10 }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "var(--cp-text-muted)" }}>{startingScore}</div>
+                <div style={{ fontSize: 11, color: "var(--cp-text-muted)", marginTop: 2 }}>Starting Score</div>
+              </div>
+            )}
+            {currentScore !== null && (
+              <div style={{ flex: 1, minWidth: 100, padding: "10px 14px", background: "var(--cp-bg)", borderRadius: 10 }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "var(--cp-accent)" }}>{currentScore}</div>
+                <div style={{ fontSize: 11, color: "var(--cp-text-muted)", marginTop: 2 }}>Current Score</div>
+              </div>
+            )}
+            {scoreDelta !== null && (
+              <div style={{ flex: 1, minWidth: 100, padding: "10px 14px", background: scoreDelta >= 0 ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)", borderRadius: 10 }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: scoreDelta >= 0 ? "var(--cp-green)" : "var(--cp-red)" }}>
+                  {scoreDelta >= 0 ? "+" : ""}{scoreDelta}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--cp-text-muted)", marginTop: 2 }}>Points {scoreDelta >= 0 ? "Gained" : "Lost"}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="cp-grid-4 cp-mb-24">
         {[

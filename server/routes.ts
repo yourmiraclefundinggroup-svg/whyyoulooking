@@ -9754,18 +9754,20 @@ ${denialLetterText}`
       if (cached) {
         cacheAgeMs = Date.now() - new Date(cached.fetchedAt).getTime();
         const notInvalidated = !cached.invalidatedAt || new Date(cached.invalidatedAt) < new Date(cached.fetchedAt);
-        if (notInvalidated && (cached.data as any)?.source === "array") {
+        if (notInvalidated && (cached.data as any)?.source === "array" && cacheAgeMs < TTL_24H) {
           existingCache = cached.data;
-          if (cacheAgeMs < TTL_24H) {
-            // Valid cache — use it; determine live vs cached by age
-            tlData = { ...existingCache };
-            profileSource = cacheAgeMs < TTL_2MIN ? "array_live" : "array_cache";
-            reportDate = existingCache.reportFetchedAt || null;
-          }
         }
       }
 
-      // ── Step 2: Attempt live Array fetch if no valid cache ──────────────────
+      // Fast path: cache < 30s old — skip live fetch to prevent API hammering
+      const TTL_30S = 30 * 1000;
+      if (existingCache && cacheAgeMs < TTL_30S) {
+        tlData = { ...existingCache };
+        profileSource = "array_cache";
+        reportDate = existingCache.reportFetchedAt || null;
+      }
+
+      // ── Step 2: Attempt live Array fetch (hierarchy: live → cache → pdf) ───
       if (profileSource === "none") {
         const ARRAY_API_KEY = process.env.ARRAY_API_KEY;
         let arrayFetched = false;
@@ -9790,6 +9792,25 @@ ${denialLetterText}`
               if (!rpt.error) {
                 const rd: any = rpt.data;
                 const normB = (b: string) => { const u = (b || "").toUpperCase(); if (u.includes("EXPERIAN") || u === "EXP") return "EXPERIAN"; if (u.includes("EQUIFAX") || u === "EQF") return "EQUIFAX"; if (u.includes("TRANSUNION") || u === "TU" || u.includes("TRANS")) return "TRANSUNION"; return u; };
+                // Extract credit scores from Array API response (various field patterns)
+                const scoreMap: Record<string, number | null> = { experian: null, equifax: null, transunion: null, vantage: null };
+                const rawScores = rd?.bureauScores ?? rd?.creditScores ?? rd?.scores ?? rd?.data?.bureauScores ?? rd?.data?.creditScores ?? [];
+                if (Array.isArray(rawScores) && rawScores.length > 0) {
+                  for (const s of rawScores) {
+                    const bKey = normB(String(s.bureau ?? s.bureauCode ?? "")).toLowerCase();
+                    const sc = parseInt(String(s.score ?? s.creditScore ?? s.value ?? 0));
+                    if (sc > 300 && sc < 900) {
+                      if (bKey.includes("experian")) scoreMap.experian = sc;
+                      else if (bKey.includes("equifax")) scoreMap.equifax = sc;
+                      else if (bKey.includes("transunion")) scoreMap.transunion = sc;
+                    }
+                  }
+                }
+                const singleSc = parseInt(String(rd?.creditScore?.score ?? rd?.vantageScore ?? rd?.score ?? rd?.data?.creditScore?.score ?? 0));
+                if (singleSc > 300 && singleSc < 900 && !scoreMap.experian && !scoreMap.equifax && !scoreMap.transunion) scoreMap.vantage = singleSc;
+                const vsSc = parseInt(String(rd?.vantageScore30 ?? rd?.vantageScore ?? rd?.creditScoreVantage ?? 0));
+                if (vsSc > 300 && vsSc < 900 && !scoreMap.vantage) scoreMap.vantage = vsSc;
+
                 const rawAccts = rd?.accounts ?? rd?.tradelines ?? rd?.data?.accounts ?? rd?.data?.tradelines ?? [];
                 const seen = new Set<string>();
                 const rawTls = (Array.isArray(rawAccts) ? rawAccts : []).flatMap((acct: any) => {
@@ -9809,6 +9830,7 @@ ${denialLetterText}`
                 const rptAt = new Date().toISOString();
                 const built = {
                   enrolled: true,
+                  scores: scoreMap,
                   tradelines: rawTls.map((t: any) => ({ ...t, violations: analyzeTradelineViolations(t), isDerogatory: isNegativeTradeline(t) })),
                   negativeTradelines: analyzeAllTradelines(rawTls),
                   inquiries: (Array.isArray(rawInqs) ? rawInqs : []).map((inq: any) => ({ creditor: inq.creditor || inq.creditorName || "Unknown", inquiryDate: inq.inquiryDate || inq.date || "", inquiryType: inq.inquiryType || "hard", suggestedDisputeReason: "Unauthorized hard inquiry — no permissible purpose established (FCRA § 1681b)" })),
@@ -9987,8 +10009,17 @@ ${denialLetterText}`
         addSug({ id: `public-record-${pr.creditor}-${pr.dateReported}`, type: "public-record", priority: "high", title: `Address public record: ${pr.creditor || pr.type}`, detail: `A public record (${pr.type}) is on your credit file. This significantly impacts your score. Dispute if inaccurate.`, status: "open" });
       }
 
+      // Extract scores from tlData if it was populated (Array live/cache)
+      const tlScores = (tlData as any).scores;
+      const profileScores = {
+        experian: tlScores?.experian ?? null,
+        equifax: tlScores?.equifax ?? null,
+        transunion: tlScores?.transunion ?? null,
+        vantage: tlScores?.vantage ?? null,
+      };
+
       return res.json({
-        scores: { experian: null, equifax: null, transunion: null, vantage: null },
+        scores: profileScores,
         tradelines: allTl,
         negativeTradelines: negTl,
         collections,
