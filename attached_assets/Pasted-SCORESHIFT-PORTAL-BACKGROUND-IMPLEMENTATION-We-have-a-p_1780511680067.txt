@@ -1,0 +1,152 @@
+SCORESHIFT PORTAL BACKGROUND IMPLEMENTATION
+
+We have a premium cinematic background video that represents the ScoreShift brand world.
+
+The video should function as an ambient environment behind the portal, not as a hero video or distracting animation.
+
+Design Goals
+
+Create a luxury fintech experience inspired by:
+
+Apple
+Linear
+Notion
+Arc Browser
+Aesop
+
+The video should feel like an environmental layer that adds atmosphere and emotional trust.
+
+The portal content must always remain the primary focus.
+
+Background Video Requirements
+
+Use the supplied MP4/WebM video as a full-screen background.
+
+Requirements:
+
+autoplay
+muted
+loop
+playsinline
+no controls
+fixed position
+full viewport coverage
+responsive on desktop and mobile
+
+The video should remain behind all content.
+
+Visual Treatment
+
+Apply a soft overlay above the video:
+
+Background overlay:
+
+rgba(255,252,246,0.55)
+
+This should slightly wash out the video and blend it into the ScoreShift design system.
+
+The goal is:
+
+calm
+premium
+readable
+trustworthy
+
+NOT:
+
+cinematic trailer
+distracting motion background
+Motion Treatment
+
+Video opacity:
+
+Desktop:
+
+opacity: 0.18;
+
+Mobile:
+
+opacity: 0.12;
+
+Motion should feel almost subconscious.
+
+Users should notice the environment after several seconds, not immediately.
+
+Performance
+
+Requirements:
+
+lazy load video
+use WebM when available
+fall back to MP4
+GPU acceleration enabled
+no layout shifts
+no performance degradation
+
+Target:
+
+Lighthouse 90+
+Smooth scrolling
+No dropped frames
+Layer Structure
+
+Layer 1:
+Background video
+
+Layer 2:
+Cream atmospheric overlay
+
+Layer 3:
+Subtle glass blur layer
+
+Layer 4:
+Portal content
+
+Glass Layer
+
+Create a subtle glass layer above the video:
+
+backdrop-filter: blur(8px);
+
+Very light.
+
+Do not create a frosted glass effect.
+
+Only enough to soften the moving terrain behind content cards.
+
+Dashboard Cards
+
+Cards should feel elevated from the environment.
+
+Card styling:
+
+background: rgba(255,255,255,.82);
+backdrop-filter: blur(12px);
+border: 1px solid rgba(255,255,255,.45);
+box-shadow: 0 12px 40px rgba(0,0,0,.08);
+border-radius: 24px;
+ScoreShift Brand Feel
+
+The portal should feel like:
+
+"A guided journey through financial clarity."
+
+The moving landscape represents:
+
+trust
+intelligence
+financial progress
+guidance
+
+Avoid:
+
+crypto aesthetics
+gaming aesthetics
+sci-fi aesthetics
+traditional fintech blue dashboards
+
+Everything should feel warm, premium, human, and sophisticated.
+
+Final Objective
+
+Transform the portal from a standard SaaS dashboard into a premium immersive ScoreShift experience where the environment subtly communicates progress, trust, and financial transformation without distracting from the user's data.

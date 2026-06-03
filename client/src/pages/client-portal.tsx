@@ -2288,9 +2288,22 @@ export default function ClientPortal() {
   };
 
   /* ── Render ───────────────────────────────────────────────────── */
+  /* Shared ambient background video (rendered once, reused for onboarding too) */
+  const BgVideo = (
+    <div className="cp-bg-layer" aria-hidden="true">
+      <video className="cp-bg-video" autoPlay muted loop playsInline preload="none">
+        <source src="/videos/scoreshift-world.webm" type="video/webm" />
+        <source src="/videos/scoreshift-world.mp4" type="video/mp4" />
+      </video>
+      <div className="cp-bg-overlay" />
+      <div className="cp-bg-glass" />
+    </div>
+  );
+
   if (!onboardingDone) {
     return (
       <div className="cp-portal">
+        {BgVideo}
         <OnboardingScreen onDone={finishOnboarding} />
       </div>
     );
@@ -2298,6 +2311,7 @@ export default function ClientPortal() {
 
   return (
     <div className="cp-portal">
+      {BgVideo}
       {/* ── Sidebar ─────────────────────────────────────────────── */}
       <aside className={`cp-sidebar${mobileNavOpen ? " open" : ""}`}>
         <a className="cp-sidebar-logo" href="#" onClick={(e) => { e.preventDefault(); setActivePage("home"); setMobileNavOpen(false); }}>
