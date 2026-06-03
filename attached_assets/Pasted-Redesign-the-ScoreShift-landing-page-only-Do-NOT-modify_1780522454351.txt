@@ -1,0 +1,467 @@
+Redesign the ScoreShift landing page only.
+
+Do NOT modify the client portal.
+Do NOT modify backend logic.
+Do NOT modify Array integration.
+Do NOT touch authentication, payments, routes, or environment variables.
+Landing page only.
+
+Goal:
+Create a premium animated landing page that matches the new ScoreShift portal direction: calm, atmospheric, cinematic, warm, modern, and guided.
+
+ScoreShift positioning:
+ScoreShift is a financial guidance platform that starts with credit.
+It helps users turn confusing credit data into a clear action plan across credit monitoring, disputes, debt payoff, subscriptions, student loans, identity protection, and financial readiness.
+
+The page should feel like:
+Linear polish
+Autonomous cinematic product motion
+Cleo guided personality
+Spade editorial finance credibility
+Stripe-level interaction quality
+Apple-level calm
+
+Avoid:
+- generic credit repair design
+- stock photos
+- loud finance charts
+- spinning credit scores
+- scammy score boost claims
+- neon gradients
+- cluttered dashboards
+- over-animation
+- cheesy AI graphics
+
+Use ScoreShift visual identity:
+- Warm cream / Bone Ledger background
+- Mineral Charcoal text
+- Aura Indigo accent
+- Sage Slate support
+- Shale Taupe depth
+- Clay Apricot sparingly for warning/action
+- Ceramic White / frosted cards
+
+Core landing page structure:
+
+1. Sticky Header
+Use a clean premium header like Linear/Autonomous.
+
+Header behavior:
+- Transparent over hero at top
+- On scroll, becomes frosted glass
+- backdrop blur
+- subtle border bottom
+- gentle slide/fade entrance
+- logo left
+- nav links center/right
+- primary CTA right
+
+Nav:
+Pricing
+How It Works
+Integrations
+For Business
+Sign In
+CTA: Check Your Credit Health
+
+Header animation:
+- opacity 0 to 1
+- translateY(-8px) to 0
+- duration 600ms
+- easing cubic-bezier(0.22, 1, 0.36, 1)
+
+2. Hero Section
+Full viewport or near-full viewport.
+
+Headline:
+Built to move
+you forward.
+
+Alternative if needed:
+Your credit plan should tell you what to do next.
+
+Subheadline:
+Modern credit monitoring, improvement, and financial readiness tools to help you move forward with clarity.
+
+Primary CTA:
+Check Your Credit Health
+
+Secondary CTA:
+See How It Works
+
+Hero visual:
+Use a cinematic atmospheric background inspired by the new portal:
+- canyon / financial river / soft landscape / flowing light
+- warm cream overlay
+- soft Aura Indigo light path
+- subtle particles or glow along the “river”
+- not distracting
+- no text in video/background
+- no financial icons in background
+
+Hero foreground:
+Add a floating ScoreShift Command Center card, not a generic dashboard screenshot.
+
+The hero card should show:
+- 3-bureau score snapshot
+- Next Best Action
+- Biggest Score Drag
+- Plan Progress
+- Estimated Impact
+- small status chip: Financial Readiness Active
+
+Hero card style:
+- frosted glass
+- 24px border radius
+- white/cream translucent surface
+- soft shadow
+- subtle 3D tilt on mouse move
+- small glowing Aura Indigo edge highlight
+- gentle floating animation
+
+Hero animation system:
+Use layered animation, not chaotic animation.
+
+Layer 1: Background cinematic video / image
+- very slow zoom or parallax
+- scale 1.04 to 1.08 over 25-35 seconds
+- opacity overlay to keep text readable
+- no fast movement
+
+Layer 2: Ambient glow
+- two large radial gradients
+- Aura Indigo glow near lower center
+- Sage glow near upper side
+- animate position slowly over 20-30 seconds
+- opacity between 0.05 and 0.12
+
+Layer 3: Hero text
+- staggered fade-up
+- headline appears first
+- subheadline second
+- buttons third
+- duration 700-900ms
+- easing cubic-bezier(0.22, 1, 0.36, 1)
+
+Layer 4: Hero command card
+- enters with fade-up + slight scale
+- delay 250ms after headline
+- floats gently using translateY(-6px to 6px)
+- 8-10 second loop
+- no bouncing
+
+Layer 5: Micro details
+- tiny light pulses on progress bar
+- subtle shimmer on active status chip
+- no distracting particles over text
+
+3. Linear-style animation rules
+Use Linear-like restraint.
+
+Linear-style motion principles:
+- animate layout transitions subtly
+- cards fade/slide in when they enter viewport
+- no dramatic zooms
+- no excessive scroll jacking
+- use crisp easing
+- cards should feel responsive and precise
+
+Implement:
+- section reveal with IntersectionObserver or Framer Motion
+- fade from opacity 0 to 1
+- translateY(24px) to 0
+- duration 600ms
+- stagger children by 80-120ms
+- viewport once: true
+- hover cards translateY(-4px)
+- hover shadow increases slightly
+- buttons have tiny scale/brightness response
+- tabs/links have animated underline or pill transition
+
+Use easing:
+cubic-bezier(0.22, 1, 0.36, 1)
+
+Do not animate every element. Only key elements.
+
+4. Autonomous-style animation rules
+Autonomous-style motion should focus on one premium hero object.
+
+Autonomous-style principles:
+- one focal object carries motion
+- surrounding page stays calm
+- product preview feels cinematic
+- motion feels like a polished product launch
+
+Implement:
+- hero command card as the main moving object
+- background moves slower than the card
+- floating 3D cards in later sections
+- soft depth layers
+- object shadow moves subtly with the float
+- hover tilt max 3 degrees
+- no spinning
+- no constant bouncing
+- no random animated shapes
+
+3D hover:
+On mouse move over large cards:
+- rotateX max 2deg
+- rotateY max 3deg
+- translateY max -4px
+- smooth spring return
+- preserve accessibility with reduced motion
+
+5. Cleo-style animation rules
+Cleo’s strength is guided personality and conversational clarity.
+
+Cleo-style motion principles:
+- friendly guided steps
+- animated progress
+- clear “next move”
+- small playful cues without losing professionalism
+
+Implement:
+- “Next Best Action” module with type-in or reveal effect
+- step cards that light up one-by-one
+- progress timeline that fills as user scrolls
+- small status chips that update visually
+- friendly copy, but not cartoonish
+
+Example guided section:
+Title:
+Your report is complicated.
+Your next step should not be.
+
+Create 3 animated steps:
+1. Connect your credit profile
+2. ScoreShift identifies what matters most
+3. Follow your guided action plan
+
+Animation:
+- step cards reveal sequentially
+- connector line draws between them
+- active step gets soft Aura Indigo glow
+- progress line fills on scroll
+
+6. Section: Problem
+Title:
+Most credit tools show you data.
+ScoreShift shows you direction.
+
+Cards:
+- Credit reports are confusing
+- Most people do not know what to fix first
+- Disputes, debt, alerts, and protection are disconnected
+
+Animation:
+- cards appear in staggered fade-up
+- on hover, card rises slightly
+- background glow remains slow and calm
+
+7. Section: Platform Flow
+Title:
+From credit data to guided action.
+
+Visual flow:
+Credit Report
+→ ScoreShift Profile
+→ Next Best Action
+→ Dispute IQ / Debt Navigator / Protection Center
+→ Progress Tracking
+
+Animation:
+- horizontal flow cards on desktop
+- vertical stacked flow on mobile
+- line draws between cards as section enters viewport
+- active node gets soft pulse
+- no heavy motion
+
+8. Section: Product Modules
+Show connected bento grid.
+
+Modules:
+- My Plan
+- Dispute IQ
+- Smart Letters + ScoreShift Mail
+- Debt Navigator
+- Student Loan Aid
+- Subscription Manager
+- Protection Center
+- Credit Report
+- Progress Tracker
+
+Bento style:
+- mix large and small cards
+- frosted/ceramic surfaces
+- soft borders
+- warm background
+- Aura Indigo accent only for active states
+- Sage Slate for trust/protection
+- Clay Apricot only for caution/priority
+
+Animation:
+- bento cards appear in clusters
+- hover lift
+- subtle 3D tilt
+- small internal metric animations
+- do not make cards spin or flip
+
+9. Section: Guided Experience
+Title:
+Every screen answers one question:
+What should I do next?
+
+Show example action cards:
+- Dispute inaccurate collection
+- Reduce utilization below 30%
+- Monitor new inquiry
+- Review exposed personal information
+- Explore student loan options
+- Review subscription savings
+
+Each card should show:
+- category
+- why it matters
+- estimated impact or status
+- CTA
+
+Animation:
+- action cards slide in from bottom
+- progress bars fill once visible
+- estimated impact number counts up subtly
+
+10. Section: Self-Service + Managed Clients
+Title:
+Choose the level of help you need.
+
+Two premium cards:
+
+Self-Service SaaS
+For users who want tools, guidance, and automation.
+
+Managed Credit Repair
+For clients who want ScoreShift to handle the strategy and execution.
+
+Include:
+Mortgage Fast Track belongs under Managed Credit Repair.
+
+Animation:
+- two cards enter from opposite sides slightly
+- hover reveals subtle details
+- no aggressive sales motion
+
+11. Section: Trust / Compliance
+Title:
+Built for clarity, security, and responsible credit improvement.
+
+Include:
+- FCRA-aware workflows
+- Secure credit data handling
+- Bureau monitoring
+- Guided dispute process
+- No generic dispute letters
+- No false guarantees
+
+Do not promise removals.
+Do not promise exact score increases.
+Do not use “guaranteed approval.”
+
+Animation:
+- trust badges fade in
+- subtle line drawing / check reveal
+
+12. Final CTA
+Title:
+Start with clarity.
+Move with certainty.
+
+Subheadline:
+ScoreShift turns your credit data into a guided financial readiness plan.
+
+CTA:
+Create Your ScoreShift Plan
+
+Animation:
+- soft background glow
+- CTA card floats slightly
+- button has calm hover glow
+
+13. Background / visual system
+Use the new portal feel.
+
+Create a reusable landing background component:
+- soft cinematic image/video background in hero
+- cream overlay
+- ambient radial gradients
+- subtle noise texture
+- optional dotted grid at very low opacity
+- no heavy beige monotony
+
+Background CSS concept:
+- radial gradient Aura Indigo at 30% 40%
+- radial gradient Sage at 80% 20%
+- warm cream base
+- slow transform animation
+- reduced motion fallback
+
+14. Performance rules
+- Keep animations lightweight
+- Prefer CSS transforms and opacity
+- Avoid animating layout properties
+- Use lazy loading for video/images
+- Use compressed video if included
+- Provide poster image for hero video
+- Respect prefers-reduced-motion
+- Ensure Lighthouse/performance does not collapse
+
+15. Mobile rules
+Mobile must look premium.
+
+- hero stacks cleanly
+- text remains readable
+- command card becomes compact
+- bento grid becomes single column
+- sticky CTA or visible CTA above fold
+- no horizontal scrolling
+- no tiny buttons
+- no overcrowded hero
+
+16. Implementation notes
+Use existing tech stack.
+If Framer Motion is already installed, use it.
+If not, use CSS animations + IntersectionObserver.
+Do not add unnecessary heavy libraries.
+
+Create reusable components:
+- AnimatedSection
+- AmbientBackground
+- FloatingCommandCard
+- BentoCard
+- FlowStep
+- ActionCard
+- TrustBadge
+- CTASection
+
+17. Copy tone
+Confident, calm, premium, human.
+
+Avoid:
+- hype
+- fear-based credit repair copy
+- “boost your score overnight”
+- “delete anything”
+- aggressive sales language
+
+Use:
+- clarity
+- guidance
+- readiness
+- next best action
+- certainty
+- financial progress
+
+Final desired feeling:
+The user should feel:
+“This is not another credit repair app. This is a financial guidance platform that knows what I need to do next.”
+
+The landing page should visually match the new portal direction with cinematic depth, atmospheric motion, premium bento cards, and calm guided UX.
