@@ -1,0 +1,95 @@
+root@Scoreshift-Array-Backend:~/Scoreshift-array-backend# cat /root/Scoreshift-array-backend/services/array.js
+"use strict";
+
+const BASE_URL = process.env.ARRAY_PRODUCTION_MODE === "true"
+  ? "https://api.array.io"
+  : "https://sandbox.array.io";
+
+const API_KEY  = process.env.ARRAY_API_KEY  || "";
+const APP_KEY  = process.env.ARRAY_APP_KEY  || "";
+
+/**
+ * Generate a short-lived Array user token.
+ * @param {string} arrayUserId  The user's Array-side userId
+ * @param {string} [appKey]     Optional override (falls back to ARRAY_APP_KEY env var)
+ * @returns {Promise<{ token?: string, error?: string }>}
+ */
+async function getUserToken(arrayUserId, appKey) {
+  const key = appKey || APP_KEY;
+  const url = `${BASE_URL}/api/authenticate/v2/usertoken`;
+
+  console.log(`[Array] Requesting token for userId=${arrayUserId} env=${process.env.ARRAY_PRODUCTION_MODE === "true" ? "prod" : "sandbox"}`);
+
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      "x-array-server-token": API_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ appKey: key, userId: arrayUserId, ttlInMinutes: 55 }),
+  });
+
+  const raw = await resp.text();
+  console.log(`[Array] Token response status: ${resp.status}`);
+
+  if (!resp.ok) {
+    // Log status only — never log response body which may contain partial token data
+    return { error: `HTTP ${resp.status}` };
+  }
+
+  let data = {};
+  try { data = JSON.parse(raw); } catch { /* plain-text token */ }
+
+  const token = data.token || data.userToken || data.access_token || (raw.trim().length < 300 ? raw.trim() : "");
+  if (!token) return { error: "no_token_in_response" };
+
+  return { token };
+}
+
+/**
+ * Fetch the full credit report JSON for an authenticated user.
+ * @param {string} userToken  Short-lived token returned by getUserToken
+ * @returns {Promise<{ data?: object, error?: string, status?: number }>}
+ */
+async function getCreditReport(userToken) {
+  const url = `${BASE_URL}/v2/user/credit-report`;
+  console.log(`[Array] Fetching credit report from ${url}`);
+
+  const resp = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${userToken}`,
+      "Content-Type": "application/json",
+      "x-array-app-key": APP_KEY,
+      "x-app-key": APP_KEY,
+    },
+  });
+
+  const raw = await resp.text();
+  // Log status only — never log response body which contains user credit/PII data
+  console.log(`[Array] Credit report status: ${resp.status}, size: ${raw.length} bytes`);
+
+  if (!resp.ok) {
+    return { error: `HTTP ${resp.status}`, status: resp.status };
+  }
+
+  let data;
+  try { data = JSON.parse(raw); } catch {
+    return { error: "non_json_response", status: resp.status };
+  }
+
+  return { data, status: resp.status };
+}
+
+module.exports = { getUserToken, getCreditReport };
+root@Scoreshift-Array-Backend:~/Scoreshift-array-backend# grep -n "array/token\|usertoken\|x-array\|appKey\|userId\|ttl" /root/Scoreshift-array-backend/index.js | head -40
+65:// ── POST /array/token ─────────────────────────────────────────────────────────
+66:// Body: { userId: string, appKey?: string }
+68:app.post("/array/token", requireInternalSecret, async (req, res) => {
+69:  const { userId, appKey } = req.body || {};
+71:  if (!userId) {
+72:    return res.status(400).json({ error: "userId is required" });
+76:    const result = await getUserToken(userId, appKey);
+78:      console.error(`[/array/token] Failed for userId=${userId}:`, result.error);
+83:    console.error("[/array/token] Unexpected error:", err);
+root@Scoreshift-Array-Backend:~/Scoreshift-array-backend# 
