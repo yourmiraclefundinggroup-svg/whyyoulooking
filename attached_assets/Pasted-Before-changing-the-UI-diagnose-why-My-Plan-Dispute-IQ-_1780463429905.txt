@@ -1,0 +1,59 @@
+Before changing the UI, diagnose why My Plan / Dispute IQ / Progress are not generating a complete plan from Donald Blair’s credit data.
+
+The Credit Report page appears to show bureau scores, report dates, alerts, and tradeline/public record data, but My Plan and Dispute IQ still show mostly empty states.
+
+Please inspect and answer these questions:
+
+1. Is My Plan reading the exact same credit report JSON/data source as the Credit Report page?
+
+2. Is Dispute IQ reading the same full report object as Credit Report, or is it waiting for a separate report pull/import process?
+
+3. What function generates the guided Action Plan? Identify the function/file name.
+
+4. What conditions must be true before the Action Plan generates recommended actions?
+Examples:
+- creditReport exists
+- accounts/tradelines length > 0
+- report.status === complete
+- arrayReportComplete === true
+- disputes/analyzableItems exist
+- user has completed onboarding
+
+5. Is the Credit Report page currently using live Array data, cached Array data, placeholder/demo data, or hardcoded Donald Blair sample data?
+
+6. Why does the Credit Report page show report date Jun 21, 2021? Is that real sandbox data from Array or sample fallback data?
+
+7. Does the plan generator currently skip analysis if the report is stale, incomplete, or missing certain fields?
+
+8. Is the plan generator analyzing:
+- tradelines/accounts
+- collections
+- late payments
+- inquiries
+- public records/bankruptcy
+- utilization
+- score factors
+- credit alerts
+
+9. If any of those categories are not being analyzed, explain why and identify the missing mapping.
+
+10. Show the data path:
+Array / credit report source
+→ database storage
+→ Credit Report page
+→ My Plan
+→ Dispute IQ
+→ Progress
+
+11. Do not redesign anything yet. First give me a clear diagnosis of why Credit Report has data but My Plan / Dispute IQ / Progress do not fully populate.
+
+12. After diagnosis, propose the smallest safe backend/data fix so the same credit report object powers:
+- Home Command Center
+- My Plan
+- Dispute IQ
+- Debt Navigator
+- Progress
+- Credit Report
+
+Goal:
+ScoreShift should feel like one connected financial guidance platform, not separate tools. The Credit Report data should automatically generate the user’s plan, disputes, debt strategy, and progress tracking.

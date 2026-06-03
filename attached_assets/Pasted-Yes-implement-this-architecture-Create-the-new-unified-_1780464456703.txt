@@ -1,0 +1,181 @@
+Yes, implement this architecture.
+
+Create the new unified server endpoint:
+
+GET /api/me/score-shift-profile
+
+Purpose:
+Create one normalized ScoreShift profile object that every portal page can use.
+
+Do not redesign the UI yet.
+Do not remove existing data sources.
+Do not remove existing endpoints.
+This should be an additive architecture layer that connects the existing data sources into one shared intelligence object.
+
+Data sources remain unchanged:
+
+* /api/client/array/tradelines live/cache
+* credit_report_uploads from admin PDF parsing
+* disputes table
+* credit_goals
+* user profile
+
+The new endpoint should assemble and return:
+
+scoreShiftProfile {
+scores: {
+experian,
+equifax,
+transunion,
+vantage
+},
+
+tradelines: [],
+negativeTradelines: [],
+collections: [],
+chargeOffs: [],
+publicRecords: [],
+inquiries: [],
+
+utilization: {
+overallPercent,
+byAccount: []
+},
+
+alerts: [],
+
+disputes: [],
+
+violations: [],
+
+scoreSimulator: {
+factors: [],
+projectedGains: []
+},
+
+planSuggestions: [],
+
+meta: {
+source,
+fetchedAt,
+reportDate,
+isLive
+}
+}
+
+Assembly logic:
+
+1. Load disputes from DB.
+2. Load Array tradelines cache if available.
+3. Load latest credit_report_uploads if Array cache is unavailable.
+4. Normalize the report data into one common shape.
+5. Run or reuse violation-analysis.
+6. Derive negativeTradelines.
+7. Derive utilization.
+8. Derive planSuggestions.
+9. Return one JSON object.
+
+Important:
+Do not require disputes rows for My Plan to populate anymore.
+
+My Plan should be able to show recommended actions from:
+
+* negativeTradelines
+* violations
+* utilization issues
+* collections
+* charge-offs
+* public records / bankruptcy
+* inquiries
+* alerts
+
+The disputes table should only represent actions already started or filed.
+
+Use this logic:
+
+Plan Suggestions = things ScoreShift recommends.
+Disputes = actions already created/filed.
+Progress = what has been completed or is in progress.
+
+Frontend:
+Create a shared hook:
+
+useScoreShiftProfile()
+
+Query key:
+["/api/me/score-shift-profile"]
+
+Use TanStack Query with approximately 5-minute stale time.
+
+Update these pages to read from useScoreShiftProfile:
+
+* Home
+* My Plan
+* Dispute IQ
+* Debt Navigator
+* Protection Center
+* Credit Report
+* Progress
+
+Goal:
+Every page should feel connected and based on the same customer intelligence layer.
+
+Home should show:
+
+* biggest score drag
+* next best action
+* utilization issue
+* alerts
+* active disputes
+
+My Plan should show:
+
+* Act Now: planSuggestions that do not have disputes yet
+* In Progress: items with active disputes
+* Completed: resolved disputes / completed actions
+
+Dispute IQ should read:
+
+* negativeTradelines
+* violations
+* disputes
+
+Debt Navigator should read:
+
+* utilization.overallPercent
+* utilization.byAccount
+* high utilization accounts
+* subscription savings if available later
+
+Protection Center should read:
+
+* alerts
+* inquiries
+* publicRecords
+* identity/privacy alert data if available
+
+Credit Report should continue showing full report data, but preferably read from the same scoreShiftProfile object so it matches the rest of the portal.
+
+Progress should read:
+
+* disputes filed
+* items removed
+* score changes
+* utilization improvements
+* completed plan actions
+
+Do not create fake data.
+Use real data first.
+Use loading states second.
+Use empty states third.
+
+The final product should feel like:
+
+Credit Report Data
+→ ScoreShift Profile
+→ Plan Suggestions
+→ Recommended Tools
+→ Actions Started
+→ Progress Tracking
+
+This is the foundation for ScoreShift becoming a unified financial guidance platform instead of separate disconnected portal tools.
