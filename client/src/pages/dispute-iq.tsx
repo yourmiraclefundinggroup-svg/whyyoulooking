@@ -1554,7 +1554,8 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
               {resultTab === "all" && (
                 allTradelines.length === 0
                   ? <EmptyState icon="📋" title="No Accounts Found" description="No accounts were detected on this report." />
-                  : <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
+                  : <div style={{ overflowX: "auto", borderRadius: 14 }}>
+                    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden", minWidth: 520 }}>
                       <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 90px 110px 140px 90px", padding: "9px 20px", background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
                         {["", "CREDITOR", "BUREAU", "BALANCE", "STATUS", "TYPE"].map((h) => (
                           <span key={h} style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", letterSpacing: "0.06em" }}>{h}</span>
@@ -1600,13 +1601,15 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                         );
                       })}
                     </div>
+                    </div>
               )}
 
               {/* ── Derogatory tab ────────────────────────────────────────── */}
               {resultTab === "derogatory" && (
                 negativeTradelines.length === 0
                   ? <EmptyState icon="✅" title="No Derogatory Accounts" description="No derogatory items were detected on this report." />
-                  : <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
+                  : <div style={{ overflowX: "auto", borderRadius: 14 }}>
+                    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden", minWidth: 580 }}>
                       <div style={{ padding: "13px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 16 }}>⊗</span>
                         <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Derogatory Accounts</span>
@@ -1656,13 +1659,15 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                         );
                       })}
                     </div>
+                    </div>
               )}
 
               {/* ── Late Payments tab ─────────────────────────────────────── */}
               {resultTab === "late" && (
                 negLate.length === 0
                   ? <EmptyState icon="✅" title="No Late Payments" description="No late payment history detected." />
-                  : <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
+                  : <div style={{ overflowX: "auto", borderRadius: 14 }}>
+                    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden", minWidth: 600 }}>
                       <div style={{ padding: "13px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 16 }}>🕐</span>
                         <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Accounts with Late Payments</span>
@@ -1710,13 +1715,15 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                         );
                       })}
                     </div>
+                    </div>
               )}
 
               {/* ── Inquiries tab ─────────────────────────────────────────── */}
               {resultTab === "inquiries" && (
                 allInquiries.length === 0
                   ? <EmptyState icon="🔍" title="No Inquiries" description="No hard inquiries found on this report." />
-                  : <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
+                  : <div style={{ overflowX: "auto", borderRadius: 14 }}>
+                    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden", minWidth: 540 }}>
                       <div style={{ padding: "13px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 16 }}>🔍</span>
                         <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Credit Inquiries</span>
@@ -1738,13 +1745,15 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                         </div>
                       ))}
                     </div>
+                    </div>
               )}
 
               {/* ── Collections tab ───────────────────────────────────────── */}
               {resultTab === "collections" && (
                 negCollections.length === 0
                   ? <EmptyState icon="✅" title="No Collections" description="No collection accounts detected." />
-                  : <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
+                  : <div style={{ overflowX: "auto", borderRadius: 14 }}>
+                    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden", minWidth: 580 }}>
                       <div style={{ padding: "13px 20px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 16 }}>🏛</span>
                         <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>Collection Accounts</span>
@@ -1790,6 +1799,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                           </div>
                         );
                       })}
+                    </div>
                     </div>
               )}
 

@@ -1150,54 +1150,163 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   RESPONSIVE — MOBILE FIRST
+   RESPONSIVE
    ═══════════════════════════════════════════════════════════════ */
+
+/* ── Desktop large: constrain content width ─────────────────── */
+@media (min-width: 1400px) {
+  .cp-content-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}
+
+/* ── Tablet: 860–1099px ──────────────────────────────────────── */
+@media (max-width: 1099px) {
+  .cp-content { padding: 22px 20px 36px; }
+  .cp-grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 860px) {
+  .cp-grid-2 { grid-template-columns: 1fr; }
+  .cp-grid-3 { grid-template-columns: 1fr 1fr; }
+  .cp-home-hero { flex-direction: column; align-items: flex-start; padding: 20px 22px; gap: 16px; }
+  .cp-home-hero-scores { width: 100%; justify-content: flex-start; }
+  .cp-score-chart { gap: 18px; overflow-x: auto; padding-bottom: 8px; }
+}
+
+/* ── Mobile: ≤768px ──────────────────────────────────────────── */
 @media (max-width: 768px) {
+  /* Video */
+  .cp-bg-video { opacity: 0.12; }
+
+  /* Sidebar becomes a slide-in drawer */
   .cp-portal { --cp-sidebar-w: 0px; }
 
   .cp-sidebar {
-    transform: translateX(-240px);
-    width: 240px;
+    width: 260px;
+    transform: translateX(-264px);
+    box-shadow: none;
   }
-
   .cp-sidebar.open {
     transform: translateX(0);
+    box-shadow: 4px 0 32px rgba(0,0,0,0.14);
   }
 
   .cp-mobile-menu-btn { display: flex; }
-  .cp-mobile-overlay { display: block; }
+  .cp-mobile-overlay  { display: block; }
 
-  .cp-main { margin-left: 0; }
-
-  .cp-content { padding: 18px 16px 32px; }
-
-  .cp-topbar { padding: 0 16px; }
-
-  .cp-home-hero {
-    flex-direction: column; align-items: flex-start; padding: 20px;
+  /* Main layout */
+  .cp-main  { margin-left: 0; overflow-x: hidden; }
+  .cp-content {
+    padding: 16px 14px 40px;
+    overflow-x: hidden;
   }
 
-  .cp-home-hero-scores { gap: 8px; }
-  .cp-home-score-chip { min-width: 60px; }
+  /* Topbar */
+  .cp-topbar { padding: 0 14px; gap: 8px; }
+  .cp-topbar-title { font-size: 14px; }
+  .cp-plan-chip { display: none; }
+
+  /* Page header */
+  .cp-page-header { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .cp-page-title  { font-size: 18px; }
+
+  /* Cards */
+  .cp-card { padding: 16px; border-radius: 18px; }
+  .cp-card:hover { transform: none; }
+  .cp-stat-card { padding: 13px 14px; border-radius: 18px; }
+  .cp-stat-card:hover { transform: none; }
+  .cp-score-card { border-radius: 18px; }
+  .cp-score-card:hover { transform: none; }
+  .cp-array-wrapper { border-radius: 18px; }
+  .cp-array-wrapper:hover { transform: none; }
+  .cp-nba-card { border-radius: 18px; }
+
+  /* Grids */
+  .cp-grid-2,
+  .cp-grid-3,
+  .cp-grid-4 { grid-template-columns: 1fr; gap: 12px; }
+
+  /* Hero */
+  .cp-home-hero { flex-direction: column; align-items: flex-start; padding: 18px; gap: 16px; border-radius: 18px; }
+  .cp-welcome-name { font-size: 18px; }
+  .cp-home-hero-scores { width: 100%; gap: 8px; flex-wrap: wrap; }
+  .cp-home-score-chip { min-width: 0; flex: 1; padding: 8px 10px; }
   .cp-home-score-val { font-size: 18px; }
 
-  .cp-grid-3 { grid-template-columns: 1fr; }
-  .cp-grid-4 { grid-template-columns: 1fr 1fr; }
+  /* Subtabs — horizontal scroll, no wrap */
+  .cp-subtabs { gap: 0; }
+  .cp-subtab  { padding: 9px 12px; font-size: 12px; }
 
-  .cp-plan-action-header { flex-wrap: wrap; }
+  /* Plan action */
+  .cp-plan-action-header { flex-wrap: wrap; gap: 6px; }
   .cp-plan-impact { margin-left: 0; }
 
-  .cp-score-chart { gap: 16px; }
-  .cp-score-chart-bar-bg { width: 16px; height: 60px; }
+  /* Score chart */
+  .cp-score-chart { gap: 10px; overflow-x: auto; padding-bottom: 8px; min-width: 0; }
+  .cp-score-chart-bar-bg  { width: 16px; height: 60px; }
   .cp-score-chart-bar-wrap svg { display: none; }
 
+  /* NBA */
   .cp-nba-title { font-size: 15px; }
+  .cp-nba-footer { gap: 8px; }
+
+  /* Array body padding */
+  .cp-array-wrapper-body { padding: 14px; }
+
+  /* Dispute tables — force card-style on mobile */
+  .cp-dispute-table-row {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 12px 14px !important;
+    gap: 4px !important;
+    grid-template-columns: none !important;
+  }
+
+  /* Prevent any inline-grid overflow */
+  [style*="grid-template-columns"] {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Onboarding */
+  .cp-onboarding-card { padding: 24px 18px; }
+  .cp-onboarding-title { font-size: 18px; }
+
+  /* Score header */
+  .cp-score-header { border-radius: 18px; }
+
+  /* Milestone */
+  .cp-milestone { padding: 10px 0; }
+
+  /* Sidebar nav items */
+  .cp-nav-label { font-size: 12.5px; }
+
+  /* Stat value size */
+  .cp-stat-value { font-size: 20px; }
 }
 
+/* ── Small mobile: ≤480px ────────────────────────────────────── */
 @media (max-width: 480px) {
-  .cp-grid-4 { grid-template-columns: 1fr; }
-  .cp-onboarding-card { padding: 24px 20px; }
-  .cp-onboarding-title { font-size: 18px; }
+  .cp-content { padding: 12px 12px 40px; }
+  .cp-topbar { height: 52px; }
+  .cp-portal { --cp-topbar-h: 52px; }
+
+  .cp-card { padding: 14px; border-radius: 16px; }
+  .cp-array-wrapper-body { padding: 12px; }
+
+  .cp-home-score-chip { padding: 8px 8px; }
+  .cp-home-score-val  { font-size: 16px; }
+  .cp-welcome-name    { font-size: 17px; }
+  .cp-page-title      { font-size: 17px; }
+  .cp-score-number    { font-size: 36px; }
+
+  .cp-nba-title { font-size: 14px; }
+  .cp-subtab    { padding: 8px 10px; font-size: 11.5px; }
+
+  .cp-onboarding-card  { padding: 20px 14px; }
+  .cp-onboarding-title { font-size: 17px; }
 }
 
 /* ── Plan section headers ─────────────────────────────────────── */
