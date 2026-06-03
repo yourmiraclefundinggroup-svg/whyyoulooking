@@ -355,44 +355,129 @@ function LettersIllus() {
   );
 }
 
-// ── Hero Command Card ─────────────────────────────────────
-function CommandCard() {
+// ── Portal tilt handlers (preserves base 3-D perspective) ─
+function portalTiltMove(e: React.MouseEvent<HTMLDivElement>) {
+  const el = e.currentTarget;
+  const r = el.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width  * 2 - 1;
+  const y = (e.clientY - r.top)  / r.height * 2 - 1;
+  el.style.transform = `perspective(1100px) rotateY(${-5 + x * 4}deg) rotateX(${2 - y * 3}deg) translateY(-4px)`;
+  el.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.38), 0 12px 40px rgba(42,40,37,0.22), 0 48px 100px rgba(42,40,37,0.16)`;
+}
+function portalTiltLeave(e: React.MouseEvent<HTMLDivElement>) {
+  e.currentTarget.style.transform = `perspective(1100px) rotateY(-5deg) rotateX(2deg)`;
+  e.currentTarget.style.boxShadow = '';
+}
+
+// ── Mock Portal (hero visual) ──────────────────────────────
+const PORTAL_NAV = [
+  { label: "Dashboard",    active: true,  badge: null,
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
+  { label: "My Plan",      active: false, badge: null,
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h18M3 6c3 0 5 2 9 2s6-2 9-2M3 18c3 0 5-2 9-2s6 2 9 2"/></svg> },
+  { label: "Credit Report", active: false, badge: null,
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg> },
+  { label: "Dispute IQ",   active: false, badge: "3",
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> },
+  { label: "Smart Letters", active: false, badge: null,
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> },
+  { label: "Progress",     active: false, badge: null,
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> },
+  { label: "Identity",     active: false, badge: null,
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> },
+];
+
+function MockPortal() {
   return (
-    <div className="lp2-command-card">
-      <div className="lp2-cc-header">
-        <div className="lp2-cc-brand">
-          <img src={scoreshiftLogo} alt="" width={18} height={18} style={{ objectFit: "contain" }}/>
-          <span>ScoreShift</span>
-        </div>
-        <div className="lp2-cc-status-chip">
-          <span className="lp2-cc-dot"/>Financial Readiness Active
-        </div>
-      </div>
-      <div className="lp2-cc-scores-row">
-        {[["712","Experian","#3B82F6"],["705","Equifax","#EF4444"],["718","TransUnion","#8B5CF6"]].map(([val,name,color]) => (
-          <div key={name} className="lp2-cc-bureau">
-            <div className="lp2-cc-bureau-val" style={{ color }}>{val}</div>
-            <div className="lp2-cc-bureau-name">{name}</div>
+    <div className="lp2-portal-wrap">
+      <div className="lp2-portal-ambient-a"/>
+      <div className="lp2-portal-ambient-b"/>
+      <div className="lp2-portal-frame" onMouseMove={portalTiltMove} onMouseLeave={portalTiltLeave}>
+
+        {/* ── Frosted sidebar ─── */}
+        <aside className="lp2-portal-sb">
+          <div className="lp2-portal-sb-logo">
+            <img src={scoreshiftLogo} alt="" width={20} height={20} style={{ objectFit: "contain" }}/>
           </div>
-        ))}
-      </div>
-      <div className="lp2-cc-nba">
-        <div className="lp2-cc-label">Next Best Action</div>
-        <div className="lp2-cc-nba-row">
-          <span className="lp2-cc-nba-icon">⚡</span>
-          <div>
-            <div className="lp2-cc-nba-title">Dispute — MIDLAND CREDIT MGMT</div>
-            <div className="lp2-cc-nba-sub">Est. +18 pts · Ready to send</div>
+          <nav className="lp2-portal-sb-nav">
+            {PORTAL_NAV.map((item) => (
+              <div key={item.label} className={`lp2-portal-nav-item${item.active ? " active" : ""}`} title={item.label}>
+                {item.icon}
+                {item.badge && <span className="lp2-portal-nav-badge">{item.badge}</span>}
+              </div>
+            ))}
+          </nav>
+          <div className="lp2-portal-sb-footer">
+            <div className="lp2-portal-user-av">JK</div>
+          </div>
+        </aside>
+
+        {/* ── Main content ─── */}
+        <div className="lp2-portal-main">
+          {/* Topbar */}
+          <div className="lp2-portal-topbar">
+            <div className="lp2-portal-topbar-title">My Dashboard</div>
+            <div className="lp2-portal-topbar-chip">
+              <span className="lp2-portal-chip-dot"/>Financial Readiness Active
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="lp2-portal-body">
+            {/* 3-bureau scores */}
+            <div className="lp2-portal-scores">
+              {([["712","Experian","#3B82F6"],["705","Equifax","#EF4444"],["718","TransUnion","#8B5CF6"]] as const).map(([val,name,color]) => (
+                <div key={name} className="lp2-portal-score-chip">
+                  <div className="lp2-portal-score-num" style={{ color }}>{val}</div>
+                  <div className="lp2-portal-score-bur">{name}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Action card + Progress card */}
+            <div className="lp2-portal-cards-row">
+              <div className="lp2-portal-action-card">
+                <div className="lp2-portal-card-label">Next Best Action</div>
+                <div className="lp2-portal-action-body">
+                  <span className="lp2-portal-action-icon">⚡</span>
+                  <div>
+                    <div className="lp2-portal-action-title">Dispute MIDLAND CREDIT</div>
+                    <div className="lp2-portal-action-sub">Est. +18 pts · Ready to send</div>
+                  </div>
+                </div>
+              </div>
+              <div className="lp2-portal-prog-card">
+                <div className="lp2-portal-card-label">Plan Progress</div>
+                <div className="lp2-portal-prog-val">68%</div>
+                <div className="lp2-portal-prog-track">
+                  <div className="lp2-portal-prog-fill" style={{ width: "68%" }}/>
+                </div>
+                <div className="lp2-portal-prog-note">4 of 6 complete</div>
+              </div>
+            </div>
+
+            {/* Open disputes */}
+            <div className="lp2-portal-disputes">
+              <div className="lp2-portal-disp-header">Open Disputes</div>
+              <div className="lp2-portal-disp-item">
+                <span className="lp2-portal-disp-dot pending"/>
+                <div className="lp2-portal-disp-body">
+                  <div className="lp2-portal-disp-name">Capital One — Late Payment</div>
+                  <div className="lp2-portal-disp-meta">Sent · Day 12 of 30</div>
+                </div>
+                <span className="lp2-portal-disp-bureau">EQ · TU</span>
+              </div>
+              <div className="lp2-portal-disp-item">
+                <span className="lp2-portal-disp-dot won"/>
+                <div className="lp2-portal-disp-body">
+                  <div className="lp2-portal-disp-name">Midland Credit Management</div>
+                  <div className="lp2-portal-disp-meta" style={{ color: "#6BAE8A" }}>Removed · +18 pts gained ✓</div>
+                </div>
+                <span className="lp2-portal-disp-bureau">EX</span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="lp2-cc-progress">
-        <div className="lp2-cc-prog-head">
-          <span className="lp2-cc-label">Plan Progress</span>
-          <span className="lp2-cc-prog-pct">68%</span>
-        </div>
-        <div className="lp2-cc-track"><div className="lp2-cc-fill" style={{ width: "68%" }}/></div>
-        <div className="lp2-cc-prog-note">4 of 6 actions complete</div>
       </div>
     </div>
   );
@@ -484,7 +569,7 @@ function HeroSection() {
           </div>
         </div>
         <div className="lp2-hero-card-wrap lp2-reveal lp2-d3">
-          <CommandCard/>
+          <MockPortal/>
         </div>
       </div>
     </section>
