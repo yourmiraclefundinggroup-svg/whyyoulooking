@@ -5,6 +5,7 @@ import { useUserContext } from "@/hooks/use-user-context";
 import { useArrayScript } from "@/hooks/use-array-script";
 import { useArrayToken } from "@/hooks/use-array-token";
 import { useFeatureAccess } from "@/hooks/use-feature-access";
+import { useScoreShiftProfile, type PlanSuggestion } from "@/hooks/use-score-shift-profile";
 import "@/styles/portal.css";
 import { DisputeIQPage as RealDisputeIQPage } from "@/pages/dispute-iq";
 
@@ -1010,25 +1011,61 @@ function HomePage({ user, goal, timeline, onNavigate, appKey, userToken, sbx, sc
 }
 
 /* ── MY PLAN PAGE ────────────────────────────────────────────────── */
+const PRIORITY_COLORS: Record<string, string> = {
+  high: "var(--cp-red)",
+  medium: "var(--cp-amber)",
+  low: "var(--cp-teal)",
+};
+const PRIORITY_LABELS: Record<string, string> = {
+  high: "High Priority",
+  medium: "Medium",
+  low: "Low",
+};
+const TYPE_LABELS: Record<string, string> = {
+  dispute: "Dispute",
+  "charge-off": "Charge-Off",
+  paydown: "Pay Down",
+  "inquiry-dispute": "Inquiry",
+  "public-record": "Public Record",
+};
+
+function SuggestionCard({ s, onNavigate }: { s: PlanSuggestion; onNavigate: (p: PageId) => void }) {
+  const color = PRIORITY_COLORS[s.priority] ?? "var(--cp-accent)";
+  return (
+    <div className="cp-plan-action-card" style={{ borderLeft: `4px solid ${color}` }}>
+      <div className="cp-plan-action-header">
+        <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, flexWrap: "wrap" }}>
+          <span className="cp-plan-category">{TYPE_LABELS[s.type] ?? s.type}</span>
+          {s.bureau && <span className="cp-plan-bureau">{s.bureau}</span>}
+          <span style={{ fontSize: 10.5, fontWeight: 700, color, background: `${color}15`, padding: "1px 8px", borderRadius: 10 }}>
+            {PRIORITY_LABELS[s.priority]}
+          </span>
+        </div>
+      </div>
+      <div className="cp-plan-action-title">{s.title}</div>
+      <div className="cp-plan-action-detail">{s.detail}</div>
+      <div style={{ marginTop: 14 }}>
+        <button className="cp-btn cp-btn-primary cp-btn-sm" onClick={() => onNavigate("dispute-iq")}>
+          Open Dispute IQ
+          <Icon size={13}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function PlanPage({ goal, timeline, onNavigate }: { goal: OnboardingGoal | null; timeline: OnboardingTimeline | null; onNavigate: (page: PageId) => void }) {
-  const { data: activeRaw, isLoading: loadingActive } = useQuery<EnrichedDispute[]>({
-    queryKey: ["/api/client/disputes?status=active"],
-  });
-  const { data: pendingRaw, isLoading: loadingPending } = useQuery<EnrichedDispute[]>({
-    queryKey: ["/api/client/disputes?status=pending"],
-  });
-  const isLoading = loadingActive || loadingPending;
-  const activeArr: EnrichedDispute[] = Array.isArray(activeRaw) ? activeRaw : [];
-  const pendingArr: EnrichedDispute[] = Array.isArray(pendingRaw) ? pendingRaw : [];
-  const active: EnrichedDispute[] = [...activeArr, ...pendingArr];
+  const { data: profile, isLoading } = useScoreShiftProfile();
+
   const goalLabel = goal ? GOALS.find(g => g.id === goal)?.label : null;
   const timelineLabel = timeline ? TIMELINES.find(t => t.id === timeline)?.label : null;
 
-  const RECOMMENDED = [
-    { title: "Review your full 3-bureau report", detail: "Check for new items, inquiries, and bureau reporting differences.", tool: "Credit Report", page: "report" as PageId, color: "var(--cp-accent)" },
-    { title: "Analyze debt and utilization", detail: "High utilization is one of the biggest score drags. Review your current levels.", tool: "Debt Navigator", page: "debt" as PageId, color: "var(--cp-amber)" },
-    { title: "Monitor for new alerts", detail: "Check credit alerts and identity protection for any new bureau activity.", tool: "Protection Center", page: "protection" as PageId, color: "var(--cp-teal)" },
-  ];
+  const openSuggestions = (profile?.planSuggestions ?? []).filter(s => s.status === "open");
+  const inProgressSuggestions = (profile?.planSuggestions ?? []).filter(s => s.status === "in_progress");
+  const activeDisputes = profile?.disputes?.active ?? [];
+  const resolvedDisputes = profile?.disputes?.resolved ?? [];
+  const hasAnyData = openSuggestions.length > 0 || inProgressSuggestions.length > 0 || activeDisputes.length > 0;
+  const totalActions = openSuggestions.length + inProgressSuggestions.length;
 
   return (
     <div>
@@ -1040,7 +1077,7 @@ function PlanPage({ goal, timeline, onNavigate }: { goal: OnboardingGoal | null;
             {goalLabel ? `Goal: ${goalLabel}${timelineLabel ? ` · ${timelineLabel}` : ""}` : "Your prioritized credit repair action list."}
           </p>
         </div>
-        {active.length > 0 && <span className="cp-badge warning">{active.length} active</span>}
+        {totalActions > 0 && <span className="cp-badge warning">{totalActions} action{totalActions !== 1 ? "s" : ""}</span>}
       </div>
 
       {isLoading ? (
@@ -1048,13 +1085,13 @@ function PlanPage({ goal, timeline, onNavigate }: { goal: OnboardingGoal | null;
           <div className="cp-array-spinner" style={{ margin: "0 auto 12px" }} />
           <div style={{ fontSize: 13, color: "var(--cp-text-muted)" }}>Loading your plan…</div>
         </div>
-      ) : active.length === 0 ? (
+      ) : !hasAnyData ? (
         <div className="cp-card cp-mb-24">
           <div className="cp-empty-state">
             <div className="cp-empty-icon">
               <Icon size={22}><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></Icon>
             </div>
-            <div className="cp-empty-title">No active disputes yet</div>
+            <div className="cp-empty-title">No action items yet</div>
             <div className="cp-empty-desc">Open Dispute IQ to pull your credit report, identify disputable items, and generate your first dispute letters. Your plan will build automatically.</div>
             <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
               <button className="cp-btn cp-btn-primary" onClick={() => onNavigate("dispute-iq")}>
@@ -1066,51 +1103,107 @@ function PlanPage({ goal, timeline, onNavigate }: { goal: OnboardingGoal | null;
           </div>
         </div>
       ) : (
-        <div className="cp-mb-24">
-          <div className="cp-plan-section-header cp-mb-18">
-            <div style={{ width: 4, height: 18, borderRadius: 2, background: "var(--cp-red)", flexShrink: 0 }} />
-            <span className="cp-plan-section-title" style={{ color: "var(--cp-red)" }}>Active Disputes</span>
-            <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 9px", borderRadius: 20, background: "rgba(239,68,68,0.1)", color: "var(--cp-red)", border: "1px solid rgba(239,68,68,0.2)" }}>Act Now</span>
-            <span style={{ fontSize: 11.5, color: "var(--cp-text-muted)", marginLeft: "auto" }}>{active.length} dispute{active.length !== 1 ? "s" : ""}</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 10 }}>
-            {active.map(d => (
-              <div key={d.id} className="cp-plan-action-card" style={{ borderLeft: "4px solid var(--cp-red)" }}>
-                <div className="cp-plan-action-header">
-                  <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, flexWrap: "wrap" }}>
-                    <span className="cp-plan-category">Dispute</span>
-                    <span className="cp-plan-bureau">{d.bureau}</span>
-                    <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--cp-red)", background: "rgba(239,68,68,0.08)", padding: "1px 8px", borderRadius: 10 }}>Dispute IQ</span>
-                  </div>
-                  <span className={`cp-pill ${
-                    d.status === "PENDING" || d.status === "SENT" ? "pending" :
-                    d.status === "DELIVERED" ? "active" :
-                    d.status === "FOLLOW_UP_REQUIRED" ? "warning" :
-                    d.status === "RESOLVED" ? "resolved" : "negative"
-                  }`}>
-                    {d.status === "PENDING" ? "Letter Ready" : d.status === "SENT" ? "Awaiting Delivery" : d.status === "DELIVERED" ? "Bureau Reviewing" : d.status === "FOLLOW_UP_REQUIRED" ? "Follow-up Required" : d.status}
-                  </span>
-                </div>
-                <div className="cp-plan-action-title">{d.issueTitle}</div>
-                <div className="cp-plan-action-detail">{d.creditor} · Sent {fmtDate(d.dateSent)} · Deadline: {fmtDate(d.expectedResponse)}</div>
-                <div style={{ marginTop: 14 }}>
-                  <button className="cp-btn cp-btn-primary cp-btn-sm" onClick={() => onNavigate("dispute-iq")}>
-                    Track in Dispute IQ
-                    <Icon size={13}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
-                  </button>
-                </div>
+        <>
+          {/* ── Act Now ──────────────────────────────────────────── */}
+          {openSuggestions.length > 0 && (
+            <div className="cp-mb-24">
+              <div className="cp-plan-section-header cp-mb-18">
+                <div style={{ width: 4, height: 18, borderRadius: 2, background: "var(--cp-red)", flexShrink: 0 }} />
+                <span className="cp-plan-section-title" style={{ color: "var(--cp-red)" }}>Act Now</span>
+                <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 9px", borderRadius: 20, background: "rgba(239,68,68,0.1)", color: "var(--cp-red)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                  {openSuggestions.length} item{openSuggestions.length !== 1 ? "s" : ""}
+                </span>
               </div>
-            ))}
-          </div>
-        </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {openSuggestions.map(s => <SuggestionCard key={s.id} s={s} onNavigate={onNavigate} />)}
+              </div>
+            </div>
+          )}
+
+          {/* ── In Progress ──────────────────────────────────────── */}
+          {(inProgressSuggestions.length > 0 || activeDisputes.length > 0) && (
+            <div className="cp-mb-24">
+              <div className="cp-plan-section-header cp-mb-18">
+                <div style={{ width: 4, height: 18, borderRadius: 2, background: "var(--cp-amber)", flexShrink: 0 }} />
+                <span className="cp-plan-section-title" style={{ color: "var(--cp-amber)" }}>In Progress</span>
+                <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 9px", borderRadius: 20, background: "rgba(245,158,11,0.1)", color: "var(--cp-amber)", border: "1px solid rgba(245,158,11,0.2)" }}>
+                  {inProgressSuggestions.length + activeDisputes.length} active
+                </span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {inProgressSuggestions.map(s => <SuggestionCard key={s.id} s={s} onNavigate={onNavigate} />)}
+                {activeDisputes.map(d => (
+                  <div key={d.id} className="cp-plan-action-card" style={{ borderLeft: "4px solid var(--cp-amber)" }}>
+                    <div className="cp-plan-action-header">
+                      <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, flexWrap: "wrap" }}>
+                        <span className="cp-plan-category">Dispute</span>
+                        <span className="cp-plan-bureau">{d.bureau}</span>
+                      </div>
+                      <span className={`cp-pill ${
+                        d.status === "PENDING" || d.status === "SENT" ? "pending" :
+                        d.status === "DELIVERED" ? "active" :
+                        d.status === "FOLLOW_UP_REQUIRED" ? "warning" : "pending"
+                      }`}>
+                        {d.status === "PENDING" ? "Letter Ready" : d.status === "SENT" ? "Awaiting Delivery" : d.status === "DELIVERED" ? "Bureau Reviewing" : d.status === "FOLLOW_UP_REQUIRED" ? "Follow-up Required" : d.status}
+                      </span>
+                    </div>
+                    <div className="cp-plan-action-title">{(d as any).issueTitle || "Dispute"}</div>
+                    <div className="cp-plan-action-detail">{(d as any).creditor} · {d.bureau} · Sent {fmtDate(d.dateSent)}</div>
+                    <div style={{ marginTop: 14 }}>
+                      <button className="cp-btn cp-btn-primary cp-btn-sm" onClick={() => onNavigate("dispute-iq")}>
+                        Track in Dispute IQ
+                        <Icon size={13}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></Icon>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Completed ────────────────────────────────────────── */}
+          {resolvedDisputes.length > 0 && (
+            <div className="cp-mb-24">
+              <div className="cp-plan-section-header cp-mb-18">
+                <div style={{ width: 4, height: 18, borderRadius: 2, background: "var(--cp-green)", flexShrink: 0 }} />
+                <span className="cp-plan-section-title" style={{ color: "var(--cp-green)" }}>Completed</span>
+                <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 9px", borderRadius: 20, background: "rgba(34,197,94,0.1)", color: "var(--cp-green)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                  {resolvedDisputes.length} resolved
+                </span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {resolvedDisputes.map(d => (
+                  <div key={d.id} className="cp-plan-action-card" style={{ borderLeft: "4px solid var(--cp-green)", opacity: 0.85 }}>
+                    <div className="cp-plan-action-header">
+                      <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, flexWrap: "wrap" }}>
+                        <span className="cp-plan-category">Dispute</span>
+                        <span className="cp-plan-bureau">{d.bureau}</span>
+                      </div>
+                      <span className={`cp-pill ${d.status === "RESOLVED" ? "resolved" : "negative"}`}>
+                        {d.status === "RESOLVED" ? "Resolved" : "Rejected"}
+                      </span>
+                    </div>
+                    <div className="cp-plan-action-title">{(d as any).issueTitle || "Dispute"}</div>
+                    <div className="cp-plan-action-detail">{(d as any).creditor} · {d.bureau}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      <div className="cp-plan-section-header cp-mb-18" style={{ marginTop: active.length > 0 ? 28 : 0 }}>
+      {/* ── Recommended tools (always shown at bottom) ──────────── */}
+      <div className="cp-plan-section-header cp-mb-18" style={{ marginTop: hasAnyData ? 28 : 0 }}>
         <div style={{ width: 4, height: 18, borderRadius: 2, background: "var(--cp-accent)", flexShrink: 0 }} />
         <span className="cp-plan-section-title" style={{ color: "var(--cp-accent)" }}>Recommended Next Steps</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {RECOMMENDED.map((a, i) => (
+        {[
+          { title: "Review your full 3-bureau report", detail: "Check for new items, inquiries, and bureau reporting differences.", tool: "Credit Report", page: "report" as PageId, color: "var(--cp-accent)" },
+          { title: "Analyze debt and utilization", detail: "High utilization is one of the biggest score drags. Review your current levels.", tool: "Debt Navigator", page: "debt" as PageId, color: "var(--cp-amber)" },
+          { title: "Monitor for new alerts", detail: "Check credit alerts and identity protection for any new bureau activity.", tool: "Protection Center", page: "protection" as PageId, color: "var(--cp-teal)" },
+        ].map((a, i) => (
           <div key={i} className="cp-plan-action-card" style={{ borderLeft: `4px solid ${a.color}` }}>
             <div className="cp-plan-action-header">
               <span style={{ fontSize: 10.5, fontWeight: 700, color: a.color, background: `${a.color}15`, padding: "1px 8px", borderRadius: 10 }}>{a.tool}</span>

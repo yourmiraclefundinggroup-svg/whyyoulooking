@@ -9723,6 +9723,252 @@ ${denialLetterText}`
     }
   });
 
+  // ── Unified ScoreShift Profile ────────────────────────────────────────────────
+  // GET /api/me/score-shift-profile
+  // Assembles one canonical profile: tradelines + disputes + planSuggestions.
+  // Source hierarchy: Array cache → PDF upload → empty.
+  app.get("/api/me/score-shift-profile", authenticateToken, requireClientAccess, async (req, res) => {
+    try {
+      const user = (req as any).user;
+      const userId = user.id;
+
+      // ── 1. Get tradeline data from cache ─────────────────────────────────
+      type TradelineData = {
+        tradelines: any[];
+        negativeTradelines: any[];
+        inquiries: any[];
+        source: string;
+        note?: string;
+        [key: string]: any;
+      };
+      let tradelineData: TradelineData = {
+        tradelines: [], negativeTradelines: [], inquiries: [], source: "none",
+      };
+
+      const cached = await storage.getCreditReportCache(userId);
+      if (cached) {
+        const ageMs = Date.now() - new Date(cached.fetchedAt).getTime();
+        const notInvalidated = !cached.invalidatedAt || new Date(cached.invalidatedAt) < new Date(cached.fetchedAt);
+        if (ageMs < 24 * 60 * 60 * 1000 && notInvalidated) {
+          tradelineData = { ...(cached.data as any) };
+        }
+      }
+
+      // ── 2. If no valid cache, fall back to PDF upload ─────────────────────
+      if (!tradelineData.tradelines?.length && tradelineData.source !== "array") {
+        const { analyzeAllTradelines, analyzeTradelineViolations, isNegativeTradeline } = await import("./violation-analysis");
+
+        const uploads = await storage.getCreditReportUploads(userId);
+        const latest = uploads
+          .filter(u => u.parseStatus === "succeeded")
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+        if (latest) {
+          const [dbAccounts, dbInquiries, dbCollections] = await Promise.all([
+            storage.getCreditReportAccounts(latest.id),
+            storage.getCreditReportInquiries(latest.id),
+            storage.getCreditReportCollections(latest.id),
+          ]);
+
+          const normalizeBureau = (b: string) => {
+            const u = (b || "").toUpperCase();
+            if (u.includes("EXPERIAN") || u === "EXP") return "EXPERIAN";
+            if (u.includes("EQUIFAX") || u === "EQF") return "EQUIFAX";
+            if (u.includes("TRANSUNION") || u === "TU" || u.includes("TRANS")) return "TRANSUNION";
+            return u;
+          };
+          const reportBureau = latest.bureau ? normalizeBureau(latest.bureau) : undefined;
+
+          function parseLatePayments(raw: string | null | undefined) {
+            if (!raw) return { days30: 0, days60: 0, days90: 0 };
+            try {
+              const p = JSON.parse(raw);
+              if (typeof p === "object") return { days30: p["30"] || p.days30 || 0, days60: p["60"] || p.days60 || 0, days90: p["90"] || p.days90 || 0 };
+            } catch { /* not json */ }
+            const m30 = raw.match(/30[:\s]+(\d+)/i);
+            const m60 = raw.match(/60[:\s]+(\d+)/i);
+            const m90 = raw.match(/90[:\s]+(\d+)/i);
+            return { days30: m30 ? parseInt(m30[1]) : 0, days60: m60 ? parseInt(m60[1]) : 0, days90: m90 ? parseInt(m90[1]) : 0 };
+          }
+
+          const accountTradelines = dbAccounts.map((acct: any) => {
+            const latePayments = parseLatePayments(acct.latePayments30_60_90 || acct.late_payments_30_60_90);
+            const statusLower = (acct.status || acct.paymentStatus || "").toLowerCase();
+            const flags = (acct.derogatoryFlags || acct.derogatory_flags || "").toLowerCase();
+            return {
+              creditor: acct.creditorName || acct.creditor_name || "Unknown Creditor",
+              accountNumber: acct.accountNumberMasked || acct.accountNumber || "Unknown",
+              accountType: acct.accountType || acct.account_type || "other",
+              balance: String(acct.balance || 0),
+              status: acct.status || acct.paymentStatus || "",
+              dateOpened: acct.dateOpened || acct.date_opened || "",
+              dateOfFirstDelinquency: undefined as string | undefined,
+              latePayments,
+              bureau: reportBureau,
+              isDerogatory: flags.includes("charge") || flags.includes("collection") || flags.includes("derogatory") ||
+                statusLower.includes("charge") || statusLower.includes("collection") || statusLower.includes("derogatory") ||
+                latePayments.days30 > 0 || latePayments.days60 > 0 || latePayments.days90 > 0,
+            };
+          });
+
+          const collectionTradelines = dbCollections.map((coll: any) => ({
+            creditor: coll.agencyName || coll.agency_name || "Collection Agency",
+            accountNumber: `Collection — ${coll.originalCreditor || coll.original_creditor || "Unknown"}`,
+            accountType: "collection",
+            balance: String(coll.amount || 0),
+            status: coll.status || "Collection",
+            dateOpened: coll.dateOpened || coll.date_opened || "",
+            dateOfFirstDelinquency: undefined as string | undefined,
+            latePayments: { days30: 0, days60: 0, days90: 0 },
+            bureau: reportBureau,
+            isDerogatory: true,
+          }));
+
+          const rawAll = [...accountTradelines, ...collectionTradelines];
+          const allTradelines = rawAll.map((t) => ({
+            ...t,
+            violations: analyzeTradelineViolations(t),
+            isDerogatory: (t as any).isDerogatory || isNegativeTradeline(t),
+          }));
+          const negativeTradelines = analyzeAllTradelines(rawAll);
+          const inquiries = dbInquiries.map((inq: any) => ({
+            creditor: inq.creditorName || inq.creditor_name || "Unknown",
+            inquiryDate: inq.inquiryDate || inq.inquiry_date || "",
+            inquiryType: inq.inquiryType || inq.inquiry_type || "hard",
+            suggestedDisputeReason: "Unauthorized hard inquiry — no permissible purpose established (FCRA § 1681b)",
+          }));
+
+          tradelineData = { tradelines: allTradelines, negativeTradelines, inquiries, source: "credit_file" };
+        }
+      }
+
+      // ── 3. Get disputes ───────────────────────────────────────────────────
+      const ACTIVE_STATUSES = ["PENDING", "SENT", "DELIVERED", "FOLLOW_UP_REQUIRED"];
+      const RESOLVED_STATUSES = ["RESOLVED", "REJECTED"];
+
+      const allDisputes = await storage.getDisputes(userId);
+      const enrichedDisputes = await Promise.all(
+        allDisputes.map(async (d) => {
+          const issue = await storage.getCreditIssue(d.issueId);
+          return {
+            ...d,
+            creditor: issue?.creditor ?? "Unknown",
+            issueType: issue?.type ?? "",
+            issueTitle: issue?.title ?? "",
+            outcome: d.status === "RESOLVED" ? "removed" : d.status === "REJECTED" ? "rejected" : null,
+          };
+        })
+      );
+      const activeDisputes = enrichedDisputes.filter(d => ACTIVE_STATUSES.includes(d.status));
+      const resolvedDisputes = enrichedDisputes.filter(d => RESOLVED_STATUSES.includes(d.status));
+
+      // ── 4. Build planSuggestions ──────────────────────────────────────────
+      // Keyed by creditor+bureau so we can check if there's already an active dispute
+      const activeDisputeKeys = new Set<string>(
+        activeDisputes.map(d => `${(d.creditor || "").toLowerCase()}|${(d.bureau || "").toUpperCase()}`)
+      );
+
+      const suggestions: any[] = [];
+      const seenSuggestions = new Set<string>();
+
+      const addSuggestion = (s: any) => {
+        const key = `${s.type}|${s.creditor ?? ""}|${s.bureau ?? ""}`;
+        if (seenSuggestions.has(key)) return;
+        seenSuggestions.add(key);
+        suggestions.push(s);
+      };
+
+      // Negative tradelines → dispute suggestions
+      for (const tl of (tradelineData.negativeTradelines || [])) {
+        const statusLower = (tl.status || "").toLowerCase();
+        const isCollection = statusLower.includes("collection");
+        const isChargeOff = statusLower.includes("charge");
+        const hasViolations = tl.violations?.length > 0;
+
+        const key = `${(tl.creditor || "").toLowerCase()}|${(tl.bureau || "").toUpperCase()}`;
+        const hasActiveDispute = activeDisputeKeys.has(key);
+
+        let type: string = "dispute";
+        if (isCollection) type = "dispute";
+        else if (isChargeOff) type = "charge-off";
+
+        const violationSummary = hasViolations
+          ? `${tl.violations.length} violation${tl.violations.length !== 1 ? "s" : ""} detected`
+          : "Derogatory item on record";
+        const lateTotal = (tl.latePayments?.days30 || 0) + (tl.latePayments?.days60 || 0) + (tl.latePayments?.days90 || 0);
+        const detail = isCollection
+          ? `Collection — ${violationSummary}. Dispute under FCRA § 1681c(a)(4).`
+          : isChargeOff
+          ? `Charge-off — ${violationSummary}. Challenge accuracy and furnisher obligations.`
+          : lateTotal > 0
+          ? `${lateTotal} late payment${lateTotal !== 1 ? "s" : ""} reported — ${violationSummary}.`
+          : `${violationSummary}. File a formal dispute to challenge this entry.`;
+
+        addSuggestion({
+          id: `dispute-${tl.creditor}-${tl.bureau || "UNK"}-${tl.accountNumber}`,
+          type,
+          priority: "high",
+          title: isCollection ? `Dispute collection: ${tl.creditor}` : isChargeOff ? `Challenge charge-off: ${tl.creditor}` : `Dispute negative item: ${tl.creditor}`,
+          detail,
+          bureau: tl.bureau,
+          creditor: tl.creditor,
+          status: hasActiveDispute ? "in_progress" : "open",
+          disputeId: hasActiveDispute ? activeDisputes.find(d => `${(d.creditor || "").toLowerCase()}|${(d.bureau || "").toUpperCase()}` === key)?.id : undefined,
+        });
+      }
+
+      // Hard inquiries < 6 months → inquiry-dispute suggestions
+      const sixMonthsAgo = Date.now() - 6 * 30 * 24 * 60 * 60 * 1000;
+      for (const inq of (tradelineData.inquiries || [])) {
+        if ((inq.inquiryType || "").toLowerCase() !== "hard") continue;
+        const inqDate = inq.inquiryDate ? new Date(inq.inquiryDate).getTime() : 0;
+        if (inqDate < sixMonthsAgo) continue;
+        addSuggestion({
+          id: `inquiry-${inq.creditor}-${inq.inquiryDate}`,
+          type: "inquiry-dispute",
+          priority: "medium",
+          title: `Dispute hard inquiry: ${inq.creditor}`,
+          detail: `Hard inquiry from ${inq.inquiryDate ? new Date(inq.inquiryDate).toLocaleDateString() : "recently"}. If you did not authorize this pull, dispute under FCRA § 1681b.`,
+          creditor: inq.creditor,
+          status: "open",
+        });
+      }
+
+      // ── 5. Map source ─────────────────────────────────────────────────────
+      const sourceMap: Record<string, string> = {
+        array: "array_live",
+        credit_file: "pdf_upload",
+        none: "none",
+      };
+      const profileSource = (sourceMap[tradelineData.source] || tradelineData.source || "none") as any;
+
+      return res.json({
+        scores: {
+          experian: null,
+          equifax: null,
+          transunion: null,
+          source: profileSource,
+        },
+        tradelines: tradelineData.tradelines || [],
+        negativeTradelines: tradelineData.negativeTradelines || [],
+        inquiries: tradelineData.inquiries || [],
+        disputes: {
+          active: activeDisputes,
+          resolved: resolvedDisputes,
+        },
+        planSuggestions: suggestions,
+        meta: {
+          source: profileSource,
+          fetchedAt: new Date().toISOString(),
+          note: tradelineData.note,
+        },
+      });
+    } catch (err: any) {
+      console.error("[ScoreShiftProfile] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ── Client: invalidate their own credit report cache (force next load to refetch) ──
   app.delete("/api/client/array/tradelines/cache", authenticateToken, requireClientAccess, async (req, res) => {
     try {
