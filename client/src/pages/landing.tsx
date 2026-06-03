@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import "../styles/landing.css";
 import scoreshiftLogo from "@assets/scoreshift-logo.png";
@@ -400,25 +400,49 @@ function CommandCard() {
 
 // ── Nav ───────────────────────────────────────────────────
 function Nav() {
+  const [open, setOpen] = useState(false);
   useNavScroll();
   return (
-    <nav className="lp2-nav">
-      <div className="lp2-container lp2-nav-inner">
-        <Link href="/" className="lp2-nav-logo">
-          <img src={scoreshiftLogo} alt="ScoreShift" width={26} height={26} style={{ objectFit: "contain" }}/>
-          <span>ScoreShift</span>
-        </Link>
-        <ul className="lp2-nav-links">
-          <li><a href="#pricing">Pricing</a></li>
-          <li><a href="#workflow">How It Works</a></li>
-          <li><Link href="/pricing">For Business</Link></li>
-        </ul>
-        <div className="lp2-nav-actions">
-          <Link href="/auth" className="lp2-nav-ghost">Sign In</Link>
-          <Link href="/auth" className="lp2-btn-primary">Check Your Credit Health</Link>
+    <>
+      <nav className="lp2-nav">
+        <div className="lp2-container lp2-nav-inner">
+          <Link href="/" className="lp2-nav-logo">
+            <img src={scoreshiftLogo} alt="ScoreShift" width={26} height={26} style={{ objectFit: "contain" }}/>
+            <span>ScoreShift</span>
+          </Link>
+          <ul className="lp2-nav-links">
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#workflow">How It Works</a></li>
+            <li><Link href="/pricing">For Business</Link></li>
+          </ul>
+          <div className="lp2-nav-actions">
+            <Link href="/auth" className="lp2-nav-ghost">Sign In</Link>
+            <Link href="/auth" className="lp2-btn-primary lp2-nav-cta">
+              <span className="lp2-nav-cta-long">Check Your Credit Health</span>
+              <span className="lp2-nav-cta-short">Get Started</span>
+            </Link>
+            <button className="lp2-hamburger" onClick={() => setOpen(o => !o)} aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open}>
+              {open
+                ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              }
+            </button>
+          </div>
+        </div>
+      </nav>
+      <div className={`lp2-mobile-drawer${open ? " open" : ""}`} onClick={() => setOpen(false)}>
+        <div className="lp2-mobile-menu" onClick={e => e.stopPropagation()}>
+          <a href="#pricing"  className="lp2-mobile-link" onClick={() => setOpen(false)}>Pricing</a>
+          <a href="#workflow" className="lp2-mobile-link" onClick={() => setOpen(false)}>How It Works</a>
+          <Link href="/pricing" className="lp2-mobile-link" onClick={() => setOpen(false)}>For Business</Link>
+          <div className="lp2-mobile-divider"/>
+          <Link href="/auth" className="lp2-mobile-link" onClick={() => setOpen(false)}>Sign In</Link>
+          <Link href="/auth" className="lp2-btn-primary lp2-mobile-cta" onClick={() => setOpen(false)}>
+            Check Your Credit Health →
+          </Link>
         </div>
       </div>
-    </nav>
+    </>
   );
 }
 

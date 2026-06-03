@@ -584,6 +584,63 @@
   50%       { box-shadow: 0 0 0 5px rgba(107,174,138,0); }
 }
 
+/* ── Hamburger + Mobile Nav ─────────────────────────────── */
+.lp2-hamburger {
+  display: none;
+  align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,0.62);
+  border: 1px solid rgba(42,40,37,0.12);
+  border-radius: 10px;
+  color: var(--lp2-charcoal);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+.lp2-hamburger:hover { background: rgba(255,255,255,0.9); }
+
+.lp2-mobile-drawer {
+  display: none;
+  position: fixed; inset: 0; z-index: 199;
+  background: rgba(42,40,37,0.24);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.lp2-mobile-drawer.open { display: block; }
+
+.lp2-mobile-menu {
+  position: absolute; top: 64px; left: 16px; right: 16px;
+  background: rgba(247,243,236,0.97);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid rgba(255,255,255,0.72);
+  border-radius: 20px;
+  box-shadow: 0 8px 40px rgba(42,40,37,0.18), 0 2px 8px rgba(42,40,37,0.08);
+  padding: 12px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.lp2-mobile-link {
+  display: block; padding: 13px 16px;
+  font-size: 15px; font-weight: 500;
+  color: var(--lp2-charcoal); text-decoration: none;
+  border-radius: 12px;
+  transition: background 0.18s;
+}
+.lp2-mobile-link:hover { background: rgba(42,40,37,0.06); }
+.lp2-mobile-divider {
+  height: 1px; background: rgba(42,40,37,0.09);
+  margin: 6px 4px;
+}
+.lp2-mobile-cta {
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 6px; padding: 13px 20px;
+  font-size: 14px; width: 100%;
+}
+
+/* Show short nav CTA text on small screens */
+.lp2-nav-cta-short { display: none; }
+.lp2-nav-cta-long  { display: inline; }
+
 /* ── Reduced motion ─────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .lp2-command-card { animation: none; }
@@ -594,46 +651,97 @@
   .lp2-badge-dot, .lp2-cc-dot { animation: none; }
 }
 
-/* ── Tablet ─────────────────────────────────────────────── */
+/* ── Large tablet (≤1024px) ─────────────────────────────── */
 @media (max-width: 1024px) {
   .lp2-hero-body { gap: 44px; }
   .lp2-bento-grid { grid-template-columns: repeat(2, 1fr); }
   .lp2-span2 { grid-column: span 2; }
   .lp2-final-card { padding: 64px 60px; }
+  .lp2-problem { padding: 88px 0; }
+  .lp2-how { padding: 88px 0; }
+  .lp2-bento { padding: 88px 0; }
+  .lp2-pricing { padding: 88px 0; }
 }
 
+/* ── Small tablet (≤860px) ──────────────────────────────── */
 @media (max-width: 860px) {
-  .lp2-pricing-grid { grid-template-columns: 1fr; max-width: 440px; margin-left: auto; margin-right: auto; }
-  .lp2-footer-inner { grid-template-columns: 1fr 1fr; }
+  .lp2-pricing-grid { grid-template-columns: 1fr; max-width: 460px; margin-left: auto; margin-right: auto; }
+  .lp2-problem-cards { grid-template-columns: repeat(2, 1fr); }
+  .lp2-how-steps { grid-template-columns: repeat(2, 1fr); }
+  .lp2-how-steps::before { display: none; }
+  .lp2-footer-inner { grid-template-columns: 1fr 1fr; gap: 36px; }
 }
 
-/* ── Mobile ─────────────────────────────────────────────── */
+/* ── Mobile (≤768px) ────────────────────────────────────── */
 @media (max-width: 768px) {
+  /* Nav: hide desktop links, show hamburger */
   .lp2-nav-links, .lp2-nav-ghost { display: none; }
+  .lp2-hamburger { display: flex; }
+  /* Show short CTA text, hide long */
+  .lp2-nav-cta-long  { display: none; }
+  .lp2-nav-cta-short { display: inline; }
   .lp2-nav .lp2-btn-primary { padding: 9px 14px; font-size: 13px; }
-  .lp2-hero { padding: 90px 0 60px; }
-  .lp2-hero-body { grid-template-columns: 1fr; gap: 44px; text-align: center; }
+
+  /* Hero */
+  .lp2-hero { padding: 90px 0 60px; min-height: 100vh; min-height: 100svh; }
+  .lp2-hero-body { grid-template-columns: 1fr; gap: 40px; text-align: center; }
   .lp2-hero-text { align-items: center; }
-  .lp2-hero-sub { max-width: 100%; }
+  .lp2-hero-sub { max-width: 100%; font-size: 16px; }
   .lp2-hero-ctas { justify-content: center; }
   .lp2-proof { justify-content: center; }
-  .lp2-hero-card-wrap { max-width: 380px; margin: 0 auto; width: 100%; }
+  .lp2-hero-card-wrap { max-width: 400px; margin: 0 auto; width: 100%; }
+
+  /* Sections vertical padding */
+  .lp2-problem { padding: 72px 0; }
+  .lp2-how     { padding: 72px 0; }
+  .lp2-bento   { padding: 72px 0; }
+  .lp2-pricing { padding: 72px 0; }
+  .lp2-final   { padding: 56px 0 80px; }
+
+  /* Cards */
   .lp2-problem-cards { grid-template-columns: 1fr; }
-  .lp2-how-steps { grid-template-columns: 1fr; gap: 14px; }
-  .lp2-how-steps::before { display: none; }
-  .lp2-bento-grid { grid-template-columns: 1fr; gap: 12px; }
-  .lp2-span2 { grid-column: span 1; }
+  .lp2-how-steps     { grid-template-columns: 1fr; gap: 12px; }
+  .lp2-bento-grid    { grid-template-columns: 1fr; gap: 12px; }
+  .lp2-bento-card    { padding: 22px 22px 20px; }
+  .lp2-span2         { grid-column: span 1; }
+
+  /* Final CTA */
   .lp2-final-card { padding: 48px 28px; }
   .lp2-final-ctas { flex-direction: column; align-items: stretch; }
   .lp2-final-btn-primary, .lp2-final-btn-ghost { justify-content: center; }
+
+  /* Footer */
   .lp2-footer-inner { grid-template-columns: 1fr 1fr; gap: 32px; }
 }
 
-/* ── Small mobile ───────────────────────────────────────── */
+/* ── Small mobile (≤480px) ──────────────────────────────── */
 @media (max-width: 480px) {
-  .lp2-hero-h1 { font-size: 36px; }
+  .lp2-container { padding: 0 20px; }
+
+  /* Hero */
+  .lp2-hero-h1 { font-size: clamp(32px, 9vw, 38px); }
+  .lp2-hero-sub { font-size: 15px; }
   .lp2-hero-ctas { flex-direction: column; align-items: stretch; }
   .lp2-hero-ctas a { justify-content: center; }
+  .lp2-badge { font-size: 12px; padding: 6px 12px; }
+
+  /* Sections */
+  .lp2-problem { padding: 60px 0; }
+  .lp2-how     { padding: 60px 0; }
+  .lp2-bento   { padding: 60px 0; }
+  .lp2-pricing { padding: 60px 0; }
+  .lp2-h2 { font-size: clamp(24px, 7.5vw, 34px); }
+  .lp2-section-sub { font-size: 15px; }
+
+  /* Bento */
+  .lp2-bento-card { padding: 20px 18px 18px; }
+  .lp2-bento-illus { width: 104px; }
+
+  /* Final CTA */
   .lp2-final-card { padding: 40px 20px; border-radius: 24px; }
+  .lp2-final-h2 { font-size: clamp(22px, 7vw, 32px) !important; }
+
+  /* Footer */
   .lp2-footer-inner { grid-template-columns: 1fr; }
+  .lp2-footer-bottom { flex-direction: column; gap: 10px; text-align: center; }
 }
