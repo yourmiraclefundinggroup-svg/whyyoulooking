@@ -2105,7 +2105,10 @@ function ProfilePage({ user, logout, featureAccess }: { user: any; logout: () =>
         <div className="cp-card">
           <div className="cp-card-header" style={{ marginBottom: 24 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg,#9B89C8,#7B6AAB)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 800, color: "white", flexShrink: 0 }}>{initials}</div>
+              <div style={{ width: 60, height: 60, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: "linear-gradient(135deg,#9B89C8,#7B6AAB)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <img src={avatarUrl} alt={displayName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  onError={(e) => { const el = e.currentTarget; el.style.display = "none"; if (el.parentElement) el.parentElement.textContent = initials; }} />
+              </div>
               <div>
                 <div style={{ fontSize: 17, fontWeight: 700, color: "var(--cp-text-primary)" }}>{displayName}</div>
                 <div style={{ fontSize: 12.5, color: "var(--cp-text-muted)", marginTop: 2 }}>{user?.email ?? "No email on file"}</div>
@@ -2292,6 +2295,7 @@ export default function ClientPortal() {
     ? ((user.firstName?.[0] ?? "") + (user.lastName?.[0] ?? user.username?.[0] ?? "")).toUpperCase() || "U"
     : "U";
   const displayName = user ? (user.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : user.username) : "User";
+  const avatarUrl = "https://randomuser.me/api/portraits/men/32.jpg";
 
   /* ── Nav items ────────────────────────────────────────────────── */
   const isManaged = user?.accountType === "MANAGED_CLIENT";
@@ -2372,7 +2376,10 @@ export default function ClientPortal() {
         </nav>
 
         <div className="cp-sidebar-user">
-          <div className="cp-user-avatar">{initials}</div>
+          <div className="cp-user-avatar" style={{ padding: 0, overflow: "hidden" }}>
+            <img src={avatarUrl} alt={displayName} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget.parentElement as HTMLElement).innerText = initials; }} />
+          </div>
           <div className="cp-user-info">
             <div className="cp-user-name">{displayName}</div>
             <div className="cp-user-plan">{featureAccess.tierLabel}</div>
