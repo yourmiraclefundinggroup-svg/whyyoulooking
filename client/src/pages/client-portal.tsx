@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import scoreshiftLogo from "@assets/scoreshift-logo.png";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUserContext } from "@/hooks/use-user-context";
@@ -2224,6 +2224,14 @@ export default function ClientPortal() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [suggestedSavings, setSuggestedSavings] = useState<number | null>(null);
 
+  const bgVideoRef = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const v = bgVideoRef.current;
+    if (!v) return;
+    v.muted = true;
+    v.play().catch(() => {});
+  }, []);
+
   /* ── Onboarding state ─────────────────────────────────────────── */
   const [onboardingDone, setOnboardingDone] = useState(() =>
     localStorage.getItem("ss_portal_onboarding_done") === "1"
@@ -2291,7 +2299,7 @@ export default function ClientPortal() {
   /* Shared ambient background video (rendered once, reused for onboarding too) */
   const BgVideo = (
     <div className="cp-bg-layer" aria-hidden="true">
-      <video className="cp-bg-video" autoPlay muted loop playsInline preload="none">
+      <video ref={bgVideoRef} className="cp-bg-video" autoPlay muted loop playsInline preload="metadata">
         <source src="/videos/scoreshift-world.webm" type="video/webm" />
         <source src="/videos/scoreshift-world.mp4" type="video/mp4" />
       </video>
