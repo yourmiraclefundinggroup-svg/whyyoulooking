@@ -84,13 +84,19 @@ async function fetchTokenDirect(
     ? "https://sandbox.array.io/api/authenticate/v2/usertoken"
     : "https://api.array.io/api/authenticate/v2/usertoken";
 
-  console.log(`[ArrayToken] Generating fresh token directly for user ${userId} (arrayUserId: ${arrayUserId})`);
+  // ARRAY_SERVER_TOKEN is a separate UUID issued by Array Support (support@array.com)
+  // and is distinct from ARRAY_API_KEY / ARRAY_API_SECRET.
+  // If not yet provisioned, falls back to apiKey for legacy compat.
+  const serverToken = (process.env.ARRAY_SERVER_TOKEN || apiKey).trim();
+
+  console.log(`[ArrayToken] Generating fresh token directly for user ${userId} (arrayUserId: ${arrayUserId}, serverTokenSource: ${process.env.ARRAY_SERVER_TOKEN ? "ARRAY_SERVER_TOKEN" : "ARRAY_API_KEY fallback"})`);
 
   try {
     const resp = await fetch(tokenUrl, {
       method: "POST",
-      headers: { "x-array-server-token": apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ appKey, userId: arrayUserId, ttlInMinutes: 55 }),
+      headers: { "x-array-server-token": serverToken, "Content-Type": "application/json" },
+      // ttlInMinutes must be a string per Array API spec (max effective value: "60")
+      body: JSON.stringify({ appKey, userId: arrayUserId, ttlInMinutes: "55" }),
     });
 
     const raw = await resp.text();
