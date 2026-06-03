@@ -1243,7 +1243,7 @@ function PlanPage({ goal, timeline, onNavigate }: { goal: OnboardingGoal | null;
                     ].map(({ label, key }) => (
                       sc?.[key] !== null && sc?.[key] !== undefined ? (
                         <div key={key} style={{ flex: 1, minWidth: 80, padding: "10px 12px", background: "var(--cp-bg)", borderRadius: 10, textAlign: "center" }}>
-                          <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 24, fontWeight: 800, color: "var(--cp-accent)", letterSpacing: -1 }}>{sc[key]}</div>
+                          <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 24, fontWeight: 800, color: "var(--cp-accent)", letterSpacing: -1 }}><CountUp to={sc[key] ?? null} animKey={`plan-score-${key}`} /></div>
                           <div style={{ fontSize: 10.5, color: "var(--cp-text-muted)", marginTop: 2, fontWeight: 600 }}>{label}</div>
                           <div style={{ fontSize: 9.5, color: "var(--cp-text-muted)", opacity: 0.7 }}>VantageScore 3.0</div>
                         </div>
@@ -1251,7 +1251,7 @@ function PlanPage({ goal, timeline, onNavigate }: { goal: OnboardingGoal | null;
                     ))}
                     {sc?.vantage !== null && sc?.vantage !== undefined && !sc?.transunion && !sc?.equifax && !sc?.experian && (
                       <div style={{ flex: 1, minWidth: 80, padding: "10px 12px", background: "var(--cp-bg)", borderRadius: 10, textAlign: "center" }}>
-                        <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 24, fontWeight: 800, color: "var(--cp-accent)", letterSpacing: -1 }}>{sc.vantage}</div>
+                        <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 24, fontWeight: 800, color: "var(--cp-accent)", letterSpacing: -1 }}><CountUp to={sc.vantage ?? null} animKey="plan-score-vantage" /></div>
                         <div style={{ fontSize: 10.5, color: "var(--cp-text-muted)", marginTop: 2, fontWeight: 600 }}>VantageScore</div>
                       </div>
                     )}
