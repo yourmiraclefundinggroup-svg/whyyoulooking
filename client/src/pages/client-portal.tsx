@@ -1432,7 +1432,7 @@ function SubscriptionManagerPage({
         sub="Your recurring subscriptions identified from your credit profile"
         badge={<span className="cp-badge live">Live</span>}
         loading={!scriptReady || (!tokenReady && !tokenError)}
-        locked={tokenError}
+        locked={false}
       >
         {tokenError ? (
           <div className="cp-empty-state" style={{ padding: "32px 20px" }}>
@@ -1454,7 +1454,7 @@ function SubscriptionManagerPage({
 }
 
 /* ── STUDENT LOAN AID PAGE ────────────────────────────────────────── */
-function StudentLoanPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenError }: ArrayPageProps) {
+function StudentLoanPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenError, onNavigate }: ArrayPageProps & { onNavigate: (page: PageId) => void }) {
   const [subTab, setSubTab] = useState("navigator");
 
   return (
@@ -1492,8 +1492,8 @@ function StudentLoanPage({ appKey, userToken, sbx, scriptReady, tokenReady, toke
               <div className="cp-empty-desc" style={{ maxWidth: 360, margin: "6px auto 16px" }}>
                 Connect your credit profile to unlock loan navigation and aid options.
               </div>
-              <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => {}}>
-                Review My Scores
+              <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate("report")}>
+                Review My Credit Report
               </button>
             </div>
           ) : (
@@ -1517,8 +1517,8 @@ function StudentLoanPage({ appKey, userToken, sbx, scriptReady, tokenReady, toke
               <div className="cp-empty-desc" style={{ maxWidth: 360, margin: "6px auto 16px" }}>
                 Connect your credit profile to unlock loan navigation and aid options.
               </div>
-              <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => {}}>
-                Review My Scores
+              <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => onNavigate("report")}>
+                Review My Credit Report
               </button>
             </div>
           ) : (
@@ -2314,7 +2314,7 @@ export default function ClientPortal() {
           {activePage === "dispute-iq" && <RealDisputeIQPage />}
           {activePage === "debt" && <DebtPage {...arrayProps} suggestedSavings={suggestedSavings} onDismissSavings={() => setSuggestedSavings(null)} />}
           {activePage === "subscriptions" && <SubscriptionManagerPage goal={onboardingGoal} isManaged={isManaged} onNavigate={(p) => { setActivePage(p); }} onSavingsApply={(amt) => { setSuggestedSavings(amt > 0 ? amt : null); setActivePage("debt"); }} {...arrayProps} />}
-          {activePage === "student-loans" && <StudentLoanPage {...arrayProps} />}
+          {activePage === "student-loans" && <StudentLoanPage {...arrayProps} onNavigate={(p) => { setActivePage(p); }} />}
           {activePage === "protection" && <ProtectionPage {...arrayProps} />}
           {activePage === "report" && <ReportPage {...arrayProps} />}
           {activePage === "progress" && <ProgressPage />}
