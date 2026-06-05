@@ -297,6 +297,10 @@ function DemoDataProvider({ children }: { children: React.ReactNode }) {
   const [seeded, setSeeded] = useState(false);
 
   useEffect(() => {
+    const prevOnboarding = localStorage.getItem("ss_portal_onboarding_done");
+    const prevGoal = localStorage.getItem("ss_portal_goal");
+    const prevTimeline = localStorage.getItem("ss_portal_timeline");
+
     localStorage.setItem("ss_portal_onboarding_done", "1");
     localStorage.setItem("ss_portal_goal", "remove-negatives");
     localStorage.setItem("ss_portal_timeline", "6-months");
@@ -307,6 +311,17 @@ function DemoDataProvider({ children }: { children: React.ReactNode }) {
     qc.setQueryData(["/api/me/documents"], []);
 
     setSeeded(true);
+
+    return () => {
+      if (prevOnboarding === null) localStorage.removeItem("ss_portal_onboarding_done");
+      else localStorage.setItem("ss_portal_onboarding_done", prevOnboarding);
+
+      if (prevGoal === null) localStorage.removeItem("ss_portal_goal");
+      else localStorage.setItem("ss_portal_goal", prevGoal);
+
+      if (prevTimeline === null) localStorage.removeItem("ss_portal_timeline");
+      else localStorage.setItem("ss_portal_timeline", prevTimeline);
+    };
   }, [qc]);
 
   if (!seeded) return null;
