@@ -652,7 +652,10 @@ function Nav() {
         <div className="lp2-container lp2-nav-inner">
           <Link href="/" className="lp2-nav-logo">
             <div className="lp2-nav-logo-wrap">
-              <img src={scoreshiftLogo} alt="" className="lp2-nav-logo-img" aria-hidden="true"/>
+              <video className="lp2-nav-logo-video" autoPlay muted loop playsInline preload="auto" aria-hidden="true">
+                <source src="/videos/ascend-logo.mp4" type="video/mp4"/>
+              </video>
+              <img src={scoreshiftLogo} alt="" className="lp2-nav-logo-fallback" aria-hidden="true"/>
             </div>
             <span>ScoreShift</span>
           </Link>

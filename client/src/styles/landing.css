@@ -224,8 +224,17 @@
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.lp2-nav-logo-img {
-  width: 28px; height: 28px; object-fit: contain; display: block;
+/* Animated logo: invert makes white-bg video → black-bg; screen blend makes black transparent */
+.lp2-nav-logo-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: contain;
+  filter: invert(1);
+  mix-blend-mode: screen;
+  display: block;
+}
+.lp2-nav-logo-fallback {
+  width: 28px; height: 28px; object-fit: contain;
+  display: block; opacity: 0.9;
 }
 .lp2-nav-links {
   display: flex; align-items: center; gap: 28px;
@@ -770,23 +779,23 @@
 .lp2-final-btn-ghost:hover { color: white; border-color: rgba(255,255,255,0.35); }
 .lp2-final-note { margin-top: 22px; font-size: 12px; color: rgba(255,255,255,0.25); position: relative; z-index: 1; }
 
-/* ── Footer ─────────────────────────────────────────────── */
-.lp2-footer { background: #060709; color: rgba(255,255,255,0.45); padding: 64px 0 36px; }
+/* ── Footer — cream/bone palette ────────────────────────── */
+.lp2-footer { background: var(--lp2-bone); color: var(--lp2-taupe); padding: 64px 0 36px; border-top: 1px solid rgba(42,40,37,0.1); }
 .lp2-footer-inner {
   display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: 44px; padding-bottom: 48px;
-  border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 28px;
+  border-bottom: 1px solid rgba(42,40,37,0.1); margin-bottom: 28px;
 }
-.lp2-footer-brand { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: white; margin-bottom: 14px; }
-.lp2-footer-tag { font-size: 14px; line-height: 1.68; color: rgba(255,255,255,0.32); margin: 0; }
-.lp2-footer-col { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: rgba(255,255,255,0.28); margin-bottom: 16px; }
+.lp2-footer-brand { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--lp2-charcoal); margin-bottom: 14px; }
+.lp2-footer-tag { font-size: 14px; line-height: 1.68; color: var(--lp2-taupe); opacity: 0.75; margin: 0; }
+.lp2-footer-col { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--lp2-taupe); opacity: 0.55; margin-bottom: 16px; }
 .lp2-footer ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-.lp2-footer ul a { font-size: 14px; color: rgba(255,255,255,0.38); text-decoration: none; transition: color 0.2s; }
-.lp2-footer ul a:hover { color: white; }
-.lp2-footer-bottom { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: rgba(255,255,255,0.25); }
+.lp2-footer ul a { font-size: 14px; color: var(--lp2-taupe); opacity: 0.75; text-decoration: none; transition: opacity 0.2s, color 0.2s; }
+.lp2-footer ul a:hover { opacity: 1; color: var(--lp2-charcoal); }
+.lp2-footer-bottom { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--lp2-taupe); opacity: 0.55; }
 .lp2-footer-legal { display: flex; gap: 20px; }
-.lp2-footer-legal a { color: rgba(255,255,255,0.25); text-decoration: none; transition: color 0.2s; }
-.lp2-footer-legal a:hover { color: white; }
+.lp2-footer-legal a { color: var(--lp2-taupe); opacity: 0.55; text-decoration: none; transition: opacity 0.2s; }
+.lp2-footer-legal a:hover { opacity: 1; }
 
 /* ── Keyframes ──────────────────────────────────────────── */
 @keyframes lp2-drift-a {
@@ -848,9 +857,9 @@
   transition: box-shadow 0.42s var(--lp2-ease), transform 0.42s var(--lp2-ease);
 }
 
-/* Sidebar — exact real-portal tokens */
+/* Sidebar — proportional to real portal (--cp-sidebar-w: 228px on 1440px canvas ≈ 15.8%; at 960px mock frame ≈ 168px) */
 .lp2-portal-sb {
-  width: 148px; flex-shrink: 0;
+  width: 168px; flex-shrink: 0;
   background: rgba(247,243,236,0.18);
   backdrop-filter: blur(22px) saturate(1.6) brightness(1.04);
   -webkit-backdrop-filter: blur(22px) saturate(1.6) brightness(1.04);
