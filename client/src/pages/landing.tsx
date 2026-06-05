@@ -431,9 +431,10 @@ export default function LandingPage() {
             ScoreShift
           </Link>
           <ul className="ss-nav-links">
+            <li><a href="#how">How It Works</a></li>
             <li><a href="#features">Features</a></li>
-            <li><a href="#proof">Results</a></li>
             <li><Link href="/pricing">Pricing</Link></li>
+            <li><a href="#proof">Results</a></li>
           </ul>
           <div className="ss-nav-actions">
             <Link href="/auth" className="ss-nav-ghost">Sign in</Link>
@@ -464,15 +465,15 @@ export default function LandingPage() {
             <em>you forward.</em>
           </h1>
           <p className="ss-hero-sub ss-reveal ss-d2">
-            ScoreShift combines AI dispute intelligence, real-time credit monitoring, and a
-            personalized action plan — all in one place.
+            Modern credit monitoring, improvement, and financial readiness tools to help you
+            move forward with clarity.
           </p>
           <div className="ss-hero-ctas ss-reveal ss-d3">
             <Link href="/auth" className="ss-btn-primary">
               Check Your Credit Health <ArrowRight />
             </Link>
-            <a href="#portal-float" className="ss-btn-ghost">
-              See the portal
+            <a href="#how" className="ss-btn-ghost">
+              See How It Works
             </a>
           </div>
           <div className="ss-hero-proof ss-reveal ss-d4">
@@ -490,7 +491,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── §2 Cinematic scroll — canyon descent, three copy lines ─── */}
-      <div className="ss-cin-wrap" ref={cinRef}>
+      <div className="ss-cin-wrap" id="how" ref={cinRef}>
         <div className="ss-cin-sticky">
           <video
             className="ss-cin-video"
@@ -501,18 +502,18 @@ export default function LandingPage() {
 
           {/* Line 1 — visible 0–28% */}
           <div className="ss-cin-line" style={{ opacity: line1Op, transform: `translateY(${line1Y}px)` }}>
-            <span className="ss-cin-eyebrow">Your credit journey</span>
-            <h2 className="ss-cin-h2">Everything you need.</h2>
+            <span className="ss-cin-eyebrow">The ScoreShift difference</span>
+            <h2 className="ss-cin-h2">Most tools show you data.</h2>
           </div>
 
           {/* Line 2 — visible 15–48% */}
           <div className="ss-cin-line" style={{ opacity: line2Op, transform: `translateY(${line2Y}px)` }}>
-            <h2 className="ss-cin-h2 ss-cin-h2-em">Nothing you don't.</h2>
+            <h2 className="ss-cin-h2 ss-cin-h2-em">ScoreShift shows you direction.</h2>
           </div>
 
           {/* Line 3 — visible 35–58% */}
           <div className="ss-cin-line" style={{ opacity: line3Op, transform: `translateY(${line3Y}px)` }}>
-            <span className="ss-cin-sub">Scroll to explore — see exactly what you'll get.</span>
+            <span className="ss-cin-sub">From credit data to a guided action plan — your next step is always clear.</span>
           </div>
 
           {/* Scroll hint */}
@@ -561,11 +562,11 @@ export default function LandingPage() {
           </div>
 
           <div className="ss-bento-grid">
-            {/* A — Score simulator */}
+            {/* A — My Plan */}
             <TiltTile className="ss-tile-a ss-reveal">
-              <div className="ss-tile-eye"><span className="ss-tile-eye-dot" />Credit Score AI</div>
-              <h3 className="ss-tile-h3">Watch your score rise in real-time</h3>
-              <p className="ss-tile-sub">AI simulates the impact of each action before you take it.</p>
+              <div className="ss-tile-eye"><span className="ss-tile-eye-dot" />My Plan</div>
+              <h3 className="ss-tile-h3">Your guided action plan, always current</h3>
+              <p className="ss-tile-sub">AI builds and updates your personalized credit roadmap every day.</p>
               <div className="ss-tile-score-vis">
                 <div className="ss-tile-score-arc">
                   <svg viewBox="0 0 100 56" fill="none">
@@ -618,60 +619,60 @@ export default function LandingPage() {
               </div>
             </TiltTile>
 
-            {/* C — Stat */}
+            {/* C — Progress Tracker */}
             <TiltTile className="ss-tile-c ss-reveal">
               <div className="ss-tile-icon indigo">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
               </div>
-              <div className="ss-tile-eye"><span className="ss-tile-eye-dot" />Avg. score gain</div>
+              <div className="ss-tile-eye"><span className="ss-tile-eye-dot" />Progress Tracker</div>
               <div className="ss-tile-big-stat indigo">+74</div>
-              <div className="ss-tile-stat-desc">points in the first 90 days</div>
+              <div className="ss-tile-stat-desc">avg. points gained in 90 days</div>
             </TiltTile>
 
-            {/* D — Stat */}
+            {/* D — Protection Center */}
             <TiltTile className="ss-tile-d ss-reveal ss-d1">
               <div className="ss-tile-icon sage">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               </div>
-              <div className="ss-tile-eye"><span className="ss-tile-eye-dot" style={{ background: "var(--ss-sage)" }} />Disputes won</div>
+              <div className="ss-tile-eye"><span className="ss-tile-eye-dot" style={{ background: "var(--ss-sage)" }} />Protection Center</div>
               <div className="ss-tile-big-stat sage">87<span style={{ fontSize: 28 }}>%</span></div>
-              <div className="ss-tile-stat-desc">success rate across all bureaus</div>
+              <div className="ss-tile-stat-desc">dispute win rate across all bureaus</div>
             </TiltTile>
 
-            {/* E — Stat */}
+            {/* E — Smart Letters */}
             <TiltTile className="ss-tile-e ss-reveal ss-d2">
               <div className="ss-tile-icon apricot">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               </div>
-              <div className="ss-tile-eye"><span className="ss-tile-eye-dot" style={{ background: "var(--ss-apricot)" }} />Avg. time to results</div>
+              <div className="ss-tile-eye"><span className="ss-tile-eye-dot" style={{ background: "var(--ss-apricot)" }} />Smart Letters</div>
               <div className="ss-tile-big-stat apricot">38</div>
-              <div className="ss-tile-stat-desc">days to first item removed</div>
+              <div className="ss-tile-stat-desc">days avg. to first item removed</div>
             </TiltTile>
 
-            {/* F — AI chat */}
+            {/* F — Debt Navigator */}
             <TiltTile className="ss-tile-f ss-reveal">
               <div className="ss-tile-icon charcoal">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               </div>
-              <div className="ss-tile-eye"><span className="ss-tile-eye-dot" style={{ background: "var(--ss-charcoal)" }} />AI Assistant</div>
-              <h3 className="ss-tile-h3">Ask anything, 24/7</h3>
+              <div className="ss-tile-eye"><span className="ss-tile-eye-dot" style={{ background: "var(--ss-charcoal)" }} />Debt Navigator</div>
+              <h3 className="ss-tile-h3">Your payoff strategy, simplified</h3>
               <div className="ss-tile-chat">
-                <div className="ss-tile-bubble user">Why did my score drop 12 pts?</div>
-                <div className="ss-tile-bubble ai">Your Experian report shows a new hard inquiry from March 15th. Hard inquiries typically cause a 5–12 point drop but fade within 12 months. Your score should recover by May.</div>
+                <div className="ss-tile-bubble user">What should I pay off first?</div>
+                <div className="ss-tile-bubble ai">Start with the Capital One card at 24.9% APR — it's your highest-interest balance. Paying it down first saves you the most over time and frees up utilization.</div>
                 <div className="ss-tile-typing">
                   <span/><span/><span/>
                 </div>
               </div>
             </TiltTile>
 
-            {/* G — Bureau monitor */}
+            {/* G — Credit Report */}
             <TiltTile className="ss-tile-g ss-reveal ss-d1">
               <div className="ss-tile-icon indigo">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </div>
-              <div className="ss-tile-eye"><span className="ss-tile-eye-dot" />3-Bureau Monitoring</div>
-              <h3 className="ss-tile-h3">All three bureaus, one view</h3>
-              <p className="ss-tile-sub">Real-time alerts when anything changes across Experian, Equifax, and TransUnion.</p>
+              <div className="ss-tile-eye"><span className="ss-tile-eye-dot" />Credit Report</div>
+              <h3 className="ss-tile-h3">All three bureaus, one clear view</h3>
+              <p className="ss-tile-sub">Real-time monitoring across Experian, Equifax, and TransUnion — with instant alerts on any change.</p>
               <div className="ss-tile-bureaus">
                 {[["Experian","712","#3B82F6","up"],["Equifax","705","#EF4444","up"],["TransUnion","718","#8B5CF6","watch"]].map(([n,v,c,b]) => (
                   <div key={n} className="ss-tile-bureau">
@@ -781,13 +782,13 @@ export default function LandingPage() {
         <div className="ss-cta-veil" />
         <div className="ss-cta-body">
           <span className="ss-cta-eye ss-reveal">The next step is yours</span>
-          <h2 className="ss-cta-h2 ss-reveal ss-d1">Start your climb.</h2>
+          <h2 className="ss-cta-h2 ss-reveal ss-d1">Start with clarity.<br /><em>Move with certainty.</em></h2>
           <span className="ss-cta-sub ss-reveal ss-d2">
-            Join thousands of clients who've removed negatives, built credit, and moved forward with confidence.
+            ScoreShift turns your credit data into a guided financial readiness plan.
           </span>
           <div className="ss-cta-btns ss-reveal ss-d3">
             <Link href="/auth" className="ss-btn-cta-main">
-              Get Started Free <ArrowRight />
+              Create Your ScoreShift Plan <ArrowRight />
             </Link>
             <Link href="/auth" className="ss-btn-cta-ghost">
               Sign in
