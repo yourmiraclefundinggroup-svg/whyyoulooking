@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+
+export const ArrayScriptOverrideContext = createContext<{ loaded: boolean } | null>(null);
 
 // Legacy sandbox constants — used only by pre-portal pages (credit-monitoring, credit-repair, signup, score-hero).
 // The portal and ArrayScriptLoader never use these; they always use the production appKey from useArrayToken.
@@ -51,6 +53,8 @@ function isAllResolved() {
  * state without attempting injection.
  */
 export function useArrayScript(appKey?: string) {
+  const override = useContext(ArrayScriptOverrideContext);
+
   const [loaded, setLoaded] = useState(isAllResolved);
 
   useEffect(() => {
@@ -92,5 +96,6 @@ export function useArrayScript(appKey?: string) {
     };
   }, [appKey]);
 
+  if (override !== null) return override;
   return { loaded };
 }
