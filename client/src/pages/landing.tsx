@@ -135,259 +135,6 @@ const ArrowRight = ({ size = 15 }: { size?: number }) => (
   </svg>
 );
 
-/* ── Interactive Portal Mock ────────────────────────────────── */
-type PortalScreen = "dashboard" | "disputes" | "plan";
-
-const PNAV = [
-  { id: "dashboard" as PortalScreen, label: "Dashboard",
-    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
-  { id: "disputes" as PortalScreen, label: "Dispute IQ", badge: "3",
-    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> },
-  { id: "plan" as PortalScreen, label: "My Plan",
-    icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> },
-];
-
-const ALL_NAV = [
-  { id: "dashboard", label: "Dashboard", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
-  { id: "plan", label: "My Plan", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
-  { id: "report", label: "Credit Report", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> },
-  { id: "disputes", label: "Dispute IQ", badge: "3", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> },
-  { id: "letters", label: "Smart Letters", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> },
-  { id: "progress", label: "Progress", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> },
-  { id: "identity", label: "Identity Guard", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> },
-  { id: "debt", label: "Debt Analysis", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
-];
-
-const SCREEN_TITLE: Record<PortalScreen, string> = {
-  dashboard: "Dashboard",
-  disputes: "Dispute IQ",
-  plan: "My Plan",
-};
-
-function ScreenDashboard() {
-  return (
-    <div className="ss-pscreen">
-      {/* Hero card */}
-      <div className="ss-phero">
-        <div>
-          <div className="ss-phero-eye">CREDIT ACTION PLAN</div>
-          <div className="ss-phero-name">Good morning, Alex.</div>
-          <div className="ss-phero-sub">Pro Plan · 3 disputes in progress</div>
-        </div>
-        <div className="ss-pscores">
-          {([["712","EXP","#3B82F6"],["705","EQ","#EF4444"],["718","TU","#8B5CF6"]] as const).map(([v,n,c]) => (
-            <div key={n} className="ss-pscore-chip">
-              <div className="ss-pscore-bureau">{n}</div>
-              <div className="ss-pscore-val" style={{ color: c }}>{v}</div>
-              <div className="ss-pscore-change">+12</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Action + Progress */}
-      <div className="ss-pgrid2">
-        <div className="ss-pcard">
-          <div className="ss-pcard-label">Next Best Action</div>
-          <div className="ss-pnba-body">
-            <span className="ss-pnba-icon">⚡</span>
-            <div>
-              <div className="ss-pnba-title">Dispute MIDLAND CREDIT</div>
-              <div className="ss-pnba-sub">Est. +18 pts · Ready to send</div>
-            </div>
-          </div>
-        </div>
-        <div className="ss-pcard">
-          <div className="ss-pcard-label">Plan Progress</div>
-          <div className="ss-pprog-val">68%</div>
-          <div className="ss-pprog-track"><div className="ss-pprog-fill" style={{ width: "68%" }}/></div>
-          <div className="ss-pprog-note">4 of 6 actions complete</div>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="ss-pgrid3">
-        <div className="ss-pcard">
-          <div className="ss-pstat-icon indigo">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg>
-          </div>
-          <div className="ss-pstat-val">+47</div>
-          <div className="ss-pstat-lbl">Pts gained</div>
-        </div>
-        <div className="ss-pcard">
-          <div className="ss-pstat-icon sage">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <div className="ss-pstat-val">2</div>
-          <div className="ss-pstat-lbl">Items removed</div>
-        </div>
-        <div className="ss-pcard">
-          <div className="ss-pstat-icon apricot">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <div className="ss-pstat-val">3</div>
-          <div className="ss-pstat-lbl">Active disputes</div>
-        </div>
-      </div>
-
-      {/* Recent disputes */}
-      <div className="ss-pcard">
-        <div className="ss-pdisps">
-          <div className="ss-pdisp-header">Recent Disputes</div>
-          {[
-            { name: "MIDLAND FUNDING LLC", meta: "Collection · 2021", bureau: "EX", bColor: "#3B82F6", status: "pending" },
-            { name: "CAPITAL ONE AUTO", meta: "Late 30d · Aug 2023", bureau: "EQ", bColor: "#EF4444", status: "won" },
-            { name: "SYNC BANK CREDIT", meta: "Inquiry · Mar 2024", bureau: "TU", bColor: "#8B5CF6", status: "sent" },
-          ].map(d => (
-            <div key={d.name} className="ss-pdisp-item">
-              <div className="ss-pdisp-bur" style={{ background: d.bColor }}>{d.bureau}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="ss-pdisp-name">{d.name}</div>
-                <div className="ss-pdisp-meta">{d.meta}</div>
-              </div>
-              <div className={`ss-pstatus ${d.status}`}>{d.status === "won" ? "Won" : d.status === "sent" ? "Sent" : "Pending"}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ScreenDisputes() {
-  return (
-    <div className="ss-pdisp-iq">
-      <div className="ss-pcard" style={{ marginBottom: 4 }}>
-        <div className="ss-pcard-label" style={{ marginBottom: 0 }}>3 disputes ready to send · Est. +52 pts combined</div>
-      </div>
-      {[
-        { name: "MIDLAND FUNDING LLC", meta: "Collection · Opened Mar 2021", priority: "high", pts: "+18 pts", bureau: "EX", bColor: "#3B82F6" },
-        { name: "CAPITAL ONE AUTO", meta: "Late payment · 30d · Aug 2023", priority: "medium", pts: "+12 pts", bureau: "EQ", bColor: "#EF4444" },
-        { name: "SYNC BANK CREDIT CARD", meta: "Hard inquiry · Mar 2024", priority: "low", pts: "+9 pts", bureau: "TU", bColor: "#8B5CF6" },
-      ].map(d => (
-        <div key={d.name} className="ss-pdisp-item-full">
-          <div className="ss-pdisp-row">
-            <div className={`ss-pdisp-dot ${d.priority}`} />
-            <div className="ss-pdisp-details">
-              <div className="ss-pdisp-full-name">{d.name}</div>
-              <div className="ss-pdisp-full-meta">{d.meta}</div>
-            </div>
-            <div className="ss-pdisp-bur" style={{ background: d.bColor }}>{d.bureau}</div>
-            <div className="ss-pdisp-pts">{d.pts}</div>
-          </div>
-          <button className="ss-pdisp-full-action">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            Generate Letter
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ScreenPlan() {
-  return (
-    <div className="ss-pplan">
-      <div className="ss-pcard" style={{ marginBottom: 4 }}>
-        <div className="ss-pcard-label" style={{ marginBottom: 0 }}>68% complete · 4 of 6 actions done</div>
-      </div>
-      {[
-        { rank: 1, done: true, title: "Dispute CITI BANK collection", sub: "Sent via certified mail", pts: "+22 pts" },
-        { rank: 2, done: true, title: "Lower utilization on Amex", sub: "Paid down to 28%", pts: "+18 pts" },
-        { rank: 3, done: true, title: "Remove PORTFOLIO RECOVERY", sub: "Removed from Experian", pts: "+15 pts" },
-        { rank: 4, done: true, title: "Add authorized user tradeline", sub: "Partner account added", pts: "+11 pts" },
-        { rank: 5, done: false, title: "Dispute MIDLAND FUNDING", sub: "Ready to generate letter", pts: "+18 pts" },
-        { rank: 6, done: false, title: "Reduce Chase card utilization", sub: "Target: below 20%", pts: "+12 pts" },
-      ].map(a => (
-        <div key={a.rank} className="ss-pplan-item">
-          <div className={`ss-pplan-rank ${a.done ? "done" : ""}`}>
-            {a.done
-              ? <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              : a.rank}
-          </div>
-          <div className="ss-pplan-text">
-            <div className="ss-pplan-title">{a.title}</div>
-            <div className="ss-pplan-sub">{a.sub}</div>
-          </div>
-          <div className="ss-pplan-pts">{a.pts}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function PortalMock() {
-  const [screen, setScreen] = useState<PortalScreen>("dashboard");
-
-  return (
-    <div className="ss-portal-shell">
-      {/* Sidebar */}
-      <div className="ss-psidebar">
-        <Link href="/portal" className="ss-psidebar-logo">
-          <img src={scoreshiftLogo} alt="ScoreShift" />
-          ScoreShift
-        </Link>
-        <div className="ss-psidebar-nav">
-          <div className="ss-pnav-section">Overview</div>
-          {ALL_NAV.slice(0, 4).map(n => (
-            <button
-              key={n.id}
-              className={`ss-pnav-item${screen === n.id ? " active" : ""}`}
-              onClick={() => {
-                if (n.id === "dashboard" || n.id === "disputes" || n.id === "plan") {
-                  setScreen(n.id as PortalScreen);
-                }
-              }}
-            >
-              {n.icon}
-              {n.label}
-              {"badge" in n && n.badge && <span className="ss-pnav-badge">{n.badge}</span>}
-            </button>
-          ))}
-          <div className="ss-pnav-section">Tools</div>
-          {ALL_NAV.slice(4).map(n => (
-            <button
-              key={n.id}
-              className={`ss-pnav-item${screen === n.id ? " active" : ""}`}
-              onClick={() => {
-                if (n.id === "plan") setScreen("plan");
-              }}
-            >
-              {n.icon}
-              {n.label}
-            </button>
-          ))}
-        </div>
-        <div className="ss-psidebar-user">
-          <div className="ss-puser-av">AJ</div>
-          <div>
-            <div className="ss-puser-name">Alex Johnson</div>
-            <div className="ss-puser-plan">Pro Plan</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main */}
-      <div className="ss-pmain">
-        <div className="ss-ptopbar">
-          <div className="ss-ptopbar-title">{SCREEN_TITLE[screen]}</div>
-          <div className="ss-ptopbar-right">
-            <span className="ss-ptopbar-chip">Pro</span>
-            <div className="ss-ptopbar-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            </div>
-          </div>
-        </div>
-        <div className="ss-pcontent">
-          {screen === "dashboard" && <ScreenDashboard />}
-          {screen === "disputes" && <ScreenDisputes />}
-          {screen === "plan" && <ScreenPlan />}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ── Tile ref wrapper ───────────────────────────────────────── */
 function TiltTile({ className, children }: { className: string; children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -532,7 +279,7 @@ export default function LandingPage() {
             <span className="ss-section-eye" style={{ color: "var(--ss-apricot)" }}>Live preview</span>
             <h2 className="ss-pfloat-h2">Your portal. Fully loaded.</h2>
             <p className="ss-pfloat-sub">
-              Every screen you see below is real — interactive, data-driven, ready on day one.
+              Click anything — it's the real thing. Every screen is interactive, data-driven, and ready on day one.
             </p>
           </div>
           <div className="ss-pfloat-frame ss-reveal ss-d1">
@@ -700,10 +447,12 @@ export default function LandingPage() {
             <div className="ss-chat-item ss-reveal">
               <div className="ss-chat-av sage">KR</div>
               <div className="ss-chat-bubble-wrap">
+                <div className="ss-chat-stars">★★★★★</div>
                 <div className="ss-chat-name">Keisha R. · Atlanta, GA</div>
                 <div className="ss-chat-bubble">
                   I just got approved for my first home loan! My score went from <span className="ss-chat-highlight">588</span> to <span className="ss-chat-score"> 714</span> in 4 months. Couldn't have done it without ScoreShift.
                 </div>
+                <div className="ss-chat-reaction">🏡</div>
                 <div className="ss-chat-time">4 months ago</div>
               </div>
             </div>
@@ -711,10 +460,12 @@ export default function LandingPage() {
             <div className="ss-chat-item right ss-reveal ss-d1">
               <div className="ss-chat-av apricot">DM</div>
               <div className="ss-chat-bubble-wrap">
+                <div className="ss-chat-stars">★★★★★</div>
                 <div className="ss-chat-name">David M. · Houston, TX</div>
                 <div className="ss-chat-bubble">
                   3 collections wiped out in 6 weeks. The dispute letters were perfect — Experian removed everything on the first round.
                 </div>
+                <div className="ss-chat-reaction">🎯</div>
                 <div className="ss-chat-time">2 months ago</div>
               </div>
             </div>
@@ -722,10 +473,12 @@ export default function LandingPage() {
             <div className="ss-chat-item ss-reveal ss-d2">
               <div className="ss-chat-av">TL</div>
               <div className="ss-chat-bubble-wrap">
+                <div className="ss-chat-stars">★★★★★</div>
                 <div className="ss-chat-name">Tamara L. · Chicago, IL</div>
                 <div className="ss-chat-bubble">
                   The AI knows exactly what to write. I tried disputing on my own for a year — ScoreShift got my score up <span className="ss-chat-highlight">+62 points</span> in 60 days.
                 </div>
+                <div className="ss-chat-reaction">📈</div>
                 <div className="ss-chat-time">3 months ago</div>
               </div>
             </div>
@@ -733,10 +486,12 @@ export default function LandingPage() {
             <div className="ss-chat-item right ss-reveal ss-d3">
               <div className="ss-chat-av" style={{ background: "linear-gradient(135deg, #D97050, #A85030)" }}>MW</div>
               <div className="ss-chat-bubble-wrap">
+                <div className="ss-chat-stars">★★★★★</div>
                 <div className="ss-chat-name">Marcus W. · Dallas, TX</div>
                 <div className="ss-chat-bubble">
                   I refinanced my car at 4.9% instead of 18%. That's saving me over $200 a month. This pays for itself.
                 </div>
+                <div className="ss-chat-reaction">🚗</div>
                 <div className="ss-chat-time">1 month ago</div>
               </div>
             </div>
@@ -744,10 +499,12 @@ export default function LandingPage() {
             <div className="ss-chat-item ss-reveal ss-d4">
               <div className="ss-chat-av sage">NP</div>
               <div className="ss-chat-bubble-wrap">
+                <div className="ss-chat-stars">★★★★★</div>
                 <div className="ss-chat-name">Nicole P. · Miami, FL</div>
                 <div className="ss-chat-bubble">
                   Identity theft wrecked my credit. ScoreShift's plan walked me through every step. <span className="ss-chat-highlight">+89 points</span> removed 7 fraudulent items.
                 </div>
+                <div className="ss-chat-reaction">🛡️</div>
                 <div className="ss-chat-time">5 weeks ago</div>
               </div>
             </div>
