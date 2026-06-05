@@ -699,12 +699,18 @@ function Nav() {
 function HeroSection() {
   return (
     <section className="lp2-hero">
+      {/* Ambient video background — same world as the portal */}
+      <div className="lp2-hero-video-wrap">
+        <video className="lp2-hero-video" autoPlay muted loop playsInline preload="metadata" aria-hidden="true">
+          <source src="/videos/scoreshift-world.webm" type="video/webm"/>
+          <source src="/videos/scoreshift-world.mp4" type="video/mp4"/>
+        </video>
+        <div className="lp2-hero-video-overlay"/>
+      </div>
       {/* Atmospheric CSS glow orbs */}
       <div className="lp2-hero-orb-a"/>
       <div className="lp2-hero-orb-b"/>
       <div className="lp2-hero-orb-c"/>
-      {/* Noise grain overlay */}
-      <div className="lp2-hero-grain"/>
 
       <div className="lp2-container lp2-hero-body">
         <div className="lp2-badge lp2-badge--dark lp2-reveal lp2-d0">
@@ -725,7 +731,7 @@ function HeroSection() {
           </Link>
           <a href="#dashboard-reveal" className="lp2-btn-hero-ghost lp2-btn-lg">See the Dashboard</a>
         </div>
-        <div className="lp2-proof lp2-proof--dark lp2-reveal lp2-d4">
+        <div className="lp2-proof lp2-reveal lp2-d4">
           <div className="lp2-avatars">
             {["JM","KR","TS","AL"].map(a => <div key={a} className="lp2-avatar">{a}</div>)}
           </div>
@@ -756,7 +762,15 @@ function CinematicRevealSection() {
   return (
     <div ref={wrapRef} className="lp2-cin-wrap" id="dashboard-reveal">
       <div className="lp2-cin-sticky">
-        {/* Background atmosphere */}
+        {/* Ambient video — same world as hero */}
+        <div className="lp2-cin-video-wrap">
+          <video className="lp2-cin-video" autoPlay muted loop playsInline preload="metadata" aria-hidden="true">
+            <source src="/videos/scoreshift-world.webm" type="video/webm"/>
+            <source src="/videos/scoreshift-world.mp4" type="video/mp4"/>
+          </video>
+          <div className="lp2-cin-video-overlay"/>
+        </div>
+        {/* Background atmosphere orbs */}
         <div className="lp2-cin-atmo-a"/>
         <div className="lp2-cin-atmo-b"/>
 
@@ -1100,7 +1114,6 @@ export default function LandingPage() {
       <Nav/>
       <HeroSection/>
       <CinematicRevealSection/>
-      <div className="lp2-stats-transition" aria-hidden="true"/>
       <StatsSection/>
       <TrustStrip/>
       <ProblemSection/>
