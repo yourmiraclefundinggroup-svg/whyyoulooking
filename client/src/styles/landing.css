@@ -249,7 +249,7 @@
 .ss-cin-wrap {
   position: relative;
   height: 300vh;
-  background: #0D0906;
+  background: #1A0D06;
 }
 .ss-cin-sticky {
   position: sticky;
@@ -311,6 +311,17 @@
   margin-left: calc(min(1020px, 92vw) / -2);
   z-index: 4;
   will-change: transform, opacity;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 30px 100px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06);
+}
+.ss-cin-portal-iframe {
+  display: block;
+  width: 100%;
+  height: 580px;
+  border: none;
+  border-radius: 20px;
+  pointer-events: auto;
 }
 .ss-cin-scroll-hint {
   position: absolute; bottom: 28px; left: 50%;

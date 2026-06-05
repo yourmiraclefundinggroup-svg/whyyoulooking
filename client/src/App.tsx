@@ -35,6 +35,7 @@ import WhiteLabelOnboarding from "@/pages/white-label-onboarding";
 import CreditMonitoring from "@/pages/credit-monitoring";
 import ClientPortal from "@/pages/client-portal";
 import Demo from "@/pages/demo";
+import PortalDemo from "@/pages/portal-demo";
 import NotFound from "@/pages/not-found";
 import { TrialUpgradeWall } from "@/components/trial-upgrade-wall";
 
@@ -109,6 +110,9 @@ function Router() {
   }
   if (location === "/demo") {
     return <Demo />;
+  }
+  if (location === "/portal-demo") {
+    return <PortalDemo />;
   }
 
   // Show login if no user is authenticated and not on other allowed pages

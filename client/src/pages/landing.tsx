@@ -18,11 +18,15 @@ function useScrollReveal() {
   }, []);
 }
 
-/* ── Nav scroll ─────────────────────────────────────────────── */
+/* ── Nav scroll + hero parallax ─────────────────────────────── */
 function useNavScroll() {
   useEffect(() => {
     const nav = document.querySelector(".ss-nav");
-    const handler = () => nav?.classList.toggle("scrolled", window.scrollY > 60);
+    const img = document.querySelector(".ss-hero-img") as HTMLElement | null;
+    const handler = () => {
+      nav?.classList.toggle("scrolled", window.scrollY > 60);
+      if (img) img.style.transform = `translateY(${window.scrollY * 0.3}px)`;
+    };
     window.addEventListener("scroll", handler, { passive: true });
     handler();
     return () => window.removeEventListener("scroll", handler);
@@ -412,7 +416,7 @@ export default function LandingPage() {
             <li><Link href="/pricing">Pricing</Link></li>
           </ul>
           <div className="ss-nav-actions">
-            <Link href="/portal" className="ss-nav-ghost">Sign in</Link>
+            <Link href="/auth" className="ss-nav-ghost">Sign in</Link>
             <Link href="/get-started" className="ss-btn-nav">
               Get started <ArrowRight size={13} />
             </Link>
@@ -499,7 +503,13 @@ export default function LandingPage() {
               opacity: portalOp,
             }}
           >
-            <PortalMock />
+            <iframe
+              src="/portal-demo"
+              className="ss-cin-portal-iframe"
+              title="ScoreShift portal preview"
+              scrolling="no"
+              frameBorder="0"
+            />
           </div>
 
           {/* Scroll hint */}
@@ -755,7 +765,7 @@ export default function LandingPage() {
             <Link href="/get-started" className="ss-btn-cta-main">
               Start free today <ArrowRight />
             </Link>
-            <Link href="/portal" className="ss-btn-cta-ghost">
+            <Link href="/auth" className="ss-btn-cta-ghost">
               Sign in
             </Link>
           </div>
