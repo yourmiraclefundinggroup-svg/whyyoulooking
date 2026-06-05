@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { UserContext } from "@/hooks/use-user-context";
+import { ArrayTokenContext } from "@/hooks/use-array-token";
 import ClientPortal from "@/pages/client-portal";
 import type { User } from "@shared/schema";
 import type { ScoreShiftProfile } from "@/hooks/use-score-shift-profile";
@@ -312,6 +313,18 @@ function DemoDataProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+const DEMO_ARRAY_STATE = {
+  token: "",
+  appKey: "",
+  apiUrl: "",
+  restApiUrl: "",
+  sandboxMode: false,
+  attempted: true,
+  isReady: false,
+  error: true,
+  refresh: async () => {},
+};
+
 export default function PortalDemo() {
   return (
     <UserContext.Provider
@@ -328,9 +341,11 @@ export default function PortalDemo() {
         logout: () => { window.location.href = "/auth"; },
       }}
     >
-      <DemoDataProvider>
-        <ClientPortal />
-      </DemoDataProvider>
+      <ArrayTokenContext.Provider value={DEMO_ARRAY_STATE}>
+        <DemoDataProvider>
+          <ClientPortal />
+        </DemoDataProvider>
+      </ArrayTokenContext.Provider>
     </UserContext.Provider>
   );
 }

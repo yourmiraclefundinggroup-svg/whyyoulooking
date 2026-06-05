@@ -33,7 +33,7 @@ const defaultState: ArrayTokenState = {
   refresh: async () => {},
 };
 
-const ArrayTokenContext = createContext<ArrayTokenState>(defaultState);
+export const ArrayTokenContext = createContext<ArrayTokenState>(defaultState);
 
 export function ArrayTokenProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<Omit<ArrayTokenState, "refresh">>({
