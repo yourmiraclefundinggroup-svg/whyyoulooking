@@ -930,16 +930,14 @@ function HowItWorksSection() {
 }
 
 // ── Bento Section — dark Linear style ─────────────────────
+/* 6-card asymmetric bento: row1 = Plan(2)+Protect(1), row2 = Report(1)+Dispute(2), row3 = Letters(1)+Progress(2) */
 const MODULES = [
-  { id: "plan",     name: "My Plan",              label: "Guided Roadmap",      span: 2, Illus: PlanIllus,     accent: "#8F7AFF" },
-  { id: "protect",  name: "Protection Center",    label: "Identity Guard",      span: 1, Illus: ProtectionIllus, accent: "#6BAE8A" },
-  { id: "report",   name: "Credit Report",        label: "Tri-Bureau Data",     span: 1, Illus: ReportIllus,   accent: "#8F7AFF" },
-  { id: "dispute",  name: "Dispute IQ",           label: "Precision Analysis",  span: 2, Illus: DisputeIllus,  accent: "#8F7AFF" },
-  { id: "debt",     name: "Debt Navigator",       label: "Payoff Planning",     span: 1, Illus: DebtIllus,     accent: "#EFA26F" },
-  { id: "loans",    name: "Student Loan Aid",     label: "Repayment Guidance",  span: 1, Illus: LoanIllus,     accent: "#6BAE8A" },
-  { id: "letters",  name: "Smart Letters & Mail", label: "Certified Disputes",  span: 1, Illus: LettersIllus,  accent: "#8F7AFF" },
-  { id: "subs",     name: "Subscription Manager", label: "Recurring Clarity",   span: 1, Illus: SubsIllus,     accent: "#EFA26F" },
-  { id: "progress", name: "Progress Tracker",     label: "Milestone View",      span: 2, Illus: ProgressIllus, accent: "#8F7AFF" },
+  { id: "plan",     name: "My Plan",              label: "Guided Roadmap",     span: 2, Illus: PlanIllus,       accent: "#8F7AFF" },
+  { id: "protect",  name: "Protection Center",    label: "Identity Guard",     span: 1, Illus: ProtectionIllus, accent: "#6BAE8A" },
+  { id: "report",   name: "Credit Report",        label: "Tri-Bureau Data",    span: 1, Illus: ReportIllus,     accent: "#8F7AFF" },
+  { id: "dispute",  name: "Dispute IQ",           label: "Precision Analysis", span: 2, Illus: DisputeIllus,    accent: "#8F7AFF" },
+  { id: "letters",  name: "Smart Letters & Mail", label: "Certified Disputes", span: 1, Illus: LettersIllus,    accent: "#8F7AFF" },
+  { id: "progress", name: "Progress Tracker",     label: "Milestone View",     span: 2, Illus: ProgressIllus,   accent: "#8F7AFF" },
 ];
 
 const BENTO_DESC: Record<string, string> = {
@@ -956,10 +954,10 @@ const BENTO_DESC: Record<string, string> = {
 
 function BentoSection() {
   return (
-    <section className="lp2-bento lp2-bento--dark">
+    <section className="lp2-bento">
       <div className="lp2-container">
-        <div className="lp2-section-label lp2-section-label--dark lp2-reveal">Product Modules</div>
-        <h2 className="lp2-h2 lp2-h2--dark lp2-reveal lp2-d1">
+        <div className="lp2-section-label lp2-reveal">Product Features</div>
+        <h2 className="lp2-h2 lp2-reveal lp2-d1">
           Every tool you need,<br/>
           <span className="lp2-gradient-text">connected.</span>
         </h2>
@@ -969,7 +967,7 @@ function BentoSection() {
             return (
               <div
                 key={m.id}
-                className={`lp2-bento-card lp2-bento-card--dark lp2-reveal lp2-d${(i % 3) + 1}${m.span === 2 ? " lp2-span2" : ""}`}
+                className={`lp2-bento-card lp2-reveal lp2-d${(i % 3) + 1}${m.span === 2 ? " lp2-span2" : ""}`}
                 onMouseMove={tiltMove}
                 onMouseLeave={tiltLeave}
               >
@@ -977,8 +975,8 @@ function BentoSection() {
                   <IllusComp/>
                 </div>
                 <div className="lp2-bento-label" style={{ color: m.accent }}>{m.label}</div>
-                <div className="lp2-bento-name lp2-bento-name--dark">{m.name}</div>
-                <div className="lp2-bento-body lp2-bento-body--dark">{BENTO_DESC[m.id]}</div>
+                <div className="lp2-bento-name">{m.name}</div>
+                <div className="lp2-bento-body">{BENTO_DESC[m.id]}</div>
               </div>
             );
           })}
@@ -1102,6 +1100,7 @@ export default function LandingPage() {
       <Nav/>
       <HeroSection/>
       <CinematicRevealSection/>
+      <div className="lp2-stats-transition" aria-hidden="true"/>
       <StatsSection/>
       <TrustStrip/>
       <ProblemSection/>

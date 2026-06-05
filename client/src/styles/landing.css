@@ -451,21 +451,23 @@
   transition: opacity 0.2s linear;
 }
 
-/* ── Stats Section — Spade-style counters ───────────────── */
+/* ── Stats Section — light cream/bone with gradient handoff ─ */
+/* Dark→light transition bleed from cinematic section */
+.lp2-stats-transition {
+  height: 80px;
+  background: linear-gradient(to bottom, var(--lp2-dark-2), var(--lp2-cream));
+  pointer-events: none;
+}
+
 .lp2-stats {
-  background: var(--lp2-dark-2);
-  padding: 96px 0 80px;
+  background: var(--lp2-cream);
+  padding: 72px 0 80px;
   position: relative; overflow: hidden;
 }
 .lp2-stats::before {
   content: '';
   position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(143,122,255,0.25), transparent);
-}
-.lp2-stats::after {
-  content: '';
-  position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(143,122,255,0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(42,40,37,0.12), transparent);
 }
 
 .lp2-stats-inner {
@@ -485,26 +487,25 @@
   content: '';
   position: absolute; left: 0; top: 10%; bottom: 10%;
   width: 1px;
-  background: rgba(255,255,255,0.07);
+  background: rgba(42,40,37,0.1);
 }
 
 .lp2-stat-num {
   font-size: clamp(52px, 7vw, 80px);
   font-weight: 800; letter-spacing: -0.04em;
-  line-height: 1; color: white;
-  margin-bottom: 12px;
-  background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.72) 100%);
+  line-height: 1; margin-bottom: 12px;
+  background: linear-gradient(135deg, var(--lp2-indigo-d) 0%, var(--lp2-indigo) 60%, var(--lp2-sage) 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .lp2-stat-label {
   font-size: 16px; font-weight: 700;
-  color: white; margin-bottom: 6px;
+  color: var(--lp2-charcoal); margin-bottom: 6px;
   letter-spacing: -0.01em;
 }
 .lp2-stat-sub {
-  font-size: 13px; color: rgba(255,255,255,0.38);
+  font-size: 13px; color: var(--lp2-taupe);
   line-height: 1.5;
 }
 
@@ -512,23 +513,26 @@
 .lp2-stat-progress-wrap {
   max-width: 640px; margin: 0 auto;
   padding: 28px 36px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--lp2-card-bg);
+  border: 1px solid var(--lp2-card-bdr);
   border-radius: 20px;
+  box-shadow: var(--lp2-card-shad);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
 }
 .lp2-stat-prog-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 12px;
 }
 .lp2-stat-prog-label {
-  font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.6);
+  font-size: 14px; font-weight: 600; color: var(--lp2-taupe);
 }
 .lp2-stat-prog-pct {
   font-size: 14px; font-weight: 700; color: var(--lp2-indigo);
 }
 .lp2-stat-prog-track {
   height: 6px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(42,40,37,0.08);
   border-radius: 100px; overflow: hidden;
   margin-bottom: 14px;
 }
@@ -539,7 +543,8 @@
 }
 .lp2-stat-prog-bureaus {
   display: flex; gap: 20px;
-  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.35);
+  font-size: 12px; font-weight: 600; color: var(--lp2-taupe);
+  opacity: 0.65;
 }
 
 /* ── Trust Strip ────────────────────────────────────────── */
@@ -616,17 +621,9 @@
 .lp2-how-title { font-size: 15.5px; font-weight: 700; color: var(--lp2-charcoal); margin: 0 0 9px; letter-spacing: -0.01em; }
 .lp2-how-body { font-size: 14px; color: var(--lp2-taupe); line-height: 1.65; margin: 0; }
 
-/* ── Bento Section — Dark Linear style ─────────────────── */
-.lp2-bento { padding: 108px 0; background: var(--lp2-cream); }
-.lp2-bento--dark {
-  background: var(--lp2-dark-3);
-  position: relative;
-}
-.lp2-bento--dark::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(143,122,255,0.2) 50%, transparent 100%);
-}
+/* ── Bento Section — Asymmetric 6-card Linear-inspired grid ─ */
+.lp2-bento { padding: 108px 0; background: var(--lp2-bone); }
+.lp2-bento--dark { background: var(--lp2-bone); }
 .lp2-bento-grid {
   display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 12px; margin-top: 52px;
@@ -938,22 +935,25 @@
 /* Main content */
 .lp2-portal-main {
   flex: 1; min-width: 0;
-  background: rgba(255,255,255,0.26);
+  background: rgba(247,243,236,0.35);
   backdrop-filter: blur(20px) saturate(1.5);
   -webkit-backdrop-filter: blur(20px) saturate(1.5);
   display: flex; flex-direction: column;
 }
+/* Exact cp-topbar tokens from portal.css */
 .lp2-portal-topbar {
-  height: 44px; flex-shrink: 0;
+  height: 52px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 14px;
-  background: rgba(255,255,255,0.20);
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(255,255,255,0.28);
+  padding: 0 16px;
+  background: rgba(247,243,236,0.75);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border-bottom: 1px solid rgba(232,226,216,0.6);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.5), 0 4px 16px rgba(0,0,0,0.03);
 }
 .lp2-portal-topbar-title {
-  font-size: 12.5px; font-weight: 700;
-  color: var(--lp2-charcoal); letter-spacing: -0.01em;
+  font-size: 13px; font-weight: 700;
+  color: var(--lp2-charcoal); letter-spacing: -0.015em;
 }
 .lp2-portal-topbar-chip {
   display: flex; align-items: center; gap: 5px;
@@ -1227,6 +1227,8 @@
   .lp2-badge-dot, .lp2-portal-chip-dot { animation: none; }
   .lp2-hero-scroll-cue, .lp2-cin-scroll-cue { animation: none; }
   .lp2-portal-wrap { animation: none; }
+  /* Disable progress bar fill animation */
+  .lp2-stat-prog-fill { transition: none !important; }
 }
 
 /* ── Responsive ─────────────────────────────────────────── */
