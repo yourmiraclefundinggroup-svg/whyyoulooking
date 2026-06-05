@@ -503,17 +503,17 @@ export default function LandingPage() {
           {/* Line 1 — visible 0–28% */}
           <div className="ss-cin-line" style={{ opacity: line1Op, transform: `translateY(${line1Y}px)` }}>
             <span className="ss-cin-eyebrow">The ScoreShift difference</span>
-            <h2 className="ss-cin-h2">Most tools show you data.</h2>
+            <h2 className="ss-cin-h2">Every disputed item removed.</h2>
           </div>
 
           {/* Line 2 — visible 15–48% */}
           <div className="ss-cin-line" style={{ opacity: line2Op, transform: `translateY(${line2Y}px)` }}>
-            <h2 className="ss-cin-h2 ss-cin-h2-em">ScoreShift shows you direction.</h2>
+            <h2 className="ss-cin-h2 ss-cin-h2-em">Every point counts.</h2>
           </div>
 
           {/* Line 3 — visible 35–58% */}
           <div className="ss-cin-line" style={{ opacity: line3Op, transform: `translateY(${line3Y}px)` }}>
-            <span className="ss-cin-sub">From credit data to a guided action plan — your next step is always clear.</span>
+            <span className="ss-cin-sub">Your portal is waiting.</span>
           </div>
 
           {/* Scroll hint */}
@@ -696,8 +696,8 @@ export default function LandingPage() {
             <p className="ss-section-sub ss-reveal ss-d2">Real conversations from real clients.</p>
           </div>
 
-          <div className="ss-chat-feed ss-reveal ss-d1">
-            <div className="ss-chat-item">
+          <div className="ss-chat-feed">
+            <div className="ss-chat-item ss-reveal">
               <div className="ss-chat-av sage">KR</div>
               <div className="ss-chat-bubble-wrap">
                 <div className="ss-chat-name">Keisha R. · Atlanta, GA</div>
@@ -708,7 +708,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="ss-chat-item right">
+            <div className="ss-chat-item right ss-reveal ss-d1">
               <div className="ss-chat-av apricot">DM</div>
               <div className="ss-chat-bubble-wrap">
                 <div className="ss-chat-name">David M. · Houston, TX</div>
@@ -719,7 +719,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="ss-chat-item">
+            <div className="ss-chat-item ss-reveal ss-d2">
               <div className="ss-chat-av">TL</div>
               <div className="ss-chat-bubble-wrap">
                 <div className="ss-chat-name">Tamara L. · Chicago, IL</div>
@@ -730,7 +730,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="ss-chat-item right">
+            <div className="ss-chat-item right ss-reveal ss-d3">
               <div className="ss-chat-av" style={{ background: "linear-gradient(135deg, #D97050, #A85030)" }}>MW</div>
               <div className="ss-chat-bubble-wrap">
                 <div className="ss-chat-name">Marcus W. · Dallas, TX</div>
@@ -741,7 +741,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="ss-chat-item">
+            <div className="ss-chat-item ss-reveal ss-d4">
               <div className="ss-chat-av sage">NP</div>
               <div className="ss-chat-bubble-wrap">
                 <div className="ss-chat-name">Nicole P. · Miami, FL</div>
@@ -782,13 +782,13 @@ export default function LandingPage() {
         <div className="ss-cta-veil" />
         <div className="ss-cta-body">
           <span className="ss-cta-eye ss-reveal">The next step is yours</span>
-          <h2 className="ss-cta-h2 ss-reveal ss-d1">Start with clarity.<br /><em>Move with certainty.</em></h2>
+          <h2 className="ss-cta-h2 ss-reveal ss-d1">Start your climb.</h2>
           <span className="ss-cta-sub ss-reveal ss-d2">
-            ScoreShift turns your credit data into a guided financial readiness plan.
+            Join thousands of clients who've removed negatives, built credit, and moved forward with confidence.
           </span>
           <div className="ss-cta-btns ss-reveal ss-d3">
             <Link href="/auth" className="ss-btn-cta-main">
-              Create Your ScoreShift Plan <ArrowRight />
+              Get Started Free <ArrowRight />
             </Link>
             <Link href="/auth" className="ss-btn-cta-ghost">
               Sign in
