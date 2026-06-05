@@ -188,55 +188,88 @@
 /* ── Hero ───────────────────────────────────────────────── */
 .lp2-hero {
   position: relative; min-height: 100vh;
-  display: flex; align-items: center;
-  overflow: hidden; padding: 100px 0 72px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  padding: 130px 0 100px;
+  background: #F5F1EA;
 }
 .lp2-hero-video {
   position: absolute; inset: 0;
   width: 100%; height: 100%; object-fit: cover;
-  transform: scale(1.05);
+  transform: scale(1.05); opacity: 0.55;
   animation: lp2-hero-scale 32s ease-in-out infinite alternate;
 }
 .lp2-hero-overlay {
   position: absolute; inset: 0;
   background: linear-gradient(
-    155deg,
-    rgba(247,243,236,0.90) 0%,
-    rgba(247,243,236,0.80) 38%,
-    rgba(247,243,236,0.66) 65%,
-    rgba(247,243,236,0.74) 100%
+    160deg,
+    rgba(245,241,234,0.94) 0%,
+    rgba(245,241,234,0.88) 45%,
+    rgba(245,241,234,0.82) 100%
   );
 }
 .lp2-hero-glow-a {
-  position: absolute; bottom: 8%; left: 28%;
-  width: 640px; height: 420px;
-  background: radial-gradient(ellipse, rgba(143,122,255,0.12) 0%, transparent 70%);
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 700px; height: 360px;
+  background: radial-gradient(ellipse, rgba(143,122,255,0.14) 0%, transparent 68%);
   pointer-events: none;
   animation: lp2-drift-a 22s ease-in-out infinite alternate;
 }
 .lp2-hero-glow-b {
-  position: absolute; top: 12%; right: 12%;
-  width: 520px; height: 360px;
-  background: radial-gradient(ellipse, rgba(107,174,138,0.09) 0%, transparent 70%);
+  position: absolute; top: 10%; right: 10%;
+  width: 460px; height: 320px;
+  background: radial-gradient(ellipse, rgba(107,174,138,0.08) 0%, transparent 70%);
   pointer-events: none;
   animation: lp2-drift-b 28s ease-in-out infinite alternate;
 }
+
+/* Centered brand-first hero body */
 .lp2-hero-body {
   position: relative; z-index: 2;
-  display: grid; grid-template-columns: 1fr 1fr;
-  align-items: center; gap: 64px; padding-top: 16px;
+  display: flex; flex-direction: column;
+  align-items: center; text-align: center;
+  gap: 0;
 }
-.lp2-hero-text { display: flex; flex-direction: column; gap: 22px; }
+
+/* Animated Ascend logo mark */
+.lp2-ascend-wrap {
+  display: flex; justify-content: center; align-items: center;
+  margin-bottom: 28px;
+}
+.lp2-ascend-video {
+  width: 160px; height: auto; display: block;
+  border-radius: 0; background: transparent;
+}
+.lp2-ascend-fallback {
+  display: none;
+  width: 100px; height: 100px; object-fit: contain;
+}
+/* Show fallback, hide video when reduced motion is preferred */
+@media (prefers-reduced-motion: reduce) {
+  .lp2-ascend-video  { display: none; }
+  .lp2-ascend-fallback { display: block; }
+}
+
+/* Wordmark below the logo */
+.lp2-hero-wordmark {
+  font-size: 15px; font-weight: 700; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--lp2-taupe);
+  margin-bottom: 24px;
+}
+
 .lp2-hero-h1 {
-  font-size: clamp(38px, 4.8vw, 66px);
-  font-weight: 800; letter-spacing: -0.032em;
-  line-height: 1.07; color: var(--lp2-charcoal); margin: 0;
+  font-size: clamp(36px, 5.2vw, 72px);
+  font-weight: 800; letter-spacing: -0.034em;
+  line-height: 1.06; color: var(--lp2-charcoal); margin: 0 0 22px;
 }
 .lp2-hero-sub {
-  font-size: 17px; color: var(--lp2-taupe);
-  line-height: 1.68; margin: 0; max-width: 420px;
+  font-size: 18px; color: var(--lp2-taupe);
+  line-height: 1.68; margin: 0 0 36px; max-width: 480px;
 }
-.lp2-hero-ctas { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.lp2-hero-ctas {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 36px;
+}
 .lp2-proof {
   display: flex; align-items: center; gap: 10px;
   font-size: 13px; color: var(--lp2-taupe);
@@ -252,7 +285,34 @@
 }
 .lp2-avatar:first-child { margin-left: 0; }
 
-/* ── Hero Command Card ───────────────────────────────────── */
+/* ── Portal Preview Section ─────────────────────────────── */
+.lp2-portal-preview {
+  padding: 96px 0 112px;
+  background: linear-gradient(180deg, #F0EBE2 0%, var(--lp2-cream) 100%);
+  position: relative; overflow: hidden;
+}
+.lp2-portal-preview::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, rgba(42,40,37,0.055) 1px, transparent 1px);
+  background-size: 22px 22px;
+  pointer-events: none; z-index: 0;
+}
+.lp2-portal-preview-head {
+  text-align: center; margin-bottom: 56px;
+  position: relative; z-index: 1;
+}
+.lp2-portal-preview-head .lp2-section-sub {
+  margin-top: 14px; font-size: 16px; color: var(--lp2-taupe); max-width: 440px; margin-left: auto; margin-right: auto;
+}
+.lp2-portal-preview-frame {
+  position: relative; z-index: 1;
+  display: flex; justify-content: center;
+  max-width: 820px; margin: 0 auto;
+}
+.lp2-portal-preview-frame .lp2-portal-wrap { width: 100%; }
+
+/* ── Legacy card wrap (no longer in hero, kept for safety) ── */
 .lp2-hero-card-wrap { display: flex; justify-content: center; }
 .lp2-command-card {
   background: var(--lp2-card-bg);
@@ -1025,14 +1085,17 @@
   .lp2-nav-cta-short { display: inline; }
   .lp2-nav .lp2-btn-primary { padding: 9px 14px; font-size: 13px; }
 
-  /* Hero */
-  .lp2-hero { padding: 90px 0 60px; min-height: 100vh; min-height: 100svh; }
-  .lp2-hero-body { grid-template-columns: 1fr; gap: 40px; text-align: center; }
-  .lp2-hero-text { align-items: center; }
-  .lp2-hero-sub { max-width: 100%; font-size: 16px; }
-  .lp2-hero-ctas { justify-content: center; }
+  /* Hero — already centered column, just tune spacing + sizes */
+  .lp2-hero { padding: 110px 0 80px; min-height: 100svh; }
+  .lp2-ascend-video { width: 120px; }
+  .lp2-hero-h1 { font-size: clamp(32px, 9vw, 46px); }
+  .lp2-hero-sub { font-size: 16px; max-width: 100%; }
+  .lp2-hero-ctas { flex-direction: column; align-items: stretch; }
+  .lp2-hero-ctas a, .lp2-hero-ctas .lp2-btn-primary { justify-content: center; }
   .lp2-proof { justify-content: center; }
-  .lp2-hero-card-wrap { max-width: 400px; margin: 0 auto; width: 100%; }
+  /* Portal preview */
+  .lp2-portal-preview { padding: 64px 0 80px; }
+  .lp2-portal-preview-frame { max-width: 100%; }
 
   /* Sections vertical padding */
   .lp2-problem { padding: 72px 0; }

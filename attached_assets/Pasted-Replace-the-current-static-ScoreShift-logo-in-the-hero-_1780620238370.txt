@@ -1,0 +1,117 @@
+Replace the current static ScoreShift logo in the hero section with the uploaded animated Ascend logo video.
+
+DESIGN OBJECTIVE
+
+The animation should function as the primary brand mark for ScoreShift.
+
+It should feel similar to how Apple, Linear, Arc Browser, and Stripe use motion as part of their identity.
+
+Do not treat it as a decorative background video.
+
+Do not stretch it across the hero.
+
+Do not place it behind text.
+
+LAYOUT
+
+Hero Layout:
+
+[ Animated Ascend Logo ]
+
+ScoreShift
+
+Financial Readiness, Guided.
+
+[ Start Your Plan ]
+
+The animated logo should sit directly above the ScoreShift wordmark.
+
+DESKTOP
+
+* Width: approximately 140-180px
+* Maintain original aspect ratio
+* Center aligned
+* High quality rendering
+* No cropping
+
+MOBILE
+
+* Width: approximately 100-130px
+* Center aligned
+* Maintain aspect ratio
+
+VIDEO IMPLEMENTATION
+
+Use the uploaded MP4 as a looping logo animation.
+
+Requirements:
+
+* autoplay
+* muted
+* playsInline
+* loop
+* preload="auto"
+
+The animation should begin immediately on page load.
+
+No playback controls.
+
+No progress bar.
+
+No visible video UI.
+
+No user interaction required.
+
+STYLING
+
+Background:
+
+* Bone Ledger (#F5F1EA equivalent)
+* Clean minimal environment
+
+Spacing:
+
+* Large breathing room around logo
+* Luxury editorial spacing
+
+Motion:
+
+* Let the video provide all motion
+* Do not add CSS floating animations
+* Do not add scaling effects
+* Do not add hover animations
+
+PERFORMANCE
+
+* Lazy load all sections below hero
+* Prioritize loading of logo animation
+* Optimize MP4 delivery
+* Maintain smooth playback on desktop and mobile
+
+FALLBACK
+
+If video fails to load:
+
+Display static Ascend logo PNG.
+
+ACCESSIBILITY
+
+Respect prefers-reduced-motion.
+
+If reduced motion is enabled:
+
+* Show static logo image
+* Disable video autoplay
+
+GOAL
+
+The hero should feel like a premium fintech company rather than a credit repair website.
+
+Think:
+Apple
+Linear
+Stripe Sessions
+Mercury
+Ramp
+
+The animated Ascend mark should become the first visual element visitors remember when they land on ScoreShift.
