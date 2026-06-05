@@ -248,7 +248,7 @@
 /* ── Cinematic Scroll Section ────────────────────────────── */
 .ss-cin-wrap {
   position: relative;
-  height: 300vh;
+  height: 250vh;
   background: var(--ss-cream);
 }
 .ss-cin-sticky {

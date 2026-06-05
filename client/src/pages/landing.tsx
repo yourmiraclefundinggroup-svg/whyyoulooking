@@ -186,7 +186,7 @@ export default function LandingPage() {
           <div className="ss-nav-actions">
             <Link href="/auth" className="ss-nav-ghost">Sign in</Link>
             <Link href="/auth" className="ss-btn-nav">
-              Get started <ArrowRight size={13} />
+              Get Started Free <ArrowRight size={13} />
             </Link>
           </div>
         </div>

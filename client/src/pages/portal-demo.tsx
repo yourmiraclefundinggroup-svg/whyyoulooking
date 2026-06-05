@@ -659,15 +659,8 @@ export default function PortalDemo() {
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 0 }}>
-      {/* Demo banner */}
-      <div className="pd-demo-banner">
-        <span className="pd-demo-dot" />
-        Demo mode — this is a preview of your ScoreShift portal
-        <a href="/auth" className="pd-demo-cta">Get started free →</a>
-      </div>
-
-      {/* Exact portal shell — uses same cp-* classes as client-portal.tsx */}
-      <div className="cp-portal" style={{ top: 38, height: "calc(100vh - 38px)" }}>
+      {/* Portal shell — pixel-identical to /portal (no demo chrome inside iframe) */}
+      <div className="cp-portal">
 
         {/* Background (matches client-portal.tsx BgVideo) */}
         <div className="cp-bg-layer" aria-hidden="true">
