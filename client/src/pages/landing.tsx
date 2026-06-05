@@ -366,12 +366,12 @@ export default function LandingPage() {
               </div>
             </TiltTile>
 
-            {/* C — Progress Tracker */}
+            {/* C — Score Tracker (Live Monitoring) */}
             <TiltTile className="ss-tile-c ss-reveal">
               <div className="ss-tile-icon indigo">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
               </div>
-              <div className="ss-tile-eye"><span className="ss-tile-eye-dot" />Progress Tracker</div>
+              <div className="ss-tile-eye"><span className="ss-tile-eye-dot" />Score Tracker (Live Monitoring)</div>
               <div className="ss-tile-big-stat indigo">+74</div>
               <div className="ss-tile-stat-desc">avg. points gained in 90 days</div>
             </TiltTile>
@@ -396,24 +396,8 @@ export default function LandingPage() {
               <div className="ss-tile-stat-desc">days avg. to first item removed</div>
             </TiltTile>
 
-            {/* F — Debt Navigator */}
-            <TiltTile className="ss-tile-f ss-reveal">
-              <div className="ss-tile-icon charcoal">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              </div>
-              <div className="ss-tile-eye"><span className="ss-tile-eye-dot" style={{ background: "var(--ss-charcoal)" }} />Debt Navigator</div>
-              <h3 className="ss-tile-h3">Your payoff strategy, simplified</h3>
-              <div className="ss-tile-chat">
-                <div className="ss-tile-bubble user">What should I pay off first?</div>
-                <div className="ss-tile-bubble ai">Start with the Capital One card at 24.9% APR — it's your highest-interest balance. Paying it down first saves you the most over time and frees up utilization.</div>
-                <div className="ss-tile-typing">
-                  <span/><span/><span/>
-                </div>
-              </div>
-            </TiltTile>
-
-            {/* G — Credit Report */}
-            <TiltTile className="ss-tile-g ss-reveal ss-d1">
+            {/* F — Credit Report (was G, now promoted to F and spans full row) */}
+            <TiltTile className="ss-tile-f ss-reveal ss-d1">
               <div className="ss-tile-icon indigo">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </div>

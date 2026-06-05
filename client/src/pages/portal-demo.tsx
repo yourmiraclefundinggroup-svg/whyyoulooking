@@ -13,7 +13,7 @@ function Icon({ children, size = 16 }: { children: React.ReactNode; size?: numbe
 }
 
 /* ── Page types — mirrors client-portal.tsx ──────────────── */
-type PageId = "home" | "plan" | "dispute-iq" | "debt" | "subscriptions" | "student-loans" | "protection" | "report" | "progress" | "profile";
+type PageId = "home" | "plan" | "dispute-iq" | "debt" | "subscriptions" | "student-loans" | "protection" | "report" | "progress" | "profile" | "payment-center";
 
 const PAGE_TITLES: Record<PageId, string> = {
   home: "Home",
@@ -26,6 +26,7 @@ const PAGE_TITLES: Record<PageId, string> = {
   report: "Credit Report",
   progress: "Progress",
   profile: "Profile & Settings",
+  "payment-center": "Payment Center",
 };
 
 /* ── Hardcoded demo data ──────────────────────────────────── */
@@ -524,6 +525,63 @@ function ProgressPage() {
   );
 }
 
+function PaymentCenterPage() {
+  return (
+    <div>
+      <div className="cp-page-header">
+        <div>
+          <span className="cp-page-eyebrow">BILLING & PAYMENTS</span>
+          <h1 className="cp-page-title">Payment Center</h1>
+          <p className="cp-page-subtitle">Managed Credit Repair · Pro Plan</p>
+        </div>
+        <span style={{ background: "var(--cp-green-light)", color: "var(--cp-green)", fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 20 }}>Current</span>
+      </div>
+      <div className="cp-grid-3 cp-mb-24">
+        {[
+          { label: "Total Investment", val: "$1,200", col: "var(--cp-text-primary)" },
+          { label: "Amount Paid",      val: "$600",   col: "var(--cp-success)"      },
+          { label: "Remaining",        val: "$600",   col: "var(--cp-amber)"        },
+        ].map(s => (
+          <div key={s.label} style={{ background: "var(--cp-bg)", borderRadius: 10, padding: "14px 16px" }}>
+            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 22, fontWeight: 800, color: s.col, letterSpacing: -1 }}>{s.val}</div>
+            <div style={{ fontSize: 10, color: "var(--cp-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+      <div className="cp-card cp-mb-24">
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+            <span style={{ fontSize: 11, color: "var(--cp-text-muted)" }}>Payment progress</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--cp-success)" }}>50% paid</span>
+          </div>
+          <div className="cp-progress-bar"><div className="cp-progress-fill" style={{ width: "50%", background: "var(--cp-success)" }} /></div>
+        </div>
+        <div style={{ background: "var(--cp-amber-light)", border: "1px solid rgba(239,162,111,0.3)", borderRadius: 9, padding: "10px 14px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--cp-amber)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 2 }}>Next Payment Due</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--cp-text-primary)" }}>$200 · February 12, 2025</div>
+          </div>
+          <span style={{ fontSize: 11, color: "var(--cp-amber)", fontWeight: 600 }}>Monthly</span>
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button className="cp-btn cp-btn-primary cp-btn-sm">
+            <Icon size={12}><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></Icon>
+            Make Payment
+          </button>
+          <button className="cp-btn cp-btn-secondary cp-btn-sm">
+            <Icon size={12}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></Icon>
+            View Agreement
+          </button>
+          <button className="cp-btn cp-btn-secondary cp-btn-sm">
+            <Icon size={12}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></Icon>
+            Download Receipt
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProfilePage() {
   return (
     <div>
@@ -586,16 +644,17 @@ export default function PortalDemo() {
 
   /* Same NAV definition as client-portal.tsx */
   const NAV: { id: PageId; label: string; icon: React.ReactNode; badge?: string }[] = [
-    { id: "home",          label: "Home",                 icon: <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></>  },
-    { id: "plan",          label: "My Plan",              icon: <><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></>, badge: "2" },
-    { id: "dispute-iq",    label: "Dispute IQ",           icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></>, badge: "3" },
-    { id: "debt",          label: "Debt Navigator",       icon: <><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />           </> },
-    { id: "subscriptions", label: "Subscription Manager", icon: <><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /><line x1="7" y1="15" x2="7" y2="15" /><line x1="11" y1="15" x2="13" y2="15" /></> },
-    { id: "student-loans", label: "Student Loan Aid",     icon: <><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" />                               </> },
-    { id: "protection",    label: "Protection Center",    icon: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />                                                      </> },
-    { id: "report",        label: "Credit Report",        icon: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />                                                          </> },
-    { id: "progress",      label: "Progress",             icon: <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" />                        </> },
-    { id: "profile",       label: "Profile",              icon: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />                         </> },
+    { id: "home",           label: "Home",                 icon: <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></>  },
+    { id: "plan",           label: "My Plan",              icon: <><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></>, badge: "2" },
+    { id: "payment-center", label: "Payment Center",       icon: <><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" />           </> },
+    { id: "dispute-iq",     label: "Dispute IQ",           icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></>, badge: "3" },
+    { id: "debt",           label: "Debt Navigator",       icon: <><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />    </> },
+    { id: "subscriptions",  label: "Subscription Manager", icon: <><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /><line x1="7" y1="15" x2="7" y2="15" /><line x1="11" y1="15" x2="13" y2="15" /></> },
+    { id: "student-loans",  label: "Student Loan Aid",     icon: <><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" />                              </> },
+    { id: "protection",     label: "Protection Center",    icon: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />                                                     </> },
+    { id: "report",         label: "Credit Report",        icon: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />                                                         </> },
+    { id: "progress",       label: "Progress",             icon: <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" />                       </> },
+    { id: "profile",        label: "Profile",              icon: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />                        </> },
   ];
 
   return (
@@ -663,16 +722,17 @@ export default function PortalDemo() {
             </div>
           </header>
           <div className="cp-content">
-            {activePage === "home"          && <HomePage onNavigate={setActivePage} />}
-            {activePage === "plan"          && <PlanPage />}
-            {activePage === "dispute-iq"    && <DisputeIQPage onNavigate={setActivePage} />}
-            {activePage === "debt"          && <DebtPage />}
-            {activePage === "subscriptions" && <SubscriptionsPage />}
-            {activePage === "student-loans" && <StudentLoanPage />}
-            {activePage === "protection"    && <ProtectionPage />}
-            {activePage === "report"        && <ReportPage />}
-            {activePage === "progress"      && <ProgressPage />}
-            {activePage === "profile"       && <ProfilePage />}
+            {activePage === "home"           && <HomePage onNavigate={setActivePage} />}
+            {activePage === "plan"           && <PlanPage />}
+            {activePage === "payment-center" && <PaymentCenterPage />}
+            {activePage === "dispute-iq"     && <DisputeIQPage onNavigate={setActivePage} />}
+            {activePage === "debt"           && <DebtPage />}
+            {activePage === "subscriptions"  && <SubscriptionsPage />}
+            {activePage === "student-loans"  && <StudentLoanPage />}
+            {activePage === "protection"     && <ProtectionPage />}
+            {activePage === "report"         && <ReportPage />}
+            {activePage === "progress"       && <ProgressPage />}
+            {activePage === "profile"        && <ProfilePage />}
           </div>
         </div>
       </div>

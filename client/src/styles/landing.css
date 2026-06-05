@@ -773,17 +773,16 @@
 .ss-tile-c { grid-column: span 4; }
 .ss-tile-d { grid-column: span 4; }
 .ss-tile-e { grid-column: span 4; }
-.ss-tile-f { grid-column: span 6; }
-.ss-tile-g { grid-column: span 6; }
+.ss-tile-f { grid-column: span 12; }
 
 @media (max-width: 900px) {
   .ss-bento-grid { grid-template-columns: 1fr 1fr; }
-  .ss-tile-a,.ss-tile-b,.ss-tile-c,.ss-tile-d,.ss-tile-e,.ss-tile-f,.ss-tile-g { grid-column: span 1; }
+  .ss-tile-a,.ss-tile-b,.ss-tile-c,.ss-tile-d,.ss-tile-e,.ss-tile-f { grid-column: span 1; }
   .ss-tile-a,.ss-tile-b { grid-column: span 2; }
 }
 @media (max-width: 580px) {
   .ss-bento-grid { grid-template-columns: 1fr; }
-  .ss-tile-a,.ss-tile-b,.ss-tile-c,.ss-tile-d,.ss-tile-e,.ss-tile-f,.ss-tile-g { grid-column: span 1; }
+  .ss-tile-a,.ss-tile-b,.ss-tile-c,.ss-tile-d,.ss-tile-e,.ss-tile-f { grid-column: span 1; }
 }
 
 .ss-tile-eye {
