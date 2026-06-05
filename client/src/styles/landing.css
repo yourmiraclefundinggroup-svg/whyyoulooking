@@ -669,6 +669,11 @@
 .ss-pfloat-frame {
   border-radius: 22px;
   overflow: hidden;
+  transform: perspective(1200px) rotateX(4deg) scale(0.62);
+  transform-origin: top center;
+  /* Negative margin compensates for the whitespace left by scale(0.62):
+     dead space = 620px × (1 − 0.62) ≈ 236px */
+  margin-bottom: -236px;
   box-shadow:
     0 2px 8px rgba(30,27,24,.06),
     0 20px 60px rgba(30,27,24,.14),
@@ -1002,6 +1007,12 @@
   font-size: 16px; margin-top: 4px; padding: 0 4px;
 }
 .ss-chat-item.right .ss-chat-reaction { text-align: right; }
+
+/* Side-specific slide-in stagger for chat bubbles */
+.ss-chat-item:not(.right).ss-reveal { transform: translateX(-28px); opacity: 0; }
+.ss-chat-item:not(.right).ss-reveal.visible { transform: translateX(0); opacity: 1; }
+.ss-chat-item.right.ss-reveal { transform: translateX(28px); opacity: 0; }
+.ss-chat-item.right.ss-reveal.visible { transform: translateX(0); opacity: 1; }
 
 /* Stats row */
 .ss-social-stats {

@@ -212,8 +212,8 @@ export default function LandingPage() {
             <em>you forward.</em>
           </h1>
           <p className="ss-hero-sub ss-reveal ss-d2">
-            Modern credit monitoring, improvement, and financial readiness tools to help you
-            move forward with clarity.
+            ScoreShift combines AI dispute intelligence, real-time credit monitoring,
+            and a personalized action plan — all in one place.
           </p>
           <div className="ss-hero-ctas ss-reveal ss-d3">
             <Link href="/auth" className="ss-btn-primary">
@@ -551,7 +551,7 @@ export default function LandingPage() {
               Sign in
             </Link>
           </div>
-          <p className="ss-cta-fine ss-reveal ss-d4">No credit card required · Cancel any time</p>
+          <p className="ss-cta-fine ss-reveal ss-d4">No credit card required · Free to start.</p>
         </div>
       </section>
 
