@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import "../styles/landing.css";
 import scoreshiftLogo from "@assets/scoreshift-logo.png";
@@ -25,6 +25,57 @@ function useNavScroll() {
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
   }, []);
+}
+
+// ── Cinematic scroll progress ──────────────────────────────
+function useCinematicProgress(ref: React.RefObject<HTMLDivElement>) {
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    const handler = () => {
+      const el = ref.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      const h = el.offsetHeight;
+      const vh = window.innerHeight;
+      const travel = h - vh;
+      const scrolledIn = -top;
+      const p = travel > 0 ? Math.max(0, Math.min(1, scrolledIn / travel)) : 0;
+      setProgress(p);
+    };
+    window.addEventListener("scroll", handler, { passive: true });
+    handler();
+    return () => window.removeEventListener("scroll", handler);
+  }, [ref]);
+  return progress;
+}
+
+// ── Count-up hook ──────────────────────────────────────────
+function useCountUp(from: number, to: number, duration = 1600) {
+  const [value, setValue] = useState(from);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      obs.disconnect();
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        setValue(to); return;
+      }
+      let start: number | null = null;
+      const ease = (t: number) => 1 - Math.pow(1 - t, 3);
+      const step = (ts: number) => {
+        if (start === null) start = ts;
+        const p = ease(Math.min((ts - start) / duration, 1));
+        setValue(Math.round(from + p * (to - from)));
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }, { threshold: 0.5 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [from, to, duration]);
+  return { value, ref };
 }
 
 // ── 3D Tilt ───────────────────────────────────────────────
@@ -331,23 +382,17 @@ function LettersIllus() {
           <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#6B5FD9" floodOpacity="0.4"/>
         </filter>
       </defs>
-      {/* Envelope back */}
       <rect x="14" y="28" width="82" height="56" rx="6" fill="#E8E4F2"/>
-      {/* Envelope body */}
       <rect x="14" y="28" width="82" height="56" rx="6" fill="url(#lt-g)" filter="url(#lt-s)"/>
       <rect x="14" y="28" width="82" height="56" rx="6" fill="none" stroke="white" strokeWidth="1" strokeOpacity="0.68"/>
-      {/* Envelope flap (V shape) */}
       <path d="M14 28 L55 54 L96 28" fill="none" stroke="#8F7AFF" strokeWidth="1.2" opacity="0.28"/>
-      {/* USPS lines */}
       <rect x="24" y="55" width="36" height="3.5" rx="1.75" fill="#8C7B6E" fillOpacity="0.3"/>
       <rect x="24" y="62" width="28" height="3.5" rx="1.75" fill="#8C7B6E" fillOpacity="0.22"/>
       <rect x="24" y="69" width="20" height="3.5" rx="1.75" fill="#8C7B6E" fillOpacity="0.16"/>
-      {/* Certified seal */}
       <circle cx="82" cy="62" r="13" fill="#8F7AFF" fillOpacity="0.15" filter="url(#lt-seal)"/>
       <circle cx="82" cy="62" r="10" fill="#8F7AFF"/>
       <circle cx="82" cy="62" r="10" fill="none" stroke="white" strokeWidth="0.75" opacity="0.4"/>
       <path d="M78 62 l2.8 2.8 5.8-5.8" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-      {/* Top stamp indicator */}
       <rect x="78" y="10" width="24" height="15" rx="3" fill="none" stroke="#EFA26F" strokeWidth="1.5" opacity="0.5" strokeDasharray="3 2"/>
       <rect x="82" y="13" width="16" height="3.5" rx="1.75" fill="#EFA26F" opacity="0.45"/>
       <rect x="85" y="18" width="10" height="3" rx="1.5" fill="#EFA26F" opacity="0.3"/>
@@ -355,22 +400,21 @@ function LettersIllus() {
   );
 }
 
-// ── Portal tilt handlers (preserves base 3-D perspective) ─
+// ── Portal tilt handlers ───────────────────────────────────
 function portalTiltMove(e: React.MouseEvent<HTMLDivElement>) {
   const el = e.currentTarget;
   const r = el.getBoundingClientRect();
   const x = (e.clientX - r.left) / r.width  * 2 - 1;
   const y = (e.clientY - r.top)  / r.height * 2 - 1;
-  el.style.transform = `perspective(1100px) rotateY(${-5 + x * 4}deg) rotateX(${2 - y * 3}deg) translateY(-4px)`;
-  el.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.38), 0 12px 40px rgba(42,40,37,0.22), 0 48px 100px rgba(42,40,37,0.16)`;
+  el.style.transform = `perspective(1100px) rotateY(${-3 + x * 3}deg) rotateX(${1 - y * 2}deg) translateY(-4px)`;
+  el.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.15), 0 16px 64px rgba(0,0,0,0.48), 0 64px 120px rgba(0,0,0,0.32)`;
 }
 function portalTiltLeave(e: React.MouseEvent<HTMLDivElement>) {
-  e.currentTarget.style.transform = `perspective(1100px) rotateY(-5deg) rotateX(2deg)`;
-  e.currentTarget.style.boxShadow = '';
+  e.currentTarget.style.transform = `perspective(1100px) rotateY(-3deg) rotateX(1deg)`;
+  e.currentTarget.style.boxShadow = "";
 }
 
 // ── Interactive Mock Portal ────────────────────────────────
-
 const PORTAL_NAV = [
   { id: "dashboard", label: "Dashboard",    badge: null,
     icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
@@ -426,18 +470,19 @@ function PSDashboard() {
         </div>
       </div>
       <div className="lp2-portal-disputes">
-        <div className="lp2-portal-disp-header">Open Disputes</div>
+        <div className="lp2-portal-disp-header">Recent Disputes</div>
         {[
-          { dot:"pending", name:"Capital One — Late Payment",     meta:"Sent · Day 12 of 30",      bur:"EQ · TU", green: false },
-          { dot:"won",     name:"Midland Credit Management",      meta:"Removed · +18 pts gained ✓", bur:"EX",      green: true  },
+          { name:"MIDLAND FUNDING LLC",  meta:"Collection · Opened 2021", bureau:"EX",  status:"pending", color:"#3B82F6" },
+          { name:"CAPITAL ONE AUTO",     meta:"Late 30d · Aug 2023",       bureau:"EQ",  status:"won",     color:"#EF4444" },
+          { name:"SYNC BANK CREDIT",     meta:"Inquiry · Mar 2024",        bureau:"TU",  status:"won",     color:"#8B5CF6" },
         ].map(d => (
           <div key={d.name} className="lp2-portal-disp-item">
-            <span className={`lp2-portal-disp-dot ${d.dot}`}/>
+            <div className={`lp2-portal-disp-dot ${d.status}`}/>
             <div className="lp2-portal-disp-body">
               <div className="lp2-portal-disp-name">{d.name}</div>
-              <div className="lp2-portal-disp-meta" style={d.green ? { color:"#6BAE8A" } : {}}>{d.meta}</div>
+              <div className="lp2-portal-disp-meta">{d.meta}</div>
             </div>
-            <span className="lp2-portal-disp-bureau">{d.bur}</span>
+            <div className="lp2-portal-disp-bureau" style={{ color:d.color, borderColor:`${d.color}30`, background:`${d.color}14` }}>{d.bureau}</div>
           </div>
         ))}
       </div>
@@ -447,31 +492,34 @@ function PSDashboard() {
 
 // ── Screen: Dispute IQ ─────────────────────────────────────
 function PSDisputes() {
-  const rows = [
-    { name:"MIDLAND CREDIT MGMT",       type:"Collections",  bureaus:["EX","EQ"], pts:"+18", status:"ready"   },
-    { name:"Capital One — 30-Day Late",  type:"Late Payment", bureaus:["TU","EQ"], pts:"+11", status:"pending" },
-    { name:"Synchrony Bank Charge-off",  type:"Derogatory",   bureaus:["EX"],      pts:"+9",  status:"draft"   },
+  const items = [
+    { name:"MIDLAND FUNDING LLC",  type:"Collection Account",  bureaus:[{l:"EX",c:"#3B82F6"},{l:"EQ",c:"#EF4444"}], pts:"+22", status:"ready" },
+    { name:"CAPITAL ONE AUTO",     type:"Late Payment 30d",    bureaus:[{l:"EQ",c:"#EF4444"}],                       pts:"+11", status:"pending" },
+    { name:"SYNC BANK / AMAZON",   type:"Hard Inquiry",        bureaus:[{l:"TU",c:"#8B5CF6"},{l:"EX",c:"#3B82F6"}], pts:"+7",  status:"draft" },
+    { name:"JEFFERSON CAPITAL",    type:"Charged-Off Account", bureaus:[{l:"EX",c:"#3B82F6"},{l:"TU",c:"#8B5CF6"}], pts:"+18", status:"ready" },
   ];
-  const bcolor: Record<string,string> = { EX:"#3B82F6", EQ:"#EF4444", TU:"#8B5CF6" };
   return (
     <div className="lp2-pscreen">
       <div className="lp2-pscreen-hdr">
-        <span className="lp2-pscreen-count">3 disputes found</span>
-        <span className="lp2-pscreen-pill indigo">AI Ready</span>
+        <span className="lp2-pscreen-count">{items.length} issues found</span>
+        <div style={{ display:"flex", gap:"4px" }}>
+          <span className="lp2-pscreen-pill indigo">AI Scored</span>
+          <span className="lp2-pscreen-pill sage">FCRA Ready</span>
+        </div>
       </div>
-      {rows.map(r => (
-        <div key={r.name} className={`lp2-pdrow lp2-pdr-${r.status}`}>
+      {items.map(it => (
+        <div key={it.name} className="lp2-pdrow">
           <div className="lp2-pdrow-main">
-            <div className="lp2-pdrow-name">{r.name}</div>
-            <div className="lp2-pdrow-type">{r.type}</div>
+            <div className="lp2-pdrow-name">{it.name}</div>
+            <div className="lp2-pdrow-type">{it.type}</div>
           </div>
           <div className="lp2-pdrow-bureaus">
-            {r.bureaus.map(b => <span key={b} className="lp2-pbur" style={{ color: bcolor[b], borderColor: bcolor[b]+"33" }}>{b}</span>)}
+            {it.bureaus.map(b => (
+              <span key={b.l} className="lp2-pbur" style={{ color:b.c, borderColor:`${b.c}30`, background:`${b.c}14` }}>{b.l}</span>
+            ))}
           </div>
-          <span className="lp2-pdrow-pts">{r.pts} pts</span>
-          <span className={`lp2-pdrow-status lp2-pst-${r.status}`}>
-            {r.status === "ready" ? "Ready" : r.status === "pending" ? "Sent" : "Draft"}
-          </span>
+          <span className="lp2-pdrow-pts">{it.pts}</span>
+          <span className={`lp2-pdrow-status lp2-pst-${it.status}`}>{it.status}</span>
         </div>
       ))}
     </div>
@@ -481,20 +529,17 @@ function PSDisputes() {
 // ── Screen: My Plan ────────────────────────────────────────
 function PSPlan() {
   const steps = [
-    { n:"01", title:"Dispute MIDLAND CREDIT",       sub:"Est. +18 pts · Certified mail ready", active:true  },
-    { n:"02", title:"Dispute Capital One Late Pay",  sub:"Est. +11 pts · Letters drafted",      active:false },
-    { n:"03", title:"Lower utilization below 30%",  sub:"Pay $340 on Chase — currently 32%",    active:false },
-    { n:"04", title:"Open secured credit builder",  sub:"Add positive history to thin file",    active:false },
+    { num:"01", title:"Connect credit profile",    sub:"Linked — 3 bureaus active",   done:true,  active:false },
+    { num:"02", title:"Review Dispute IQ report",  sub:"4 high-priority items found", done:true,  active:false },
+    { num:"03", title:"Send dispute letters",       sub:"2 ready · Est. +40 pts",      done:false, active:true  },
+    { num:"04", title:"Monitor bureau responses",  sub:"14-day certified mail window", done:false, active:false },
+    { num:"05", title:"Rebuild positive history",  sub:"Credit builder recommended",  done:false, active:false },
   ];
   return (
     <div className="lp2-pscreen">
-      <div className="lp2-pscreen-hdr">
-        <span className="lp2-pscreen-count">4 priority actions</span>
-        <span className="lp2-pscreen-pill sage">68% done</span>
-      </div>
       {steps.map(s => (
-        <div key={s.n} className={`lp2-pstep${s.active ? " active" : ""}`}>
-          <div className={`lp2-pstep-num${s.active ? " active" : ""}`}>{s.n}</div>
+        <div key={s.num} className={`lp2-pstep${s.active ? " active" : ""}`}>
+          <div className={`lp2-pstep-num${s.active ? " active" : ""}`}>{s.done ? "✓" : s.num}</div>
           <div className="lp2-pstep-body">
             <div className="lp2-pstep-title">{s.title}</div>
             <div className="lp2-pstep-sub">{s.sub}</div>
@@ -542,26 +587,21 @@ function PSReport() {
 }
 
 // ── Mock Portal shell ──────────────────────────────────────
-function MockPortal() {
+function MockPortal({ cinematic = false }: { cinematic?: boolean }) {
   const [activeNav, setActiveNav] = useState("dashboard");
   const screenNav = new Set(["dashboard","plan","report","disputes"]);
   const screen = screenNav.has(activeNav) ? activeNav : "dashboard";
 
   return (
-    <div className="lp2-portal-wrap">
+    <div className={`lp2-portal-wrap${cinematic ? " lp2-portal-wrap--cin" : ""}`}>
       <div className="lp2-portal-ambient-a"/>
       <div className="lp2-portal-ambient-b"/>
-      <div className="lp2-portal-frame" onMouseMove={portalTiltMove} onMouseLeave={portalTiltLeave}>
-
-        {/* ── Sidebar ── */}
+      <div className="lp2-portal-frame" onMouseMove={cinematic ? portalTiltMove : undefined} onMouseLeave={cinematic ? portalTiltLeave : undefined}>
         <aside className="lp2-portal-sb">
-          {/* Logo row */}
           <div className="lp2-portal-sb-logo">
             <img src={scoreshiftLogo} alt="" width={18} height={18} style={{ objectFit:"contain", flexShrink:0 }}/>
             <span className="lp2-portal-sb-brand">ScoreShift</span>
           </div>
-
-          {/* Nav */}
           <nav className="lp2-portal-sb-nav">
             {PORTAL_NAV.map(item => (
               <button
@@ -575,8 +615,6 @@ function MockPortal() {
               </button>
             ))}
           </nav>
-
-          {/* User row */}
           <div className="lp2-portal-sb-user">
             <div className="lp2-portal-user-av">JK</div>
             <div className="lp2-portal-user-info">
@@ -585,8 +623,6 @@ function MockPortal() {
             </div>
           </div>
         </aside>
-
-        {/* ── Main ── */}
         <div className="lp2-portal-main">
           <div className="lp2-portal-topbar">
             <div className="lp2-portal-topbar-title">{SCREEN_TITLES[activeNav]}</div>
@@ -601,13 +637,12 @@ function MockPortal() {
             {screen === "report"    && <PSReport    key="report"/>}
           </div>
         </div>
-
       </div>
     </div>
   );
 }
 
-// ── Nav ───────────────────────────────────────────────────
+// ── Nav ────────────────────────────────────────────────────
 function Nav() {
   const [open, setOpen] = useState(false);
   useNavScroll();
@@ -617,10 +652,7 @@ function Nav() {
         <div className="lp2-container lp2-nav-inner">
           <Link href="/" className="lp2-nav-logo">
             <div className="lp2-nav-logo-wrap">
-              <video className="lp2-nav-logo-video" autoPlay muted loop playsInline preload="auto" aria-hidden="true">
-                <source src="/videos/ascend-logo.mp4" type="video/mp4"/>
-              </video>
-              <img src={scoreshiftLogo} alt="" className="lp2-nav-logo-fallback" aria-hidden="true"/>
+              <img src={scoreshiftLogo} alt="" className="lp2-nav-logo-img" aria-hidden="true"/>
             </div>
             <span>ScoreShift</span>
           </Link>
@@ -632,7 +664,7 @@ function Nav() {
           <div className="lp2-nav-actions">
             <Link href="/auth" className="lp2-nav-ghost">Sign In</Link>
             <Link href="/auth" className="lp2-btn-primary lp2-nav-cta">
-              <span className="lp2-nav-cta-long">Check Your Credit Health</span>
+              <span className="lp2-nav-cta-long">Get Started Free</span>
               <span className="lp2-nav-cta-short">Get Started</span>
             </Link>
             <button className="lp2-hamburger" onClick={() => setOpen(o => !o)} aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open}>
@@ -652,7 +684,7 @@ function Nav() {
           <div className="lp2-mobile-divider"/>
           <Link href="/auth" className="lp2-mobile-link" onClick={() => setOpen(false)}>Sign In</Link>
           <Link href="/auth" className="lp2-btn-primary lp2-mobile-cta" onClick={() => setOpen(false)}>
-            Check Your Credit Health →
+            Get Started Free →
           </Link>
         </div>
       </div>
@@ -660,75 +692,166 @@ function Nav() {
   );
 }
 
-// ── Hero ──────────────────────────────────────────────────
+// ── Hero ── dark, centered, massive type ──────────────────
 function HeroSection() {
   return (
     <section className="lp2-hero">
-      <video className="lp2-hero-video" autoPlay muted loop playsInline preload="metadata" aria-hidden="true">
-        <source src="/videos/scoreshift-world.mp4" type="video/mp4"/>
-      </video>
-      <div className="lp2-hero-overlay"/>
-      <div className="lp2-hero-glow-a"/>
-      <div className="lp2-hero-glow-b"/>
+      {/* Atmospheric CSS glow orbs */}
+      <div className="lp2-hero-orb-a"/>
+      <div className="lp2-hero-orb-b"/>
+      <div className="lp2-hero-orb-c"/>
+      {/* Noise grain overlay */}
+      <div className="lp2-hero-grain"/>
 
       <div className="lp2-container lp2-hero-body">
-        <div className="lp2-hero-text">
-          <div className="lp2-badge lp2-reveal lp2-d0">
-            <span className="lp2-badge-dot"/>
-            Modern Credit &amp; Financial Readiness Platform
-          </div>
-          <h1 className="lp2-hero-h1 lp2-reveal lp2-d1">
-            Built to move<br/>
-            <span className="lp2-gradient-text">you forward.</span>
-          </h1>
-          <p className="lp2-hero-sub lp2-reveal lp2-d2">
-            Modern credit monitoring, improvement, and financial readiness tools to help you move forward with clarity.
-          </p>
-          <div className="lp2-hero-ctas lp2-reveal lp2-d3">
-            <Link href="/auth" className="lp2-btn-primary lp2-btn-lg">
-              Check Your Credit Health
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </Link>
-            <a href="#portal-preview" className="lp2-btn-outline lp2-btn-lg">See How It Works</a>
-          </div>
-          <div className="lp2-proof lp2-reveal lp2-d4">
-            <div className="lp2-avatars">
-              {["JM","KR","TS","AL"].map(a => <div key={a} className="lp2-avatar">{a}</div>)}
-            </div>
-            <span>Trusted by <strong>1,200+ people</strong> moving forward</span>
-          </div>
+        <div className="lp2-badge lp2-badge--dark lp2-reveal lp2-d0">
+          <span className="lp2-badge-dot"/>
+          Modern Credit &amp; Financial Readiness Platform
         </div>
-        <div className="lp2-hero-card-wrap lp2-reveal lp2-d3">
-          <MockPortal/>
+        <h1 className="lp2-hero-h1 lp2-reveal lp2-d1">
+          Built to move<br/>
+          <span className="lp2-gradient-text">you forward.</span>
+        </h1>
+        <p className="lp2-hero-sub lp2-reveal lp2-d2">
+          Credit monitoring, AI-powered dispute letters, and a personalized action plan — all in one place.
+        </p>
+        <div className="lp2-hero-ctas lp2-reveal lp2-d3">
+          <Link href="/auth" className="lp2-btn-hero-primary lp2-btn-lg">
+            Check Your Credit Health
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </Link>
+          <a href="#dashboard-reveal" className="lp2-btn-hero-ghost lp2-btn-lg">See the Dashboard</a>
         </div>
+        <div className="lp2-proof lp2-proof--dark lp2-reveal lp2-d4">
+          <div className="lp2-avatars">
+            {["JM","KR","TS","AL"].map(a => <div key={a} className="lp2-avatar">{a}</div>)}
+          </div>
+          <span>Trusted by <strong>1,200+ people</strong> moving forward</span>
+        </div>
+      </div>
+
+      {/* Scroll indicator */}
+      <div className="lp2-hero-scroll-cue">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
     </section>
   );
 }
 
-// ── Portal preview section (below hero) ───────────────────
-function PortalPreviewSection() {
+// ── Cinematic Reveal ── Cleo-style scroll reveal ───────────
+function CinematicRevealSection() {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const progress = useCinematicProgress(wrapRef);
+
+  const veilOpacity    = Math.max(0, 1 - progress * 2.2);
+  const copyOpacity    = Math.max(0, 1 - progress * 3.5);
+  const portalOpacity  = Math.min(1, Math.max(0, (progress - 0.18) / 0.55));
+  const portalY        = Math.max(-20, 90 - progress * 130);
+  const portalScale    = Math.min(1, 0.84 + progress * 0.22);
+  const cueOpacity     = Math.max(0, 1 - progress * 8);
+
   return (
-    <section className="lp2-portal-preview" id="portal-preview">
-      <div className="lp2-container">
-        <div className="lp2-portal-preview-head lp2-reveal lp2-d0">
-          <div className="lp2-eyebrow">Your Command Center</div>
-          <h2 className="lp2-section-h2">
-            Everything in one intelligent dashboard.
-          </h2>
-          <p className="lp2-section-sub">
-            Click through the tabs — this is your actual portal, not a mockup.
-          </p>
+    <div ref={wrapRef} className="lp2-cin-wrap" id="dashboard-reveal">
+      <div className="lp2-cin-sticky">
+        {/* Background atmosphere */}
+        <div className="lp2-cin-atmo-a"/>
+        <div className="lp2-cin-atmo-b"/>
+
+        {/* Dark veil that fades away */}
+        <div className="lp2-cin-veil" style={{ opacity: veilOpacity }}/>
+
+        {/* Headline copy — fades out as portal rises */}
+        <div className="lp2-cin-copy" style={{ opacity: copyOpacity, pointerEvents: copyOpacity < 0.05 ? "none" : "auto" }}>
+          <span className="lp2-cin-eyebrow">Your command center</span>
+          <h2 className="lp2-cin-h2">Everything in one<br/>intelligent dashboard.</h2>
+          <p className="lp2-cin-sub">Click any tab. This is the real product.</p>
         </div>
-        <div className="lp2-portal-preview-frame lp2-reveal lp2-d1">
-          <MockPortal/>
+
+        {/* Portal rising up from below */}
+        <div
+          className="lp2-cin-portal-stage"
+          style={{
+            opacity: portalOpacity,
+            transform: `translateY(${portalY}px) scale(${portalScale})`,
+            pointerEvents: portalOpacity > 0.4 ? "auto" : "none",
+          }}
+        >
+          <MockPortal cinematic/>
+        </div>
+
+        {/* Scroll nudge */}
+        <div className="lp2-cin-scroll-cue" style={{ opacity: cueOpacity }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Stats Section ── Spade-style scroll-triggered counters ─
+function StatBlock({ from, to, prefix = "", suffix = "", label, sub }: {
+  from: number; to: number; prefix?: string; suffix?: string; label: string; sub: string;
+}) {
+  const { value, ref } = useCountUp(from, to);
+  return (
+    <div className="lp2-stat-block" ref={ref}>
+      <div className="lp2-stat-num">
+        {prefix}{value.toLocaleString()}{suffix}
+      </div>
+      <div className="lp2-stat-label">{label}</div>
+      <div className="lp2-stat-sub">{sub}</div>
+    </div>
+  );
+}
+
+function DisputeProgressBar() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [filled, setFilled] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setFilled(true); obs.disconnect(); }
+    }, { threshold: 0.5 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return (
+    <div className="lp2-stat-progress-wrap" ref={ref}>
+      <div className="lp2-stat-prog-header">
+        <span className="lp2-stat-prog-label">Disputes resolved this month</span>
+        <span className="lp2-stat-prog-pct">4,892 / 5,100</span>
+      </div>
+      <div className="lp2-stat-prog-track">
+        <div className="lp2-stat-prog-fill" style={{ width: filled ? "96%" : "0%", transition: filled ? "width 1.8s cubic-bezier(0.22,1,0.36,1)" : "none" }}/>
+      </div>
+      <div className="lp2-stat-prog-bureaus">
+        <span style={{ color:"#3B82F6" }}>● Experian</span>
+        <span style={{ color:"#EF4444" }}>● Equifax</span>
+        <span style={{ color:"#8B5CF6" }}>● TransUnion</span>
+      </div>
+    </div>
+  );
+}
+
+function StatsSection() {
+  return (
+    <section className="lp2-stats">
+      <div className="lp2-container">
+        <div className="lp2-stats-inner">
+          <div className="lp2-stats-grid">
+            <StatBlock from={480} to={712} label="Avg. Score Reached" sub="After 90 days on ScoreShift" />
+            <StatBlock from={0} to={14} label="Items Removed" sub="Avg. per client, first dispute round" />
+            <StatBlock from={0} to={97} suffix="%" label="Client Satisfaction" sub="Across all active subscribers" />
+          </div>
+          <DisputeProgressBar/>
         </div>
       </div>
     </section>
   );
 }
 
-// ── Trust Strip ───────────────────────────────────────────
+// ── Trust Strip ────────────────────────────────────────────
 function TrustStrip() {
   const items = ["FCRA-Aware Workflows","3-Bureau Live Data","USPS Certified Mail","SOC 2 Ready","Secure Data Handling","Guided Dispute Process","No False Guarantees"];
   return (
@@ -743,7 +866,7 @@ function TrustStrip() {
   );
 }
 
-// ── Problem ───────────────────────────────────────────────
+// ── Problem ────────────────────────────────────────────────
 function ProblemSection() {
   const cards = [
     { icon: "🧩", title: "Data everywhere, clarity nowhere", body: "Credit reports are scattered, inconsistent, and hard to read. You can't see what lenders actually see in one place.", accent: "#8F7AFF" },
@@ -773,7 +896,7 @@ function ProblemSection() {
   );
 }
 
-// ── How It Works ──────────────────────────────────────────
+// ── How It Works ───────────────────────────────────────────
 function HowItWorksSection() {
   const steps = [
     { num: "01", icon: "🔗", title: "Connect your credit profile", body: "Securely link your tri-bureau credit data. No score impact, no guesswork." },
@@ -803,17 +926,17 @@ function HowItWorksSection() {
   );
 }
 
-// ── Bento Section ─────────────────────────────────────────
+// ── Bento Section — dark Linear style ─────────────────────
 const MODULES = [
-  { id: "plan",     name: "My Plan",              label: "Guided Roadmap",      span: 2, Illus: PlanIllus,     accent: "#8F7AFF", accentBg: "rgba(143,122,255,0.07)" },
-  { id: "protect",  name: "Protection Center",    label: "Identity Guard",      span: 1, Illus: ProtectionIllus, accent: "#6BAE8A", accentBg: "rgba(107,174,138,0.07)" },
-  { id: "report",   name: "Credit Report",        label: "Tri-Bureau Data",     span: 1, Illus: ReportIllus,   accent: "#8F7AFF", accentBg: "rgba(143,122,255,0.05)" },
-  { id: "dispute",  name: "Dispute IQ",           label: "Precision Analysis",  span: 2, Illus: DisputeIllus,  accent: "#8F7AFF", accentBg: "rgba(143,122,255,0.07)" },
-  { id: "debt",     name: "Debt Navigator",       label: "Payoff Planning",     span: 1, Illus: DebtIllus,     accent: "#EFA26F", accentBg: "rgba(239,162,111,0.06)" },
-  { id: "loans",    name: "Student Loan Aid",     label: "Repayment Guidance",  span: 1, Illus: LoanIllus,     accent: "#6BAE8A", accentBg: "rgba(107,174,138,0.06)" },
-  { id: "letters",  name: "Smart Letters & Mail", label: "Certified Disputes",  span: 1, Illus: LettersIllus,  accent: "#8F7AFF", accentBg: "rgba(143,122,255,0.05)" },
-  { id: "subs",     name: "Subscription Manager", label: "Recurring Clarity",   span: 1, Illus: SubsIllus,     accent: "#EFA26F", accentBg: "rgba(239,162,111,0.06)" },
-  { id: "progress", name: "Progress Tracker",     label: "Milestone View",      span: 2, Illus: ProgressIllus, accent: "#8F7AFF", accentBg: "rgba(143,122,255,0.06)" },
+  { id: "plan",     name: "My Plan",              label: "Guided Roadmap",      span: 2, Illus: PlanIllus,     accent: "#8F7AFF" },
+  { id: "protect",  name: "Protection Center",    label: "Identity Guard",      span: 1, Illus: ProtectionIllus, accent: "#6BAE8A" },
+  { id: "report",   name: "Credit Report",        label: "Tri-Bureau Data",     span: 1, Illus: ReportIllus,   accent: "#8F7AFF" },
+  { id: "dispute",  name: "Dispute IQ",           label: "Precision Analysis",  span: 2, Illus: DisputeIllus,  accent: "#8F7AFF" },
+  { id: "debt",     name: "Debt Navigator",       label: "Payoff Planning",     span: 1, Illus: DebtIllus,     accent: "#EFA26F" },
+  { id: "loans",    name: "Student Loan Aid",     label: "Repayment Guidance",  span: 1, Illus: LoanIllus,     accent: "#6BAE8A" },
+  { id: "letters",  name: "Smart Letters & Mail", label: "Certified Disputes",  span: 1, Illus: LettersIllus,  accent: "#8F7AFF" },
+  { id: "subs",     name: "Subscription Manager", label: "Recurring Clarity",   span: 1, Illus: SubsIllus,     accent: "#EFA26F" },
+  { id: "progress", name: "Progress Tracker",     label: "Milestone View",      span: 2, Illus: ProgressIllus, accent: "#8F7AFF" },
 ];
 
 const BENTO_DESC: Record<string, string> = {
@@ -830,10 +953,10 @@ const BENTO_DESC: Record<string, string> = {
 
 function BentoSection() {
   return (
-    <section className="lp2-bento">
+    <section className="lp2-bento lp2-bento--dark">
       <div className="lp2-container">
-        <div className="lp2-section-label lp2-reveal">Product Modules</div>
-        <h2 className="lp2-h2 lp2-reveal lp2-d1">
+        <div className="lp2-section-label lp2-section-label--dark lp2-reveal">Product Modules</div>
+        <h2 className="lp2-h2 lp2-h2--dark lp2-reveal lp2-d1">
           Every tool you need,<br/>
           <span className="lp2-gradient-text">connected.</span>
         </h2>
@@ -843,8 +966,7 @@ function BentoSection() {
             return (
               <div
                 key={m.id}
-                className={`lp2-bento-card lp2-reveal lp2-d${(i % 3) + 1}${m.span === 2 ? " lp2-span2" : ""}`}
-                style={{ background: `linear-gradient(145deg, rgba(255,255,255,0.84) 0%, rgba(255,255,255,0.65) 100%)` }}
+                className={`lp2-bento-card lp2-bento-card--dark lp2-reveal lp2-d${(i % 3) + 1}${m.span === 2 ? " lp2-span2" : ""}`}
                 onMouseMove={tiltMove}
                 onMouseLeave={tiltLeave}
               >
@@ -852,8 +974,8 @@ function BentoSection() {
                   <IllusComp/>
                 </div>
                 <div className="lp2-bento-label" style={{ color: m.accent }}>{m.label}</div>
-                <div className="lp2-bento-name">{m.name}</div>
-                <div className="lp2-bento-body">{BENTO_DESC[m.id]}</div>
+                <div className="lp2-bento-name lp2-bento-name--dark">{m.name}</div>
+                <div className="lp2-bento-body lp2-bento-body--dark">{BENTO_DESC[m.id]}</div>
               </div>
             );
           })}
@@ -863,7 +985,7 @@ function BentoSection() {
   );
 }
 
-// ── Pricing ───────────────────────────────────────────────
+// ── Pricing ────────────────────────────────────────────────
 function PricingSection() {
   const plans = [
     { tier: "Starter", price: "29", note: "Start seeing your full credit picture", featured: false,
@@ -878,7 +1000,7 @@ function PricingSection() {
       <div className="lp2-container">
         <div className="lp2-section-label lp2-reveal lp2-text-center">Pricing</div>
         <h2 className="lp2-h2 lp2-reveal lp2-d1 lp2-text-center">Plans built for where you are</h2>
-        <p className="lp2-section-sub lp2-reveal lp2-d2">Start free. Scale when you're ready. No hidden fees.</p>
+        <p className="lp2-section-sub lp2-reveal lp2-d2 lp2-text-center">Start free. Scale when you're ready. No hidden fees.</p>
         <div className="lp2-pricing-grid">
           {plans.map((p, i) => (
             <div key={p.tier} className={`lp2-pricing-card lp2-reveal lp2-d${i+1}${p.featured ? " featured" : ""}`}
@@ -906,7 +1028,7 @@ function PricingSection() {
   );
 }
 
-// ── Final CTA ─────────────────────────────────────────────
+// ── Final CTA ──────────────────────────────────────────────
 function FinalCTA() {
   return (
     <section className="lp2-final">
@@ -928,7 +1050,7 @@ function FinalCTA() {
   );
 }
 
-// ── Footer ────────────────────────────────────────────────
+// ── Footer ─────────────────────────────────────────────────
 function Footer() {
   return (
     <footer className="lp2-footer">
@@ -969,14 +1091,15 @@ function Footer() {
   );
 }
 
-// ── Main Export ───────────────────────────────────────────
+// ── Main Export ────────────────────────────────────────────
 export default function LandingPage() {
   useScrollReveal();
   return (
     <div className="lp2-page">
       <Nav/>
       <HeroSection/>
-      <PortalPreviewSection/>
+      <CinematicRevealSection/>
+      <StatsSection/>
       <TrustStrip/>
       <ProblemSection/>
       <HowItWorksSection/>
