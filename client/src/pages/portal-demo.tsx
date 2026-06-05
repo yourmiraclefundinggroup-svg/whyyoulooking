@@ -43,8 +43,8 @@ function ScreenDashboard({ onNavigate }: { onNavigate: (s: DemoScreen) => void }
       <div className="pd-hero-card">
         <div className="pd-hero-left">
           <div className="pd-hero-eye">CREDIT ACTION PLAN · DEMO MODE</div>
-          <div className="pd-hero-name">Good morning, Alex.</div>
-          <div className="pd-hero-sub">Pro Plan · 3 disputes in progress · Specialist: Sarah K.</div>
+          <div className="pd-hero-name">Good morning, Jordan.</div>
+          <div className="pd-hero-sub">Pro Plan · 4 disputes in progress · Specialist: Sarah K.</div>
           <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
             <span className="pd-badge pd-badge-active">ACTIVE</span>
             <span style={{ fontSize: 11, color: "var(--pd-muted)", fontWeight: 500 }}>68% readiness · 4 of 6 actions done</span>
@@ -124,6 +124,7 @@ function ScreenDashboard({ onNavigate }: { onNavigate: (s: DemoScreen) => void }
             { name: "MIDLAND FUNDING LLC", meta: "Collection · Opened Mar 2021", bureau: "EX", bColor: "#3B82F6", status: "pending", statusLabel: "Pending" },
             { name: "CAPITAL ONE AUTO", meta: "Late payment 30d · Aug 2023", bureau: "EQ", bColor: "#EF4444", status: "won", statusLabel: "Won" },
             { name: "SYNC BANK CREDIT CARD", meta: "Hard inquiry · Mar 2024", bureau: "TU", bColor: "#8B5CF6", status: "sent", statusLabel: "Sent" },
+            { name: "PORTFOLIO RECOVERY ASSOC", meta: "Collection · Opened Jan 2022", bureau: "EX", bColor: "#3B82F6", status: "pending", statusLabel: "Pending" },
           ].map(d => (
             <div key={d.name} className="pd-disp-row">
               <span className="pd-bureau-badge" style={{ background: d.bColor }}>{d.bureau}</span>
@@ -144,12 +145,13 @@ function ScreenDisputes() {
   return (
     <div className="pd-screen">
       <div className="pd-card" style={{ borderTop: "3px solid var(--pd-accent)", marginBottom: 4 }}>
-        <div className="pd-disp-summary">3 disputes ready · Est. <strong style={{ color: "var(--pd-sage)" }}>+52 pts</strong> combined</div>
+        <div className="pd-disp-summary">4 disputes ready · Est. <strong style={{ color: "var(--pd-sage)" }}>+61 pts</strong> combined</div>
       </div>
       {[
         { name: "MIDLAND FUNDING LLC", meta: "Collection · Opened Mar 2021 · $1,240", priority: "high", pts: "+18 pts", bureau: "EX", bColor: "#3B82F6", law: "FCRA §1681e(b)" },
         { name: "CAPITAL ONE AUTO FINANCE", meta: "Late payment 30d · Aug 2023", priority: "medium", pts: "+12 pts", bureau: "EQ", bColor: "#EF4444", law: "FCRA §1681s-2(b)" },
         { name: "SYNC BANK CREDIT CARD", meta: "Hard inquiry · Mar 15, 2024", priority: "low", pts: "+9 pts", bureau: "TU", bColor: "#8B5CF6", law: "FCRA §1681b" },
+        { name: "PORTFOLIO RECOVERY ASSOC", meta: "Collection · Opened Jan 2022 · $890", priority: "high", pts: "+22 pts", bureau: "EX", bColor: "#3B82F6", law: "FCRA §1681e(b)" },
       ].map(d => (
         <div key={d.name} className="pd-card pd-disp-card">
           <div className="pd-disp-card-row">
@@ -265,9 +267,9 @@ export default function PortalDemo() {
             ))}
           </nav>
           <div className="pd-sidebar-user">
-            <div className="pd-user-av">AJ</div>
+            <div className="pd-user-av">JK</div>
             <div>
-              <div className="pd-user-name">Alex Johnson</div>
+              <div className="pd-user-name">Jordan K.</div>
               <div className="pd-user-plan">Pro Plan · Demo</div>
             </div>
           </div>

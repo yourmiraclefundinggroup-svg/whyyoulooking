@@ -33,29 +33,37 @@ function useNavScroll() {
   }, []);
 }
 
-/* ── Cinematic scroll progress ──────────────────────────────── */
+/* ── Cinematic scroll progress — rAF-throttled ──────────────── */
 function useCinematicProgress(ref: React.RefObject<HTMLDivElement>) {
   const [progress, setProgress] = useState(0);
   useEffect(() => {
-    const handler = () => {
+    let rafId: number | null = null;
+    const update = () => {
+      rafId = null;
       const el = ref.current;
       if (!el) return;
       const top = el.getBoundingClientRect().top;
       const h = el.offsetHeight;
       const vh = window.innerHeight;
       const travel = h - vh;
-      const scrolledIn = -top;
-      const p = travel > 0 ? Math.max(0, Math.min(1, scrolledIn / travel)) : 0;
+      const p = travel > 0 ? Math.max(0, Math.min(1, -top / travel)) : 0;
       setProgress(p);
     };
-    window.addEventListener("scroll", handler, { passive: true });
-    handler();
-    return () => window.removeEventListener("scroll", handler);
+    const onScroll = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(update);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    update();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [ref]);
   return progress;
 }
 
-/* ── 3D tilt ────────────────────────────────────────────────── */
+/* ── 3D tilt — CSS-variable driven with cursor-follow glow ──── */
 function useTilt(ref: React.RefObject<HTMLDivElement>, strength = 3) {
   useEffect(() => {
     const el = ref.current;
@@ -64,12 +72,16 @@ function useTilt(ref: React.RefObject<HTMLDivElement>, strength = 3) {
       const r = el.getBoundingClientRect();
       const x = (e.clientX - r.left) / r.width * 2 - 1;
       const y = (e.clientY - r.top) / r.height * 2 - 1;
-      el.style.transform = `perspective(900px) rotateX(${-y * strength}deg) rotateY(${x * (strength * 1.2)}deg) translateY(-5px)`;
-      el.style.boxShadow = "0 2px 6px rgba(42,40,37,0.06),0 14px 36px rgba(42,40,37,0.12),0 40px 72px rgba(42,40,37,0.09),inset 0 1px 0 rgba(255,255,255,0.9)";
+      el.style.setProperty("--rotateX", `${-y * strength}deg`);
+      el.style.setProperty("--rotateY", `${x * strength * 1.2}deg`);
+      el.style.setProperty("--gx", `${e.clientX - r.left}px`);
+      el.style.setProperty("--gy", `${e.clientY - r.top}px`);
+      el.classList.add("tilting");
     };
     const leave = () => {
-      el.style.transform = "";
-      el.style.boxShadow = "";
+      el.style.setProperty("--rotateX", "0deg");
+      el.style.setProperty("--rotateY", "0deg");
+      el.classList.remove("tilting");
     };
     el.addEventListener("mousemove", move);
     el.addEventListener("mouseleave", leave);
@@ -393,12 +405,20 @@ export default function LandingPage() {
   const cinRef = useRef<HTMLDivElement>(null);
   const cinProgress = useCinematicProgress(cinRef);
 
-  // Derived cinematic values
-  const copyOpacity = Math.max(0, 1 - cinProgress * 3.5);
-  const copyY       = -cinProgress * 40;
-  const portalY     = Math.max(0, (1 - cinProgress * 1.35)) * 110;
-  const portalOp    = Math.min(1, cinProgress * 2.8);
-  const portalScale = 0.82 + cinProgress * 0.18;
+  // Three timed copy lines at 0/15/35% progress, each lasting ~20pp
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+  const lineOp = (start: number, peak: number, end: number) => {
+    if (cinProgress < start) return 0;
+    if (cinProgress < peak) return clamp((cinProgress - start) / (peak - start), 0, 1);
+    return clamp(1 - (cinProgress - peak) / (end - peak), 0, 1);
+  };
+  const line1Op = lineOp(0, 0.06, 0.28);
+  const line2Op = lineOp(0.15, 0.26, 0.48);
+  const line3Op = lineOp(0.35, 0.46, 0.58);
+  const line1Y  = -cinProgress * 30;
+  const line2Y  = -(cinProgress - 0.15) * 30;
+  const line3Y  = -(cinProgress - 0.35) * 30;
+
   const scrollHintOp = Math.max(0, 1 - cinProgress * 8);
 
   return (
@@ -417,7 +437,7 @@ export default function LandingPage() {
           </ul>
           <div className="ss-nav-actions">
             <Link href="/auth" className="ss-nav-ghost">Sign in</Link>
-            <Link href="/get-started" className="ss-btn-nav">
+            <Link href="/auth" className="ss-btn-nav">
               Get started <ArrowRight size={13} />
             </Link>
           </div>
@@ -448,10 +468,10 @@ export default function LandingPage() {
             personalized action plan — all in one place.
           </p>
           <div className="ss-hero-ctas ss-reveal ss-d3">
-            <Link href="/get-started" className="ss-btn-primary">
-              Start for free <ArrowRight />
+            <Link href="/auth" className="ss-btn-primary">
+              Check Your Credit Health <ArrowRight />
             </Link>
-            <a href="#portal-demo" className="ss-btn-ghost">
+            <a href="#portal-float" className="ss-btn-ghost">
               See the portal
             </a>
           </div>
@@ -469,10 +489,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── §2 Cinematic scroll — canyon descent → portal ───── */}
-      <div className="ss-cin-wrap" ref={cinRef} id="portal-demo">
+      {/* ── §2 Cinematic scroll — canyon descent, three copy lines ─── */}
+      <div className="ss-cin-wrap" ref={cinRef}>
         <div className="ss-cin-sticky">
-          {/* Canyon video */}
           <video
             className="ss-cin-video"
             src="/videos/canyon-descent.mp4"
@@ -480,36 +499,20 @@ export default function LandingPage() {
           />
           <div className="ss-cin-veil" />
 
-          {/* Copy that fades out */}
-          <div
-            className="ss-cin-copy"
-            style={{ opacity: copyOpacity, transform: `translateY(${copyY}px)` }}
-          >
+          {/* Line 1 — visible 0–28% */}
+          <div className="ss-cin-line" style={{ opacity: line1Op, transform: `translateY(${line1Y}px)` }}>
             <span className="ss-cin-eyebrow">Your credit journey</span>
-            <h2 className="ss-cin-h2">
-              Everything you need.<br />
-              Nothing you don't.
-            </h2>
-            <span className="ss-cin-sub">
-              Scroll to explore the portal — see exactly what you'll get.
-            </span>
+            <h2 className="ss-cin-h2">Everything you need.</h2>
           </div>
 
-          {/* Portal that rises up */}
-          <div
-            className="ss-cin-portal-stage"
-            style={{
-              transform: `translateY(${portalY}%) scale(${portalScale})`,
-              opacity: portalOp,
-            }}
-          >
-            <iframe
-              src="/portal-demo"
-              className="ss-cin-portal-iframe"
-              title="ScoreShift portal preview"
-              scrolling="no"
-              frameBorder="0"
-            />
+          {/* Line 2 — visible 15–48% */}
+          <div className="ss-cin-line" style={{ opacity: line2Op, transform: `translateY(${line2Y}px)` }}>
+            <h2 className="ss-cin-h2 ss-cin-h2-em">Nothing you don't.</h2>
+          </div>
+
+          {/* Line 3 — visible 35–58% */}
+          <div className="ss-cin-line" style={{ opacity: line3Op, transform: `translateY(${line3Y}px)` }}>
+            <span className="ss-cin-sub">Scroll to explore — see exactly what you'll get.</span>
           </div>
 
           {/* Scroll hint */}
@@ -519,7 +522,31 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* ── §3 Bento features ───────────────────────────────── */}
+      {/* ── §3 Portal Float — canyon atmosphere with live portal ─── */}
+      <section className="ss-pfloat" id="portal-float">
+        <img src="/images/canyon-hero.jpg" alt="Grand Canyon atmosphere" className="ss-pfloat-bg" />
+        <div className="ss-pfloat-fog" />
+        <div className="ss-pfloat-inner ss-reveal">
+          <div className="ss-pfloat-caption">
+            <span className="ss-section-eye" style={{ color: "var(--ss-apricot)" }}>Live preview</span>
+            <h2 className="ss-pfloat-h2">Your portal. Fully loaded.</h2>
+            <p className="ss-pfloat-sub">
+              Every screen you see below is real — interactive, data-driven, ready on day one.
+            </p>
+          </div>
+          <div className="ss-pfloat-frame ss-reveal ss-d1">
+            <iframe
+              src="/portal-demo"
+              className="ss-pfloat-iframe"
+              title="ScoreShift portal preview"
+              scrolling="no"
+              frameBorder="0"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── §4 Bento features ───────────────────────────────── */}
       <section className="ss-bento" id="features">
         <div className="ss-wrap">
           <div className="ss-bento-head">
@@ -754,21 +781,19 @@ export default function LandingPage() {
         <div className="ss-cta-veil" />
         <div className="ss-cta-body">
           <span className="ss-cta-eye ss-reveal">The next step is yours</span>
-          <h2 className="ss-cta-h2 ss-reveal ss-d1">
-            Your score is a number.<br />
-            Your future isn't.
-          </h2>
+          <h2 className="ss-cta-h2 ss-reveal ss-d1">Start your climb.</h2>
           <span className="ss-cta-sub ss-reveal ss-d2">
-            Join thousands of clients who've used ScoreShift to remove negatives, build credit, and move forward with confidence.
+            Join thousands of clients who've removed negatives, built credit, and moved forward with confidence.
           </span>
           <div className="ss-cta-btns ss-reveal ss-d3">
-            <Link href="/get-started" className="ss-btn-cta-main">
-              Start free today <ArrowRight />
+            <Link href="/auth" className="ss-btn-cta-main">
+              Get Started Free <ArrowRight />
             </Link>
             <Link href="/auth" className="ss-btn-cta-ghost">
               Sign in
             </Link>
           </div>
+          <p className="ss-cta-fine ss-reveal ss-d4">No credit card required · Cancel any time</p>
         </div>
       </section>
 
