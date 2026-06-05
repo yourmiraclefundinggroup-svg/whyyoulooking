@@ -616,7 +616,12 @@ function Nav() {
       <nav className="lp2-nav">
         <div className="lp2-container lp2-nav-inner">
           <Link href="/" className="lp2-nav-logo">
-            <img src={scoreshiftLogo} alt="ScoreShift" width={26} height={26} style={{ objectFit: "contain" }}/>
+            <div className="lp2-nav-logo-wrap">
+              <video className="lp2-nav-logo-video" autoPlay muted loop playsInline preload="auto" aria-hidden="true">
+                <source src="/videos/ascend-logo.mp4" type="video/mp4"/>
+              </video>
+              <img src={scoreshiftLogo} alt="" className="lp2-nav-logo-fallback" aria-hidden="true"/>
+            </div>
             <span>ScoreShift</span>
           </Link>
           <ul className="lp2-nav-links">
@@ -656,28 +661,9 @@ function Nav() {
 }
 
 // ── Hero ──────────────────────────────────────────────────
-// ── Ascend animated logo mark ──────────────────────────────
-function AscendLogo() {
-  return (
-    <div className="lp2-ascend-wrap">
-      <video
-        className="lp2-ascend-video"
-        autoPlay muted loop playsInline preload="auto"
-        aria-label="ScoreShift logo animation"
-      >
-        <source src="/videos/ascend-logo.mp4" type="video/mp4"/>
-      </video>
-      {/* Shown when video fails or prefers-reduced-motion */}
-      <img src={scoreshiftLogo} alt="ScoreShift" className="lp2-ascend-fallback"/>
-    </div>
-  );
-}
-
-// ── Hero — centered brand-first layout ────────────────────
 function HeroSection() {
   return (
     <section className="lp2-hero">
-      {/* Ambient world texture — stays subtle behind bone overlay */}
       <video className="lp2-hero-video" autoPlay muted loop playsInline preload="metadata" aria-hidden="true">
         <source src="/videos/scoreshift-world.mp4" type="video/mp4"/>
       </video>
@@ -686,44 +672,35 @@ function HeroSection() {
       <div className="lp2-hero-glow-b"/>
 
       <div className="lp2-container lp2-hero-body">
-
-        {/* Animated brand mark */}
-        <div className="lp2-reveal lp2-d0">
-          <AscendLogo/>
-        </div>
-
-        {/* Wordmark */}
-        <div className="lp2-hero-wordmark lp2-reveal lp2-d1">ScoreShift</div>
-
-        {/* Headline */}
-        <h1 className="lp2-hero-h1 lp2-reveal lp2-d2">
-          Financial Readiness,{" "}
-          <span className="lp2-gradient-text">Guided.</span>
-        </h1>
-
-        {/* Sub */}
-        <p className="lp2-hero-sub lp2-reveal lp2-d3">
-          Modern credit monitoring, improvement, and financial readiness tools
-          to help you move forward with clarity.
-        </p>
-
-        {/* CTA */}
-        <div className="lp2-hero-ctas lp2-reveal lp2-d4">
-          <Link href="/auth" className="lp2-btn-primary lp2-btn-lg">
-            Start Your Plan
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          </Link>
-          <a href="#portal-preview" className="lp2-btn-outline lp2-btn-lg">See the Platform</a>
-        </div>
-
-        {/* Social proof */}
-        <div className="lp2-proof lp2-reveal lp2-d5">
-          <div className="lp2-avatars">
-            {["JM","KR","TS","AL"].map(a => <div key={a} className="lp2-avatar">{a}</div>)}
+        <div className="lp2-hero-text">
+          <div className="lp2-badge lp2-reveal lp2-d0">
+            <span className="lp2-badge-dot"/>
+            Modern Credit &amp; Financial Readiness Platform
           </div>
-          <span>Trusted by <strong>1,200+ people</strong> moving forward</span>
+          <h1 className="lp2-hero-h1 lp2-reveal lp2-d1">
+            Built to move<br/>
+            <span className="lp2-gradient-text">you forward.</span>
+          </h1>
+          <p className="lp2-hero-sub lp2-reveal lp2-d2">
+            Modern credit monitoring, improvement, and financial readiness tools to help you move forward with clarity.
+          </p>
+          <div className="lp2-hero-ctas lp2-reveal lp2-d3">
+            <Link href="/auth" className="lp2-btn-primary lp2-btn-lg">
+              Check Your Credit Health
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </Link>
+            <a href="#portal-preview" className="lp2-btn-outline lp2-btn-lg">See How It Works</a>
+          </div>
+          <div className="lp2-proof lp2-reveal lp2-d4">
+            <div className="lp2-avatars">
+              {["JM","KR","TS","AL"].map(a => <div key={a} className="lp2-avatar">{a}</div>)}
+            </div>
+            <span>Trusted by <strong>1,200+ people</strong> moving forward</span>
+          </div>
         </div>
-
+        <div className="lp2-hero-card-wrap lp2-reveal lp2-d3">
+          <MockPortal/>
+        </div>
       </div>
     </section>
   );
