@@ -1,7 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Link } from "wouter";
 import "../styles/landing.css";
-import scoreshiftLogo from "@assets/scoreshift-logo.png";
 
 /* ── Scroll reveal ─────────────────────────────────────────── */
 function useScrollReveal() {
@@ -73,8 +72,7 @@ export default function LandingPage() {
       <nav className="ss-nav">
         <div className="ss-wrap ss-nav-inner">
           <Link href="/" className="ss-nav-logo">
-            <img src={scoreshiftLogo} alt="ScoreShift" />
-            ScoreShift
+            <img src="/images/scoreshift-logo-full.png" alt="ScoreShift" className="ss-nav-logo-img" />
           </Link>
           <ul className="ss-nav-links">
             <li><a href="#product">Product</a></li>
@@ -274,7 +272,6 @@ export default function LandingPage() {
               <div className="ss-s5-art">
                 <img src={p.image} alt="" className="ss-s5-photo" aria-hidden="true" />
                 <div className="ss-s5-photo-veil" style={{ background: p.overlay }} />
-                <div className="ss-s5-dots" />
               </div>
               <div className="ss-s5-copy">
                 <span className="ss-s5-label" style={{ color: p.accent }}>{p.label}</span>
@@ -485,8 +482,7 @@ export default function LandingPage() {
       <footer className="ss-footer">
         <div className="ss-wrap ss-footer-inner">
           <Link href="/" className="ss-footer-logo">
-            <img src={scoreshiftLogo} alt="ScoreShift" />
-            ScoreShift
+            <img src="/images/scoreshift-logo-full.png" alt="ScoreShift" className="ss-footer-logo-img" />
           </Link>
           <ul className="ss-footer-links">
             <li><Link href="/privacy-policy">Privacy</Link></li>

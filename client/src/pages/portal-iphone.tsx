@@ -47,7 +47,7 @@ export default function PortalIphone() {
       <ArrayTokenContext.Provider value={DEMO_ARRAY_STATE}>
         <ArrayScriptOverrideContext.Provider value={{ loaded: true }}>
           <DemoDataProvider>
-            <ClientPortal initialPage="home" />
+            <ClientPortal initialPage="plan" />
           </DemoDataProvider>
         </ArrayScriptOverrideContext.Provider>
       </ArrayTokenContext.Provider>
