@@ -867,32 +867,63 @@
     0 0 0 0.5px rgba(255,255,255,0.60);
 }
 
-/* ── Visual area — upper ~65% of card ─── */
+/* ── Visual area — upper ~65% of card (screenshot) ─── */
 .ss-pcard-visual {
   flex: 0 0 auto;
   width: 100%;
-  background: linear-gradient(160deg,
-    rgba(243,240,235,0.80) 0%,
-    rgba(235,232,226,0.60) 100%);
+  height: 210px;
   border-radius: 22px 22px 0 0;
   overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-  padding: 4px 0 0;
   position: relative;
+  background-color: #f0ede8;
+  /* default crop: hides sidebar (18% of 1280px) and banner (6% of 720px) */
+  background-size: 165%;
+  background-repeat: no-repeat;
+  background-position: 46% 23%;
 }
+/* Fade-out bottom edge to blend into card body */
 .ss-pcard-visual::after {
   content: "";
   position: absolute; bottom: 0; left: 0; right: 0;
-  height: 32px;
+  height: 48px;
   background: linear-gradient(to bottom,
-    rgba(243,240,235,0) 0%,
-    rgba(243,240,235,0.50) 100%);
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.82) 100%);
   pointer-events: none;
+  border-radius: 0 0 4px 4px;
 }
-.ss-pcard-svg {
-  width: 100%;
-  height: auto;
-  display: block;
+/* Top rounded corner mask */
+.ss-pcard-visual::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 22px;
+  background: linear-gradient(to bottom,
+    rgba(255,255,255,0.18) 0%,
+    rgba(255,255,255,0) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Per-card screenshot sources & fine-tuned crop ── */
+.ss-pcard-visual--understand {
+  background-image: url('/images/card-understand.jpg');
+  /* Credit Issues page: show the issues list, skip sidebar + banner */
+  background-position: 46% 28%;
+}
+.ss-pcard-visual--prioritize {
+  background-image: url('/images/card-prioritize.jpg');
+  /* Dashboard: show credit overview scores section */
+  background-position: 46% 32%;
+}
+.ss-pcard-visual--act {
+  background-image: url('/images/card-act.jpg');
+  /* Disputes page: show active + resolved dispute tables */
+  background-position: 46% 28%;
+}
+.ss-pcard-visual--track {
+  background-image: url('/images/card-track.jpg');
+  /* Score Tracker: show bureau charts */
+  background-position: 46% 34%;
 }
 
 /* ── Text area — lower ~35% ─────────────── */
