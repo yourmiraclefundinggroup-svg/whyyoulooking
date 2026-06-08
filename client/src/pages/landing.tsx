@@ -46,27 +46,6 @@ function useHeroParallax() {
   }, []);
 }
 
-/* ── Portrait slow parallax (5% slower than scroll) ─────────── */
-function usePortraitParallax() {
-  useEffect(() => {
-    const wrap = document.querySelector(".ss-portraits-wrap") as HTMLElement | null;
-    let raf: number | null = null;
-    const handler = () => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = null;
-        if (!wrap) return;
-        const rect = wrap.parentElement?.getBoundingClientRect();
-        if (!rect) return;
-        const offset = -rect.top * 0.05;
-        wrap.style.transform = `translateY(${offset}px)`;
-      });
-    };
-    window.addEventListener("scroll", handler, { passive: true });
-    return () => { window.removeEventListener("scroll", handler); if (raf) cancelAnimationFrame(raf); };
-  }, []);
-}
-
 /* ── Icons ─────────────────────────────────────────────────── */
 const ArrowRight = ({ size = 15 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -86,7 +65,6 @@ export default function LandingPage() {
   useScrollReveal();
   useNavScroll();
   useHeroParallax();
-  usePortraitParallax();
 
   return (
     <div className="ss-land">
@@ -352,33 +330,6 @@ export default function LandingPage() {
         ))}
       </section>
 
-      {/* ════════════════════════════════════════════════════════
-          SCENE 5B — People Moving Forward (Portrait Gallery)
-      ════════════════════════════════════════════════════════ */}
-      <section className="ss-s5b">
-        <div className="ss-s5b-grain" aria-hidden="true" />
-        <div className="ss-wrap">
-          <div className="ss-s5b-head ss-reveal">
-            <h2 className="ss-s5b-h2">People moving forward.</h2>
-            <p className="ss-s5b-sub">Different goals. Different starting points. One clear path.</p>
-          </div>
-        </div>
-        <div className="ss-portraits-outer">
-          <div className="ss-portraits-wrap">
-            {[
-              { src: "/images/portrait-builder.jpg",  alt: "The Builder"  },
-              { src: "/images/portrait-explorer.jpg", alt: "The Explorer" },
-              { src: "/images/portrait-planner.jpg",  alt: "The Planner"  },
-              { src: "/images/portrait-solo.jpg",     alt: "The Solo"     },
-              { src: "/images/portrait-couple.jpg",   alt: "The Future"   },
-            ].map((p, i) => (
-              <div key={p.alt} className={`ss-portrait ss-reveal ss-d${i + 1}`}>
-                <img src={p.src} alt={p.alt} className="ss-portrait-img" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ════════════════════════════════════════════════════════
           SCENE 6 — Trust / Testimonials
@@ -402,22 +353,23 @@ export default function LandingPage() {
 
         <div className="ss-tcard-track">
           {[
-            { initials: "KR", name: "Keisha R.", location: "Atlanta, GA",  delta: "+126 pts", quote: "I got approved for my first home loan. My score went from 588 to 714 in 4 months.", hue: "107,174,138" },
-            { initials: "DM", name: "David M.", location: "Houston, TX",   delta: "+89 pts",  quote: "3 collections wiped out in 6 weeks. The dispute letters were perfect on the first round.", hue: "239,162,111" },
-            { initials: "TL", name: "Tamara L.", location: "Chicago, IL",  delta: "+62 pts",  quote: "I tried disputing on my own for a year. ScoreShift got results in 60 days.", hue: "67,56,202" },
-            { initials: "MW", name: "Marcus W.", location: "Dallas, TX",   delta: "+47 pts",  quote: "I refinanced my car at 4.9% instead of 18%. This product pays for itself.", hue: "212,169,106" },
-            { initials: "NP", name: "Nicole P.", location: "Miami, FL",    delta: "+89 pts",  quote: "Identity theft wrecked my credit. ScoreShift's plan walked me through every step.", hue: "139,92,246" },
+            { portrait: "/images/portrait-explorer.jpg", name: "Keisha R.", location: "Atlanta, GA",  delta: "+126 pts", quote: "I got approved for my first home loan. My score went from 588 to 714 in 4 months." },
+            { portrait: "/images/portrait-builder.jpg",  name: "David M.",  location: "Houston, TX",  delta: "+89 pts",  quote: "3 collections wiped out in 6 weeks. The dispute letters were perfect on the first round." },
+            { portrait: "/images/portrait-solo.jpg",     name: "Tamara L.", location: "Chicago, IL",  delta: "+62 pts",  quote: "I tried disputing on my own for a year. ScoreShift got results in 60 days." },
+            { portrait: "/images/portrait-planner.jpg",  name: "Marcus W.", location: "Dallas, TX",   delta: "+47 pts",  quote: "I refinanced my car at 4.9% instead of 18%. This product pays for itself." },
+            { portrait: "/images/portrait-couple.jpg",   name: "Nicole P.", location: "Miami, FL",    delta: "+89 pts",  quote: "Identity theft wrecked my credit. ScoreShift's plan walked me through every step." },
           ].map((t) => (
-            <div key={t.name} className="ss-tcard" style={{ "--hue": t.hue } as React.CSSProperties}>
-              <div className="ss-tcard-portrait">
-                <div className="ss-tcard-dots" />
-                <span className="ss-tcard-initials">{t.initials}</span>
+            <div key={t.name} className="ss-tcard">
+              <div className="ss-tcard-img-side">
+                <img src={t.portrait} alt={t.name} className="ss-tcard-portrait-img" />
               </div>
-              <div className="ss-tcard-delta">{t.delta}</div>
-              <p className="ss-tcard-quote">"{t.quote}"</p>
-              <div className="ss-tcard-meta">
-                <strong>{t.name}</strong>
-                <span>{t.location}</span>
+              <div className="ss-tcard-content">
+                <div className="ss-tcard-delta">{t.delta}</div>
+                <p className="ss-tcard-quote">"{t.quote}"</p>
+                <div className="ss-tcard-meta">
+                  <strong>{t.name}</strong>
+                  <span>{t.location}</span>
+                </div>
               </div>
             </div>
           ))}
