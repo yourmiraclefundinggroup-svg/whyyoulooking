@@ -907,13 +907,13 @@
 /* ── Per-card screenshot sources & fine-tuned crop ── */
 .ss-pcard-visual--understand {
   background-image: url('/images/card-understand.jpg');
-  /* Credit Issues page: show the issues list, skip sidebar + banner */
-  background-position: 46% 28%;
+  /* Onboarding questionnaire: show "What's your timeline?" card, skip dark edges */
+  background-position: 50% 25%;
 }
 .ss-pcard-visual--prioritize {
   background-image: url('/images/card-prioritize.jpg');
-  /* Dashboard: show credit overview scores section */
-  background-position: 46% 32%;
+  /* My Action Plan: skip sidebar left edge, show plan content from just below topbar */
+  background-position: 46% 22%;
 }
 .ss-pcard-visual--act {
   background-image: url('/images/card-act.jpg');
