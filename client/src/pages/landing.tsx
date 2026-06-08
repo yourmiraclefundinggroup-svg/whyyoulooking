@@ -76,7 +76,6 @@ export default function LandingPage() {
           </Link>
           <ul className="ss-nav-links">
             <li><a href="#product">Product</a></li>
-            <li><a href="#journey">How It Works</a></li>
             <li><Link href="/pricing">Pricing</Link></li>
             <li><a href="#trust">Results</a></li>
           </ul>
@@ -313,60 +312,6 @@ export default function LandingPage() {
         ))}
       </section>
 
-      {/* ════════════════════════════════════════════════════════
-          SCENE 5 — How ScoreShift Guides You (Process)
-      ════════════════════════════════════════════════════════ */}
-      <section className="ss-sprocess" id="how-it-works">
-        <div className="ss-wrap">
-          <div className="ss-sprocess-head ss-reveal">
-            <h2 className="ss-sprocess-h2">How ScoreShift guides you.</h2>
-            <p className="ss-sprocess-sub">
-              ScoreShift turns your credit profile into a clear sequence of priorities,
-              tools, and next steps.
-            </p>
-          </div>
-
-          <div className="ss-sprocess-grid">
-
-            {/* ── 01 UNDERSTAND ── */}
-            <div className="ss-pcard ss-reveal ss-d1">
-              <div className="ss-pcard-visual ss-pcard-visual--understand" />
-              <div className="ss-pcard-text">
-                <h3 className="ss-pcard-title">Understand</h3>
-                <p className="ss-pcard-body">We identify what impacts your profile.</p>
-              </div>
-            </div>
-
-            {/* ── 02 PRIORITIZE ── */}
-            <div className="ss-pcard ss-reveal ss-d2">
-              <div className="ss-pcard-visual ss-pcard-visual--prioritize" />
-              <div className="ss-pcard-text">
-                <h3 className="ss-pcard-title">Prioritize</h3>
-                <p className="ss-pcard-body">We organize what matters most.</p>
-              </div>
-            </div>
-
-            {/* ── 03 ACT ── */}
-            <div className="ss-pcard ss-reveal ss-d3">
-              <div className="ss-pcard-visual ss-pcard-visual--act" />
-              <div className="ss-pcard-text">
-                <h3 className="ss-pcard-title">Act</h3>
-                <p className="ss-pcard-body">Access tools built for the next step.</p>
-              </div>
-            </div>
-
-            {/* ── 04 TRACK ── */}
-            <div className="ss-pcard ss-reveal ss-d4">
-              <div className="ss-pcard-visual ss-pcard-visual--track" />
-              <div className="ss-pcard-text">
-                <h3 className="ss-pcard-title">Track</h3>
-                <p className="ss-pcard-body">Monitor progress over time.</p>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
 
       {/* ════════════════════════════════════════════════════════
           SCENE 6 — See The Path Forward (Product Reveal)

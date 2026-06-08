@@ -816,227 +816,6 @@
   .ss-s5-intro { padding: 72px 28px 48px; }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   SCENE 5 — How ScoreShift Guides You (Process)
-═══════════════════════════════════════════════════════════ */
-.ss-sprocess {
-  background: var(--ss-cream);
-  padding: 120px 0 128px;
-  position: relative;
-}
-
-.ss-sprocess-head {
-  text-align: center;
-  max-width: 580px;
-  margin: 0 auto 72px;
-  padding: 0 28px;
-}
-.ss-sprocess-h2 {
-  font-size: clamp(30px, 4.6vw, 54px);
-  font-weight: 800; letter-spacing: -0.04em;
-  line-height: 1.1; color: var(--ss-indigo-deep);
-  margin: 0 0 20px;
-}
-.ss-sprocess-sub {
-  font-size: 17px; color: var(--ss-taupe);
-  line-height: 1.65; margin: 0;
-}
-
-/* 4-column card grid */
-.ss-sprocess-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-  padding: 0 40px;
-}
-
-/* ── Apple-style feature card ──────────────────────────── */
-/* ═══════════════════════════════════════════════════════
-   FEATURE CARDS — Apple-style product photography
-   ════════════════════════════════════════════════════════ */
-.ss-pcard {
-  /* Premium glass surface */
-  background: rgba(255,255,255,0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.60);
-  border-radius: 24px;
-  display: flex; flex-direction: column;
-  position: relative;
-  overflow: hidden;
-  cursor: default;
-  /* Multi-layer ambient shadow — Apple-style depth */
-  box-shadow:
-    0 0 0 0.5px rgba(0,0,0,0.06),
-    0 1px 3px rgba(0,0,0,0.04),
-    0 6px 16px rgba(0,0,0,0.06),
-    0 20px 48px rgba(0,0,0,0.08),
-    0 52px 96px rgba(0,0,0,0.04);
-  transition:
-    transform 0.38s cubic-bezier(0.22,0.68,0,1.2),
-    box-shadow 0.38s ease,
-    background 0.35s ease;
-}
-
-/* Specular top-edge highlight */
-.ss-pcard::before {
-  content: "";
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 1px; z-index: 10;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(255,255,255,0.95) 25%,
-    rgba(255,255,255,0.95) 75%,
-    transparent 100%);
-  pointer-events: none;
-}
-
-/* Lift + deepen on hover */
-.ss-pcard:hover {
-  transform: translateY(-10px) scale(1.02);
-  background: rgba(255,255,255,0.96);
-  box-shadow:
-    0 0 0 0.5px rgba(0,0,0,0.08),
-    0 2px 6px rgba(0,0,0,0.05),
-    0 12px 28px rgba(0,0,0,0.09),
-    0 36px 72px rgba(0,0,0,0.13),
-    0 72px 144px rgba(0,0,0,0.06);
-}
-
-/* ══════════════════════════════════════════════════════
-   SCREENSHOT VISUAL — art-directed product frame
-   ══════════════════════════════════════════════════════ */
-.ss-pcard-visual {
-  flex: 0 0 auto;
-  width: 100%;
-  height: 244px;                  /* 68% of ~360px total card */
-  border-radius: 22px 22px 0 0;
-  overflow: hidden;
-  position: relative;
-  background-color: #f6f5f2;      /* light fallback */
-  background-repeat: no-repeat;
-
-  /* ── Consistent zoom: all cards same scale ── */
-  background-size: 242%;
-
-  /* ── Default position (portal cards — sidebar skipped) ── */
-  background-position: 31% 25%;
-
-  /* ── Transparent-edge mask: works for any bg color ── */
-  /* Top: subtle fade in from card radius */
-  /* Bottom: dissolve into card body */
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    rgba(0,0,0,0.88) 0%,
-    rgba(0,0,0,1)    6%,
-    rgba(0,0,0,1)    66%,
-    rgba(0,0,0,0)   100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    rgba(0,0,0,0.88) 0%,
-    rgba(0,0,0,1)    6%,
-    rgba(0,0,0,1)    66%,
-    rgba(0,0,0,0)   100%
-  );
-}
-
-/* Inset bezel — simulates screen depth */
-.ss-pcard-visual::after {
-  content: "";
-  position: absolute; inset: 0;
-  border-radius: inherit;
-  /* Screen depth shadow */
-  box-shadow:
-    inset 0 0 0 1px rgba(0,0,0,0.07),
-    inset 0 2px 8px rgba(0,0,0,0.06);
-  pointer-events: none;
-  z-index: 2;
-}
-
-/* Top vignette — creates depth/immersion in the screenshot */
-.ss-pcard-visual::before {
-  content: "";
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 64px;
-  background: linear-gradient(to bottom,
-    rgba(0,0,0,0.14) 0%,
-    transparent 100%);
-  pointer-events: none;
-  z-index: 1;
-  border-radius: inherit;
-}
-
-/* ── Per-card: source + focal-point crop ── */
-/* All use background-size: 242% — same zoom level */
-
-/* UNDERSTAND: onboarding questionnaire (dark bg, centered card)
-   Show: step indicator + "What's your timeline?" + options   */
-.ss-pcard-visual--understand {
-  background-image: url('/images/card-understand.jpg');
-  background-color: #0f1117;        /* dark to match screenshot bg */
-  background-position: 50% 20%;    /* centered H, top of modal */
-}
-
-/* PRIORITIZE: My Action Plan (portal, sidebar ~225px left)
-   Show: plan header + credit scores + first action item       */
-.ss-pcard-visual--prioritize {
-  background-image: url('/images/card-prioritize.jpg');
-  background-position: 31% 22%;    /* skip sidebar, just past topbar */
-}
-
-/* ACT: Dispute workflow (portal, sidebar ~225px left)
-   Show: dispute tools, form, action buttons                   */
-.ss-pcard-visual--act {
-  background-image: url('/images/card-act.jpg');
-  background-position: 31% 20%;    /* skip sidebar, show upper content */
-}
-
-/* TRACK: Score Tracker (portal, sidebar ~225px left)
-   Show: score charts, progress, bureau scores                 */
-.ss-pcard-visual--track {
-  background-image: url('/images/card-track.jpg');
-  background-position: 31% 28%;    /* skip sidebar, center on charts */
-}
-
-/* ── Text area — lower ~32% ─────────────── */
-.ss-pcard-text {
-  padding: 20px 22px 26px;
-  display: flex; flex-direction: column; gap: 5px;
-  flex: 1;
-}
-.ss-pcard-title {
-  font-size: 16px; font-weight: 700; letter-spacing: -0.022em;
-  line-height: 1.22; color: #1a1813;
-  margin: 0;
-}
-.ss-pcard-body {
-  font-size: 13px; color: rgba(30,27,24,0.52);
-  line-height: 1.58; margin: 0;
-}
-
-/* Stagger reveal */
-.ss-pcard.visible {
-  animation: ss-fade-up 0.55s var(--ss-ease) both;
-  animation-delay: var(--delay, 0ms);
-}
-
-@media (max-width: 1020px) {
-  .ss-sprocess-grid {
-    grid-template-columns: repeat(2, 1fr);
-    padding: 0 28px;
-    gap: 16px;
-  }
-}
-@media (max-width: 560px) {
-  .ss-sprocess-grid {
-    grid-template-columns: 1fr;
-    padding: 0 20px;
-    gap: 14px;
-  }
-  .ss-sprocess { padding: 80px 0 96px; }
-  .ss-pcard-text { padding: 18px 20px 22px; }
-}
 
 /* ═══════════════════════════════════════════════════════════
    SCENE 6 (Trust) / Testimonials
@@ -1400,8 +1179,7 @@
 
 /* ── Section heading shimmer on reveal ───────────────── */
 .ss-s5-headline,
-.ss-s6-h2,
-.ss-sprocess-h2 {
+.ss-s6-h2 {
   background-clip: text;
   -webkit-background-clip: text;
 }
@@ -1434,8 +1212,6 @@
   width: 100%;
 }
 
-/* ── Process section grid stagger (via existing reveal) ─── */
-
 /* ── Nav link active underline slide ─────────────────── */
 .ss-nav-link {
   position: relative;
@@ -1450,14 +1226,6 @@
 }
 .ss-nav-link:hover::after { width: 100%; }
 
-/* ── Process section grid stagger ───────────────────── */
-.ss-sprocess-grid .ss-pcard.visible {
-  animation: ss-fade-up 0.7s var(--ss-ease-out) both;
-}
-.ss-sprocess-grid .ss-pcard.ss-d1 { animation-delay: 0.08s; }
-.ss-sprocess-grid .ss-pcard.ss-d2 { animation-delay: 0.18s; }
-.ss-sprocess-grid .ss-pcard.ss-d3 { animation-delay: 0.28s; }
-.ss-sprocess-grid .ss-pcard.ss-d4 { animation-delay: 0.38s; }
 
 /* ── Smooth parallax on section background images ────── */
 .ss-s3-img,
