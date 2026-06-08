@@ -1,0 +1,184 @@
+Use the attached Figma storyboard as the source of truth.
+
+We are rebuilding the ScoreShift landing page around a cinematic scroll experience, not a traditional SaaS landing page.
+
+IMPORTANT:
+Keep the existing interactive My Plan iPhone mockup and its interactions.
+
+Everything else can be rebuilt.
+
+This page should feel like Apple product storytelling + Linear spacing/motion + Cleo-style human warmth.
+
+It should not feel like a normal Replit template, fintech template, or credit repair landing page.
+
+PAGE STRUCTURE:
+
+Scene 1 — Believe
+Headline:
+Credit guidance that actually tells you what to do next.
+
+Subheadline:
+Understand what matters, prioritize what comes next, and take action with guided tools designed to help you move forward.
+
+Visual:
+Cinematic ScoreShift canyon/cloud world.
+Minimal typography.
+Glass navigation.
+Subtle scroll prompt.
+
+Motion:
+Slow atmospheric background movement.
+Headline fades in softly.
+Scroll cue pulses subtly.
+
+Scene 2 — Product Reveal
+Headline:
+Know what matters.
+Know what to do next.
+
+Visual:
+Use the existing interactive My Plan iPhone mockup.
+The phone should feel massive, centered, and Apple-style.
+The product should be the hero.
+
+Interaction:
+When users tap My Plan cards, reveal the connected tool:
+
+* Remove inaccuracies → Dispute IQ
+* Lower utilization → Debt Navigator
+* Collections → Resolution Center
+* Late payments → Payment Recovery
+
+Motion:
+Phone rises or scales into view.
+Cards respond with smooth press/expand motion.
+No flashy score animations.
+No floating feature bubbles unless very subtle.
+
+Scene 3 — Guided Journey
+Headline:
+Guidance built around you.
+
+Visual:
+Use the final canyon path image from Figma.
+The path is the hero.
+
+Motion:
+Scroll should feel like the camera is moving forward along the path.
+Use parallax or slow background transform.
+Clouds/light should feel subtly alive.
+No glowing path.
+No fantasy effects.
+
+Scene 4 — See The Path Forward
+Headline:
+See the path forward.
+
+Visual:
+Use the final canyon overlook image from Figma.
+
+Motion:
+Slow cinematic reveal across the overlook.
+After the landscape settles, fade in a glass My Plan / progress card.
+This should feel like the user has reached clarity.
+
+Scene 5 — Human Lifestyle Bridges
+Use the lifestyle support images from Figma as smaller editorial sections, not main hero images.
+
+Purpose:
+They should tie the story back to real people.
+
+Use:
+
+* The Builder
+* The Explorer
+* The Couple
+* The Friends
+* The Walk
+
+Motion:
+Soft image reveals.
+Subtle parallax.
+Gentle scale on scroll.
+No aggressive animation.
+
+Scene 6 — Trust / Testimonials
+Headline:
+Tired of not knowing what to do next?
+
+Copy:
+Most people can see their credit.
+Very few people know what to do with it.
+
+ScoreShift turns confusion into a clear plan and gives you the tools to take action — all in one place.
+
+Know what matters. Know what to do next.
+
+Visual:
+Cleo-inspired testimonial cards with real people converted into halftone / dot-matrix portraits.
+
+Motion:
+Horizontal scroll or carousel.
+Cards should glide slowly.
+Portrait dots can shimmer subtly if possible.
+
+Scene 7 — Final CTA
+Headline:
+Start your guided plan.
+
+Visual:
+Use the final horizon path image from Figma.
+
+Motion:
+Slow forward push toward the horizon.
+The future remains open.
+No destination reveal.
+
+PRIMARY CTA:
+Start My Plan
+
+SECONDARY CTA:
+See How It Works
+
+DESIGN RULES:
+
+* Large whitespace
+* Cream background
+* Indigo typography
+* Sandstone/gold warmth
+* Rounded glass cards
+* Premium editorial typography
+* Mobile-first responsiveness
+* Smooth scroll transitions
+* Section-to-section storytelling
+* Avoid generic feature grids
+* Avoid credit repair clichés
+* Avoid fake score promises
+* Avoid neon fintech graphics
+
+MOTION STYLE:
+This should feel like a cinematic guided journey.
+
+Use:
+
+* Scroll-triggered fade
+* Parallax image movement
+* Slow scale-in
+* Sticky product reveal where useful
+* Smooth section transitions
+* Subtle glass nav movement
+* Premium easing
+
+Do NOT use:
+
+* Fast animations
+* Bouncy effects
+* Gamified progress
+* Flashy credit score changes
+* Template-style section blocks
+
+The page should feel like:
+Confusion → Clarity → Guided Plan → Tools → Trust → Action.
+
+Goal:
+Make the landing page feel like a premium brand campaign for ScoreShift while still proving the product works through the My Plan iPhone mockup.
