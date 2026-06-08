@@ -161,19 +161,55 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="ss-tool-map ss-reveal ss-d2">
-          {[
-            { label: "Remove inaccuracies", tool: "Dispute IQ", color: "var(--ss-indigo)" },
-            { label: "Lower utilization",   tool: "Debt Navigator",      color: "var(--ss-gold)" },
-            { label: "Collections",         tool: "Resolution Center",   color: "var(--ss-apricot)" },
-            { label: "Late payments",       tool: "Payment Recovery",    color: "var(--ss-sage)" },
-          ].map(t => (
-            <div key={t.tool} className="ss-tool-chip">
-              <span className="ss-tool-issue">{t.label}</span>
-              <span className="ss-tool-arrow">→</span>
-              <span className="ss-tool-name" style={{ color: t.color }}>{t.tool}</span>
-            </div>
-          ))}
+        <div className="ss-action-map ss-reveal ss-d2">
+          <p className="ss-action-map-headline">Your plan connects every problem to the right tool.</p>
+          <p className="ss-action-map-sub">Tap a priority to see what ScoreShift helps you do next.</p>
+          <div className="ss-action-map-grid">
+            {[
+              {
+                icon: "✦",
+                problem: "Inaccurate items",
+                action: "Review and dispute with",
+                tool: "Dispute IQ",
+                colorClass: "ss-pill-indigo",
+                delay: "ss-d1",
+              },
+              {
+                icon: "◈",
+                problem: "High balances",
+                action: "Plan payoff moves with",
+                tool: "Debt Navigator",
+                colorClass: "ss-pill-gold",
+                delay: "ss-d2",
+              },
+              {
+                icon: "◎",
+                problem: "Collections",
+                action: "See resolution options in",
+                tool: "Resolution Center",
+                colorClass: "ss-pill-apricot",
+                delay: "ss-d3",
+              },
+              {
+                icon: "↺",
+                problem: "Late payments",
+                action: "Track recovery steps with",
+                tool: "Payment Recovery",
+                colorClass: "ss-pill-sage",
+                delay: "ss-d4",
+              },
+            ].map(p => (
+              <div key={p.tool} className={`ss-action-pill ss-reveal ${p.delay} ${p.colorClass}`}>
+                <span className="ss-pill-icon">{p.icon}</span>
+                <div className="ss-pill-body">
+                  <span className="ss-pill-problem">{p.problem}</span>
+                  <span className="ss-pill-action">
+                    {p.action} <span className="ss-pill-tool">{p.tool} →</span>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

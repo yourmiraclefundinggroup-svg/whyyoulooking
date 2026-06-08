@@ -1,0 +1,81 @@
+Update the bottom interaction area under the My Plan iPhone mockup.
+
+Right now the chips under the phone feel too plain and disconnected. They need to feel like premium frosted-glass action pills that clearly explain what ScoreShift helps the user do.
+
+Replace the current plain chips with a frosted glass “Action Map” component.
+
+Design direction:
+
+* Frosted glass pills
+* Soft blur
+* Semi-transparent cream/white background
+* Thin indigo/gold border
+* Soft shadow
+* Rounded pill shape
+* Premium Apple/Linear feel
+* Should look elevated, not like basic buttons
+
+Section label above pills:
+
+Your plan connects every problem to the right tool.
+
+Small supporting text:
+
+Tap a priority to see what ScoreShift helps you do next.
+
+Create 4 frosted glass action pills:
+
+1. Inaccurate items
+   Review and dispute with Dispute IQ
+
+2. High balances
+   Plan payoff moves with Debt Navigator
+
+3. Collections
+   See resolution options in one place
+
+4. Late payments
+   Track recovery steps and next actions
+
+Each pill should include:
+
+* small icon
+* problem label
+* short action sentence
+* linked tool name in indigo or gold
+* subtle arrow
+
+Example pill structure:
+
+[icon] Inaccurate items
+Review and dispute with Dispute IQ →
+
+Interaction:
+
+* On hover: pill lifts 4px, border becomes slightly brighter, background blur increases
+* On click: corresponding item in the phone should highlight if possible
+* Add a very subtle glow behind the active pill
+* Animate pills in with a staggered fade-up after the phone appears
+
+Desktop layout:
+
+* 2 columns x 2 rows under the phone
+* Centered
+* Max width around 760px
+
+Mobile layout:
+
+* Stack pills vertically
+* Keep text readable
+* Avoid tiny chips
+
+Remove the current simple chips:
+Remove inaccuracies → Dispute IQ
+Lower utilization → Debt Navigator
+Collections → Resolution Center
+Late payments → Payment Recovery
+
+Replace them with the new frosted glass Action Map component.
+
+The goal:
+Visitors should immediately understand that ScoreShift does not just show problems — it connects each problem to the right guided tool.
