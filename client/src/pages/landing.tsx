@@ -72,7 +72,7 @@ export default function LandingPage() {
       <nav className="ss-nav">
         <div className="ss-wrap ss-nav-inner">
           <Link href="/" className="ss-nav-logo">
-            <img src="/images/scoreshift-logo-full.png" alt="ScoreShift" className="ss-nav-logo-img" />
+            <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" className="ss-nav-logo-img" />
           </Link>
           <ul className="ss-nav-links">
             <li><a href="#product">Product</a></li>
@@ -482,7 +482,7 @@ export default function LandingPage() {
       <footer className="ss-footer">
         <div className="ss-wrap ss-footer-inner">
           <Link href="/" className="ss-footer-logo">
-            <img src="/images/scoreshift-logo-full.png" alt="ScoreShift" className="ss-footer-logo-img" />
+            <img src="/images/scoreshift-logo-full.png" alt="ScoreShift" className="ss-footer-logo-img ss-footer-logo-bars" />
           </Link>
           <ul className="ss-footer-links">
             <li><Link href="/privacy-policy">Privacy</Link></li>

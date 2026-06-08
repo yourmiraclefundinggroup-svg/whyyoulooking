@@ -84,8 +84,8 @@
   width: auto;
   max-width: 420px;
   object-fit: contain;
-  filter: drop-shadow(0 0 10px rgba(255,255,255,0.30));
-  transition: filter 0.3s;
+  filter: drop-shadow(0 1px 6px rgba(255,255,255,0.15));
+  transition: opacity 0.3s;
 }
 .ss-nav.scrolled .ss-nav-logo-img {
   filter: none;
@@ -1037,6 +1037,12 @@
   object-fit: contain;
   opacity: 0.70;
   transition: opacity 0.2s;
+}
+.ss-footer-logo-bars {
+  height: 160px;
+  width: auto;
+  max-width: 420px;
+  opacity: 0.85;
 }
 .ss-footer-logo:hover .ss-footer-logo-img { opacity: 0.90; }
 
