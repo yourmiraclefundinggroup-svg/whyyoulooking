@@ -851,123 +851,168 @@
 }
 
 /* ── Apple-style feature card ──────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   FEATURE CARDS — Apple-style product photography
+   ════════════════════════════════════════════════════════ */
 .ss-pcard {
-  background: rgba(255,255,255,0.74);
-  border: 1px solid rgba(210,203,192,0.50);
+  /* Premium glass surface */
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.60);
   border-radius: 24px;
   display: flex; flex-direction: column;
   position: relative;
   overflow: hidden;
-  transition:
-    transform 0.30s cubic-bezier(0.22,0.68,0,1.2),
-    box-shadow 0.30s ease,
-    background 0.30s ease,
-    border-color 0.30s ease;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.90) inset,
-    0 2px 8px rgba(30,27,24,0.04),
-    0 8px 32px rgba(30,27,24,0.06);
   cursor: default;
+  /* Multi-layer ambient shadow — Apple-style depth */
+  box-shadow:
+    0 0 0 0.5px rgba(0,0,0,0.06),
+    0 1px 3px rgba(0,0,0,0.04),
+    0 6px 16px rgba(0,0,0,0.06),
+    0 20px 48px rgba(0,0,0,0.08),
+    0 52px 96px rgba(0,0,0,0.04);
+  transition:
+    transform 0.38s cubic-bezier(0.22,0.68,0,1.2),
+    box-shadow 0.38s ease,
+    background 0.35s ease;
 }
 
-/* Top edge shine */
+/* Specular top-edge highlight */
 .ss-pcard::before {
   content: "";
   position: absolute; top: 0; left: 0; right: 0;
-  height: 1px;
+  height: 1px; z-index: 10;
   background: linear-gradient(90deg,
-    rgba(255,255,255,0) 0%,
-    rgba(255,255,255,0.95) 30%,
-    rgba(255,255,255,0.95) 70%,
-    rgba(255,255,255,0) 100%);
-  z-index: 2;
+    transparent 0%,
+    rgba(255,255,255,0.95) 25%,
+    rgba(255,255,255,0.95) 75%,
+    transparent 100%);
+  pointer-events: none;
 }
 
-/* Subtle hover: lift + deepen + brighten */
+/* Lift + deepen on hover */
 .ss-pcard:hover {
-  transform: translateY(-4px);
-  background: rgba(255,255,255,0.88);
-  border-color: rgba(210,203,192,0.70);
+  transform: translateY(-10px) scale(1.02);
+  background: rgba(255,255,255,0.96);
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.95) inset,
-    0 4px 12px rgba(30,27,24,0.05),
-    0 16px 48px rgba(30,27,24,0.10),
-    0 0 0 0.5px rgba(255,255,255,0.60);
+    0 0 0 0.5px rgba(0,0,0,0.08),
+    0 2px 6px rgba(0,0,0,0.05),
+    0 12px 28px rgba(0,0,0,0.09),
+    0 36px 72px rgba(0,0,0,0.13),
+    0 72px 144px rgba(0,0,0,0.06);
 }
 
-/* ── Visual area — upper ~65% of card (screenshot) ─── */
+/* ══════════════════════════════════════════════════════
+   SCREENSHOT VISUAL — art-directed product frame
+   ══════════════════════════════════════════════════════ */
 .ss-pcard-visual {
   flex: 0 0 auto;
   width: 100%;
-  height: 210px;
+  height: 244px;                  /* 68% of ~360px total card */
   border-radius: 22px 22px 0 0;
   overflow: hidden;
   position: relative;
-  background-color: #f0ede8;
-  /* default crop: hides sidebar (18% of 1280px) and banner (6% of 720px) */
-  background-size: 165%;
+  background-color: #f6f5f2;      /* light fallback */
   background-repeat: no-repeat;
-  background-position: 46% 23%;
+
+  /* ── Consistent zoom: all cards same scale ── */
+  background-size: 242%;
+
+  /* ── Default position (portal cards — sidebar skipped) ── */
+  background-position: 31% 25%;
+
+  /* ── Transparent-edge mask: works for any bg color ── */
+  /* Top: subtle fade in from card radius */
+  /* Bottom: dissolve into card body */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.88) 0%,
+    rgba(0,0,0,1)    6%,
+    rgba(0,0,0,1)    66%,
+    rgba(0,0,0,0)   100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.88) 0%,
+    rgba(0,0,0,1)    6%,
+    rgba(0,0,0,1)    66%,
+    rgba(0,0,0,0)   100%
+  );
 }
-/* Fade-out bottom edge to blend into card body */
+
+/* Inset bezel — simulates screen depth */
 .ss-pcard-visual::after {
   content: "";
-  position: absolute; bottom: 0; left: 0; right: 0;
-  height: 48px;
-  background: linear-gradient(to bottom,
-    rgba(255,255,255,0) 0%,
-    rgba(255,255,255,0.82) 100%);
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  /* Screen depth shadow */
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,0.07),
+    inset 0 2px 8px rgba(0,0,0,0.06);
   pointer-events: none;
-  border-radius: 0 0 4px 4px;
+  z-index: 2;
 }
-/* Top rounded corner mask */
+
+/* Top vignette — creates depth/immersion in the screenshot */
 .ss-pcard-visual::before {
   content: "";
   position: absolute; top: 0; left: 0; right: 0;
-  height: 22px;
+  height: 64px;
   background: linear-gradient(to bottom,
-    rgba(255,255,255,0.18) 0%,
-    rgba(255,255,255,0) 100%);
+    rgba(0,0,0,0.14) 0%,
+    transparent 100%);
   pointer-events: none;
   z-index: 1;
+  border-radius: inherit;
 }
 
-/* ── Per-card screenshot sources & fine-tuned crop ── */
+/* ── Per-card: source + focal-point crop ── */
+/* All use background-size: 242% — same zoom level */
+
+/* UNDERSTAND: onboarding questionnaire (dark bg, centered card)
+   Show: step indicator + "What's your timeline?" + options   */
 .ss-pcard-visual--understand {
   background-image: url('/images/card-understand.jpg');
-  /* Onboarding questionnaire: show "What's your timeline?" card, skip dark edges */
-  background-position: 50% 25%;
-}
-.ss-pcard-visual--prioritize {
-  background-image: url('/images/card-prioritize.jpg');
-  /* My Action Plan: skip sidebar left edge, show plan content from just below topbar */
-  background-position: 46% 22%;
-}
-.ss-pcard-visual--act {
-  background-image: url('/images/card-act.jpg');
-  /* Disputes page: show active + resolved dispute tables */
-  background-position: 46% 28%;
-}
-.ss-pcard-visual--track {
-  background-image: url('/images/card-track.jpg');
-  /* Score Tracker: show bureau charts */
-  background-position: 46% 34%;
+  background-color: #0f1117;        /* dark to match screenshot bg */
+  background-position: 50% 20%;    /* centered H, top of modal */
 }
 
-/* ── Text area — lower ~35% ─────────────── */
+/* PRIORITIZE: My Action Plan (portal, sidebar ~225px left)
+   Show: plan header + credit scores + first action item       */
+.ss-pcard-visual--prioritize {
+  background-image: url('/images/card-prioritize.jpg');
+  background-position: 31% 22%;    /* skip sidebar, just past topbar */
+}
+
+/* ACT: Dispute workflow (portal, sidebar ~225px left)
+   Show: dispute tools, form, action buttons                   */
+.ss-pcard-visual--act {
+  background-image: url('/images/card-act.jpg');
+  background-position: 31% 20%;    /* skip sidebar, show upper content */
+}
+
+/* TRACK: Score Tracker (portal, sidebar ~225px left)
+   Show: score charts, progress, bureau scores                 */
+.ss-pcard-visual--track {
+  background-image: url('/images/card-track.jpg');
+  background-position: 31% 28%;    /* skip sidebar, center on charts */
+}
+
+/* ── Text area — lower ~32% ─────────────── */
 .ss-pcard-text {
-  padding: 22px 24px 28px;
-  display: flex; flex-direction: column; gap: 8px;
+  padding: 20px 22px 26px;
+  display: flex; flex-direction: column; gap: 5px;
   flex: 1;
 }
 .ss-pcard-title {
-  font-size: 19px; font-weight: 800; letter-spacing: -0.028em;
-  line-height: 1.15; color: var(--ss-indigo-deep);
+  font-size: 16px; font-weight: 700; letter-spacing: -0.022em;
+  line-height: 1.22; color: #1a1813;
   margin: 0;
 }
 .ss-pcard-body {
-  font-size: 13.5px; color: var(--ss-taupe);
-  line-height: 1.60; margin: 0;
+  font-size: 13px; color: rgba(30,27,24,0.52);
+  line-height: 1.58; margin: 0;
 }
 
 /* Stagger reveal */
@@ -1284,21 +1329,12 @@
   transform: translateY(-3px);
 }
 
-/* ── Process card enhanced hover ────────────────────── */
-.ss-pcard {
-  transition:
-    transform 0.35s cubic-bezier(0.22, 0.68, 0, 1.2),
-    box-shadow 0.35s ease;
-}
-.ss-pcard:hover {
-  transform: translateY(-6px) scale(1.015);
-  box-shadow: 0 24px 60px rgba(0,0,0,0.10);
-}
+/* ── Screenshot Ken-Burns zoom on card hover ─────────── */
 .ss-pcard-visual {
-  transition: background-position 0.6s ease;
+  transition: transform 0.65s cubic-bezier(0.22, 0.68, 0, 1.15);
 }
 .ss-pcard:hover .ss-pcard-visual {
-  background-size: 172%;
+  transform: scale(1.04);
 }
 
 /* ── Action pills enhanced hover ────────────────────── */
