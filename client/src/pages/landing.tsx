@@ -206,51 +206,7 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════
-          SCENE 4 — See The Path Forward
-      ════════════════════════════════════════════════════════ */}
-      <section className="ss-s4">
-        <div className="ss-s4-parallax-wrap">
-          <img src="/images/path-forward.jpg" alt="" className="ss-s4-img" aria-hidden="true" />
-        </div>
-        <div className="ss-s4-veil" />
-        <div className="ss-s4-body">
-          <h2 className="ss-s4-h2 ss-reveal">See the path forward.</h2>
-
-          <div className="ss-plan-card ss-reveal ss-d2">
-            <div className="ss-plan-card-top">
-              <div>
-                <div className="ss-plan-card-label">My Plan</div>
-                <div className="ss-plan-card-updated">Updated today</div>
-              </div>
-              <div className="ss-plan-card-score-wrap">
-                <div className="ss-plan-card-score-num">748</div>
-                <div className="ss-plan-card-score-label">credit score</div>
-              </div>
-            </div>
-            <div className="ss-plan-card-items">
-              {[
-                { done: true,  text: "Dispute Midland Funding collection",   tag: "Removed",  tagClass: "done" },
-                { done: true,  text: "Lower Capital One utilization to 28%", tag: "Done",     tagClass: "done" },
-                { done: false, text: "Send verification letter to Equifax",  tag: "Next",     tagClass: "next" },
-                { done: false, text: "Resolve $430 medical balance",         tag: "Upcoming", tagClass: "" },
-              ].map((item, i) => (
-                <div key={i} className={`ss-plan-item ${item.done ? "done" : ""}`}>
-                  <div className="ss-plan-check">{item.done ? "✓" : ""}</div>
-                  <span className="ss-plan-text">{item.text}</span>
-                  <span className={`ss-plan-tag ${item.tagClass}`}>{item.tag}</span>
-                </div>
-              ))}
-            </div>
-            <div className="ss-plan-card-footer">
-              <span>Projected score in 60 days</span>
-              <strong>760+</strong>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════════════════════════
-          SCENE 5 — Guidance Built Around You
+          SCENE 4 — Guidance Built Around You (lifestyle panels)
       ════════════════════════════════════════════════════════ */}
       <section className="ss-s5">
         <div className="ss-s5-intro ss-reveal">
@@ -328,6 +284,125 @@ export default function LandingPage() {
             </div>
           </div>
         ))}
+      </section>
+
+      {/* ════════════════════════════════════════════════════════
+          SCENE 5 — How ScoreShift Guides You (Process)
+      ════════════════════════════════════════════════════════ */}
+      <section className="ss-sprocess" id="how-it-works">
+        <div className="ss-wrap">
+          <div className="ss-sprocess-head ss-reveal">
+            <h2 className="ss-sprocess-h2">How ScoreShift guides you.</h2>
+            <p className="ss-sprocess-sub">
+              ScoreShift turns your credit profile into a clear sequence of priorities,
+              tools, and next steps.
+            </p>
+          </div>
+
+          <div className="ss-sprocess-grid">
+            {[
+              {
+                num: "01",
+                title: "Understand",
+                body: "We identify what impacts your profile.",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
+                    <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+                  </svg>
+                ),
+              },
+              {
+                num: "02",
+                title: "Prioritize",
+                body: "We organize what matters most.",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                    <line x1="8" y1="18" x2="21" y2="18"/>
+                    <circle cx="3" cy="6" r="1.5"/><circle cx="3" cy="12" r="1.5"/><circle cx="3" cy="18" r="1.5"/>
+                  </svg>
+                ),
+              },
+              {
+                num: "03",
+                title: "Act",
+                body: "Access tools built for the next step.",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                  </svg>
+                ),
+              },
+              {
+                num: "04",
+                title: "Track",
+                body: "Monitor progress over time.",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+                    <polyline points="16 7 22 7 22 13"/>
+                  </svg>
+                ),
+              },
+            ].map((step, i) => (
+              <div
+                key={step.num}
+                className="ss-pcard ss-reveal"
+                style={{ "--delay": `${i * 100}ms` } as React.CSSProperties}
+              >
+                <div className="ss-pcard-icon">{step.icon}</div>
+                <div className="ss-pcard-num">{step.num}</div>
+                <h3 className="ss-pcard-title">{step.title}</h3>
+                <p className="ss-pcard-body">{step.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════════
+          SCENE 6 — See The Path Forward (Product Reveal)
+      ════════════════════════════════════════════════════════ */}
+      <section className="ss-s4">
+        <div className="ss-s4-parallax-wrap">
+          <img src="/images/path-forward.jpg" alt="" className="ss-s4-img" aria-hidden="true" />
+        </div>
+        <div className="ss-s4-veil" />
+        <div className="ss-s4-body">
+          <h2 className="ss-s4-h2 ss-reveal">See the path forward.</h2>
+
+          <div className="ss-plan-card ss-reveal ss-d2">
+            <div className="ss-plan-card-top">
+              <div>
+                <div className="ss-plan-card-label">My Plan</div>
+                <div className="ss-plan-card-updated">Updated today</div>
+              </div>
+              <div className="ss-plan-card-score-wrap">
+                <div className="ss-plan-card-score-num">748</div>
+                <div className="ss-plan-card-score-label">credit score</div>
+              </div>
+            </div>
+            <div className="ss-plan-card-items">
+              {[
+                { done: true,  text: "Dispute Midland Funding collection",   tag: "Removed",  tagClass: "done" },
+                { done: true,  text: "Lower Capital One utilization to 28%", tag: "Done",     tagClass: "done" },
+                { done: false, text: "Send verification letter to Equifax",  tag: "Next",     tagClass: "next" },
+                { done: false, text: "Resolve $430 medical balance",         tag: "Upcoming", tagClass: "" },
+              ].map((item, i) => (
+                <div key={i} className={`ss-plan-item ${item.done ? "done" : ""}`}>
+                  <div className="ss-plan-check">{item.done ? "✓" : ""}</div>
+                  <span className="ss-plan-text">{item.text}</span>
+                  <span className={`ss-plan-tag ${item.tagClass}`}>{item.tag}</span>
+                </div>
+              ))}
+            </div>
+            <div className="ss-plan-card-footer">
+              <span>Projected score in 60 days</span>
+              <strong>760+</strong>
+            </div>
+          </div>
+        </div>
       </section>
 
 

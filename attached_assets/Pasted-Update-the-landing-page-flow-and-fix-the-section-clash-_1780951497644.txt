@@ -1,0 +1,95 @@
+Update the landing page flow and fix the section clash.
+
+The current “Guidance Built Around You” and “See The Path Forward” sections feel too similar back-to-back because both use dark cinematic canyon backgrounds.
+
+Keep the “Guidance Built Around You” section exactly as the emotional/personalized journey section.
+
+Then insert a new bright cream process section immediately after it called:
+
+How ScoreShift Guides You
+
+This new section should act as a visual reset between the canyon journey scene and the later product reveal.
+
+Use a clean cream background, indigo typography, rounded cards, subtle shadows, and premium Linear-style spacing.
+
+Section headline:
+
+How ScoreShift guides you.
+
+Subheadline:
+
+ScoreShift turns your credit profile into a clear sequence of priorities, tools, and next steps.
+
+Create four cards:
+
+1. Understand
+   We identify what impacts your profile.
+
+2. Prioritize
+   We organize what matters most.
+
+3. Act
+   Access tools built for the next step.
+
+4. Track
+   Monitor progress over time.
+
+Design notes:
+
+* Make this section feel calm, clear, and structured.
+* Use 4 horizontal cards on desktop.
+* Use stacked cards on mobile.
+* Add small premium icons or simple numbered markers.
+* Do not make it look like a generic SaaS feature grid.
+* Keep it elegant, spacious, and editorial.
+* Use subtle hover states.
+* Use soft entrance animation on scroll.
+* Cards should fade in with a 100ms stagger.
+
+After this new section, move the “See The Path Forward” product reveal section below it.
+
+The new page order should be:
+
+1. Believe / Hero
+   Credit guidance that actually tells you what to do next.
+
+2. Understand / Product Preview
+   Know what matters.
+   Know what to do next.
+
+3. Personalize / Guided Journey
+   Guidance built around you.
+
+4. Process / How ScoreShift Works
+   How ScoreShift guides you.
+   Understand → Prioritize → Act → Track
+
+5. Product Reveal
+   See the path forward.
+   Use the plan/progress card here.
+
+6. Trust
+   People moving forward.
+   Use the pixelated portraits and lifestyle support imagery.
+
+7. Final CTA
+   Start your guided plan.
+
+Important:
+The new process section should create breathing room between the two canyon scenes.
+
+Do not remove the existing My Plan iPhone mockup.
+
+Do not remove the Guidance Built Around You section.
+
+Do not remove the See The Path Forward product section.
+
+Only reposition and add the new cream process section between them.
+
+Motion:
+
+* Guidance section: slow cinematic parallax.
+* Process section: clean card fade-up stagger.
+* See The Path Forward section: product card fades in and tasks animate/check in sequence.
+* Trust section: pixel portraits reveal softly.
+* CTA: slow background push toward horizon.
