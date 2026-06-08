@@ -1,0 +1,376 @@
+/* ══════════════════════════════════════════════════════════
+   PLAN SHOWCASE — Cinematic iPhone 14 Pro Presentation
+   Tokens: cream #F7F3EC · indigo #8F7AFF · sage #6BAE8A · charcoal #1E1B18
+   Prefix: .ps-* (scoped to this view)
+   ══════════════════════════════════════════════════════════ */
+
+:root {
+  --ps-cream:    #F7F3EC;
+  --ps-bone:     #EDE8DF;
+  --ps-charcoal: #1E1B18;
+  --ps-muted:    #8C7B6E;
+  --ps-subtle:   #C4B9AB;
+  --ps-indigo:   #8F7AFF;
+  --ps-indigo-d: #6B5FD9;
+  --ps-sage:     #6BAE8A;
+  --ps-apricot:  #EFA26F;
+  --ps-ease:     cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Root frame — locked to phone viewport, no scroll */
+.ps-root {
+  width: 390px;
+  height: 844px;
+  overflow: hidden;
+  background: var(--ps-cream);
+  color: var(--ps-charcoal);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Status bar (Dynamic Island clearance) ──────────────── */
+.ps-status-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 56px 26px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ps-charcoal);
+  letter-spacing: -0.01em;
+  pointer-events: none;
+  user-select: none;
+}
+.ps-status-time {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.ps-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.75;
+}
+.ps-status-icons svg {
+  display: block;
+  fill: var(--ps-charcoal);
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.ps-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 16px 22px 0;
+}
+.ps-header-logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.ps-header-brand {
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--ps-charcoal);
+}
+.ps-header-badge {
+  margin-left: auto;
+  background: rgba(143,122,255,0.10);
+  color: var(--ps-indigo);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid rgba(143,122,255,0.18);
+}
+
+/* ── Scrollable body ────────────────────────────────────── */
+.ps-body {
+  flex: 1;
+  overflow: hidden;
+  padding: 24px 22px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  animation: ps-enter 0.55s var(--ps-ease) 0.05s both;
+}
+
+@keyframes ps-enter {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Eyebrow ─────────────────────────────────────────────── */
+.ps-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ps-indigo);
+  margin-bottom: 9px;
+  opacity: 0.9;
+}
+
+/* ── Greeting ────────────────────────────────────────────── */
+.ps-greeting {
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -0.044em;
+  line-height: 1.04;
+  color: var(--ps-charcoal);
+  margin: 0 0 22px;
+}
+.ps-greeting em {
+  font-style: normal;
+  background: linear-gradient(108deg, var(--ps-indigo) 0%, #A08DFF 50%, var(--ps-indigo-d) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Score strip ─────────────────────────────────────────── */
+.ps-scores {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.ps-score-pill {
+  flex: 1;
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(232,226,216,0.85);
+  border-radius: 15px;
+  padding: 12px 6px 11px;
+  text-align: center;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow:
+    0 2px 12px rgba(0,0,0,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.90);
+}
+.ps-score-num {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.ps-score-bureau {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--ps-muted);
+}
+
+/* ── Plan section label ──────────────────────────────────── */
+.ps-section-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ps-muted);
+  margin-bottom: 10px;
+  opacity: 0.8;
+}
+
+/* ── Priority cards ──────────────────────────────────────── */
+.ps-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-bottom: 16px;
+}
+.ps-card {
+  background: rgba(255,255,255,0.70);
+  border: 1px solid rgba(232,226,216,0.78);
+  border-radius: 18px;
+  padding: 14px 16px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 2px 10px rgba(0,0,0,0.04),
+    0 1px 3px rgba(0,0,0,0.025),
+    inset 0 1px 0 rgba(255,255,255,0.85);
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  position: relative;
+  overflow: hidden;
+}
+.ps-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 5%, rgba(255,255,255,0.75) 50%, transparent 95%);
+}
+.ps-card-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.ps-card-dot.high {
+  background: var(--ps-indigo);
+  box-shadow: 0 0 0 3px rgba(143,122,255,0.18);
+}
+.ps-card-dot.medium {
+  background: var(--ps-sage);
+  box-shadow: 0 0 0 3px rgba(107,174,138,0.18);
+}
+.ps-card-dot.low {
+  background: var(--ps-apricot);
+  box-shadow: 0 0 0 3px rgba(239,162,111,0.18);
+}
+.ps-card-content {
+  flex: 1;
+  min-width: 0;
+}
+.ps-card-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ps-charcoal);
+  letter-spacing: -0.02em;
+  margin-bottom: 3px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ps-card-detail {
+  font-size: 11.5px;
+  color: var(--ps-muted);
+  line-height: 1.35;
+}
+.ps-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.ps-card-pts {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+  border: 1px solid;
+}
+.ps-card-pts.indigo {
+  background: rgba(143,122,255,0.10);
+  color: var(--ps-indigo);
+  border-color: rgba(143,122,255,0.18);
+}
+.ps-card-pts.sage {
+  background: rgba(107,174,138,0.10);
+  color: var(--ps-sage);
+  border-color: rgba(107,174,138,0.20);
+}
+.ps-card-pts.apricot {
+  background: rgba(239,162,111,0.10);
+  color: var(--ps-apricot);
+  border-color: rgba(239,162,111,0.20);
+}
+.ps-card-status {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--ps-subtle);
+  letter-spacing: 0.02em;
+}
+
+/* ── Status strip ────────────────────────────────────────── */
+.ps-status-strip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 15px;
+  font-size: 11.5px;
+  color: var(--ps-muted);
+  line-height: 1.4;
+  padding: 0 2px;
+}
+.ps-status-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ps-sage);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2.5px rgba(107,174,138,0.22);
+  animation: ps-pulse 2.4s ease-in-out infinite;
+}
+@keyframes ps-pulse {
+  0%, 100% { opacity: 0.8; transform: scale(1); box-shadow: 0 0 0 2.5px rgba(107,174,138,0.22); }
+  50%       { opacity: 1; transform: scale(1.2); box-shadow: 0 0 0 4px rgba(107,174,138,0.14); }
+}
+
+/* ── CTA button ──────────────────────────────────────────── */
+.ps-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--ps-indigo);
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  padding: 16px 24px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  box-shadow:
+    0 8px 30px rgba(143,122,255,0.35),
+    0 2px 8px rgba(143,122,255,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.20);
+  transition: transform 0.16s var(--ps-ease), box-shadow 0.16s var(--ps-ease);
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+}
+.ps-cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+  pointer-events: none;
+}
+.ps-cta:active {
+  transform: scale(0.975);
+  box-shadow: 0 4px 18px rgba(143,122,255,0.26);
+}
+.ps-cta-arrow {
+  font-size: 16px;
+  line-height: 1;
+  transition: transform 0.2s var(--ps-ease);
+}
+.ps-cta:hover .ps-cta-arrow {
+  transform: translateX(3px);
+}
+
+/* ── Home indicator ──────────────────────────────────────── */
+.ps-home-bar {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding: 14px 0 8px;
+}
+.ps-home-bar-inner {
+  width: 134px;
+  height: 5px;
+  background: var(--ps-charcoal);
+  border-radius: 3px;
+  opacity: 0.15;
+}

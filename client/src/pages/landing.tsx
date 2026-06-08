@@ -270,26 +270,42 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* ── §3 Portal Float — canyon atmosphere with live portal ─── */}
-      <section className="ss-pfloat" id="portal-float">
-        <img src="/images/canyon-hero.jpg" alt="Grand Canyon atmosphere" className="ss-pfloat-bg" />
-        <div className="ss-pfloat-fog" />
-        <div className="ss-pfloat-inner ss-reveal">
-          <div className="ss-pfloat-caption">
-            <span className="ss-section-eye" style={{ color: "var(--ss-apricot)" }}>Live preview</span>
-            <h2 className="ss-pfloat-h2">Your portal. Fully loaded.</h2>
-            <p className="ss-pfloat-sub">
-              Click anything — it's the real thing. Every screen is interactive, data-driven, and ready on day one.
+      {/* ── §3 iPhone showcase — My Plan cinematic scene ─────── */}
+      <section className="ss-iphone-scene" id="portal-float">
+        <div className="ss-wrap">
+          <div className="ss-iphone-head ss-reveal">
+            <span className="ss-section-eye">Live preview</span>
+            <h2 className="ss-section-h2">
+              Your plan.{" "}
+              <span className="ss-gradient-text">Always clear.</span>
+            </h2>
+            <p className="ss-section-sub">
+              ScoreShift surfaces exactly what matters — no noise, no dashboards.
+              Just your next best credit action, personalized every day.
             </p>
           </div>
-          <div className="ss-pfloat-frame ss-reveal ss-d1">
-            <iframe
-              src="/portal-demo"
-              className="ss-pfloat-iframe"
-              title="ScoreShift portal preview"
-              scrolling="no"
-              frameBorder="0"
-            />
+        </div>
+
+        <div className="ss-iphone-stage ss-reveal ss-d1">
+          <div className="ss-iphone-glow" />
+          <div className="ss-iphone-frame">
+            {/* Silent toggle */}
+            <div className="ss-iphone-btn ss-iphone-silent" />
+            {/* Volume up / down */}
+            <div className="ss-iphone-btn ss-iphone-vol-up" />
+            <div className="ss-iphone-btn ss-iphone-vol-dn" />
+            {/* Power */}
+            <div className="ss-iphone-btn ss-iphone-power" />
+            <div className="ss-iphone-screen">
+              <div className="ss-iphone-island" />
+              <iframe
+                src="/plan-showcase"
+                className="ss-iphone-iframe"
+                title="ScoreShift My Plan"
+                scrolling="no"
+                frameBorder="0"
+              />
+            </div>
           </div>
         </div>
       </section>
