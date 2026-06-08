@@ -221,7 +221,7 @@ export default function LandingPage() {
           {
             id: "builder",
             side: "left",
-            image: "/images/lifestyle-builder.jpg",
+            image: "/images/lifestyle-builder-new.jpg",
             overlay: "linear-gradient(135deg, rgba(20,12,48,0.38) 0%, rgba(80,48,140,0.22) 100%)",
             accent: "#A78BFA",
             label: "The Builder",
@@ -251,7 +251,7 @@ export default function LandingPage() {
           {
             id: "planner",
             side: "right",
-            image: "/images/lifestyle-solo-woman.jpg",
+            image: "/images/lifestyle-builder.jpg",
             overlay: "linear-gradient(135deg, rgba(8,18,46,0.38) 0%, rgba(36,60,130,0.22) 100%)",
             accent: "#60A5FA",
             label: "The Planner",
