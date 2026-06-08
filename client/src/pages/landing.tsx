@@ -288,6 +288,7 @@ export default function LandingPage() {
 
         <div className="ss-iphone-stage ss-reveal ss-d1">
           <div className="ss-iphone-glow" />
+          <div className="ss-iphone-wrap">
           <div className="ss-iphone-frame">
             {/* Silent toggle */}
             <div className="ss-iphone-btn ss-iphone-silent" />
@@ -306,6 +307,7 @@ export default function LandingPage() {
                 frameBorder="0"
               />
             </div>
+          </div>
           </div>
         </div>
       </section>

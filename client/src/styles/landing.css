@@ -718,12 +718,18 @@
   z-index: 2;
   display: flex;
   justify-content: center;
-  align-items: flex-end;
-  /* Natural height = 844px frame + space. We show the top ~90% of the phone,
-     letting the bottom edge bleed into the next section for depth. */
-  height: 880px;
+  align-items: flex-start;
+  /* Height = 880px × 0.72 scale ≈ 634px. Add 40px so the glow has room below. */
+  height: 674px;
   width: 100%;
-  padding-bottom: 0;
+}
+/* Layout wrapper: collapses to the visually-scaled phone dimensions so the
+   next section starts flush under the phone with no dead whitespace. */
+.ss-iphone-wrap {
+  position: relative;
+  width: 418px;
+  height: 634px;   /* 880 × 0.72 */
+  flex-shrink: 0;
 }
 .ss-iphone-glow {
   position: absolute;
@@ -740,8 +746,9 @@
 
 /* ── Phone frame ─────────────────────────────────────────── */
 .ss-iphone-frame {
-  position: relative;
-  z-index: 1;
+  /* Positioned inside .ss-iphone-wrap; scaled down to 72% */
+  position: absolute;
+  top: 0; left: 0;
   width: 418px;          /* 390 screen + 14 × 2 frame */
   height: 880px;         /* 844 screen + 14 top + 22 bottom chin */
   background: linear-gradient(165deg, #2A2A2C 0%, #1C1C1E 40%, #141414 100%);
@@ -755,12 +762,13 @@
     0 0 60px rgba(0,0,0,0.14),
     inset 0 1px 0 rgba(255,255,255,0.14),
     inset 0 -1px 0 rgba(255,255,255,0.04);
+  transform: scale(0.72);
+  transform-origin: top center;
   animation: ss-phone-float 5s ease-in-out infinite;
-  transform-origin: bottom center;
 }
 @keyframes ss-phone-float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-8px); }
+  0%, 100% { transform: scale(0.72) translateY(0px); }
+  50%       { transform: scale(0.72) translateY(-10px); }
 }
 
 /* Left hardware buttons */

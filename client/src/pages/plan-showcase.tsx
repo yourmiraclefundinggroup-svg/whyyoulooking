@@ -1,60 +1,27 @@
 import { useState, useEffect } from "react";
+import { UserContext } from "@/hooks/use-user-context";
+import { DEMO_USER, DEMO_PROFILE, DEMO_PACKAGE, DemoDataProvider } from "@/lib/demo-data.tsx";
 import scoreshiftLogo from "@assets/scoreshift-logo.png";
 import "../styles/plan-showcase.css";
 
-const SCORES = [
-  { bureau: "EX", score: 712, color: "#3B82F6" },
-  { bureau: "EQ", score: 705, color: "#EF4444" },
-  { bureau: "TU", score: 718, color: "#8B5CF6" },
-];
-
-const PLAN_ITEMS = [
-  {
-    id: 1,
-    priority: "high" as const,
-    title: "Dispute MIDLAND FUNDING",
-    detail: "Collection · Experian · Ready to file",
-    pts: "+18 pts",
-    ptsColor: "indigo" as const,
-    status: "Action needed",
-  },
-  {
-    id: 2,
-    priority: "medium" as const,
-    title: "Lower Amex utilization",
-    detail: "Pay $800 to drop 43% → 15%",
-    pts: "+18 pts",
-    ptsColor: "sage" as const,
-    status: "High impact",
-  },
-  {
-    id: 3,
-    priority: "medium" as const,
-    title: "Remove PORTFOLIO RECOVERY",
-    detail: "Collection · TransUnion · Dispute ready",
-    pts: "+15 pts",
-    ptsColor: "apricot" as const,
-    status: "In review",
-  },
-];
-
-function ClockIcon() {
-  return (
-    <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-      <rect x="0" y="3" width="3" height="6" rx="1" fill="currentColor" opacity="0.35"/>
-      <rect x="4.5" y="1.5" width="3" height="9" rx="1" fill="currentColor" opacity="0.6"/>
-      <rect x="9" y="0" width="3" height="12" rx="1" fill="currentColor"/>
-      <rect x="13.5" y="3" width="2.5" height="6" rx="1" fill="currentColor" opacity="0.6"/>
-    </svg>
-  );
+function extractPts(detail: string): string {
+  const m = detail.match(/\+(\d+)\s*pts/);
+  return m ? `+${m[1]} pts` : "";
 }
+
+function statusLabel(status: string): string {
+  if (status === "in_progress") return "In progress";
+  if (status === "completed")   return "Completed";
+  return "Action needed";
+}
+
 function WifiIcon() {
   return (
     <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-      <path d="M0.5 4.5 C3.5 1.5 12.5 1.5 15.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      <path d="M3 7 C4.8 5.2 11.2 5.2 13 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      <path d="M5.5 9.5 C6.5 8.5 9.5 8.5 10.5 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      <circle cx="8" cy="12" r="1.5" fill="currentColor"/>
+      <path d="M0.5 4.5C3.5 1.5 12.5 1.5 15.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M3 7c1.8-1.8 8.2-1.8 10 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M5.5 9.5c1-.98 4-.98 5 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <circle cx="8" cy="12" r="1.3" fill="currentColor"/>
     </svg>
   );
 }
@@ -63,29 +30,61 @@ function BatteryIcon() {
     <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
       <rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor" strokeOpacity="0.35"/>
       <rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/>
-      <path d="M23 4 L23 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.4"/>
+      <path d="M23 4v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.4"/>
+    </svg>
+  );
+}
+function SignalIcon() {
+  return (
+    <svg width="17" height="12" viewBox="0 0 17 12" fill="none">
+      <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+      <rect x="4.5" y="4.5" width="3" height="7.5" rx="1" fill="currentColor"/>
+      <rect x="9" y="2" width="3" height="10" rx="1" fill="currentColor"/>
+      <rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity="0.35"/>
     </svg>
   );
 }
 
-export default function PlanShowcase() {
+const DEMO_USER_CTX = {
+  user: DEMO_USER,
+  isAdmin: false,
+  isBetaTester: false,
+  isClientViewer: true,
+  canCreateDisputes: false,
+  canAccessAI: false,
+  canAccessCreditBuilding: false,
+  canAccessEducation: false,
+  setCurrentUserId: () => {},
+  logout: () => {},
+};
+
+/* Palette-mapped bureau scores — brand tokens only */
+const SCORE_DISPLAY = [
+  { bureau: "EX", score: DEMO_PROFILE.scores.experian!,   color: "var(--ps-indigo)" },
+  { bureau: "EQ", score: DEMO_PROFILE.scores.equifax!,    color: "var(--ps-charcoal)" },
+  { bureau: "TU", score: DEMO_PROFILE.scores.transunion!, color: "var(--ps-sage)" },
+];
+
+function PlanShowcaseInner() {
   const hour = new Date().getHours();
   const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
-  const [timeStr, setTimeStr] = useState("");
+  const [timeStr, setTimeStr] = useState(() => {
+    const h = new Date().getHours() % 12 || 12;
+    const m = new Date().getMinutes().toString().padStart(2, "0");
+    return `${h}:${m}`;
+  });
 
   useEffect(() => {
-    const fmt = () => {
+    const id = setInterval(() => {
       const now = new Date();
-      const h = now.getHours();
+      const h = now.getHours() % 12 || 12;
       const m = now.getMinutes().toString().padStart(2, "0");
-      const ampm = h >= 12 ? "PM" : "AM";
-      const h12 = h % 12 || 12;
-      setTimeStr(`${h12}:${m}`);
-    };
-    fmt();
-    const id = setInterval(fmt, 30000);
+      setTimeStr(`${h}:${m}`);
+    }, 30000);
     return () => clearInterval(id);
   }, []);
+
+  const planItems = DEMO_PROFILE.planSuggestions.slice(0, 3);
 
   return (
     <div className="ps-root">
@@ -93,7 +92,7 @@ export default function PlanShowcase() {
       <div className="ps-status-bar">
         <span className="ps-status-time">{timeStr}</span>
         <div className="ps-status-icons">
-          <ClockIcon />
+          <SignalIcon />
           <WifiIcon />
           <BatteryIcon />
         </div>
@@ -106,10 +105,10 @@ export default function PlanShowcase() {
         <span className="ps-header-badge">PRO</span>
       </div>
 
-      {/* Scrollable body */}
+      {/* Body */}
       <div className="ps-body">
         {/* Eyebrow */}
-        <div className="ps-eyebrow">Your Credit Success Plan</div>
+        <div className="ps-eyebrow">Your Personalized Plan</div>
 
         {/* Greeting */}
         <h1 className="ps-greeting">
@@ -117,9 +116,9 @@ export default function PlanShowcase() {
           <em>Jordan.</em>
         </h1>
 
-        {/* Score strip */}
+        {/* Score strip — brand palette: indigo / charcoal / sage */}
         <div className="ps-scores">
-          {SCORES.map(({ bureau, score, color }) => (
+          {SCORE_DISPLAY.map(({ bureau, score, color }) => (
             <div key={bureau} className="ps-score-pill">
               <div className="ps-score-num" style={{ color }}>{score}</div>
               <div className="ps-score-bureau">{bureau}</div>
@@ -127,28 +126,38 @@ export default function PlanShowcase() {
           ))}
         </div>
 
-        {/* Plan items */}
-        <div className="ps-section-label">Priority Actions · 3 of 7</div>
+        {/* Priority plan items derived from DEMO_PROFILE.planSuggestions */}
+        <div className="ps-section-label">
+          Priority Actions · {planItems.length} of {DEMO_PROFILE.planSuggestions.length}
+        </div>
         <div className="ps-cards">
-          {PLAN_ITEMS.map((item) => (
-            <div key={item.id} className="ps-card">
-              <div className={`ps-card-dot ${item.priority}`} />
-              <div className="ps-card-content">
-                <div className="ps-card-title">{item.title}</div>
-                <div className="ps-card-detail">{item.detail}</div>
+          {planItems.map((item) => {
+            const pts = extractPts(item.detail);
+            const ptsColor = item.priority === "high" ? "indigo" : "sage";
+            return (
+              <div key={item.id} className="ps-card">
+                <div className={`ps-card-dot ${item.priority}`} />
+                <div className="ps-card-content">
+                  <div className="ps-card-title">{item.title}</div>
+                  <div className="ps-card-detail">
+                    {item.detail.replace(/\s*·\s*Est\. \+\d+ pts/, "").replace(/\s*·\s*Ready to generate/, "")}
+                  </div>
+                </div>
+                {pts && (
+                  <div className="ps-card-right">
+                    <span className={`ps-card-pts ${ptsColor}`}>{pts}</span>
+                    <span className="ps-card-status">{statusLabel(item.status)}</span>
+                  </div>
+                )}
               </div>
-              <div className="ps-card-right">
-                <span className={`ps-card-pts ${item.ptsColor}`}>{item.pts}</span>
-                <span className="ps-card-status">{item.status}</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* Status strip */}
+        {/* Status strip — from DEMO_PACKAGE.casesSummary */}
         <div className="ps-status-strip">
           <div className="ps-status-live-dot" />
-          <span>4 disputes active&nbsp;·&nbsp;Specialist: <strong style={{ color: "var(--ps-charcoal)", fontWeight: 600 }}>Sarah K.</strong></span>
+          <span>{DEMO_PACKAGE.casesSummary}</span>
         </div>
 
         {/* CTA */}
@@ -163,5 +172,15 @@ export default function PlanShowcase() {
         <div className="ps-home-bar-inner" />
       </div>
     </div>
+  );
+}
+
+export default function PlanShowcase() {
+  return (
+    <UserContext.Provider value={DEMO_USER_CTX}>
+      <DemoDataProvider>
+        <PlanShowcaseInner />
+      </DemoDataProvider>
+    </UserContext.Provider>
   );
 }
