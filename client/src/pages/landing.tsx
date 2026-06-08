@@ -96,7 +96,7 @@ export default function LandingPage() {
       ════════════════════════════════════════════════════════ */}
       <section className="ss-s1">
         <img
-          src="/images/canyon-hero.jpg"
+          src="/images/hero.jpg"
           alt=""
           className="ss-s1-img"
           aria-hidden="true"
@@ -190,7 +190,7 @@ export default function LandingPage() {
       ════════════════════════════════════════════════════════ */}
       <section className="ss-s3" id="journey">
         <div className="ss-s3-parallax-wrap">
-          <img src="/images/canyon-hero.jpg" alt="" className="ss-s3-img" aria-hidden="true" />
+          <img src="/images/path-guided.jpg" alt="" className="ss-s3-img" aria-hidden="true" />
         </div>
         <div className="ss-s3-veil" />
         <div className="ss-s3-body">
@@ -210,7 +210,7 @@ export default function LandingPage() {
       ════════════════════════════════════════════════════════ */}
       <section className="ss-s4">
         <div className="ss-s4-parallax-wrap">
-          <img src="/images/canyon-hero.jpg" alt="" className="ss-s4-img" aria-hidden="true" />
+          <img src="/images/path-forward.jpg" alt="" className="ss-s4-img" aria-hidden="true" />
         </div>
         <div className="ss-s4-veil" />
         <div className="ss-s4-body">
@@ -257,7 +257,8 @@ export default function LandingPage() {
           {
             id: "builder",
             side: "left",
-            gradient: "linear-gradient(135deg, #1A1040 0%, #2D1B69 45%, #5C3AA0 100%)",
+            image: "/images/lifestyle-builder.jpg",
+            overlay: "linear-gradient(135deg, rgba(26,16,64,0.45) 0%, rgba(92,58,160,0.30) 100%)",
             accent: "#A78BFA",
             quote: "I didn't know where to start. Now I have a plan I can actually follow.",
             name: "The Builder",
@@ -266,7 +267,8 @@ export default function LandingPage() {
           {
             id: "explorer",
             side: "right",
-            gradient: "linear-gradient(135deg, #0D2818 0%, #1A4A2E 45%, #3A7A54 100%)",
+            image: "/images/lifestyle-explorer.jpg",
+            overlay: "linear-gradient(135deg, rgba(13,40,24,0.40) 0%, rgba(58,122,84,0.28) 100%)",
             accent: "#6BAE8A",
             quote: "Three collections gone. I didn't even know I could dispute those.",
             name: "The Explorer",
@@ -275,7 +277,8 @@ export default function LandingPage() {
           {
             id: "couple",
             side: "left",
-            gradient: "linear-gradient(135deg, #2A1206 0%, #6B3010 45%, #B05820 100%)",
+            image: "/images/lifestyle-couple.jpg",
+            overlay: "linear-gradient(135deg, rgba(42,18,6,0.38) 0%, rgba(176,88,32,0.28) 100%)",
             accent: "#D4A96A",
             quote: "We got approved for our first home. ScoreShift walked us through every step.",
             name: "The Couple",
@@ -284,7 +287,8 @@ export default function LandingPage() {
           {
             id: "friends",
             side: "right",
-            gradient: "linear-gradient(135deg, #0A1A3A 0%, #1A3060 45%, #3458A0 100%)",
+            image: "/images/lifestyle-friends.jpg",
+            overlay: "linear-gradient(135deg, rgba(10,26,58,0.42) 0%, rgba(52,88,160,0.28) 100%)",
             accent: "#60A5FA",
             quote: "My score went up 74 points. I had no idea how much I was leaving on the table.",
             name: "The Friends",
@@ -293,7 +297,8 @@ export default function LandingPage() {
           {
             id: "walk",
             side: "left",
-            gradient: "linear-gradient(135deg, #1E1208 0%, #4A3018 45%, #806040 100%)",
+            image: "/images/lifestyle-walk.jpg",
+            overlay: "linear-gradient(135deg, rgba(30,18,8,0.38) 0%, rgba(128,96,64,0.28) 100%)",
             accent: "#EFA26F",
             quote: "Clarity changes everything. Knowing what to do next made it feel possible.",
             name: "The Walk",
@@ -302,9 +307,10 @@ export default function LandingPage() {
         ].map((p) => (
           <div key={p.id} className={`ss-s5-panel ss-reveal`}>
             <div className={`ss-s5-inner ${p.side === "right" ? "reverse" : ""}`}>
-              <div className="ss-s5-art" style={{ background: p.gradient }}>
+              <div className="ss-s5-art">
+                <img src={p.image} alt="" className="ss-s5-photo" aria-hidden="true" />
+                <div className="ss-s5-photo-veil" style={{ background: p.overlay }} />
                 <div className="ss-s5-dots" />
-                <div className="ss-s5-art-circle" style={{ background: p.accent, opacity: 0.12 }} />
               </div>
               <div className="ss-s5-copy">
                 <p className="ss-s5-quote" style={{ color: p.accent }}>
@@ -370,6 +376,7 @@ export default function LandingPage() {
           SCENE 7 — Final CTA
       ════════════════════════════════════════════════════════ */}
       <section className="ss-s7">
+        <img src="/images/cta-horizon.jpg" alt="" className="ss-s7-photo" aria-hidden="true" />
         <div className="ss-s7-bg" />
         <div className="ss-s7-horizon" />
         <div className="ss-s7-body">
