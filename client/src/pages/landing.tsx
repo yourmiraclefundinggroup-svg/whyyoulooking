@@ -327,63 +327,346 @@ export default function LandingPage() {
           </div>
 
           <div className="ss-sprocess-grid">
-            {[
-              {
-                num: "01",
-                title: "Understand",
-                body: "We identify what impacts your profile.",
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>
-                    <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
-                  </svg>
-                ),
-              },
-              {
-                num: "02",
-                title: "Prioritize",
-                body: "We organize what matters most.",
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
-                    <line x1="8" y1="18" x2="21" y2="18"/>
-                    <circle cx="3" cy="6" r="1.5"/><circle cx="3" cy="12" r="1.5"/><circle cx="3" cy="18" r="1.5"/>
-                  </svg>
-                ),
-              },
-              {
-                num: "03",
-                title: "Act",
-                body: "Access tools built for the next step.",
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                  </svg>
-                ),
-              },
-              {
-                num: "04",
-                title: "Track",
-                body: "Monitor progress over time.",
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
-                    <polyline points="16 7 22 7 22 13"/>
-                  </svg>
-                ),
-              },
-            ].map((step, i) => (
-              <div
-                key={step.num}
-                className="ss-pcard ss-reveal"
-                style={{ "--delay": `${i * 100}ms` } as React.CSSProperties}
-              >
-                <div className="ss-pcard-icon">{step.icon}</div>
-                <div className="ss-pcard-num">{step.num}</div>
-                <h3 className="ss-pcard-title">{step.title}</h3>
-                <p className="ss-pcard-body">{step.body}</p>
+
+            {/* ── 01 UNDERSTAND ── */}
+            <div className="ss-pcard ss-reveal ss-d1">
+              <div className="ss-pcard-visual">
+                <svg viewBox="0 0 280 196" fill="none" xmlns="http://www.w3.org/2000/svg" className="ss-pcard-svg">
+                  <defs>
+                    <filter id="u-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="6" stdDeviation="10" floodColor="#1e1b18" floodOpacity="0.12"/>
+                    </filter>
+                    <filter id="u-glow" x="-30%" y="-30%" width="160%" height="160%">
+                      <feGaussianBlur stdDeviation="6" result="blur"/>
+                      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                    <linearGradient id="u-bg" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.72"/>
+                      <stop offset="100%" stopColor="#f5f3ef" stopOpacity="0.60"/>
+                    </linearGradient>
+                    <linearGradient id="u-hi" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#6366f1" stopOpacity="0.18"/>
+                      <stop offset="100%" stopColor="#6366f1" stopOpacity="0.06"/>
+                    </linearGradient>
+                    <clipPath id="u-lens-clip">
+                      <circle cx="188" cy="122" r="46"/>
+                    </clipPath>
+                  </defs>
+                  {/* Report panel */}
+                  <rect x="22" y="18" width="164" height="166" rx="16" fill="url(#u-bg)" stroke="rgba(255,255,255,0.85)" strokeWidth="1.2" filter="url(#u-shadow)"/>
+                  {/* Header bar */}
+                  <rect x="38" y="34" width="52" height="7" rx="3.5" fill="rgba(99,102,241,0.30)"/>
+                  <rect x="38" y="47" width="36" height="4" rx="2" fill="rgba(140,123,110,0.22)"/>
+                  {/* Divider */}
+                  <line x1="38" y1="62" x2="170" y2="62" stroke="rgba(200,194,185,0.45)" strokeWidth="1"/>
+                  {/* Report rows — normal */}
+                  <rect x="38" y="72" width="120" height="4" rx="2" fill="rgba(140,123,110,0.18)"/>
+                  <rect x="38" y="82" width="94" height="4" rx="2" fill="rgba(140,123,110,0.18)"/>
+                  {/* Highlighted row 1 — indigo */}
+                  <rect x="30" y="94" width="148" height="14" rx="4" fill="url(#u-hi)"/>
+                  <rect x="38" y="97" width="110" height="4" rx="2" fill="rgba(99,102,241,0.55)"/>
+                  <rect x="152" y="97" width="18" height="4" rx="2" fill="rgba(99,102,241,0.75)"/>
+                  {/* Normal rows */}
+                  <rect x="38" y="116" width="128" height="4" rx="2" fill="rgba(140,123,110,0.18)"/>
+                  <rect x="38" y="126" width="82" height="4" rx="2" fill="rgba(140,123,110,0.18)"/>
+                  {/* Highlighted row 2 — gold */}
+                  <rect x="30" y="138" width="148" height="14" rx="4" fill="rgba(196,145,58,0.10)"/>
+                  <rect x="38" y="141" width="96" height="4" rx="2" fill="rgba(196,145,58,0.60)"/>
+                  {/* Normal rows */}
+                  <rect x="38" y="160" width="116" height="4" rx="2" fill="rgba(140,123,110,0.18)"/>
+                  <rect x="38" y="170" width="72" height="4" rx="2" fill="rgba(140,123,110,0.18)"/>
+                  {/* Lens glass backing */}
+                  <circle cx="188" cy="122" r="50" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.35)" strokeWidth="1"/>
+                  {/* Lens frosted glass circle */}
+                  <circle cx="188" cy="122" r="46" fill="rgba(255,255,255,0.52)" stroke="rgba(255,255,255,0.90)" strokeWidth="1.8" filter="url(#u-shadow)"/>
+                  {/* Magnified content inside lens */}
+                  <g clipPath="url(#u-lens-clip)">
+                    <rect x="154" y="108" width="68" height="28" rx="5" fill="rgba(99,102,241,0.08)"/>
+                    <rect x="160" y="113" width="56" height="5" rx="2.5" fill="rgba(99,102,241,0.55)"/>
+                    <rect x="160" y="122" width="42" height="5" rx="2.5" fill="rgba(99,102,241,0.35)"/>
+                    <rect x="160" y="131" width="50" height="4" rx="2" fill="rgba(140,123,110,0.25)"/>
+                  </g>
+                  {/* Lens rim highlight */}
+                  <circle cx="188" cy="122" r="46" fill="none" stroke="rgba(255,255,255,0.95)" strokeWidth="1.2"/>
+                  {/* Handle */}
+                  <line x1="224" y1="158" x2="248" y2="182" stroke="rgba(230,225,216,0.85)" strokeWidth="7" strokeLinecap="round"/>
+                  <line x1="224" y1="158" x2="248" y2="182" stroke="rgba(255,255,255,0.60)" strokeWidth="3" strokeLinecap="round"/>
+                  {/* Lens inner shine */}
+                  <ellipse cx="175" cy="110" rx="14" ry="8" fill="rgba(255,255,255,0.28)" transform="rotate(-25 175 110)"/>
+                </svg>
               </div>
-            ))}
+              <div className="ss-pcard-text">
+                <h3 className="ss-pcard-title">Understand</h3>
+                <p className="ss-pcard-body">We surface exactly what's impacting your credit — and why each item matters.</p>
+              </div>
+            </div>
+
+            {/* ── 02 PRIORITIZE ── */}
+            <div className="ss-pcard ss-reveal ss-d2">
+              <div className="ss-pcard-visual">
+                <svg viewBox="0 0 280 196" fill="none" xmlns="http://www.w3.org/2000/svg" className="ss-pcard-svg">
+                  <defs>
+                    <filter id="p-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="6" stdDeviation="8" floodColor="#1e1b18" floodOpacity="0.14"/>
+                    </filter>
+                    <filter id="p-node-glow">
+                      <feGaussianBlur stdDeviation="4" result="blur"/>
+                      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                    <linearGradient id="p-path" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="rgba(99,102,241,0.15)"/>
+                      <stop offset="45%" stopColor="rgba(99,102,241,0.55)"/>
+                      <stop offset="65%" stopColor="rgba(196,145,58,0.55)"/>
+                      <stop offset="100%" stopColor="rgba(196,145,58,0.15)"/>
+                    </linearGradient>
+                    <linearGradient id="p-card1" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.80"/>
+                      <stop offset="100%" stopColor="#f0ede8" stopOpacity="0.65"/>
+                    </linearGradient>
+                  </defs>
+
+                  {/* Background glass panel */}
+                  <rect x="16" y="24" width="248" height="152" rx="18" fill="rgba(255,255,255,0.38)" stroke="rgba(255,255,255,0.65)" strokeWidth="1" filter="url(#p-shadow)"/>
+
+                  {/* Connector path — curved through all nodes */}
+                  <path d="M 46 130 C 80 130 80 90 114 90 C 148 90 148 60 182 60 C 216 60 216 90 240 90" stroke="url(#p-path)" strokeWidth="2.5" strokeLinecap="round"/>
+
+                  {/* Node 1 — small, muted (left) */}
+                  <circle cx="46" cy="130" r="10" fill="rgba(255,255,255,0.55)" stroke="rgba(200,194,185,0.60)" strokeWidth="1.5"/>
+                  <circle cx="46" cy="130" r="4" fill="rgba(140,123,110,0.35)"/>
+
+                  {/* Node 2 — medium */}
+                  <circle cx="114" cy="90" r="12" fill="rgba(255,255,255,0.65)" stroke="rgba(200,194,185,0.50)" strokeWidth="1.5"/>
+                  <circle cx="114" cy="90" r="5" fill="rgba(99,102,241,0.40)"/>
+
+                  {/* Node 3 — PRIMARY elevated (indigo) */}
+                  <circle cx="182" cy="60" r="26" fill="rgba(255,255,255,0.30)" stroke="rgba(255,255,255,0.40)" strokeWidth="1" filter="url(#p-shadow)"/>
+                  <circle cx="182" cy="60" r="22" fill="url(#p-card1)" stroke="rgba(255,255,255,0.90)" strokeWidth="1.8" filter="url(#p-node-glow)"/>
+                  <circle cx="182" cy="60" r="9" fill="rgba(99,102,241,0.85)"/>
+                  <circle cx="178" cy="56" r="3" fill="rgba(255,255,255,0.60)"/>
+                  {/* Label card for node 3 */}
+                  <rect x="148" y="26" width="68" height="22" rx="8" fill="rgba(255,255,255,0.80)" stroke="rgba(99,102,241,0.25)" strokeWidth="1" filter="url(#p-shadow)"/>
+                  <rect x="156" y="32" width="32" height="3.5" rx="1.75" fill="rgba(99,102,241,0.60)"/>
+                  <rect x="156" y="38" width="22" height="3" rx="1.5" fill="rgba(140,123,110,0.30)"/>
+
+                  {/* Node 4 — SECONDARY elevated (gold) */}
+                  <circle cx="240" cy="90" r="19" fill="rgba(255,255,255,0.30)" stroke="rgba(255,255,255,0.40)" strokeWidth="1" filter="url(#p-shadow)"/>
+                  <circle cx="240" cy="90" r="16" fill="url(#p-card1)" stroke="rgba(255,255,255,0.90)" strokeWidth="1.5"/>
+                  <circle cx="240" cy="90" r="7" fill="rgba(196,145,58,0.85)"/>
+                  <circle cx="237" cy="87" r="2.5" fill="rgba(255,255,255,0.55)"/>
+
+                  {/* Ranking labels */}
+                  <rect x="20" y="148" width="52" height="18" rx="6" fill="rgba(255,255,255,0.70)" stroke="rgba(200,194,185,0.50)" strokeWidth="1"/>
+                  <rect x="27" y="153" width="20" height="3" rx="1.5" fill="rgba(140,123,110,0.35)"/>
+                  <rect x="27" y="159" width="30" height="3" rx="1.5" fill="rgba(140,123,110,0.20)"/>
+
+                  <rect x="80" y="148" width="52" height="18" rx="6" fill="rgba(99,102,241,0.10)" stroke="rgba(99,102,241,0.22)" strokeWidth="1"/>
+                  <rect x="87" y="153" width="26" height="3" rx="1.5" fill="rgba(99,102,241,0.50)"/>
+                  <rect x="87" y="159" width="18" height="3" rx="1.5" fill="rgba(99,102,241,0.28)"/>
+
+                  <rect x="148" y="148" width="60" height="18" rx="6" fill="rgba(196,145,58,0.10)" stroke="rgba(196,145,58,0.28)" strokeWidth="1"/>
+                  <rect x="155" y="153" width="28" height="3" rx="1.5" fill="rgba(196,145,58,0.60)"/>
+                  <rect x="155" y="159" width="20" height="3" rx="1.5" fill="rgba(196,145,58,0.32)"/>
+                </svg>
+              </div>
+              <div className="ss-pcard-text">
+                <h3 className="ss-pcard-title">Prioritize</h3>
+                <p className="ss-pcard-body">Your issues are ranked by impact — so you always know what to fix first.</p>
+              </div>
+            </div>
+
+            {/* ── 03 ACT ── */}
+            <div className="ss-pcard ss-reveal ss-d3">
+              <div className="ss-pcard-visual">
+                <svg viewBox="0 0 280 196" fill="none" xmlns="http://www.w3.org/2000/svg" className="ss-pcard-svg">
+                  <defs>
+                    <filter id="a-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="8" stdDeviation="10" floodColor="#1e1b18" floodOpacity="0.14"/>
+                    </filter>
+                    <filter id="a-shadow-sm" x="-10%" y="-10%" width="120%" height="120%">
+                      <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#1e1b18" floodOpacity="0.10"/>
+                    </filter>
+                    <linearGradient id="a-card" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.82"/>
+                      <stop offset="100%" stopColor="#f2efe9" stopOpacity="0.68"/>
+                    </linearGradient>
+                    <linearGradient id="a-indigo" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#6366f1" stopOpacity="0.90"/>
+                      <stop offset="100%" stopColor="#4f46e5" stopOpacity="0.95"/>
+                    </linearGradient>
+                    <linearGradient id="a-gold" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#d4a853" stopOpacity="0.90"/>
+                      <stop offset="100%" stopColor="#b8832a" stopOpacity="0.95"/>
+                    </linearGradient>
+                  </defs>
+
+                  {/* Tool card 4 — back-left (workflow) */}
+                  <g transform="rotate(-8 60 160) translate(14, 60)">
+                    <rect width="88" height="108" rx="14" fill="url(#a-card)" stroke="rgba(255,255,255,0.80)" strokeWidth="1.2" filter="url(#a-shadow-sm)"/>
+                    <rect x="12" y="14" width="48" height="5" rx="2.5" fill="rgba(140,123,110,0.25)"/>
+                    {/* Workflow diagram */}
+                    <rect x="12" y="30" width="20" height="14" rx="5" fill="rgba(99,102,241,0.18)" stroke="rgba(99,102,241,0.35)" strokeWidth="1"/>
+                    <line x1="32" y1="37" x2="44" y2="37" stroke="rgba(140,123,110,0.35)" strokeWidth="1.5"/>
+                    <circle cx="50" cy="37" r="6" fill="rgba(99,102,241,0.15)" stroke="rgba(99,102,241,0.45)" strokeWidth="1"/>
+                    <line x1="56" y1="37" x2="64" y2="37" stroke="rgba(140,123,110,0.35)" strokeWidth="1.5"/>
+                    <rect x="64" y="30" width="14" height="14" rx="4" fill="rgba(196,145,58,0.20)" stroke="rgba(196,145,58,0.45)" strokeWidth="1"/>
+                    <rect x="12" y="56" width="64" height="3.5" rx="1.75" fill="rgba(140,123,110,0.18)"/>
+                    <rect x="12" y="65" width="50" height="3.5" rx="1.75" fill="rgba(140,123,110,0.18)"/>
+                    <rect x="12" y="74" width="58" height="3.5" rx="1.75" fill="rgba(140,123,110,0.14)"/>
+                    <rect x="12" y="86" width="36" height="10" rx="5" fill="rgba(99,102,241,0.12)" stroke="rgba(99,102,241,0.28)" strokeWidth="1"/>
+                    <rect x="16" y="89.5" width="28" height="3" rx="1.5" fill="rgba(99,102,241,0.45)"/>
+                  </g>
+
+                  {/* Tool card 3 — back-right (navigator / compass) */}
+                  <g transform="rotate(7 220 50) translate(158, 18)">
+                    <rect width="88" height="108" rx="14" fill="url(#a-card)" stroke="rgba(255,255,255,0.80)" strokeWidth="1.2" filter="url(#a-shadow-sm)"/>
+                    <rect x="12" y="14" width="44" height="5" rx="2.5" fill="rgba(196,145,58,0.35)"/>
+                    {/* Compass / nav circle */}
+                    <circle cx="44" cy="52" r="28" fill="rgba(255,255,255,0.55)" stroke="rgba(200,194,185,0.55)" strokeWidth="1"/>
+                    <circle cx="44" cy="52" r="22" fill="none" stroke="rgba(196,145,58,0.20)" strokeWidth="1" strokeDasharray="3 4"/>
+                    <line x1="44" y1="30" x2="44" y2="38" stroke="rgba(196,145,58,0.70)" strokeWidth="2" strokeLinecap="round"/>
+                    <line x1="44" y1="66" x2="44" y2="74" stroke="rgba(140,123,110,0.35)" strokeWidth="1.5" strokeLinecap="round"/>
+                    <line x1="22" y1="52" x2="30" y2="52" stroke="rgba(140,123,110,0.35)" strokeWidth="1.5" strokeLinecap="round"/>
+                    <line x1="58" y1="52" x2="66" y2="52" stroke="rgba(196,145,58,0.70)" strokeWidth="2" strokeLinecap="round"/>
+                    <polygon points="44,34 41,48 44,44 47,48" fill="rgba(196,145,58,0.90)"/>
+                    <circle cx="44" cy="52" r="4" fill="rgba(255,255,255,0.90)" stroke="rgba(196,145,58,0.50)" strokeWidth="1"/>
+                    <circle cx="44" cy="52" r="1.5" fill="rgba(196,145,58,0.85)"/>
+                  </g>
+
+                  {/* Tool card 2 — mid-left (shield) */}
+                  <g transform="rotate(-4 80 100) translate(30, 72)">
+                    <rect width="94" height="114" rx="15" fill="url(#a-card)" stroke="rgba(255,255,255,0.90)" strokeWidth="1.4" filter="url(#a-shadow)"/>
+                    <rect x="14" y="16" width="50" height="5" rx="2.5" fill="rgba(140,123,110,0.25)"/>
+                    {/* Shield */}
+                    <path d="M47 34 L66 41 L66 57 C66 67 47 75 47 75 C47 75 28 67 28 57 L28 41 Z" fill="rgba(99,102,241,0.12)" stroke="rgba(99,102,241,0.40)" strokeWidth="1.5"/>
+                    <path d="M47 39 L61 44.5 L61 57 C61 64.5 47 70.5 47 70.5 C47 70.5 33 64.5 33 57 L33 44.5 Z" fill="rgba(99,102,241,0.20)"/>
+                    <path d="M40 54 L45 59 L56 48" stroke="rgba(99,102,241,0.85)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <rect x="14" y="86" width="66" height="3.5" rx="1.75" fill="rgba(140,123,110,0.18)"/>
+                    <rect x="14" y="95" width="52" height="3.5" rx="1.75" fill="rgba(140,123,110,0.14)"/>
+                  </g>
+
+                  {/* Tool card 1 — front-center (document / dispute letter) */}
+                  <g transform="rotate(3 160 80) translate(126, 52)">
+                    <rect width="100" height="122" rx="16" fill="url(#a-card)" stroke="rgba(255,255,255,0.95)" strokeWidth="1.5" filter="url(#a-shadow)"/>
+                    {/* Doc header strip */}
+                    <rect x="0" y="0" width="100" height="28" rx="16" fill="rgba(99,102,241,0.10)"/>
+                    <rect x="0" y="16" width="100" height="12" rx="0" fill="rgba(99,102,241,0.10)"/>
+                    <rect x="14" y="8" width="44" height="5" rx="2.5" fill="rgba(99,102,241,0.60)"/>
+                    {/* Doc lines */}
+                    <rect x="14" y="38" width="72" height="4" rx="2" fill="rgba(140,123,110,0.22)"/>
+                    <rect x="14" y="48" width="60" height="4" rx="2" fill="rgba(140,123,110,0.18)"/>
+                    <rect x="14" y="58" width="68" height="4" rx="2" fill="rgba(140,123,110,0.22)"/>
+                    <rect x="14" y="68" width="52" height="4" rx="2" fill="rgba(140,123,110,0.16)"/>
+                    {/* Highlighted clause */}
+                    <rect x="10" y="80" width="80" height="14" rx="4" fill="rgba(99,102,241,0.08)"/>
+                    <rect x="14" y="83.5" width="64" height="3.5" rx="1.75" fill="rgba(99,102,241,0.50)"/>
+                    <rect x="14" y="90" width="44" height="3.5" rx="1.75" fill="rgba(99,102,241,0.30)"/>
+                    {/* Send button */}
+                    <rect x="14" y="105" width="72" height="11" rx="5.5" fill="url(#a-indigo)"/>
+                    <rect x="26" y="108.5" width="32" height="3.5" rx="1.75" fill="rgba(255,255,255,0.75)"/>
+                    <polygon points="68,112 72,112 70,108.5" fill="rgba(255,255,255,0.65)"/>
+                    {/* Shine */}
+                    <ellipse cx="30" cy="10" rx="18" ry="6" fill="rgba(255,255,255,0.30)" transform="rotate(-15 30 10)"/>
+                  </g>
+                </svg>
+              </div>
+              <div className="ss-pcard-text">
+                <h3 className="ss-pcard-title">Act</h3>
+                <p className="ss-pcard-body">Every priority connects to a guided tool — disputes, payoff plans, and protection in one place.</p>
+              </div>
+            </div>
+
+            {/* ── 04 TRACK ── */}
+            <div className="ss-pcard ss-reveal ss-d4">
+              <div className="ss-pcard-visual">
+                <svg viewBox="0 0 280 196" fill="none" xmlns="http://www.w3.org/2000/svg" className="ss-pcard-svg">
+                  <defs>
+                    <filter id="t-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="6" stdDeviation="8" floodColor="#1e1b18" floodOpacity="0.13"/>
+                    </filter>
+                    <linearGradient id="t-bg" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.75"/>
+                      <stop offset="100%" stopColor="#f5f2ec" stopOpacity="0.60"/>
+                    </linearGradient>
+                    <linearGradient id="t-chart" x1="0" y1="1" x2="0" y2="0">
+                      <stop offset="0%" stopColor="rgba(99,102,241,0.0)"/>
+                      <stop offset="100%" stopColor="rgba(99,102,241,0.18)"/>
+                    </linearGradient>
+                    <linearGradient id="t-progress" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="rgba(99,102,241,0.70)"/>
+                      <stop offset="100%" stopColor="rgba(196,145,58,0.80)"/>
+                    </linearGradient>
+                    <clipPath id="t-card-clip">
+                      <rect x="18" y="20" width="244" height="158" rx="18"/>
+                    </clipPath>
+                  </defs>
+
+                  {/* Glass backing */}
+                  <rect x="18" y="20" width="244" height="158" rx="18" fill="url(#t-bg)" stroke="rgba(255,255,255,0.82)" strokeWidth="1.2" filter="url(#t-shadow)"/>
+
+                  {/* Progress area fill */}
+                  <path d="M 34 148 L 34 132 C 60 132 60 118 86 118 C 112 118 112 96 138 96 C 164 96 164 72 190 68 C 216 64 216 56 246 56 L 246 148 Z" fill="url(#t-chart)" clipPath="url(#t-card-clip)"/>
+
+                  {/* Progress line */}
+                  <path d="M 34 132 C 60 132 60 118 86 118 C 112 118 112 96 138 96 C 164 96 164 72 190 68 C 216 64 216 56 246 56" stroke="url(#t-progress)" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+
+                  {/* Timeline baseline */}
+                  <line x1="34" y1="148" x2="246" y2="148" stroke="rgba(200,194,185,0.45)" strokeWidth="1.2"/>
+
+                  {/* Milestone 1 — complete (indigo) */}
+                  <line x1="34" y1="132" x2="34" y2="148" stroke="rgba(99,102,241,0.35)" strokeWidth="1.2" strokeDasharray="2 2"/>
+                  <circle cx="34" cy="132" r="8" fill="rgba(99,102,241,0.12)" stroke="rgba(99,102,241,0.28)" strokeWidth="1" filter="url(#t-shadow)"/>
+                  <circle cx="34" cy="132" r="5" fill="rgba(99,102,241,0.85)"/>
+                  <circle cx="32.5" cy="130.5" r="1.5" fill="rgba(255,255,255,0.60)"/>
+                  <rect x="20" y="154" width="28" height="9" rx="4.5" fill="rgba(99,102,241,0.12)" stroke="rgba(99,102,241,0.22)" strokeWidth="1"/>
+                  <rect x="23" y="157" width="22" height="3" rx="1.5" fill="rgba(99,102,241,0.45)"/>
+
+                  {/* Milestone 2 — complete */}
+                  <line x1="86" y1="118" x2="86" y2="148" stroke="rgba(99,102,241,0.35)" strokeWidth="1.2" strokeDasharray="2 2"/>
+                  <circle cx="86" cy="118" r="8" fill="rgba(99,102,241,0.12)" stroke="rgba(99,102,241,0.28)" strokeWidth="1"/>
+                  <circle cx="86" cy="118" r="5" fill="rgba(99,102,241,0.85)"/>
+                  <circle cx="84.5" cy="116.5" r="1.5" fill="rgba(255,255,255,0.60)"/>
+                  <rect x="72" y="154" width="28" height="9" rx="4.5" fill="rgba(99,102,241,0.12)" stroke="rgba(99,102,241,0.22)" strokeWidth="1"/>
+                  <rect x="75" y="157" width="22" height="3" rx="1.5" fill="rgba(99,102,241,0.45)"/>
+
+                  {/* Milestone 3 — complete */}
+                  <line x1="138" y1="96" x2="138" y2="148" stroke="rgba(140,123,110,0.30)" strokeWidth="1.2" strokeDasharray="2 2"/>
+                  <circle cx="138" cy="96" r="8" fill="rgba(99,102,241,0.12)" stroke="rgba(99,102,241,0.28)" strokeWidth="1"/>
+                  <circle cx="138" cy="96" r="5" fill="rgba(99,102,241,0.85)"/>
+                  <circle cx="136.5" cy="94.5" r="1.5" fill="rgba(255,255,255,0.60)"/>
+                  <rect x="124" y="154" width="28" height="9" rx="4.5" fill="rgba(99,102,241,0.12)" stroke="rgba(99,102,241,0.22)" strokeWidth="1"/>
+                  <rect x="127" y="157" width="22" height="3" rx="1.5" fill="rgba(99,102,241,0.45)"/>
+
+                  {/* Milestone 4 — ACTIVE elevated (gold glow) */}
+                  <circle cx="190" cy="68" r="18" fill="rgba(196,145,58,0.10)" stroke="rgba(196,145,58,0.20)" strokeWidth="1" filter="url(#t-shadow)"/>
+                  <line x1="190" y1="68" x2="190" y2="148" stroke="rgba(196,145,58,0.35)" strokeWidth="1.2" strokeDasharray="2 2"/>
+                  <circle cx="190" cy="68" r="12" fill="rgba(255,255,255,0.72)" stroke="rgba(196,145,58,0.55)" strokeWidth="1.5" filter="url(#t-shadow)"/>
+                  <circle cx="190" cy="68" r="7" fill="rgba(196,145,58,0.90)"/>
+                  <circle cx="188" cy="66" r="2" fill="rgba(255,255,255,0.65)"/>
+                  {/* Active score card */}
+                  <rect x="158" y="38" width="64" height="22" rx="8" fill="rgba(255,255,255,0.85)" stroke="rgba(196,145,58,0.40)" strokeWidth="1" filter="url(#t-shadow)"/>
+                  <rect x="166" y="43" width="28" height="4" rx="2" fill="rgba(196,145,58,0.70)"/>
+                  <rect x="166" y="51" width="40" height="3" rx="1.5" fill="rgba(140,123,110,0.30)"/>
+                  <rect x="176" y="154" width="28" height="9" rx="4.5" fill="rgba(196,145,58,0.12)" stroke="rgba(196,145,58,0.30)" strokeWidth="1"/>
+                  <rect x="179" y="157" width="22" height="3" rx="1.5" fill="rgba(196,145,58,0.55)"/>
+
+                  {/* Milestone 5 — upcoming (ghost) */}
+                  <line x1="246" y1="56" x2="246" y2="148" stroke="rgba(200,194,185,0.30)" strokeWidth="1.2" strokeDasharray="2 2"/>
+                  <circle cx="246" cy="56" r="8" fill="rgba(255,255,255,0.40)" stroke="rgba(200,194,185,0.45)" strokeWidth="1.2"/>
+                  <circle cx="246" cy="56" r="4" fill="rgba(200,194,185,0.35)"/>
+                  <rect x="232" y="154" width="28" height="9" rx="4.5" fill="rgba(255,255,255,0.50)" stroke="rgba(200,194,185,0.40)" strokeWidth="1"/>
+                  <rect x="235" y="157" width="22" height="3" rx="1.5" fill="rgba(200,194,185,0.40)"/>
+
+                  {/* Glass panel shine at top */}
+                  <ellipse cx="120" cy="28" rx="60" ry="8" fill="rgba(255,255,255,0.30)"/>
+                </svg>
+              </div>
+              <div className="ss-pcard-text">
+                <h3 className="ss-pcard-title">Track</h3>
+                <p className="ss-pcard-body">Watch your score rise through milestones — with a clear view of what changed and what's next.</p>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>

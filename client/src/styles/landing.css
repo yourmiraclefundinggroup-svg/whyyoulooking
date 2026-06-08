@@ -818,69 +818,110 @@
 .ss-sprocess-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  gap: 18px;
   padding: 0 40px;
 }
 
-/* Individual process card */
+/* ── Apple-style feature card ──────────────────────────── */
 .ss-pcard {
-  background: rgba(255,255,255,0.78);
-  border: 1px solid rgba(210,203,192,0.55);
-  border-radius: 20px;
-  padding: 36px 28px 32px;
-  display: flex; flex-direction: column; gap: 14px;
+  background: rgba(255,255,255,0.74);
+  border: 1px solid rgba(210,203,192,0.50);
+  border-radius: 24px;
+  display: flex; flex-direction: column;
   position: relative;
   overflow: hidden;
-  transition: transform 0.32s var(--ss-ease), box-shadow 0.32s;
-  animation-delay: var(--delay, 0ms);
-  box-shadow: 0 1px 4px rgba(30,27,24,0.04), 0 6px 24px rgba(30,27,24,0.04);
+  transition:
+    transform 0.30s cubic-bezier(0.22,0.68,0,1.2),
+    box-shadow 0.30s ease,
+    background 0.30s ease,
+    border-color 0.30s ease;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.90) inset,
+    0 2px 8px rgba(30,27,24,0.04),
+    0 8px 32px rgba(30,27,24,0.06);
+  cursor: default;
 }
+
+/* Top edge shine */
 .ss-pcard::before {
   content: "";
   position: absolute; top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--ss-indigo) 0%, var(--ss-gold) 100%);
-  opacity: 0;
-  transition: opacity 0.3s;
+  height: 1px;
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.95) 30%,
+    rgba(255,255,255,0.95) 70%,
+    rgba(255,255,255,0) 100%);
+  z-index: 2;
 }
+
+/* Subtle hover: lift + deepen + brighten */
 .ss-pcard:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 4px 16px rgba(30,27,24,0.08), 0 20px 56px rgba(30,27,24,0.09);
+  transform: translateY(-4px);
+  background: rgba(255,255,255,0.88);
+  border-color: rgba(210,203,192,0.70);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.95) inset,
+    0 4px 12px rgba(30,27,24,0.05),
+    0 16px 48px rgba(30,27,24,0.10),
+    0 0 0 0.5px rgba(255,255,255,0.60);
 }
-.ss-pcard:hover::before { opacity: 1; }
 
-.ss-pcard-icon {
-  width: 40px; height: 40px;
-  color: var(--ss-indigo);
-  flex-shrink: 0;
+/* ── Visual area — upper ~65% of card ─── */
+.ss-pcard-visual {
+  flex: 0 0 auto;
+  width: 100%;
+  background: linear-gradient(160deg,
+    rgba(243,240,235,0.80) 0%,
+    rgba(235,232,226,0.60) 100%);
+  border-radius: 22px 22px 0 0;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  padding: 4px 0 0;
+  position: relative;
 }
-.ss-pcard-icon svg { width: 100%; height: 100%; }
+.ss-pcard-visual::after {
+  content: "";
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 32px;
+  background: linear-gradient(to bottom,
+    rgba(243,240,235,0) 0%,
+    rgba(243,240,235,0.50) 100%);
+  pointer-events: none;
+}
+.ss-pcard-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
 
-.ss-pcard-num {
-  font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(67,56,202,0.40);
+/* ── Text area — lower ~35% ─────────────── */
+.ss-pcard-text {
+  padding: 22px 24px 28px;
+  display: flex; flex-direction: column; gap: 8px;
+  flex: 1;
 }
 .ss-pcard-title {
-  font-size: 20px; font-weight: 800; letter-spacing: -0.025em;
-  line-height: 1.2; color: var(--ss-indigo-deep);
+  font-size: 19px; font-weight: 800; letter-spacing: -0.028em;
+  line-height: 1.15; color: var(--ss-indigo-deep);
   margin: 0;
 }
 .ss-pcard-body {
-  font-size: 14.5px; color: var(--ss-taupe);
-  line-height: 1.6; margin: 0;
+  font-size: 13.5px; color: var(--ss-taupe);
+  line-height: 1.60; margin: 0;
 }
 
-/* Stagger reveal: use animation-delay via CSS var */
+/* Stagger reveal */
 .ss-pcard.visible {
   animation: ss-fade-up 0.55s var(--ss-ease) both;
   animation-delay: var(--delay, 0ms);
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1020px) {
   .ss-sprocess-grid {
     grid-template-columns: repeat(2, 1fr);
     padding: 0 28px;
+    gap: 16px;
   }
 }
 @media (max-width: 560px) {
@@ -890,6 +931,7 @@
     gap: 14px;
   }
   .ss-sprocess { padding: 80px 0 96px; }
+  .ss-pcard-text { padding: 18px 20px 22px; }
 }
 
 /* ═══════════════════════════════════════════════════════════
