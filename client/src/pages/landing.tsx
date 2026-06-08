@@ -101,12 +101,6 @@ export default function LandingPage() {
         />
         <div className="ss-s1-veil" />
         <div className="ss-s1-body">
-          <div className="ss-reveal">
-            <div className="ss-eyepill">
-              <span className="ss-eyepill-dot" />
-              AI-guided credit guidance
-            </div>
-          </div>
           <h1 className="ss-s1-h1 ss-reveal ss-d1">
             Credit guidance that<br />
             <em>actually tells you<br />what to do next.</em>
