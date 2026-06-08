@@ -841,7 +841,7 @@
   height: 844px;
   border: none;
   display: block;
-  pointer-events: none;
+  /* pointer-events intentionally enabled for interactive demo */
 }
 
 /* Responsive: scale down the phone on smaller viewports */
