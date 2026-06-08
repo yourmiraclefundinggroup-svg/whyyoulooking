@@ -1,0 +1,93 @@
+The feature cards are moving in the right direction but the screenshots currently feel like raw screenshots dropped into containers.
+
+I want these treated like product photography.
+
+For every feature card:
+
+UNDERSTAND
+PRIORITIZE
+ACT
+TRACK
+
+Use the following design rules:
+
+1. Consistent screenshot framing
+
+All screenshots should occupy roughly the same visual space.
+
+The visible UI should begin at approximately the same vertical position.
+
+No screenshot should appear significantly zoomed in or zoomed out compared to the others.
+
+2. Remove empty space
+
+Crop out unnecessary whitespace and margins from screenshots.
+
+Show only the most important part of the interface.
+
+Focus on the content that supports the card headline.
+
+3. Create visual focal points
+
+Understand:
+Show findings, insights, highlighted issues.
+
+Prioritize:
+Show recommendations, action plan, ranking.
+
+Act:
+Show tools being used, dispute workflow, action center.
+
+Track:
+Show score movement, progress, milestones.
+
+The most important information should sit near the center of the crop.
+
+4. Apply Apple-style presentation
+
+Screenshots should feel like premium product renders.
+
+Use:
+
+- 16px–24px radius
+- subtle shadow
+- soft edge fade
+- slight zoom
+- careful cropping
+
+Do not show entire raw screens.
+
+Frame each screenshot intentionally.
+
+5. Equal card composition
+
+Every card should follow:
+
+[Visual Area]
+approximately 65–70% height
+
+[Headline + Copy]
+approximately 30–35% height
+
+The screenshot area should be consistent across all four cards.
+
+6. Add depth
+
+Allow screenshots to slightly overflow upward within the card.
+
+Create the feeling that the product is emerging from the surface.
+
+Use masking and gradient fades if necessary.
+
+7. Match premium SaaS examples
+
+Reference:
+
+- Apple product pages
+- Linear feature cards
+- Arc Browser website
+- Stripe product showcases
+
+Goal:
+
+The cards should feel like carefully art-directed product showcases, not screenshots placed inside boxes.

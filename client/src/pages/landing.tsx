@@ -5,7 +5,7 @@ import "../styles/landing.css";
 /* ── Scroll reveal ─────────────────────────────────────────── */
 function useScrollReveal() {
   useEffect(() => {
-    const els = document.querySelectorAll(".ss-reveal");
+    const els = document.querySelectorAll(".ss-reveal, .ss-reveal-left, .ss-reveal-right, .ss-reveal-scale");
     const obs = new IntersectionObserver(
       (entries) => entries.forEach(e => {
         if (e.isIntersecting) { e.target.classList.add("visible"); obs.unobserve(e.target); }
@@ -185,16 +185,16 @@ export default function LandingPage() {
               {
                 icon: "◎",
                 problem: "Collections",
-                action: "See resolution options in",
-                tool: "Resolution Center",
+                action: "See options in",
+                tool: "Resolution Ctr.",
                 colorClass: "ss-pill-apricot",
                 delay: "ss-d3",
               },
               {
                 icon: "↺",
                 problem: "Late payments",
-                action: "Track recovery steps with",
-                tool: "Payment Recovery",
+                action: "Track recovery with",
+                tool: "Pay. Recovery",
                 colorClass: "ss-pill-sage",
                 delay: "ss-d4",
               },
@@ -204,7 +204,7 @@ export default function LandingPage() {
                 <div className="ss-pill-body">
                   <span className="ss-pill-problem">{p.problem}</span>
                   <span className="ss-pill-action">
-                    {p.action} <span className="ss-pill-tool">{p.tool} →</span>
+                    {p.action} <span className="ss-pill-tool">{p.tool}</span>
                   </span>
                 </div>
               </div>
@@ -259,7 +259,7 @@ export default function LandingPage() {
           {
             id: "future",
             side: "right",
-            image: "/images/lifestyle-couple.jpg",
+            image: "/images/lifestyle-future-new.jpg",
             overlay: "linear-gradient(135deg, rgba(30,14,6,0.36) 0%, rgba(140,72,24,0.22) 100%)",
             accent: "#D4A96A",
             label: "The Future",
@@ -289,7 +289,7 @@ export default function LandingPage() {
           {
             id: "community",
             side: "left",
-            image: "/images/lifestyle-walk.jpg",
+            image: "/images/lifestyle-community-new.jpg",
             overlay: "linear-gradient(135deg, rgba(26,14,6,0.36) 0%, rgba(110,72,32,0.22) 100%)",
             accent: "#EFA26F",
             label: "The Community",
@@ -297,7 +297,7 @@ export default function LandingPage() {
             body: "Track milestones, monitor changes, and follow a plan built around your goals.",
           },
         ].map((p) => (
-          <div key={p.id} className="ss-s5-panel ss-reveal">
+          <div key={p.id} className={`ss-s5-panel ${p.side === "right" ? "ss-reveal-right" : "ss-reveal-left"}`}>
             <div className={`ss-s5-inner ${p.side === "right" ? "reverse" : ""}`}>
               <div className="ss-s5-art">
                 <img src={p.image} alt="" className="ss-s5-photo" aria-hidden="true" />
