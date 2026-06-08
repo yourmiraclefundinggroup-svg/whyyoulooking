@@ -58,7 +58,7 @@
 ═══════════════════════════════════════════════════════════ */
 .ss-nav {
   position: fixed; top: 0; left: 0; right: 0;
-  z-index: 300; height: 62px;
+  z-index: 300; height: 90px;
   transition: background 0.45s var(--ss-ease), border-color 0.45s, box-shadow 0.45s;
 }
 .ss-nav-inner {
@@ -80,9 +80,9 @@
 }
 .ss-nav-logo:hover { opacity: 0.85; }
 .ss-nav-logo-img {
-  height: 100px;
+  height: 160px;
   width: auto;
-  max-width: 300px;
+  max-width: 420px;
   object-fit: contain;
   filter: drop-shadow(0 0 10px rgba(255,255,255,0.30));
   transition: filter 0.3s;
