@@ -46,6 +46,27 @@ function useHeroParallax() {
   }, []);
 }
 
+/* ── Portrait slow parallax (5% slower than scroll) ─────────── */
+function usePortraitParallax() {
+  useEffect(() => {
+    const wrap = document.querySelector(".ss-portraits-wrap") as HTMLElement | null;
+    let raf: number | null = null;
+    const handler = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = null;
+        if (!wrap) return;
+        const rect = wrap.parentElement?.getBoundingClientRect();
+        if (!rect) return;
+        const offset = -rect.top * 0.05;
+        wrap.style.transform = `translateY(${offset}px)`;
+      });
+    };
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => { window.removeEventListener("scroll", handler); if (raf) cancelAnimationFrame(raf); };
+  }, []);
+}
+
 /* ── Icons ─────────────────────────────────────────────────── */
 const ArrowRight = ({ size = 15 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -65,6 +86,7 @@ export default function LandingPage() {
   useScrollReveal();
   useNavScroll();
   useHeroParallax();
+  usePortraitParallax();
 
   return (
     <div className="ss-land">
@@ -250,62 +272,70 @@ export default function LandingPage() {
       </section>
 
       {/* ════════════════════════════════════════════════════════
-          SCENE 5 — Human Lifestyle Bridges
+          SCENE 5 — Guidance Built Around You
       ════════════════════════════════════════════════════════ */}
       <section className="ss-s5">
+        <div className="ss-s5-intro ss-reveal">
+          <h2 className="ss-s5-intro-h2">Guidance built around you.</h2>
+          <p className="ss-s5-intro-sub">
+            Every person's credit story is different. ScoreShift reads your profile,
+            identifies what matters most, and builds a personalized path forward.
+          </p>
+        </div>
+
         {[
           {
             id: "builder",
             side: "left",
             image: "/images/lifestyle-builder.jpg",
-            overlay: "linear-gradient(135deg, rgba(26,16,64,0.45) 0%, rgba(92,58,160,0.30) 100%)",
+            overlay: "linear-gradient(135deg, rgba(20,12,48,0.38) 0%, rgba(80,48,140,0.22) 100%)",
             accent: "#A78BFA",
-            quote: "I didn't know where to start. Now I have a plan I can actually follow.",
-            name: "The Builder",
-            sub: "Building credit from the ground up",
+            label: "The Builder",
+            headline: "Building something bigger than your credit.",
+            body: "ScoreShift helps entrepreneurs understand what impacts their profile most, prioritize actions, and track progress over time.",
+          },
+          {
+            id: "future",
+            side: "right",
+            image: "/images/lifestyle-couple.jpg",
+            overlay: "linear-gradient(135deg, rgba(30,14,6,0.36) 0%, rgba(140,72,24,0.22) 100%)",
+            accent: "#D4A96A",
+            label: "The Future",
+            headline: "Planning major milestones.",
+            body: "Whether you're preparing for a home purchase, refinancing, or your next move, ScoreShift turns uncertainty into a clear action plan.",
           },
           {
             id: "explorer",
-            side: "right",
-            image: "/images/lifestyle-explorer.jpg",
-            overlay: "linear-gradient(135deg, rgba(13,40,24,0.40) 0%, rgba(58,122,84,0.28) 100%)",
-            accent: "#6BAE8A",
-            quote: "Three collections gone. I didn't even know I could dispute those.",
-            name: "The Explorer",
-            sub: "Removing obstacles along the path",
-          },
-          {
-            id: "couple",
             side: "left",
-            image: "/images/lifestyle-couple.jpg",
-            overlay: "linear-gradient(135deg, rgba(42,18,6,0.38) 0%, rgba(176,88,32,0.28) 100%)",
-            accent: "#D4A96A",
-            quote: "We got approved for our first home. ScoreShift walked us through every step.",
-            name: "The Couple",
-            sub: "Working toward a shared milestone",
+            image: "/images/lifestyle-explorer.jpg",
+            overlay: "linear-gradient(135deg, rgba(10,30,18,0.36) 0%, rgba(40,100,64,0.22) 100%)",
+            accent: "#6BAE8A",
+            label: "The Explorer",
+            headline: "Financial confidence creates freedom.",
+            body: "Know what matters, know what comes next, and make decisions with clarity.",
           },
           {
-            id: "friends",
+            id: "planner",
             side: "right",
-            image: "/images/lifestyle-friends.jpg",
-            overlay: "linear-gradient(135deg, rgba(10,26,58,0.42) 0%, rgba(52,88,160,0.28) 100%)",
+            image: "/images/lifestyle-solo-woman.jpg",
+            overlay: "linear-gradient(135deg, rgba(8,18,46,0.38) 0%, rgba(36,60,130,0.22) 100%)",
             accent: "#60A5FA",
-            quote: "My score went up 74 points. I had no idea how much I was leaving on the table.",
-            name: "The Friends",
-            sub: "Holding each other accountable",
+            label: "The Planner",
+            headline: "Understanding what moves the needle.",
+            body: "ScoreShift identifies the factors affecting your profile and guides you through the next best action.",
           },
           {
-            id: "walk",
+            id: "community",
             side: "left",
             image: "/images/lifestyle-walk.jpg",
-            overlay: "linear-gradient(135deg, rgba(30,18,8,0.38) 0%, rgba(128,96,64,0.28) 100%)",
+            overlay: "linear-gradient(135deg, rgba(26,14,6,0.36) 0%, rgba(110,72,32,0.22) 100%)",
             accent: "#EFA26F",
-            quote: "Clarity changes everything. Knowing what to do next made it feel possible.",
-            name: "The Walk",
-            sub: "One step at a time toward the horizon",
+            label: "The Community",
+            headline: "Progress is easier when you can see it.",
+            body: "Track milestones, monitor changes, and follow a plan built around your goals.",
           },
         ].map((p) => (
-          <div key={p.id} className={`ss-s5-panel ss-reveal`}>
+          <div key={p.id} className="ss-s5-panel ss-reveal">
             <div className={`ss-s5-inner ${p.side === "right" ? "reverse" : ""}`}>
               <div className="ss-s5-art">
                 <img src={p.image} alt="" className="ss-s5-photo" aria-hidden="true" />
@@ -313,15 +343,41 @@ export default function LandingPage() {
                 <div className="ss-s5-dots" />
               </div>
               <div className="ss-s5-copy">
-                <p className="ss-s5-quote" style={{ color: p.accent }}>
-                  "{p.quote}"
-                </p>
-                <div className="ss-s5-name">{p.name}</div>
-                <div className="ss-s5-sub">{p.sub}</div>
+                <span className="ss-s5-label" style={{ color: p.accent }}>{p.label}</span>
+                <h3 className="ss-s5-headline">{p.headline}</h3>
+                <p className="ss-s5-body">{p.body}</p>
               </div>
             </div>
           </div>
         ))}
+      </section>
+
+      {/* ════════════════════════════════════════════════════════
+          SCENE 5B — People Moving Forward (Portrait Gallery)
+      ════════════════════════════════════════════════════════ */}
+      <section className="ss-s5b">
+        <div className="ss-s5b-grain" aria-hidden="true" />
+        <div className="ss-wrap">
+          <div className="ss-s5b-head ss-reveal">
+            <h2 className="ss-s5b-h2">People moving forward.</h2>
+            <p className="ss-s5b-sub">Different goals. Different starting points. One clear path.</p>
+          </div>
+        </div>
+        <div className="ss-portraits-outer">
+          <div className="ss-portraits-wrap">
+            {[
+              { src: "/images/portrait-builder.jpg",  alt: "The Builder"  },
+              { src: "/images/portrait-explorer.jpg", alt: "The Explorer" },
+              { src: "/images/portrait-planner.jpg",  alt: "The Planner"  },
+              { src: "/images/portrait-solo.jpg",     alt: "The Solo"     },
+              { src: "/images/portrait-couple.jpg",   alt: "The Future"   },
+            ].map((p, i) => (
+              <div key={p.alt} className={`ss-portrait ss-reveal ss-d${i + 1}`}>
+                <img src={p.src} alt={p.alt} className="ss-portrait-img" />
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* ════════════════════════════════════════════════════════

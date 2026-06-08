@@ -1,0 +1,214 @@
+SCORESHIFT LANDING PAGE UPDATE
+
+OBJECTIVE
+
+Remove all fake testimonial quotes from the Lifestyle section.
+
+Replace the section with premium product storytelling that explains how ScoreShift fits into real life situations.
+
+The section should feel like Apple, Linear, Notion, Ramp, and Wealthfront—not a traditional credit repair website.
+
+The imagery should communicate aspiration, progress, clarity, confidence, and life milestones.
+
+The copy should explain what ScoreShift does without making score promises or using marketing-style testimonials.
+
+---
+
+SECTION TITLE
+
+Guidance built around you.
+
+Subheading:
+
+Every person's credit story is different. ScoreShift reads your profile, identifies what matters most, and builds a personalized path forward.
+
+---
+
+CARD 1 — THE BUILDER
+
+Image:
+Young entrepreneur working from a canyon overlook.
+
+Headline:
+Building something bigger than your credit.
+
+Body:
+ScoreShift helps entrepreneurs understand what impacts their profile most, prioritize actions, and track progress over time.
+
+---
+
+CARD 2 — THE FUTURE
+
+Image:
+Couple walking together through the canyon.
+
+Headline:
+Planning major milestones.
+
+Body:
+Whether you're preparing for a home purchase, refinancing, or your next move, ScoreShift turns uncertainty into a clear action plan.
+
+---
+
+CARD 3 — THE EXPLORER
+
+Image:
+Confident woman overlooking the landscape.
+
+Headline:
+Financial confidence creates freedom.
+
+Body:
+Know what matters, know what comes next, and make decisions with clarity.
+
+---
+
+CARD 4 — THE PLANNER
+
+Image:
+Thoughtful woman portrait.
+
+Headline:
+Understanding what moves the needle.
+
+Body:
+ScoreShift identifies the factors affecting your profile and guides you through the next best action.
+
+---
+
+CARD 5 — THE COMMUNITY
+
+Image:
+Group walking together.
+
+Headline:
+Progress is easier when you can see it.
+
+Body:
+Track milestones, monitor changes, and follow a plan built around your goals.
+
+---
+
+PIXELATED PORTRAIT SECTION
+
+Create a new section directly beneath the lifestyle cards.
+
+Purpose:
+
+Introduce the people behind the journeys.
+
+Not testimonials.
+
+Not score claims.
+
+Not marketing promises.
+
+These should feel like editorial portraits from a premium magazine.
+
+Section Title:
+
+People moving forward.
+
+Subheading:
+
+Different goals. Different starting points. One clear path.
+
+Display five navy halftone portraits on a warm cream background.
+
+Use the provided pixelated editorial portraits.
+
+---
+
+PIXELATED PORTRAIT ANIMATIONS
+
+The animation must be subtle and premium.
+
+DO NOT use:
+
+* spinning
+* bouncing
+* scaling
+* floating avatars
+* flashy effects
+* fintech gimmicks
+
+Instead:
+
+1. Portrait Fade Reveal
+
+As each portrait enters the viewport:
+
+* opacity 0 → 100%
+* slight upward movement (12px)
+* duration 0.8s
+* stagger 120ms
+
+2. Dot Resolution Effect
+
+When hovering:
+
+The halftone pattern subtly sharpens and increases detail.
+
+It should feel like the image is coming into focus.
+
+Duration:
+400ms ease-out.
+
+3. Ambient Grain Motion
+
+Apply an extremely subtle animated grain texture.
+
+Barely noticeable.
+
+Luxury editorial feel.
+
+4. Slow Parallax
+
+Portrait group moves at approximately 5% slower than scroll speed.
+
+Very subtle.
+
+Should feel cinematic.
+
+5. Editorial Hover
+
+On hover:
+
+* increase contrast 5%
+* increase sharpness slightly
+* reduce paper texture slightly
+
+The portrait should feel like it becomes more alive.
+
+No zooming.
+
+No dramatic movement.
+
+---
+
+DESIGN DIRECTION
+
+Reference:
+
+* Apple product storytelling
+* Kinfolk magazine
+* Linear website
+* Aesop
+* Wealthfront
+* Vogue editorial layouts
+
+Avoid:
+
+* traditional credit repair websites
+* fake testimonials
+* score promises
+* before/after marketing
+* sales-heavy language
+
+The feeling should be:
+
+Clarity.
+Progress.
+Confidence.
+Forward movement.
+Human-centered guidance.
