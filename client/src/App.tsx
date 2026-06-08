@@ -36,7 +36,7 @@ import CreditMonitoring from "@/pages/credit-monitoring";
 import ClientPortal from "@/pages/client-portal";
 import Demo from "@/pages/demo";
 import PortalDemo from "@/pages/portal-demo";
-import PlanShowcase from "@/pages/plan-showcase";
+import PortalIphone from "@/pages/portal-iphone";
 import NotFound from "@/pages/not-found";
 import { TrialUpgradeWall } from "@/components/trial-upgrade-wall";
 
@@ -115,8 +115,8 @@ function Router() {
   if (location === "/portal-demo") {
     return <PortalDemo />;
   }
-  if (location === "/plan-showcase") {
-    return <PlanShowcase />;
+  if (location === "/portal-iphone") {
+    return <PortalIphone />;
   }
 
   // Show login if no user is authenticated and not on other allowed pages

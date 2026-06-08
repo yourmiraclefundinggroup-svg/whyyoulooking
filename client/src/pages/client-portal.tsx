@@ -2244,14 +2244,14 @@ class ArrayErrorBoundary extends React.Component<
 /* ═══════════════════════════════════════════════════════════════════
    MAIN CLIENT PORTAL
    ═══════════════════════════════════════════════════════════════════ */
-export default function ClientPortal() {
+export default function ClientPortal({ initialPage }: { initialPage?: PageId } = {}) {
   const { user, logout } = useUserContext();
   const featureAccess = useFeatureAccess();
   const { appKey, token: userToken, isReady: tokenReady, error: tokenError, apiUrl, sandboxMode } = useArrayToken();
   const { loaded: scriptReady } = useArrayScript(appKey || undefined);
   useArrayThemeInjector();
 
-  const [activePage, setActivePage] = useState<PageId>("home");
+  const [activePage, setActivePage] = useState<PageId>(initialPage ?? "home");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [suggestedSavings, setSuggestedSavings] = useState<number | null>(null);
 

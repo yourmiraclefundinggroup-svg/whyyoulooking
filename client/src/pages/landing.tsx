@@ -300,10 +300,9 @@ export default function LandingPage() {
             <div className="ss-iphone-screen">
               <div className="ss-iphone-island" />
               <iframe
-                src="/plan-showcase"
+                src="/portal-iphone"
                 className="ss-iphone-iframe"
                 title="ScoreShift My Plan"
-                scrolling="no"
                 frameBorder="0"
               />
             </div>
