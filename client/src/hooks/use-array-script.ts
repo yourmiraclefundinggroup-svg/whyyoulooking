@@ -4,10 +4,10 @@ export const ArrayScriptOverrideContext = createContext<{ loaded: boolean } | nu
 
 // Legacy sandbox constants — used only by pre-portal pages (credit-monitoring, credit-repair, signup, score-hero).
 // The portal and ArrayScriptLoader never use these; they always use the production appKey from useArrayToken.
-export const ARRAY_SANDBOX_APP_KEY = "EA23400D-C8B0-4D2D-834B-355C8D86BA0D";
+export const ARRAY_SANDBOX_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
 export const ARRAY_SANDBOX_API_URL = "https://mock.array.io";
 export const ARRAY_SANDBOX_TOKENS = {
-  default: "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11",
+  default: "DFD90F1A-BB8F-4310-B921-8EC7A4BF7649",
   creditAlerts: "31B6FCB6-D137-4F69-871C-CDA3385EA5FB",
   subscriptionManager: "57F4F530-0D64-463B-B997-B9A8309CACA6",
   studentLoanAid: "DFD90F1A-BB8F-4310-B921-8EC7A4BF7649",

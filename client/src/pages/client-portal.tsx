@@ -25,7 +25,7 @@ declare global {
       "array-credit-report": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
       "array-credit-debt-analysis": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
       "array-debt-navigator": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
-      "array-student-loan-aid": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+      "array-student-loan-navigator": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
       "array-subscription-manager": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
     }
   }
@@ -1557,7 +1557,7 @@ function StudentLoanPage({ appKey, userToken, sbx, scriptReady, tokenReady, toke
                 </button>
               </div>
             }>
-              <array-student-loan-aid appKey={appKey} userToken={userToken} {...sbx} />
+              <array-student-loan-navigator appKey={appKey} userToken={userToken} {...sbx} autolaunch="true" />
             </ArrayErrorBoundary>
           )}
         </ArrayWrapper>
@@ -1583,7 +1583,7 @@ function StudentLoanPage({ appKey, userToken, sbx, scriptReady, tokenReady, toke
               </button>
             </div>
           ) : (
-            <array-student-loan-aid appKey={appKey} userToken={userToken} {...sbx} />
+            <array-student-loan-navigator appKey={appKey} userToken={userToken} {...sbx} autolaunch="true" />
           )}
         </ArrayWrapper>
       )}

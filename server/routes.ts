@@ -8891,9 +8891,9 @@ ${denialLetterText}`
       // than 200 we fall back silently to the static sandbox token so the web
       // components always have something to work with.
       if (isSandbox) {
-        const SANDBOX_APP_KEY = "EA23400D-C8B0-4D2D-834B-355C8D86BA0D";
+        const SANDBOX_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
         const SANDBOX_API_URL = "https://mock.array.io";
-        const SANDBOX_FALLBACK_TOKEN = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
+        const SANDBOX_FALLBACK_TOKEN = "DFD90F1A-BB8F-4310-B921-8EC7A4BF7649";
 
         const { arrayEnrollments } = await import("@shared/schema");
         const [enrollment] = await db.select().from(arrayEnrollments).where(eq(arrayEnrollments.userId, user.id));
@@ -8923,13 +8923,13 @@ ${denialLetterText}`
             .where(eq(arrayEnrollments.userId, user.id));
         } catch { /* non-critical */ }
 
-        console.log(`[Array] Token issued for user ${user.id} (arrayUserId: ${sandboxArrayUserId || "fallback"})`);
+        console.log(`[Array] Sandbox token issued for user ${user.id} (arrayUserId: ${sandboxArrayUserId || "fallback"})`);
         return res.json({
           token: sandboxToken,
           appKey: SANDBOX_APP_KEY,
-          apiUrl: "",
-          restApiUrl: "https://api.array.io",
-          sandboxMode: false,
+          apiUrl: SANDBOX_API_URL,
+          restApiUrl: "https://sandbox.array.io",
+          sandboxMode: true,
           arrayUserId: sandboxArrayUserId || `scoreshift_user_${user.id}`,
           expiresAt: new Date(Date.now() + 55 * 60 * 1000).toISOString(),
         });
@@ -9285,7 +9285,7 @@ ${denialLetterText}`
 
       const isSandboxAdmin = process.env.ARRAY_PRODUCTION_MODE !== "true";
       const ARRAY_BASE_URL_ADMIN = isSandboxAdmin ? "https://sandbox.array.io" : "https://api.array.io";
-      const SANDBOX_FALLBACK_TOKEN_ADMIN = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
+      const SANDBOX_FALLBACK_TOKEN_ADMIN = "DFD90F1A-BB8F-4310-B921-8EC7A4BF7649";
 
       // Step 1: Generate a server-side user token for this client — sandbox fallback on failure
       let userToken: string = SANDBOX_FALLBACK_TOKEN_ADMIN;
@@ -9296,7 +9296,7 @@ ${denialLetterText}`
             "x-array-server-token": ARRAY_API_KEY,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ appKey: process.env.ARRAY_APP_KEY || "EA23400D-C8B0-4D2D-834B-355C8D86BA0D", userId: arrayUserId, ttlInMinutes: "55" }),
+          body: JSON.stringify({ appKey: process.env.ARRAY_APP_KEY || "3F03D20E-5311-43D8-8A76-E4B5D77793BD", userId: arrayUserId, ttlInMinutes: "55" }),
         });
         if (tokenResponse.ok) {
           const tokenData = await tokenResponse.json() as ArrayTokenResponse;
@@ -9496,7 +9496,7 @@ ${denialLetterText}`
       let arrayApiError: string | undefined;
       if (ARRAY_API_KEY) {
         const isSandbox = process.env.ARRAY_PRODUCTION_MODE !== "true";
-        const SANDBOX_APP_KEY = "EA23400D-C8B0-4D2D-834B-355C8D86BA0D";
+        const SANDBOX_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
         const DATA_BASE_URL = isSandbox ? "https://sandbox.array.io" : "https://api.array.io";
         const appKey = isSandbox ? SANDBOX_APP_KEY : (process.env.ARRAY_APP_KEY || "");
 
@@ -9511,7 +9511,7 @@ ${denialLetterText}`
           console.log(`[CreditFile] User ${userId} has no Array enrollment — skipping live fetch`);
         } else {
           // ── Get or reuse a cached user token (50-minute TTL) ───────────
-          const SANDBOX_FALLBACK_TOKEN = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
+          const SANDBOX_FALLBACK_TOKEN = "DFD90F1A-BB8F-4310-B921-8EC7A4BF7649";
           const { token: userToken, error: tokenErr } = await getOrRefreshArrayToken(
             userId, enrollment.arrayUserId, ARRAY_API_KEY, appKey, isSandbox,
           );
@@ -9775,7 +9775,7 @@ ${denialLetterText}`
 
         if (ARRAY_API_KEY) {
           const isSandbox = process.env.ARRAY_PRODUCTION_MODE !== "true";
-          const SANDBOX_APP_KEY = "EA23400D-C8B0-4D2D-834B-355C8D86BA0D";
+          const SANDBOX_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
           const DATA_BASE_URL = isSandbox ? "https://sandbox.array.io" : "https://api.array.io";
           const appKey = isSandbox ? SANDBOX_APP_KEY : (process.env.ARRAY_APP_KEY || "");
 
@@ -9783,7 +9783,7 @@ ${denialLetterText}`
           const [enrollment] = await db.select().from(arrayEnrollments).where(eq(arrayEnrollments.userId, userId));
 
           if (enrollment?.arrayUserId) {
-            const SANDBOX_FALLBACK = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
+            const SANDBOX_FALLBACK = "DFD90F1A-BB8F-4310-B921-8EC7A4BF7649";
             const { token: userToken, error: tokenErr } = await getOrRefreshArrayToken(userId, enrollment.arrayUserId, ARRAY_API_KEY, appKey, isSandbox);
             let resolvedToken = userToken;
             if ((tokenErr || !userToken) && isSandbox) resolvedToken = SANDBOX_FALLBACK;
