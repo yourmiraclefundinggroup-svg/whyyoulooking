@@ -8923,13 +8923,13 @@ ${denialLetterText}`
             .where(eq(arrayEnrollments.userId, user.id));
         } catch { /* non-critical */ }
 
-        console.log(`[Array] Sandbox token issued for user ${user.id} (arrayUserId: ${sandboxArrayUserId || "fallback"})`);
+        console.log(`[Array] Token issued for user ${user.id} (arrayUserId: ${sandboxArrayUserId || "fallback"})`);
         return res.json({
           token: sandboxToken,
           appKey: SANDBOX_APP_KEY,
-          apiUrl: SANDBOX_API_URL,
-          restApiUrl: "https://sandbox.array.io",
-          sandboxMode: true,
+          apiUrl: "",
+          restApiUrl: "https://api.array.io",
+          sandboxMode: false,
           arrayUserId: sandboxArrayUserId || `scoreshift_user_${user.id}`,
           expiresAt: new Date(Date.now() + 55 * 60 * 1000).toISOString(),
         });
