@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useArrayScript } from "@/hooks/use-array-script";
 import { useArrayToken } from "@/hooks/use-array-token";
-import { STUDENT_LOAN_APP_KEY, STUDENT_LOAN_TOKEN } from "@/hooks/use-array-script";
+import { STUDENT_LOAN_APP_KEY, STUDENT_LOAN_TOKEN, DEBT_NAVIGATOR_APP_KEY, DEBT_NAVIGATOR_TOKEN } from "@/hooks/use-array-script";
 import { useFeatureAccess } from "@/hooks/use-feature-access";
 import { useArrayThemeInjector } from "@/hooks/use-array-theme-injector";
 import { useScoreShiftProfile, type PlanSuggestion, type ProfileDispute } from "@/hooks/use-score-shift-profile";
@@ -1683,7 +1683,7 @@ function DebtPage({ appKey, userToken, sbx, scriptReady, tokenReady, tokenError,
 
       {subTab === "navigator" && (
         <ArrayWrapper title="Debt Payoff Planner" sub="Avalanche, snowball, and custom payoff strategies — based on your real balances" loading={!scriptReady || (!tokenReady && !tokenError)} locked={tokenError}>
-          <array-debt-navigator appKey={appKey} userToken={userToken} {...sbx} />
+          <array-debt-navigator appKey={DEBT_NAVIGATOR_APP_KEY} userToken={DEBT_NAVIGATOR_TOKEN} apiUrl="https://mock.array.io" sandbox="true" />
         </ArrayWrapper>
       )}
     </div>

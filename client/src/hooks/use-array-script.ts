@@ -13,9 +13,11 @@ export const ARRAY_SANDBOX_TOKENS = {
   studentLoanAid: "DFD90F1A-BB8F-4310-B921-8EC7A4BF7649",
 };
 
-// Student Loan Navigator uses a separate Array app key
+// Student Loan Navigator and Debt Navigator use a separate Array app key
 export const STUDENT_LOAN_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
 export const STUDENT_LOAN_TOKEN = "DFD90F1A-BB8F-4310-B921-8EC7A4BF7649";
+export const DEBT_NAVIGATOR_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
+export const DEBT_NAVIGATOR_TOKEN = "AD45C4BF-5C0A-40B3-8A53-ED29D091FA11";
 
 const ARRAY_COMPONENT_SCRIPTS = [
   "array-account-enroll",
@@ -80,8 +82,10 @@ export function useArrayScript(appKey?: string) {
           return;
         }
         const script = document.createElement("script");
-        // Student loan navigator has its own dedicated app key
-        const scriptAppKey = name === "array-student-loan-navigator" ? STUDENT_LOAN_APP_KEY : appKey;
+        // Student loan navigator and debt navigator have their own dedicated app key
+        const scriptAppKey = (name === "array-student-loan-navigator" || name === "array-debt-navigator")
+          ? STUDENT_LOAN_APP_KEY
+          : appKey;
         script.src = `https://embed.array.io/cms/${name}.js?appKey=${scriptAppKey}`;
         script.type = "text/javascript";
         script.dataset.arrayComponent = name;
