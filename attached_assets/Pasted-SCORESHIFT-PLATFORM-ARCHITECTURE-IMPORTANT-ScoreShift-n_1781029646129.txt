@@ -1,0 +1,160 @@
+SCORESHIFT PLATFORM ARCHITECTURE (IMPORTANT)
+
+ScoreShift now operates under two distinct customer experiences:
+
+---
+
+1. ScoreShift Self-Service
+
+---
+
+ScoreShift Self-Service is the software platform experience.
+
+Customers use ScoreShift tools and guidance independently.
+
+Self-Service Plans:
+
+Free
+$0/month
+
+Path
+$19.99/month
+
+Momentum
+$79.99/month
+
+Founding Member Momentum
+$55/month forever
+First 122 members only
+
+Summit
+$149.99/month
+
+Self-Service users have access to platform tools based on their plan level.
+
+Tools include:
+
+* Financial Readiness Score
+* FICO Score Access
+* Credit Monitoring
+* Credit Reports
+* Dispute IQ
+* Smart Letters
+* Debt Navigator
+* Score Simulator
+* Student Loan Aid
+* Identity Monitoring
+* Privacy Protection
+* Subscription Manager
+* Mortgage Readiness
+* Funding Readiness
+
+Dispute IQ is fully available according to plan permissions.
+
+---
+
+2. ScoreShift Concierge
+
+---
+
+ScoreShift Concierge is the premium managed-service experience.
+
+The ScoreShift team performs the work and manages the strategy.
+
+Concierge clients do NOT directly use Dispute IQ while service is active.
+
+Instead they receive:
+
+* Concierge Dashboard
+* Progress Tracking
+* Milestones
+* Status Updates
+* Monitoring Data
+* Case Activity
+* Team Updates
+* Payment Tracking
+* Contract Access
+
+During active Concierge service:
+
+Dispute IQ must remain locked.
+
+Users can see what ScoreShift is doing but cannot:
+
+* Create letters
+* Edit letters
+* Send disputes
+* Execute dispute actions
+
+Those actions remain managed by the Concierge team.
+
+---
+
+## Concierge Plans
+
+Fast-Track
+$800
+
+Flexible Pay:
+$400 today
+$200 in 2 weeks
+$200 in 4 weeks
+
+Includes:
+3 Months Momentum after completion
+
+---
+
+Fast-Track Rush
+$1,500
+
+Flexible Pay:
+$750 today
+$375 in 2 weeks
+$375 in 4 weeks
+
+Includes:
+6 Months Momentum after completion
+
+---
+
+Fast-Track Elite
+$2,500
+
+Flexible Pay:
+$1,250 today
+$625 in 2 weeks
+$625 in 4 weeks
+
+Includes:
+12 Months Momentum after completion
+
+Premium Tradeline Network Access
+
+One Authorized User Tradeline Included
+
+---
+
+## Concierge Completion Logic
+
+When Concierge service is completed:
+
+Fast-Track:
+Unlock 3 months Momentum
+
+Rush:
+Unlock 6 months Momentum
+
+Elite:
+Unlock 12 months Momentum
+
+Upon completion:
+
+* Dispute IQ unlocks
+* Smart Letters unlock
+* Momentum tools unlock
+* Self-Service experience activates
+
+This transition must happen automatically.
+
+The customer moves from Concierge to Self-Service without creating a new account.

@@ -85,6 +85,7 @@ const sections: AdminSection[] = [
   { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
   { id: 'clients', label: 'Clients', icon: Users, badge: 847 },
   { id: 'disputes', label: 'Disputes', icon: Mail, badge: 142 },
+  { id: 'concierge', label: 'Concierge', icon: Shield },
   { id: 'mail-wallet', label: 'Mail Wallet', icon: Inbox },
   { id: 'reporting', label: 'Reporting', icon: TrendingUp },
   { id: 'team', label: 'Team', icon: Users },
@@ -277,6 +278,7 @@ export default function AdminPortalV2Full() {
           {activeSection === 'dashboard' && <DashboardView metrics={metrics} disputes={mockDisputes} />}
           {activeSection === 'clients' && <ClientsView />}
           {activeSection === 'disputes' && <DisputesView disputes={mockDisputes} />}
+          {activeSection === 'concierge' && <ConciergeAdminView />}
           {activeSection === 'mail-wallet' && <MailWalletAdminView />}
           {activeSection === 'reporting' && <ReportingView metrics={metrics} />}
           {activeSection === 'team' && <TeamManagementView team={mockTeam} />}
@@ -787,6 +789,406 @@ interface AdminWalletRow {
   updatedAt: string
   user: { id: number; firstName: string; lastName: string; email: string }
   lettersCount: number
+}
+
+// ─── Concierge Admin View ────────────────────────────────────────────────────
+
+interface ConciergeRow {
+  id: number
+  userId: number
+  packageType: string
+  paymentOption: string
+  totalPriceCents: number
+  amountPaidCents: number
+  momentumMonths: number
+  contractStatus: string
+  signedAt: string | null
+  serviceStartedAt: string | null
+  serviceCompletedAt: string | null
+  momentumUnlockedAt: string | null
+  paymentSchedule: any[]
+  signatureName: string | null
+  adminNotes: string | null
+  createdAt: string
+  clientFirstName: string
+  clientLastName: string
+  clientEmail: string
+  clientState: string | null
+  user: { id: number; firstName: string; lastName: string; email: string }
+}
+
+const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  draft: { bg: 'bg-slate-100 dark:bg-slate-800', text: 'text-slate-600 dark:text-slate-300' },
+  pending_signature: { bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400' },
+  signed: { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-400' },
+  active: { bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-700 dark:text-green-400' },
+  completed: { bg: 'bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-700 dark:text-purple-400' },
+  cancelled: { bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-400' },
+}
+
+const PKG_LABELS: Record<string, string> = {
+  'fast-track': 'Fast-Track ($800)',
+  'rush': 'Fast-Track Rush ($1,500)',
+  'elite': 'Fast-Track Elite ($2,500)',
+}
+
+function ConciergeAdminView() {
+  const qc = useQueryClient()
+  const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState<ConciergeRow | null>(null)
+  const [contractText, setContractText] = useState('')
+  const [loadingText, setLoadingText] = useState(false)
+  const [showContract, setShowContract] = useState(false)
+  const [notes, setNotes] = useState('')
+  const [savingNotes, setSavingNotes] = useState(false)
+  const [markingActive, setMarkingActive] = useState(false)
+  const [markingComplete, setMarkingComplete] = useState(false)
+  const [paymentIdx, setPaymentIdx] = useState<number | null>(null)
+  const [recordingPayment, setRecordingPayment] = useState(false)
+
+  const { data: contracts = [], isLoading } = useQuery<ConciergeRow[]>({
+    queryKey: ['/api/admin/concierge'],
+  })
+
+  const filtered = contracts.filter(c => {
+    const q = search.toLowerCase()
+    return (
+      `${c.user.firstName} ${c.user.lastName}`.toLowerCase().includes(q) ||
+      c.user.email.toLowerCase().includes(q) ||
+      c.packageType.includes(q) ||
+      c.contractStatus.includes(q)
+    )
+  })
+
+  const activeCount = contracts.filter(c => c.contractStatus === 'active').length
+  const completedCount = contracts.filter(c => c.contractStatus === 'completed').length
+  const totalRevenue = contracts.reduce((s, c) => s + (c.amountPaidCents || 0), 0)
+
+  async function openDetail(row: ConciergeRow) {
+    setSelected(row)
+    setNotes(row.adminNotes || '')
+    setShowContract(false)
+    setContractText('')
+  }
+
+  async function loadContractText() {
+    if (!selected) return
+    setLoadingText(true)
+    try {
+      const token = localStorage.getItem('auth_token')
+      const r = await fetch(`/api/admin/concierge/${selected.userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await r.json()
+      setContractText(data.contractText || '')
+      setShowContract(true)
+    } finally {
+      setLoadingText(false)
+    }
+  }
+
+  async function markActive() {
+    if (!selected) return
+    setMarkingActive(true)
+    try {
+      const token = localStorage.getItem('auth_token')
+      await fetch(`/api/admin/concierge/${selected.userId}/mark-active`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      qc.invalidateQueries({ queryKey: ['/api/admin/concierge'] })
+      setSelected(prev => prev ? { ...prev, contractStatus: 'active' } : null)
+    } finally { setMarkingActive(false) }
+  }
+
+  async function markComplete() {
+    if (!selected) return
+    setMarkingComplete(true)
+    try {
+      const token = localStorage.getItem('auth_token')
+      await fetch(`/api/admin/concierge/${selected.userId}/mark-complete`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      qc.invalidateQueries({ queryKey: ['/api/admin/concierge'] })
+      setSelected(prev => prev ? { ...prev, contractStatus: 'completed', momentumUnlockedAt: new Date().toISOString() } : null)
+    } finally { setMarkingComplete(false) }
+  }
+
+  async function saveNotes() {
+    if (!selected) return
+    setSavingNotes(true)
+    try {
+      const token = localStorage.getItem('auth_token')
+      await fetch(`/api/admin/concierge/${selected.userId}/notes`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ notes }),
+      })
+      qc.invalidateQueries({ queryKey: ['/api/admin/concierge'] })
+    } finally { setSavingNotes(false) }
+  }
+
+  async function recordPayment(idx: number, amountCents: number) {
+    if (!selected) return
+    setRecordingPayment(true)
+    try {
+      const token = localStorage.getItem('auth_token')
+      await fetch(`/api/admin/concierge/${selected.userId}/mark-payment`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ installmentIndex: idx, amountCents }),
+      })
+      qc.invalidateQueries({ queryKey: ['/api/admin/concierge'] })
+      setSelected(prev => {
+        if (!prev) return null
+        const sched = [...(prev.paymentSchedule || [])]
+        if (sched[idx]) sched[idx] = { ...sched[idx], paid: true }
+        return { ...prev, paymentSchedule: sched, amountPaidCents: (prev.amountPaidCents || 0) + amountCents }
+      })
+      setPaymentIdx(null)
+    } finally { setRecordingPayment(false) }
+  }
+
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Concierge Contracts</h2>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Manage Concierge client agreements, service status, and Momentum unlocks.</p>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        {[
+          { label: 'Total Contracts', value: contracts.length, icon: '📋' },
+          { label: 'Active Service', value: activeCount, icon: '⚡' },
+          { label: 'Completed', value: completedCount, icon: '✅' },
+          { label: 'Total Revenue', value: `$${(totalRevenue / 100).toLocaleString()}`, icon: '💰' },
+        ].map(({ label, value, icon }) => (
+          <div key={label} className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">{label}</div>
+                <div className="text-2xl font-bold text-slate-900 dark:text-white">{value}</div>
+              </div>
+              <span className="text-2xl">{icon}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className={`flex gap-6 ${selected ? 'flex-col lg:flex-row' : ''}`}>
+        {/* Table */}
+        <div className={selected ? 'lg:w-1/2' : 'w-full'}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search clients, packages, status…"
+                  className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+            </div>
+
+            {isLoading ? (
+              <div className="p-12 text-center text-slate-400">Loading contracts…</div>
+            ) : filtered.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="text-3xl mb-3">📋</div>
+                <div className="text-slate-500 dark:text-slate-400 text-sm">{search ? 'No matching contracts' : 'No concierge contracts yet'}</div>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                {filtered.map(row => {
+                  const statusCls = STATUS_COLORS[row.contractStatus] || STATUS_COLORS.draft
+                  const paidPct = row.totalPriceCents > 0 ? Math.round((row.amountPaidCents / row.totalPriceCents) * 100) : 0
+                  return (
+                    <div
+                      key={row.id}
+                      onClick={() => openDetail(row)}
+                      className={`p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${selected?.id === row.id ? 'bg-amber-50/60 dark:bg-amber-900/10 border-l-2 border-amber-500' : ''}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-slate-900 dark:text-white text-sm truncate">
+                            {row.user.firstName} {row.user.lastName}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{row.user.email}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{PKG_LABELS[row.packageType] || row.packageType}</div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusCls.bg} ${statusCls.text}`}>
+                            {row.contractStatus.replace(/_/g, ' ')}
+                          </span>
+                          <div className="text-xs text-slate-500">{paidPct}% paid</div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Detail panel */}
+        {selected && (
+          <div className="lg:w-1/2 flex flex-col gap-4">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <div className="font-bold text-lg text-slate-900 dark:text-white">{selected.user.firstName} {selected.user.lastName}</div>
+                  <div className="text-sm text-slate-500 dark:text-slate-400">{selected.user.email}</div>
+                </div>
+                <button onClick={() => setSelected(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl leading-none">✕</button>
+              </div>
+
+              {/* Status + actions */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {(() => { const s = STATUS_COLORS[selected.contractStatus] || STATUS_COLORS.draft; return (
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full ${s.bg} ${s.text}`}>{selected.contractStatus.replace(/_/g,'  ')}</span>
+                )})()}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {[
+                  { label: 'Package', value: PKG_LABELS[selected.packageType] || selected.packageType },
+                  { label: 'Payment', value: selected.paymentOption === 'full' ? 'Full Payment' : 'Flexible Pay' },
+                  { label: 'Total', value: `$${(selected.totalPriceCents / 100).toLocaleString()}` },
+                  { label: 'Paid', value: `$${((selected.amountPaidCents || 0) / 100).toLocaleString()}` },
+                  { label: 'Momentum', value: `${selected.momentumMonths} months` },
+                  { label: 'Signed', value: selected.signedAt ? new Date(selected.signedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—' },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3">
+                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">{label}</div>
+                    <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">{value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Signature */}
+              {selected.signatureName && (
+                <div className="mb-4 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">E-Signature</div>
+                  <div className="text-base" style={{ fontFamily: 'cursive', color: '#7B6AAB' }}>{selected.signatureName}</div>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {selected.contractStatus !== 'active' && selected.contractStatus !== 'completed' && (
+                  <button
+                    onClick={markActive}
+                    disabled={markingActive}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-60"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    {markingActive ? 'Activating…' : 'Mark Service Active'}
+                  </button>
+                )}
+                {selected.contractStatus === 'active' && (
+                  <button
+                    onClick={markComplete}
+                    disabled={markingComplete}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-60"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    {markingComplete ? 'Completing…' : 'Mark Complete + Unlock Momentum'}
+                  </button>
+                )}
+                {selected.contractStatus === 'completed' && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 text-xs font-semibold rounded-lg border border-purple-200 dark:border-purple-800">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    Momentum Unlocked {selected.momentumMonths}mo
+                  </div>
+                )}
+                <button
+                  onClick={loadingText ? undefined : loadContractText}
+                  disabled={loadingText}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg transition-colors"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  {loadingText ? 'Loading…' : 'View Contract'}
+                </button>
+              </div>
+
+              {/* Payment schedule */}
+              {selected.paymentSchedule && selected.paymentSchedule.length > 0 && (
+                <div className="mb-4">
+                  <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Payment Schedule</div>
+                  <div className="flex flex-col gap-2">
+                    {selected.paymentSchedule.map((p: any, i: number) => (
+                      <div key={i} className={`flex items-center justify-between p-3 rounded-lg border text-sm ${p.paid ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700'}`}>
+                        <div>
+                          <div className="font-medium text-slate-800 dark:text-slate-200">{p.label}</div>
+                          <div className="text-xs text-slate-400">{p.dueDate ? new Date(p.dueDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-800 dark:text-slate-100">${(p.amountCents / 100).toFixed(0)}</span>
+                          {p.paid ? (
+                            <span className="text-xs font-bold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full">Paid</span>
+                          ) : (
+                            <button
+                              onClick={() => paymentIdx === i ? recordPayment(i, p.amountCents) : setPaymentIdx(i)}
+                              disabled={recordingPayment}
+                              className="text-xs font-bold text-amber-600 hover:text-amber-700 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800 transition-colors"
+                            >
+                              {paymentIdx === i && recordingPayment ? 'Recording…' : paymentIdx === i ? 'Confirm?' : 'Mark Paid'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Admin notes */}
+              <div>
+                <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Admin Notes</div>
+                <textarea
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Internal notes about this client's case…"
+                  className="w-full text-sm px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+                />
+                <button
+                  onClick={saveNotes}
+                  disabled={savingNotes}
+                  className="mt-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-60"
+                >
+                  {savingNotes ? 'Saving…' : 'Save Notes'}
+                </button>
+              </div>
+            </div>
+
+            {/* Contract text panel */}
+            {showContract && contractText && (
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="font-bold text-sm text-slate-900 dark:text-white">Contract Document</div>
+                  <button onClick={() => setShowContract(false)} className="text-slate-400 hover:text-slate-600 text-sm">Hide</button>
+                </div>
+                <pre className="text-xs font-mono text-slate-600 dark:text-slate-300 whitespace-pre-wrap overflow-auto max-h-80 bg-slate-50 dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-700 leading-relaxed">
+                  {contractText}
+                </pre>
+                <button
+                  onClick={() => navigator.clipboard.writeText(contractText)}
+                  className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg transition-colors"
+                >
+                  <Copy className="w-3 h-3" /> Copy Contract
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 function MailWalletAdminView() {

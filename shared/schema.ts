@@ -1438,3 +1438,61 @@ export type MailCreditTransaction = typeof mailCreditTransactions.$inferSelect;
 export type InsertMailCreditTransaction = z.infer<typeof insertMailCreditTransactionSchema>;
 export type MailedLetter = typeof mailedLetters.$inferSelect;
 export type InsertMailedLetter = z.infer<typeof insertMailedLetterSchema>;
+
+// ─── Concierge Contract Tables ────────────────────────────────────────────────
+
+export const conciergeContracts = pgTable("concierge_contracts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+
+  // Package selection
+  packageType: text("package_type").notNull(), // fast-track | rush | elite
+  paymentOption: text("payment_option").notNull(), // full | flexible
+  totalPriceCents: integer("total_price_cents").notNull(),
+  momentumMonths: integer("momentum_months").notNull(), // 3, 6, or 12
+
+  // Installment schedule stored as JSON: [{label, amountCents, dueDate, paid}]
+  paymentSchedule: jsonb("payment_schedule"),
+
+  // Client info captured at contract time (snapshot)
+  clientFirstName: text("client_first_name").notNull(),
+  clientLastName: text("client_last_name").notNull(),
+  clientEmail: text("client_email").notNull(),
+  clientAddress: text("client_address"),
+  clientCity: text("client_city"),
+  clientState: text("client_state"),
+  clientZip: text("client_zip"),
+
+  // Contract lifecycle status
+  // draft → pending_signature → signed → active → completed | cancelled
+  contractStatus: text("contract_status").notNull().default("draft"),
+
+  // E-signature
+  signedAt: timestamp("signed_at"),
+  signatureName: text("signature_name"),
+  signatureIpAddress: text("signature_ip_address"),
+
+  // Service timeline
+  serviceStartedAt: timestamp("service_started_at"),
+  serviceCompletedAt: timestamp("service_completed_at"),
+  momentumUnlockedAt: timestamp("momentum_unlocked_at"),
+
+  // Stripe
+  stripeSessionId: text("stripe_session_id"),
+  paymentStatus: text("payment_status").default("pending"), // pending | paid | partial
+  amountPaidCents: integer("amount_paid_cents").default(0),
+
+  // Admin
+  adminNotes: text("admin_notes"),
+  signedPdfPath: text("signed_pdf_path"),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertConciergeContractSchema = createInsertSchema(conciergeContracts).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+
+export type ConciergeContract = typeof conciergeContracts.$inferSelect;
+export type InsertConciergeContract = z.infer<typeof insertConciergeContractSchema>;

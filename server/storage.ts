@@ -12,9 +12,11 @@ import {
   leads, affiliates, affiliateSignups, deletionEvents, creditScoreHistory, creditReportCache,
   managedClientPackages, clientCaseActivities, clientDocuments,
   mailWallets, mailCreditTransactions, mailedLetters,
+  conciergeContracts,
   type MailWallet, type InsertMailWallet,
   type MailCreditTransaction, type InsertMailCreditTransaction,
   type MailedLetter, type InsertMailedLetter,
+  type ConciergeContract, type InsertConciergeContract,
   type ManagedClientPackage, type InsertManagedClientPackage,
   type ClientCaseActivity, type InsertClientCaseActivity,
   type ClientDocument, type InsertClientDocument,
@@ -377,6 +379,11 @@ export interface IStorage {
   getMailedLetters(userId: number): Promise<MailedLetter[]>;
   updateMailedLetter(id: number, updates: Partial<MailedLetter>): Promise<MailedLetter | undefined>;
   getAllMailWalletsWithUsers(): Promise<(MailWallet & { user: User; lettersCount: number })[]>;
+  // Concierge contracts
+  getConciergeContract(userId: number): Promise<ConciergeContract | undefined>;
+  upsertConciergeContract(userId: number, data: Partial<InsertConciergeContract>): Promise<ConciergeContract>;
+  updateConciergeContract(userId: number, updates: Partial<ConciergeContract>): Promise<ConciergeContract | undefined>;
+  getAllConciergeContracts(): Promise<(ConciergeContract & { user: User })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2867,6 +2874,48 @@ export class MemStorage implements IStorage {
       if (!user) continue;
       const letters = await this.getMailedLetters(wallet.userId);
       result.push({ ...wallet, user, lettersCount: letters.length });
+    }
+    return result;
+  }
+
+  async getConciergeContract(userId: number): Promise<ConciergeContract | undefined> {
+    const [row] = await db.select().from(conciergeContracts).where(eq(conciergeContracts.userId, userId));
+    return row || undefined;
+  }
+
+  async upsertConciergeContract(userId: number, data: Partial<InsertConciergeContract>): Promise<ConciergeContract> {
+    const existing = await this.getConciergeContract(userId);
+    if (existing) {
+      const [updated] = await db
+        .update(conciergeContracts)
+        .set({ ...data, updatedAt: new Date() } as any)
+        .where(eq(conciergeContracts.userId, userId))
+        .returning();
+      return updated;
+    }
+    const [created] = await db
+      .insert(conciergeContracts)
+      .values({ userId, ...data } as any)
+      .returning();
+    return created;
+  }
+
+  async updateConciergeContract(userId: number, updates: Partial<ConciergeContract>): Promise<ConciergeContract | undefined> {
+    const [updated] = await db
+      .update(conciergeContracts)
+      .set({ ...updates, updatedAt: new Date() } as any)
+      .where(eq(conciergeContracts.userId, userId))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getAllConciergeContracts(): Promise<(ConciergeContract & { user: User })[]> {
+    const contracts = await db.select().from(conciergeContracts).orderBy(desc(conciergeContracts.createdAt));
+    const result: (ConciergeContract & { user: User })[] = [];
+    for (const c of contracts) {
+      const user = await this.getUser(c.userId);
+      if (!user) continue;
+      result.push({ ...c, user });
     }
     return result;
   }

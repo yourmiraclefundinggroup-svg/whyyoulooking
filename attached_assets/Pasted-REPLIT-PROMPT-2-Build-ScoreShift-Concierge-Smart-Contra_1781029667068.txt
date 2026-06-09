@@ -1,0 +1,97 @@
+REPLIT PROMPT 2 — Build ScoreShift Concierge Smart Contract System
+
+Build a Smart Contract system for ScoreShift Concierge clients.
+
+Goal:
+Every Concierge client receives a personalized contract inside the app based on their selected package, payment option, state, and client situation.
+
+Concierge Packages:
+
+1. Fast-Track — $800
+   Flexible Pay:
+
+   * $400 today
+   * $200 in 2 weeks
+   * $200 in 4 weeks
+     Includes 3 months of Momentum after service completion.
+
+2. Fast-Track Rush — $1,500
+   Flexible Pay:
+
+   * $750 today
+   * $375 in 2 weeks
+   * $375 in 4 weeks
+     Includes 6 months of Momentum after service completion.
+
+3. Fast-Track Elite — $2,500
+   Flexible Pay:
+
+   * $1,250 today
+   * $625 in 2 weeks
+   * $625 in 4 weeks
+     Includes 12 months of Momentum after service completion.
+     Includes Premium Tradeline Network Access and one Authorized User Tradeline.
+
+Build flow:
+
+Package selection
+↓
+Payment option selection
+↓
+Client intake details
+↓
+Contract generation
+↓
+Client review
+↓
+E-signature
+↓
+Payment
+↓
+Concierge dashboard unlocks
+
+Contract should dynamically include:
+
+* Client name
+* Client email
+* Client address
+* State
+* Selected package
+* Total price
+* Payment option
+* Payment schedule
+* Services included
+* Rush status if applicable
+* Tradeline language if Elite
+* Momentum access after completion
+* Concierge service terms
+* Client responsibilities
+* No guarantee disclaimer
+* Authorization to review credit information
+* Electronic signature consent
+
+Important Concierge rules:
+
+During active Concierge service, the client can view progress, milestones, status updates, monitoring data, and case activity.
+
+Dispute IQ editing, letter creation, and dispute execution must remain locked while Concierge service is active.
+
+After Concierge completion:
+
+* Fast-Track unlocks 3 months of Momentum
+* Rush unlocks 6 months of Momentum
+* Elite unlocks 12 months of Momentum
+* Dispute IQ unlocks
+* Smart Letters unlock
+
+Create admin controls:
+
+* Generate contract
+* View signed contract
+* Mark contract signed
+* Mark service active
+* Mark service complete
+* Unlock Momentum access
+* Upload signed PDF copy if needed
+
+Design should feel premium and trustworthy, like a fintech contract portal, not a generic form.

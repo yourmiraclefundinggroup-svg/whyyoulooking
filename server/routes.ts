@@ -11111,6 +11111,363 @@ ${pdfText.slice(0, 8000)}`;
     }
   });
 
+  // ─── Concierge Contract Routes ────────────────────────────────────────────────
+
+  // GET /api/me/concierge — current user's concierge contract + status
+  app.get("/api/me/concierge", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).userId as number;
+      const contract = await storage.getConciergeContract(userId);
+      res.json(contract || null);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch concierge contract" });
+    }
+  });
+
+  // POST /api/concierge/start — create draft contract (package + payment option selected)
+  app.post("/api/concierge/start", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).userId as number;
+      const { packageType, paymentOption } = req.body;
+      const { CONCIERGE_PACKAGES } = await import("./concierge-contract.js");
+      const pkg = CONCIERGE_PACKAGES[packageType as keyof typeof CONCIERGE_PACKAGES];
+      if (!pkg) return res.status(400).json({ error: "Invalid package type" });
+      if (!["full", "flexible"].includes(paymentOption)) return res.status(400).json({ error: "Invalid payment option" });
+
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const today = new Date();
+      const schedule = paymentOption === "full"
+        ? pkg.fullPayInstallments(today)
+        : pkg.flexPayInstallments(today);
+
+      const contract = await storage.upsertConciergeContract(userId, {
+        packageType,
+        paymentOption,
+        totalPriceCents: pkg.totalPriceCents,
+        momentumMonths: pkg.momentumMonths,
+        paymentSchedule: schedule,
+        clientFirstName: user.firstName || "",
+        clientLastName: user.lastName || "",
+        clientEmail: user.email,
+        clientAddress: user.addressLine1 || null,
+        clientCity: user.city || null,
+        clientState: user.state || null,
+        clientZip: user.zipCode || null,
+        contractStatus: "pending_signature",
+      });
+      res.json(contract);
+    } catch (err) {
+      console.error("[concierge/start]", err);
+      res.status(500).json({ error: "Failed to start concierge contract" });
+    }
+  });
+
+  // GET /api/concierge/contract-text — rendered contract text for review
+  app.get("/api/concierge/contract-text", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).userId as number;
+      const contract = await storage.getConciergeContract(userId);
+      if (!contract) return res.status(404).json({ error: "No contract found" });
+
+      const { CONCIERGE_PACKAGES, generateContractText } = await import("./concierge-contract.js");
+      const pkg = CONCIERGE_PACKAGES[contract.packageType as keyof typeof CONCIERGE_PACKAGES];
+      if (!pkg) return res.status(400).json({ error: "Invalid package type" });
+
+      const text = generateContractText({
+        package: pkg,
+        paymentOption: contract.paymentOption as "full" | "flexible",
+        paymentSchedule: (contract.paymentSchedule as any[]) || [],
+        clientFirstName: contract.clientFirstName,
+        clientLastName: contract.clientLastName,
+        clientEmail: contract.clientEmail,
+        clientAddress: contract.clientAddress,
+        clientCity: contract.clientCity,
+        clientState: contract.clientState,
+        clientZip: contract.clientZip,
+        contractDate: contract.createdAt.toISOString().split("T")[0],
+      });
+      res.json({ text, contract });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to generate contract text" });
+    }
+  });
+
+  // POST /api/concierge/sign — e-sign the contract
+  app.post("/api/concierge/sign", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).userId as number;
+      const { signatureName } = req.body;
+      if (!signatureName || signatureName.trim().length < 2) {
+        return res.status(400).json({ error: "A valid signature name is required" });
+      }
+      const contract = await storage.getConciergeContract(userId);
+      if (!contract) return res.status(404).json({ error: "No contract found" });
+      if (contract.contractStatus === "signed" || contract.contractStatus === "active" || contract.contractStatus === "completed") {
+        return res.status(400).json({ error: "Contract is already signed" });
+      }
+      const ip = req.headers["x-forwarded-for"]?.toString().split(",")[0] || req.socket.remoteAddress || "unknown";
+      const updated = await storage.updateConciergeContract(userId, {
+        contractStatus: "signed",
+        signedAt: new Date(),
+        signatureName: signatureName.trim(),
+        signatureIpAddress: ip,
+      });
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to sign contract" });
+    }
+  });
+
+  // POST /api/concierge/checkout — create Stripe Checkout Session for first payment
+  app.post("/api/concierge/checkout", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).userId as number;
+      const contract = await storage.getConciergeContract(userId);
+      if (!contract) return res.status(404).json({ error: "No contract found" });
+      if (contract.contractStatus !== "signed") {
+        return res.status(400).json({ error: "Contract must be signed before payment" });
+      }
+
+      const { CONCIERGE_PACKAGES } = await import("./concierge-contract.js");
+      const pkg = CONCIERGE_PACKAGES[contract.packageType as keyof typeof CONCIERGE_PACKAGES];
+
+      // First installment amount (flexible pay) or full amount
+      const schedule = (contract.paymentSchedule as any[]) || [];
+      const firstInstallment = schedule[0];
+      const amountCents = firstInstallment?.amountCents || contract.totalPriceCents;
+
+      const stripeKey = process.env.STRIPE_SECRET_KEY;
+      if (!stripeKey) return res.status(500).json({ error: "Stripe not configured" });
+      const stripe = new Stripe(stripeKey, { apiVersion: "2025-05-28.basil" });
+
+      const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [{
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `ScoreShift Concierge — ${pkg.name}`,
+              description: firstInstallment?.label || "Full payment",
+            },
+            unit_amount: amountCents,
+          },
+          quantity: 1,
+        }],
+        mode: "payment",
+        success_url: `${baseUrl}/portal?page=concierge&concierge_paid=1&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/portal?page=concierge`,
+        metadata: { userId: String(userId), conciergeContractId: String(contract.id) },
+      });
+
+      await storage.updateConciergeContract(userId, { stripeSessionId: session.id });
+      res.json({ url: session.url });
+    } catch (err) {
+      console.error("[concierge/checkout]", err);
+      res.status(500).json({ error: "Failed to create checkout session" });
+    }
+  });
+
+  // POST /api/concierge/confirm-payment — called after Stripe redirect
+  app.post("/api/concierge/confirm-payment", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).userId as number;
+      const { sessionId } = req.body;
+      const contract = await storage.getConciergeContract(userId);
+      if (!contract) return res.status(404).json({ error: "No contract found" });
+
+      const stripeKey = process.env.STRIPE_SECRET_KEY;
+      if (!stripeKey) return res.status(500).json({ error: "Stripe not configured" });
+      const stripe = new Stripe(stripeKey, { apiVersion: "2025-05-28.basil" });
+
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      if (session.payment_status !== "paid") {
+        return res.status(400).json({ error: "Payment not completed" });
+      }
+      if (contract.stripeSessionId !== sessionId) {
+        return res.status(400).json({ error: "Session mismatch" });
+      }
+      // Idempotency: don't re-process
+      if (contract.paymentStatus === "paid" && (contract.amountPaidCents || 0) >= contract.totalPriceCents) {
+        return res.json(contract);
+      }
+
+      const paid = (session.amount_total || 0);
+      const newTotal = (contract.amountPaidCents || 0) + paid;
+      const paymentStatus = newTotal >= contract.totalPriceCents ? "paid" : "partial";
+
+      // Mark first installment as paid
+      const schedule = (contract.paymentSchedule as any[]) || [];
+      if (schedule.length > 0) schedule[0].paid = true;
+
+      // Flip account to MANAGED_CLIENT so concierge dashboard shows
+      await storage.updateUser(userId, { accountType: "MANAGED_CLIENT" });
+      // Set up a managed package entry if not already present
+      const existing = await storage.getManagedClientPackage(userId);
+      if (!existing) {
+        const { CONCIERGE_PACKAGES } = await import("./concierge-contract.js");
+        const pkg = CONCIERGE_PACKAGES[contract.packageType as keyof typeof CONCIERGE_PACKAGES];
+        await storage.upsertManagedClientPackage(userId, {
+          userId,
+          packageName: `ScoreShift Concierge — ${pkg.name}`,
+          caseStatus: "active",
+          totalInvestment: String(contract.totalPriceCents / 100),
+          amountPaid: String(newTotal / 100),
+          paymentPlanType: contract.paymentOption === "flexible" ? "installment" : "full",
+          casesSummary: `Concierge service activated on ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}.`,
+        });
+      }
+
+      const updated = await storage.updateConciergeContract(userId, {
+        paymentStatus,
+        amountPaidCents: newTotal,
+        paymentSchedule: schedule,
+        contractStatus: "active",
+      });
+      res.json(updated);
+    } catch (err) {
+      console.error("[concierge/confirm-payment]", err);
+      res.status(500).json({ error: "Failed to confirm payment" });
+    }
+  });
+
+  // ── Admin concierge routes ─────────────────────────────────────────────────
+
+  // GET /api/admin/concierge — list all concierge clients
+  app.get("/api/admin/concierge", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const requestingUser = await storage.getUser((req as any).userId);
+      if (requestingUser?.role !== "ADMIN") return res.status(403).json({ error: "Forbidden" });
+      const contracts = await storage.getAllConciergeContracts();
+      res.json(contracts);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch concierge contracts" });
+    }
+  });
+
+  // GET /api/admin/concierge/:userId — single user contract + generated text
+  app.get("/api/admin/concierge/:userId", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const requestingUser = await storage.getUser((req as any).userId);
+      if (requestingUser?.role !== "ADMIN") return res.status(403).json({ error: "Forbidden" });
+      const userId = parseInt(req.params.userId);
+      const contract = await storage.getConciergeContract(userId);
+      if (!contract) return res.status(404).json({ error: "No contract found" });
+
+      const { CONCIERGE_PACKAGES, generateContractText } = await import("./concierge-contract.js");
+      const pkg = CONCIERGE_PACKAGES[contract.packageType as keyof typeof CONCIERGE_PACKAGES];
+      let contractText = "";
+      if (pkg) {
+        contractText = generateContractText({
+          package: pkg,
+          paymentOption: contract.paymentOption as "full" | "flexible",
+          paymentSchedule: (contract.paymentSchedule as any[]) || [],
+          clientFirstName: contract.clientFirstName,
+          clientLastName: contract.clientLastName,
+          clientEmail: contract.clientEmail,
+          clientAddress: contract.clientAddress,
+          clientCity: contract.clientCity,
+          clientState: contract.clientState,
+          clientZip: contract.clientZip,
+          contractDate: contract.createdAt.toISOString().split("T")[0],
+        });
+      }
+      res.json({ contract, contractText });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch contract" });
+    }
+  });
+
+  // POST /api/admin/concierge/:userId/mark-active — start service
+  app.post("/api/admin/concierge/:userId/mark-active", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const requestingUser = await storage.getUser((req as any).userId);
+      if (requestingUser?.role !== "ADMIN") return res.status(403).json({ error: "Forbidden" });
+      const userId = parseInt(req.params.userId);
+      const updated = await storage.updateConciergeContract(userId, {
+        contractStatus: "active",
+        serviceStartedAt: new Date(),
+      });
+      await storage.updateUser(userId, { accountType: "MANAGED_CLIENT" });
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to mark service active" });
+    }
+  });
+
+  // POST /api/admin/concierge/:userId/mark-complete — complete service + unlock Momentum
+  app.post("/api/admin/concierge/:userId/mark-complete", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const requestingUser = await storage.getUser((req as any).userId);
+      if (requestingUser?.role !== "ADMIN") return res.status(403).json({ error: "Forbidden" });
+      const userId = parseInt(req.params.userId);
+      const contract = await storage.getConciergeContract(userId);
+      if (!contract) return res.status(404).json({ error: "No contract found" });
+
+      // Unlock Momentum: pro = 3–6 months, elite = 12 months
+      const momentumTier = contract.momentumMonths >= 12 ? "elite" : "pro";
+      await storage.updateUser(userId, {
+        accountType: "SELF_SERVICE",
+        subscriptionTier: momentumTier,
+      });
+      await storage.upsertManagedClientPackage(userId, {
+        userId,
+        caseStatus: "completed",
+      });
+      const updated = await storage.updateConciergeContract(userId, {
+        contractStatus: "completed",
+        serviceCompletedAt: new Date(),
+        momentumUnlockedAt: new Date(),
+      });
+      res.json({ updated, momentumTier });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to complete service" });
+    }
+  });
+
+  // PATCH /api/admin/concierge/:userId/notes — save admin notes
+  app.patch("/api/admin/concierge/:userId/notes", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const requestingUser = await storage.getUser((req as any).userId);
+      if (requestingUser?.role !== "ADMIN") return res.status(403).json({ error: "Forbidden" });
+      const userId = parseInt(req.params.userId);
+      const updated = await storage.updateConciergeContract(userId, { adminNotes: req.body.notes || "" });
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to save notes" });
+    }
+  });
+
+  // PATCH /api/admin/concierge/:userId/mark-payment — mark an installment paid
+  app.patch("/api/admin/concierge/:userId/mark-payment", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const requestingUser = await storage.getUser((req as any).userId);
+      if (requestingUser?.role !== "ADMIN") return res.status(403).json({ error: "Forbidden" });
+      const userId = parseInt(req.params.userId);
+      const { installmentIndex, amountCents } = req.body;
+      const contract = await storage.getConciergeContract(userId);
+      if (!contract) return res.status(404).json({ error: "No contract found" });
+      const schedule = (contract.paymentSchedule as any[]) || [];
+      if (schedule[installmentIndex] !== undefined) {
+        schedule[installmentIndex].paid = true;
+      }
+      const newTotal = (contract.amountPaidCents || 0) + (amountCents || 0);
+      const paymentStatus = newTotal >= contract.totalPriceCents ? "paid" : "partial";
+      const updated = await storage.updateConciergeContract(userId, {
+        paymentSchedule: schedule,
+        amountPaidCents: newTotal,
+        paymentStatus,
+      });
+      // Sync to managed package
+      await storage.upsertManagedClientPackage(userId, { userId, amountPaid: String(newTotal / 100) });
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to record payment" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

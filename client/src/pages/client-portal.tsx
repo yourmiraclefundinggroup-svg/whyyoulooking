@@ -32,7 +32,7 @@ declare global {
 }
 
 /* ── Types ────────────────────────────────────────────────────────── */
-type PageId = "home" | "plan" | "dispute-iq" | "debt" | "subscriptions" | "student-loans" | "protection" | "report" | "progress" | "profile" | "payment-center" | "mail-wallet";
+type PageId = "home" | "plan" | "dispute-iq" | "debt" | "subscriptions" | "student-loans" | "protection" | "report" | "progress" | "profile" | "payment-center" | "mail-wallet" | "concierge";
 
 type OnboardingGoal = "improve-score" | "remove-negatives" | "build-credit" | "reduce-debt";
 type OnboardingTimeline = "3-months" | "6-months" | "1-year" | "exploring";
@@ -2298,6 +2298,485 @@ function MailStatusBadge({ status }: { status: string }) {
   );
 }
 
+// ─── Concierge Page ──────────────────────────────────────────────────────────
+
+const CONCIERGE_PKGS = [
+  {
+    type: "fast-track",
+    name: "Fast-Track",
+    price: "$800",
+    tag: "Most Popular",
+    tagColor: "#7B6AAB",
+    momentumMonths: 3,
+    features: ["3-bureau credit analysis", "Professional dispute submission", "FCRA violation detection", "Monthly progress reports", "3 months Momentum included"],
+    tradeline: false,
+  },
+  {
+    type: "rush",
+    name: "Fast-Track Rush",
+    price: "$1,500",
+    tag: "Priority Service",
+    tagColor: "#EFA26F",
+    momentumMonths: 6,
+    features: ["All Fast-Track features", "Priority dispute processing", "Bureau escalation support", "Bi-weekly specialist check-ins", "6 months Momentum included"],
+    tradeline: false,
+  },
+  {
+    type: "elite",
+    name: "Fast-Track Elite",
+    price: "$2,500",
+    tag: "Best Results",
+    tagColor: "#22c55e",
+    momentumMonths: 12,
+    features: ["All Rush features", "Premium Tradeline Network Access", "1 Authorized User Tradeline included", "Funding readiness coaching", "12 months Momentum included"],
+    tradeline: true,
+  },
+] as const;
+
+type ConciergePackageType = "fast-track" | "rush" | "elite";
+
+function ConciergeStatusBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; color: string; bg: string }> = {
+    pending_signature: { label: "Awaiting Signature", color: "var(--cp-clay)", bg: "var(--cp-clay-light)" },
+    signed: { label: "Signed — Awaiting Payment", color: "var(--cp-accent)", bg: "var(--cp-accent-light)" },
+    active: { label: "Service Active", color: "var(--cp-sage)", bg: "var(--cp-sage-light)" },
+    completed: { label: "Service Completed", color: "#6366f1", bg: "rgba(99,102,241,0.12)" },
+    cancelled: { label: "Cancelled", color: "#ef4444", bg: "rgba(239,68,68,0.1)" },
+  };
+  const s = map[status] || { label: status, color: "var(--cp-text-muted)", bg: "rgba(110,106,99,0.1)" };
+  return (
+    <span style={{ background: s.bg, color: s.color, border: `1px solid ${s.color}30`, borderRadius: 20, padding: "3px 12px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", display: "inline-block" }}>
+      {s.label}
+    </span>
+  );
+}
+
+function ConciergePage({ onNavigate }: { onNavigate: (page: PageId) => void }) {
+  const qc = useQueryClient();
+  const { data: contract, isLoading: contractLoading } = useQuery<any>({ queryKey: ["/api/me/concierge"] });
+
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [selectedPkg, setSelectedPkg] = useState<ConciergePackageType | null>(null);
+  const [paymentOption, setPaymentOption] = useState<"full" | "flexible" | null>(null);
+  const [contractText, setContractText] = useState("");
+  const [contractData, setContractData] = useState<any>(null);
+  const [sigName, setSigName] = useState("");
+  const [loadingContract, setLoadingContract] = useState(false);
+  const [signing, setSigning] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [sigError, setSigError] = useState("");
+
+  // Handle Stripe return URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("concierge_paid") === "1" && params.get("session_id")) {
+      const sessionId = params.get("session_id")!;
+      fetch("/api/concierge/confirm-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+        body: JSON.stringify({ sessionId }),
+      }).then(() => {
+        qc.invalidateQueries({ queryKey: ["/api/me/concierge"] });
+        qc.invalidateQueries({ queryKey: ["/api/user"] });
+        window.history.replaceState({}, "", "/portal?page=concierge");
+      });
+    }
+  }, [qc]);
+
+  async function startContract() {
+    if (!selectedPkg || !paymentOption) return;
+    setLoadingContract(true);
+    try {
+      await fetch("/api/concierge/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+        body: JSON.stringify({ packageType: selectedPkg, paymentOption }),
+      });
+      const r = await fetch("/api/concierge/contract-text", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+      });
+      const data = await r.json();
+      setContractText(data.text || "");
+      setContractData(data.contract);
+      qc.invalidateQueries({ queryKey: ["/api/me/concierge"] });
+      setStep(3);
+    } catch {
+      /* noop */
+    } finally {
+      setLoadingContract(false);
+    }
+  }
+
+  async function loadContractText() {
+    setLoadingContract(true);
+    try {
+      const r = await fetch("/api/concierge/contract-text", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+      });
+      const data = await r.json();
+      setContractText(data.text || "");
+      setContractData(data.contract);
+    } finally {
+      setLoadingContract(false);
+    }
+  }
+
+  async function signContract() {
+    if (!sigName.trim() || sigName.trim().length < 2) { setSigError("Please enter your full legal name to sign."); return; }
+    setSigError("");
+    setSigning(true);
+    try {
+      const r = await fetch("/api/concierge/sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+        body: JSON.stringify({ signatureName: sigName }),
+      });
+      if (!r.ok) { setSigError("Failed to sign contract. Please try again."); return; }
+      qc.invalidateQueries({ queryKey: ["/api/me/concierge"] });
+      setStep(4);
+    } catch { setSigError("Failed to sign. Please try again."); }
+    finally { setSigning(false); }
+  }
+
+  async function startPayment() {
+    setPaying(true);
+    try {
+      const r = await fetch("/api/concierge/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
+        body: "{}",
+      });
+      const data = await r.json();
+      if (data.url) window.location.href = data.url;
+    } catch { /* noop */ }
+    finally { setPaying(false); }
+  }
+
+  if (contractLoading) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300 }}>
+        <div className="cp-spinner" style={{ width: 36, height: 36, borderWidth: 3 }} />
+      </div>
+    );
+  }
+
+  const status = contract?.contractStatus;
+
+  // Active or Completed state
+  if (status === "active" || status === "completed") {
+    const pkg = CONCIERGE_PKGS.find(p => p.type === contract.packageType);
+    const schedule: any[] = contract.paymentSchedule || [];
+    const paidCents = contract.amountPaidCents || 0;
+    const totalCents = contract.totalPriceCents || 0;
+    const paidPct = totalCents > 0 ? Math.round((paidCents / totalCents) * 100) : 0;
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        {/* Status hero */}
+        <div className="cp-card" style={{ background: status === "completed" ? "linear-gradient(135deg,rgba(99,102,241,0.08),rgba(99,102,241,0.03))" : "linear-gradient(135deg,rgba(123,106,171,0.08),rgba(123,106,171,0.03))", borderColor: status === "completed" ? "rgba(99,102,241,0.2)" : "rgba(123,106,171,0.2)" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div className="cp-welcome-eyebrow">SCORESHIFT CONCIERGE</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "var(--cp-text-primary)", marginTop: 4, marginBottom: 8, letterSpacing: -0.5 }}>{pkg?.name || contract.packageType}</div>
+              <ConciergeStatusBadge status={status} />
+              {status === "completed" && (
+                <div style={{ marginTop: 12, padding: "12px 16px", background: "rgba(99,102,241,0.08)", borderRadius: 10, border: "1px solid rgba(99,102,241,0.2)" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#6366f1", marginBottom: 4 }}>🎉 Service Complete — Momentum Unlocked!</div>
+                  <div style={{ fontSize: 12.5, color: "var(--cp-text-secondary)", lineHeight: 1.6 }}>Your {contract.momentumMonths}-month Momentum plan is now active. Dispute IQ, Smart Letters, and all platform tools are unlocked.</div>
+                  <button className="cp-btn cp-btn-primary cp-btn-sm" style={{ marginTop: 10 }} onClick={() => onNavigate("dispute-iq")}>Open Dispute IQ →</button>
+                </div>
+              )}
+              {status === "active" && (
+                <div style={{ marginTop: 12, fontSize: 12.5, color: "var(--cp-text-secondary)", lineHeight: 1.6 }}>
+                  Your ScoreShift Concierge team is actively working on your case. Dispute IQ editing is managed by your team while service is active.
+                </div>
+              )}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
+              <div style={{ fontSize: 10, color: "var(--cp-text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em" }}>Payment Progress</div>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 28, fontWeight: 800, color: "var(--cp-accent)", letterSpacing: -1 }}>{paidPct}%</div>
+              <div style={{ fontSize: 11, color: "var(--cp-text-muted)" }}>${(paidCents / 100).toFixed(0)} of ${(totalCents / 100).toFixed(0)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Dispute IQ lock banner (active only) */}
+        {status === "active" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", background: "rgba(239,162,111,0.08)", borderRadius: 12, border: "1px solid rgba(239,162,111,0.3)" }}>
+            <span style={{ fontSize: 22 }}>🔒</span>
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: "#C07050", marginBottom: 2 }}>Dispute IQ — Managed by Your Team</div>
+              <div style={{ fontSize: 12.5, color: "var(--cp-text-secondary)" }}>Your concierge specialists handle all dispute activity. You'll see progress updates in real time below.</div>
+            </div>
+          </div>
+        )}
+
+        {/* Payment schedule */}
+        {schedule.length > 0 && (
+          <div className="cp-card">
+            <div className="cp-card-title cp-mb-18">Payment Schedule</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {schedule.map((s: any, i: number) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: s.paid ? "rgba(132,204,22,0.06)" : "rgba(110,106,99,0.04)", borderRadius: 10, border: `1px solid ${s.paid ? "rgba(132,204,22,0.2)" : "rgba(110,106,99,0.12)"}` }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--cp-text-primary)" }}>{s.label}</div>
+                    <div style={{ fontSize: 11.5, color: "var(--cp-text-muted)", marginTop: 2 }}>Due {s.dueDate ? new Date(s.dueDate + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 800, color: "var(--cp-text-primary)" }}>${(s.amountCents / 100).toFixed(0)}</span>
+                    <span className={`cp-badge ${s.paid ? "success" : ""}`}>{s.paid ? "Paid" : "Pending"}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Contract details */}
+        <div className="cp-card">
+          <div className="cp-card-title cp-mb-18">Contract Details</div>
+          <div className="cp-grid-2" style={{ gap: 12 }}>
+            {[
+              { label: "Package", value: pkg?.name || contract.packageType },
+              { label: "Total Investment", value: `$${(totalCents / 100).toFixed(0)}` },
+              { label: "Payment Option", value: contract.paymentOption === "full" ? "Payment in Full" : "Flexible Pay" },
+              { label: "Momentum Included", value: `${contract.momentumMonths} months` },
+              { label: "Signed", value: contract.signedAt ? new Date(contract.signedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—" },
+              { label: "Signature", value: contract.signatureName || "—" },
+            ].map(({ label, value }) => (
+              <div key={label} style={{ padding: "10px 14px", background: "rgba(110,106,99,0.04)", borderRadius: 10, border: "1px solid rgba(110,106,99,0.1)" }}>
+                <div style={{ fontSize: 10, color: "var(--cp-text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--cp-text-primary)" }}>{value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Signed, awaiting payment
+  if (status === "signed") {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <div className="cp-card" style={{ textAlign: "center", padding: "40px 24px" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>✍️</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "var(--cp-text-primary)", marginBottom: 8 }}>Contract Signed</div>
+          <div style={{ fontSize: 13.5, color: "var(--cp-text-secondary)", lineHeight: 1.7, marginBottom: 24 }}>
+            Your contract is signed. Complete your first payment to activate your Concierge service and unlock your dashboard.
+          </div>
+          <ConciergeStatusBadge status="signed" />
+          <div style={{ marginTop: 24 }}>
+            <button className="cp-btn cp-btn-primary" onClick={startPayment} disabled={paying} style={{ minWidth: 200 }}>
+              {paying ? "Redirecting…" : "Complete Payment →"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Step 3: Contract review + e-signature
+  if (step === 3 || status === "pending_signature") {
+    if (status === "pending_signature" && !contractText) {
+      loadContractText();
+    }
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <div className="cp-card">
+          <div className="cp-card-title" style={{ marginBottom: 6 }}>Review Your Agreement</div>
+          <div className="cp-card-subtitle cp-mb-18">Read the full contract carefully before signing. Scroll to the bottom to sign.</div>
+          {loadingContract ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><div className="cp-spinner" /></div>
+          ) : (
+            <pre style={{ background: "rgba(110,106,99,0.05)", border: "1px solid rgba(110,106,99,0.12)", borderRadius: 12, padding: "20px 22px", fontSize: 11.5, lineHeight: 1.75, color: "var(--cp-text-secondary)", overflowX: "auto", whiteSpace: "pre-wrap", maxHeight: 420, overflowY: "auto", fontFamily: "'Courier New', monospace" }}>
+              {contractText}
+            </pre>
+          )}
+        </div>
+
+        <div className="cp-card">
+          <div className="cp-card-title cp-mb-18">Electronic Signature</div>
+          <div style={{ fontSize: 13, color: "var(--cp-text-secondary)", lineHeight: 1.7, marginBottom: 18 }}>
+            By typing your full legal name below and clicking "Sign Agreement", you agree to be legally bound by all terms in this contract pursuant to the E-SIGN Act.
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label className="cp-form-label">Your Full Legal Name</label>
+            <input
+              className="cp-form-input"
+              placeholder="e.g. Jane Marie Smith"
+              value={sigName}
+              onChange={e => setSigName(e.target.value)}
+              style={{ fontSize: 15 }}
+            />
+            {sigError && <div style={{ fontSize: 12, color: "#ef4444", marginTop: 6 }}>{sigError}</div>}
+          </div>
+          <div style={{ padding: "10px 14px", background: "rgba(110,106,99,0.04)", borderRadius: 8, border: "1px solid rgba(110,106,99,0.12)", fontSize: 12, color: "var(--cp-text-muted)", marginBottom: 16, lineHeight: 1.6 }}>
+            ✍️ Signature preview: <em style={{ color: "var(--cp-text-primary)", fontFamily: "cursive", fontSize: 15 }}>{sigName || "Your name will appear here"}</em>
+          </div>
+          <button className="cp-btn cp-btn-primary" onClick={signContract} disabled={signing || !sigName.trim()} style={{ width: "100%" }}>
+            {signing ? "Signing…" : "Sign Agreement →"}
+          </button>
+          <div style={{ fontSize: 11, color: "var(--cp-text-muted)", marginTop: 12, textAlign: "center" }}>
+            Your IP address and timestamp are recorded for legal purposes.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Step 4: Signed, awaiting payment redirect
+  if (step === 4) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <div className="cp-card" style={{ textAlign: "center", padding: "40px 24px" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "var(--cp-text-primary)", marginBottom: 8 }}>Agreement Signed!</div>
+          <div style={{ fontSize: 13.5, color: "var(--cp-text-secondary)", lineHeight: 1.7, marginBottom: 24 }}>
+            Your contract is signed and secure. Complete your first payment to activate your Concierge service.
+          </div>
+          <button className="cp-btn cp-btn-primary" onClick={startPayment} disabled={paying} style={{ minWidth: 220, fontSize: 15 }}>
+            {paying ? "Redirecting to payment…" : "Proceed to Payment →"}
+          </button>
+          <div style={{ fontSize: 11.5, color: "var(--cp-text-muted)", marginTop: 16 }}>Secured by Stripe · SSL encrypted</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Step 2: Payment option
+  if (step === 2 && selectedPkg) {
+    const pkg = CONCIERGE_PKGS.find(p => p.type === selectedPkg)!;
+    const total = { "fast-track": 800, "rush": 1500, "elite": 2500 }[selectedPkg];
+    const flexAmounts = {
+      "fast-track": ["$400 today", "$200 in 2 weeks", "$200 in 4 weeks"],
+      "rush": ["$750 today", "$375 in 2 weeks", "$375 in 4 weeks"],
+      "elite": ["$1,250 today", "$625 in 2 weeks", "$625 in 4 weeks"],
+    }[selectedPkg];
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => setStep(1)}>← Back</button>
+          <div>
+            <div className="cp-welcome-eyebrow">STEP 2 OF 3 · {pkg.name}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--cp-text-primary)" }}>Choose your payment option</div>
+          </div>
+        </div>
+
+        <div className="cp-grid-2" style={{ gap: 16 }}>
+          {/* Full pay */}
+          <div
+            className="cp-card"
+            onClick={() => setPaymentOption("full")}
+            style={{ cursor: "pointer", borderColor: paymentOption === "full" ? "var(--cp-accent)" : undefined, background: paymentOption === "full" ? "rgba(123,106,171,0.06)" : undefined, transition: "all 0.2s" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--cp-text-primary)" }}>Pay in Full</div>
+              <div style={{ width: 20, height: 20, borderRadius: "50%", border: `2px solid ${paymentOption === "full" ? "var(--cp-accent)" : "rgba(110,106,99,0.3)"}`, background: paymentOption === "full" ? "var(--cp-accent)" : "transparent", flexShrink: 0 }} />
+            </div>
+            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 28, fontWeight: 800, color: "var(--cp-accent)", letterSpacing: -1, marginBottom: 8 }}>${total}</div>
+            <div style={{ fontSize: 12.5, color: "var(--cp-text-secondary)", lineHeight: 1.6 }}>One payment today. Simple and complete.</div>
+          </div>
+
+          {/* Flexible pay */}
+          <div
+            className="cp-card"
+            onClick={() => setPaymentOption("flexible")}
+            style={{ cursor: "pointer", borderColor: paymentOption === "flexible" ? "var(--cp-accent)" : undefined, background: paymentOption === "flexible" ? "rgba(123,106,171,0.06)" : undefined, transition: "all 0.2s" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--cp-text-primary)" }}>Flexible Pay</div>
+              <div style={{ width: 20, height: 20, borderRadius: "50%", border: `2px solid ${paymentOption === "flexible" ? "var(--cp-accent)" : "rgba(110,106,99,0.3)"}`, background: paymentOption === "flexible" ? "var(--cp-accent)" : "transparent", flexShrink: 0 }} />
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              {flexAmounts.map((a, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: i < flexAmounts.length - 1 ? "1px solid rgba(110,106,99,0.08)" : "none" }}>
+                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--cp-accent)", flexShrink: 0, display: "inline-block" }} />
+                  <span style={{ fontSize: 12.5, color: "var(--cp-text-secondary)" }}>{a}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--cp-text-muted)" }}>Same total · 3 installments</div>
+          </div>
+        </div>
+
+        <button
+          className="cp-btn cp-btn-primary"
+          disabled={!paymentOption || loadingContract}
+          onClick={startContract}
+          style={{ width: "100%", fontSize: 15, padding: "14px 0" }}
+        >
+          {loadingContract ? "Generating contract…" : "Review Agreement →"}
+        </button>
+      </div>
+    );
+  }
+
+  // Step 1: Package selection
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <div>
+        <div className="cp-welcome-eyebrow">STEP 1 OF 3</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: "var(--cp-text-primary)", letterSpacing: -0.5, marginBottom: 6 }}>Choose your Concierge plan</div>
+        <div style={{ fontSize: 13.5, color: "var(--cp-text-secondary)", lineHeight: 1.6 }}>
+          Our specialists handle everything — disputes, strategy, and bureau follow-ups. You watch the progress.
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {CONCIERGE_PKGS.map(pkg => (
+          <div
+            key={pkg.type}
+            className="cp-card"
+            onClick={() => setSelectedPkg(pkg.type)}
+            style={{ cursor: "pointer", borderColor: selectedPkg === pkg.type ? "var(--cp-accent)" : undefined, background: selectedPkg === pkg.type ? "rgba(123,106,171,0.06)" : undefined, transition: "all 0.2s" }}
+          >
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "var(--cp-text-primary)" }}>{pkg.name}</div>
+                  <span style={{ background: pkg.tagColor, color: "white", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>{pkg.tag}</span>
+                  {pkg.tradeline && <span style={{ background: "rgba(34,197,94,0.12)", color: "#16a34a", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, border: "1px solid rgba(34,197,94,0.3)" }}>+ Tradeline</span>}
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px", marginBottom: 10 }}>
+                  {pkg.features.map(f => (
+                    <div key={f} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12 }}>
+                      <span style={{ color: "var(--cp-sage)", fontWeight: 700 }}>✓</span>
+                      <span style={{ color: "var(--cp-text-secondary)" }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--cp-text-muted)" }}>Includes {pkg.momentumMonths} months Momentum after completion</div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 800, color: "var(--cp-accent)", letterSpacing: -1 }}>{pkg.price}</div>
+                  <div style={{ fontSize: 11, color: "var(--cp-text-muted)" }}>or 3 installments</div>
+                </div>
+                <div style={{ width: 22, height: 22, borderRadius: "50%", border: `2px solid ${selectedPkg === pkg.type ? "var(--cp-accent)" : "rgba(110,106,99,0.3)"}`, background: selectedPkg === pkg.type ? "var(--cp-accent)" : "transparent", flexShrink: 0 }} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <button
+        className="cp-btn cp-btn-primary"
+        disabled={!selectedPkg}
+        onClick={() => setStep(2)}
+        style={{ width: "100%", fontSize: 15, padding: "14px 0" }}
+      >
+        Continue — Choose Payment Option →
+      </button>
+
+      <div style={{ padding: "14px 18px", background: "rgba(110,106,99,0.04)", borderRadius: 12, border: "1px solid rgba(110,106,99,0.1)", fontSize: 12.5, color: "var(--cp-text-muted)", lineHeight: 1.7 }}>
+        🔒 <strong style={{ color: "var(--cp-text-secondary)" }}>Protected by CROA.</strong> You have a 3-day right to cancel under the Credit Repair Organizations Act. All agreements are fully digital and legally binding.
+      </div>
+    </div>
+  );
+}
+
 function MailWalletPage({ onNavigate }: { onNavigate: (page: PageId) => void }) {
   const qc = useQueryClient();
   const [tab, setTab] = useState<"wallet" | "history" | "transactions">("wallet");
@@ -2653,7 +3132,7 @@ export default function ClientPortal({ initialPage }: { initialPage?: PageId } =
     // Read ?page= from Stripe return URL or direct navigation
     const params = new URLSearchParams(window.location.search);
     const pageParam = params.get("page");
-    const validPages: PageId[] = ["home","plan","dispute-iq","debt","subscriptions","student-loans","protection","report","progress","profile","payment-center","mail-wallet"];
+    const validPages: PageId[] = ["home","plan","dispute-iq","debt","subscriptions","student-loans","protection","report","progress","profile","payment-center","mail-wallet","concierge"];
     if (pageParam && validPages.includes(pageParam as PageId)) return pageParam as PageId;
     return initialPage ?? "home";
   });
@@ -2716,6 +3195,7 @@ export default function ClientPortal({ initialPage }: { initialPage?: PageId } =
     { id: "report", label: "Credit Report", icon: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></> },
     { id: "progress", label: "Progress", icon: <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></> },
     { id: "mail-wallet" as PageId, label: "Mail Wallet", icon: <><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z" /><polyline points="22 6 12 13 2 6" /></> as React.ReactNode },
+    { id: "concierge" as PageId, label: "Concierge", icon: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></> as React.ReactNode },
     { id: "profile", label: "Profile", icon: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></> },
   ];
 
@@ -2732,6 +3212,7 @@ export default function ClientPortal({ initialPage }: { initialPage?: PageId } =
     profile: "Profile & Settings",
     "payment-center": "Payment Center",
     "mail-wallet": "Mail Wallet",
+    "concierge": "Concierge Service",
   };
 
   /* ── Render ───────────────────────────────────────────────────── */
@@ -2823,7 +3304,7 @@ export default function ClientPortal({ initialPage }: { initialPage?: PageId } =
         <div className="cp-content">
           {(activePage === "home" || activePage === "payment-center") && <HomePage user={user} goal={onboardingGoal} timeline={onboardingTimeline} onNavigate={setActivePage} appKey={appKey} userToken={userToken} sbx={sbx} scriptReady={scriptReady} tokenReady={tokenReady} tokenError={tokenError} scrollToPayment={activePage === "payment-center"} />}
           {activePage === "plan" && <PlanPage goal={onboardingGoal} timeline={onboardingTimeline} onNavigate={setActivePage} />}
-          {activePage === "dispute-iq" && <RealDisputeIQPage />}
+          {activePage === "dispute-iq" && !isManaged && <RealDisputeIQPage />}
           {activePage === "debt" && <DebtPage {...arrayProps} suggestedSavings={suggestedSavings} onDismissSavings={() => setSuggestedSavings(null)} />}
           {activePage === "subscriptions" && <SubscriptionManagerPage goal={onboardingGoal} isManaged={isManaged} onNavigate={(p) => { setActivePage(p); }} onSavingsApply={(amt) => { setSuggestedSavings(amt > 0 ? amt : null); setActivePage("debt"); }} {...arrayProps} />}
           {activePage === "student-loans" && <StudentLoanPage {...arrayProps} onNavigate={(p) => { setActivePage(p); }} />}
@@ -2831,6 +3312,30 @@ export default function ClientPortal({ initialPage }: { initialPage?: PageId } =
           {activePage === "report" && <ReportPage {...arrayProps} />}
           {activePage === "progress" && <ProgressPage />}
           {activePage === "mail-wallet" && <MailWalletPage onNavigate={setActivePage} />}
+          {activePage === "concierge" && <ConciergePage onNavigate={setActivePage} />}
+          {activePage === "dispute-iq" && isManaged && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div className="cp-page-header">
+                <div>
+                  <span className="cp-page-eyebrow">Credit Repair</span>
+                  <h1 className="cp-page-title">Dispute IQ</h1>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 16, padding: "20px 22px", background: "rgba(239,162,111,0.07)", borderRadius: 14, border: "1px solid rgba(239,162,111,0.25)" }}>
+                <span style={{ fontSize: 28, flexShrink: 0 }}>🔒</span>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "#C07050", marginBottom: 6 }}>Managed by Your Concierge Team</div>
+                  <div style={{ fontSize: 13.5, color: "var(--cp-text-secondary)", lineHeight: 1.7, marginBottom: 14 }}>
+                    While your Concierge service is active, our specialists handle all dispute activity on your behalf — letter creation, bureau submissions, and follow-ups. You cannot edit or submit disputes during active service.
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--cp-text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
+                    After service completion, Dispute IQ will automatically unlock with your included Momentum plan.
+                  </div>
+                  <button className="cp-btn cp-btn-secondary cp-btn-sm" onClick={() => setActivePage("concierge")}>View My Concierge Dashboard →</button>
+                </div>
+              </div>
+            </div>
+          )}
           {activePage === "profile" && <ProfilePage user={user} logout={logout} featureAccess={featureAccess} />}
         </div>
       </div>
