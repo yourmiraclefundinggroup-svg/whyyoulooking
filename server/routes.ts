@@ -8891,7 +8891,7 @@ ${denialLetterText}`
       // than 200 we fall back silently to the static sandbox token so the web
       // components always have something to work with.
       if (isSandbox) {
-        const SANDBOX_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
+        const SANDBOX_APP_KEY = "EA23400D-C8B0-4D2D-834B-355C8D86BA0D";
         const SANDBOX_API_URL = "https://mock.array.io";
         const SANDBOX_FALLBACK_TOKEN = "DFD90F1A-BB8F-4310-B921-8EC7A4BF7649";
 
@@ -9296,7 +9296,7 @@ ${denialLetterText}`
             "x-array-server-token": ARRAY_API_KEY,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ appKey: process.env.ARRAY_APP_KEY || "3F03D20E-5311-43D8-8A76-E4B5D77793BD", userId: arrayUserId, ttlInMinutes: "55" }),
+          body: JSON.stringify({ appKey: process.env.ARRAY_APP_KEY || "EA23400D-C8B0-4D2D-834B-355C8D86BA0D", userId: arrayUserId, ttlInMinutes: "55" }),
         });
         if (tokenResponse.ok) {
           const tokenData = await tokenResponse.json() as ArrayTokenResponse;
@@ -9496,7 +9496,7 @@ ${denialLetterText}`
       let arrayApiError: string | undefined;
       if (ARRAY_API_KEY) {
         const isSandbox = process.env.ARRAY_PRODUCTION_MODE !== "true";
-        const SANDBOX_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
+        const SANDBOX_APP_KEY = "EA23400D-C8B0-4D2D-834B-355C8D86BA0D";
         const DATA_BASE_URL = isSandbox ? "https://sandbox.array.io" : "https://api.array.io";
         const appKey = isSandbox ? SANDBOX_APP_KEY : (process.env.ARRAY_APP_KEY || "");
 
@@ -9775,7 +9775,7 @@ ${denialLetterText}`
 
         if (ARRAY_API_KEY) {
           const isSandbox = process.env.ARRAY_PRODUCTION_MODE !== "true";
-          const SANDBOX_APP_KEY = "3F03D20E-5311-43D8-8A76-E4B5D77793BD";
+          const SANDBOX_APP_KEY = "EA23400D-C8B0-4D2D-834B-355C8D86BA0D";
           const DATA_BASE_URL = isSandbox ? "https://sandbox.array.io" : "https://api.array.io";
           const appKey = isSandbox ? SANDBOX_APP_KEY : (process.env.ARRAY_APP_KEY || "");
 
