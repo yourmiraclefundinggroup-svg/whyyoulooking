@@ -237,10 +237,11 @@ export default function LandingPage() {
       ════════════════════════════════════════════════════════ */}
       <section className="ss-s5">
         <div className="ss-s5-intro ss-reveal">
-          <h2 className="ss-s5-intro-h2">Guidance built around you.</h2>
+          <h2 className="ss-s5-intro-h2">Not all credit journeys look the same.</h2>
           <p className="ss-s5-intro-sub">
-            Every person's credit story is different. ScoreShift reads your profile,
-            identifies what matters most, and builds a personalized path forward.
+            What works for someone else may not work for you.
+            That's why ScoreShift doesn't give everyone the same advice. We identify
+            what matters most in your profile and build a path designed specifically for you.
           </p>
         </div>
 
