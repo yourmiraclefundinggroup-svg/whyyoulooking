@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useArrayScript } from "@/hooks/use-array-script";
 import { useArrayToken } from "@/hooks/use-array-token";
+import { STUDENT_LOAN_APP_KEY, STUDENT_LOAN_TOKEN } from "@/hooks/use-array-script";
 import { useFeatureAccess } from "@/hooks/use-feature-access";
 import { useArrayThemeInjector } from "@/hooks/use-array-theme-injector";
 import { useScoreShiftProfile, type PlanSuggestion, type ProfileDispute } from "@/hooks/use-score-shift-profile";
@@ -1557,7 +1558,7 @@ function StudentLoanPage({ appKey, userToken, sbx, scriptReady, tokenReady, toke
                 </button>
               </div>
             }>
-              <array-student-loan-navigator appKey={appKey} userToken={userToken} {...sbx} autolaunch="true" />
+              <array-student-loan-navigator appKey={STUDENT_LOAN_APP_KEY} userToken={STUDENT_LOAN_TOKEN} apiUrl="https://mock.array.io" sandbox="true" autolaunch="true" />
             </ArrayErrorBoundary>
           )}
         </ArrayWrapper>
@@ -1583,7 +1584,7 @@ function StudentLoanPage({ appKey, userToken, sbx, scriptReady, tokenReady, toke
               </button>
             </div>
           ) : (
-            <array-student-loan-navigator appKey={appKey} userToken={userToken} {...sbx} autolaunch="true" />
+            <array-student-loan-navigator appKey={STUDENT_LOAN_APP_KEY} userToken={STUDENT_LOAN_TOKEN} apiUrl="https://mock.array.io" sandbox="true" autolaunch="true" />
           )}
         </ArrayWrapper>
       )}
