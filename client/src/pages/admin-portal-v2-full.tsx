@@ -4,10 +4,12 @@ import {
   Users, BarChart3, DollarSign, AlertCircle, Settings, LogOut, Menu, X,
   ChevronRight, Plus, Search, Filter, Download, TrendingUp, Mail,
   CheckCircle, Clock, XCircle, Eye, EyeOff, Copy, Settings2, Shield,
-  Zap, Globe, Package
+  Zap, Globe, Package, CreditCard, Inbox, Minus
 } from 'lucide-react'
 import { useUserContext } from '@/hooks/use-user-context'
 import { useLocation } from 'wouter'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { apiRequest } from '@/lib/queryClient'
 
 interface AdminSection {
   id: string
@@ -83,6 +85,7 @@ const sections: AdminSection[] = [
   { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
   { id: 'clients', label: 'Clients', icon: Users, badge: 847 },
   { id: 'disputes', label: 'Disputes', icon: Mail, badge: 142 },
+  { id: 'mail-wallet', label: 'Mail Wallet', icon: Inbox },
   { id: 'reporting', label: 'Reporting', icon: TrendingUp },
   { id: 'team', label: 'Team', icon: Users },
   { id: 'white-label', label: 'White Label', icon: Package },
@@ -274,6 +277,7 @@ export default function AdminPortalV2Full() {
           {activeSection === 'dashboard' && <DashboardView metrics={metrics} disputes={mockDisputes} />}
           {activeSection === 'clients' && <ClientsView />}
           {activeSection === 'disputes' && <DisputesView disputes={mockDisputes} />}
+          {activeSection === 'mail-wallet' && <MailWalletAdminView />}
           {activeSection === 'reporting' && <ReportingView metrics={metrics} />}
           {activeSection === 'team' && <TeamManagementView team={mockTeam} />}
           {activeSection === 'white-label' && <WhiteLabelView config={mockWhiteLabelConfig} />}
@@ -769,6 +773,336 @@ function SettingsView() {
             </button>
           </div>
         </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ─── Mail Wallet Admin View ───────────────────────────────────────────────────
+
+interface AdminWalletRow {
+  id: number
+  userId: number
+  balance: number
+  updatedAt: string
+  user: { id: number; firstName: string; lastName: string; email: string }
+  lettersCount: number
+}
+
+function MailWalletAdminView() {
+  const qc = useQueryClient()
+  const [search, setSearch] = useState('')
+  const [adjustUserId, setAdjustUserId] = useState<number | null>(null)
+  const [adjustCredits, setAdjustCredits] = useState('')
+  const [adjustReason, setAdjustReason] = useState('')
+  const [adjusting, setAdjusting] = useState(false)
+  const [adjustError, setAdjustError] = useState('')
+  const [detailUserId, setDetailUserId] = useState<number | null>(null)
+
+  const { data: wallets = [], isLoading } = useQuery<AdminWalletRow[]>({
+    queryKey: ['/api/admin/mail-wallet'],
+  })
+
+  const { data: detail } = useQuery<{
+    wallet: { balance: number }
+    transactions: { id: number; type: string; credits: number; balanceAfter: number; description: string; createdAt: string }[]
+    letters: { id: number; letterName: string; recipient: string; status: string; trackingNumber: string | null; mailedAt: string | null; creditsUsed: number }[]
+  }>({
+    queryKey: ['/api/admin/mail-wallet', detailUserId],
+    enabled: detailUserId !== null,
+  })
+
+  const filtered = wallets.filter(w => {
+    const q = search.toLowerCase()
+    return (
+      !q ||
+      w.user.firstName.toLowerCase().includes(q) ||
+      w.user.lastName.toLowerCase().includes(q) ||
+      w.user.email.toLowerCase().includes(q)
+    )
+  })
+
+  const totalCredits = wallets.reduce((s, w) => s + w.balance, 0)
+  const totalLetters = wallets.reduce((s, w) => s + w.lettersCount, 0)
+
+  async function submitAdjustment() {
+    if (!adjustUserId) return
+    const n = parseInt(adjustCredits)
+    if (isNaN(n) || n === 0) { setAdjustError('Enter a non-zero number'); return }
+    if (!adjustReason.trim()) { setAdjustError('Reason is required'); return }
+    setAdjusting(true)
+    setAdjustError('')
+    try {
+      await apiRequest('POST', `/api/admin/mail-wallet/${adjustUserId}/adjust`, {
+        credits: n,
+        reason: adjustReason.trim(),
+      })
+      qc.invalidateQueries({ queryKey: ['/api/admin/mail-wallet'] })
+      if (detailUserId === adjustUserId) qc.invalidateQueries({ queryKey: ['/api/admin/mail-wallet', adjustUserId] })
+      setAdjustUserId(null)
+      setAdjustCredits('')
+      setAdjustReason('')
+    } catch (e: any) {
+      setAdjustError(e.message || 'Failed to adjust credits')
+    } finally {
+      setAdjusting(false)
+    }
+  }
+
+  const statusColor: Record<string, string> = {
+    QUEUED: '#8b8fa8', MAILED: '#4f6ef7', IN_TRANSIT: '#f59e0b',
+    DELIVERED: '#10b981', RETURNED: '#ef4444', FAILED: '#ef4444',
+  }
+
+  return (
+    <motion.div initial="initial" animate="animate" variants={stagger} className="p-6 space-y-6">
+      {/* Header */}
+      <motion.div variants={fadeUp} className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Mail Wallet</h2>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Manage certified mail credits for all clients</p>
+        </div>
+      </motion.div>
+
+      {/* Summary cards */}
+      <motion.div variants={fadeUp} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          { label: 'Total Accounts', value: wallets.length, icon: <Users className="w-5 h-5" />, color: 'text-blue-600' },
+          { label: 'Total Credits Held', value: totalCredits, icon: <CreditCard className="w-5 h-5" />, color: 'text-emerald-600' },
+          { label: 'Letters Mailed', value: totalLetters, icon: <Inbox className="w-5 h-5" />, color: 'text-violet-600' },
+        ].map(card => (
+          <div key={card.label} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
+            <div className={`${card.color} mb-2`}>{card.icon}</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">{card.value}</div>
+            <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">{card.label}</div>
+          </div>
+        ))}
+      </motion.div>
+
+      {/* Adjustment modal */}
+      {adjustUserId !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Adjust Credits</h3>
+              <button onClick={() => { setAdjustUserId(null); setAdjustError('') }} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+              For: <strong className="text-slate-900 dark:text-white">
+                {wallets.find(w => w.userId === adjustUserId)?.user.firstName} {wallets.find(w => w.userId === adjustUserId)?.user.lastName}
+              </strong>
+              {' · '}Current balance: <strong>{wallets.find(w => w.userId === adjustUserId)?.balance ?? '—'}</strong>
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide mb-1 block">
+                  Credits (+ to add, − to remove)
+                </label>
+                <input
+                  type="number"
+                  value={adjustCredits}
+                  onChange={e => setAdjustCredits(e.target.value)}
+                  placeholder="e.g. 5 or -2"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide mb-1 block">
+                  Reason
+                </label>
+                <input
+                  type="text"
+                  value={adjustReason}
+                  onChange={e => setAdjustReason(e.target.value)}
+                  placeholder="e.g. Courtesy credit, refund, etc."
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                />
+              </div>
+              {adjustError && <p className="text-red-500 text-xs">{adjustError}</p>}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => { setAdjustUserId(null); setAdjustError('') }}
+                  className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitAdjustment}
+                  disabled={adjusting}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
+                >
+                  {adjusting ? 'Saving…' : 'Apply Adjustment'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detail drawer */}
+      {detailUserId !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {wallets.find(w => w.userId === detailUserId)?.user.firstName} {wallets.find(w => w.userId === detailUserId)?.user.lastName}
+                </h3>
+                <p className="text-sm text-slate-500">{wallets.find(w => w.userId === detailUserId)?.user.email}</p>
+              </div>
+              <button onClick={() => setDetailUserId(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="overflow-y-auto p-6 space-y-4">
+              {!detail ? (
+                <div className="text-center py-8 text-slate-400">Loading…</div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4">
+                      <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Balance</div>
+                      <div className="text-2xl font-bold text-slate-900 dark:text-white">{detail.wallet.balance} credits</div>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-700 rounded-xl p-4">
+                      <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Letters Mailed</div>
+                      <div className="text-2xl font-bold text-slate-900 dark:text-white">{detail.letters.length}</div>
+                    </div>
+                  </div>
+
+                  {detail.letters.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Mail History</h4>
+                      <div className="space-y-2">
+                        {detail.letters.slice(0, 10).map(l => (
+                          <div key={l.id} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-slate-900 dark:text-white truncate">{l.letterName}</div>
+                              <div className="text-xs text-slate-500">To: {l.recipient} · {l.creditsUsed} credit{l.creditsUsed !== 1 ? 's' : ''}</div>
+                              {l.trackingNumber && <div className="text-xs text-blue-500 font-mono mt-0.5">{l.trackingNumber}</div>}
+                            </div>
+                            <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: (statusColor[l.status] || '#8b8fa8') + '18', color: statusColor[l.status] || '#8b8fa8' }}>
+                              {l.status}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {detail.transactions.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Transaction Log</h4>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-slate-200 dark:border-slate-600">
+                              {['Date', 'Description', 'Credits', 'Balance'].map(h => (
+                                <th key={h} className="text-left py-2 px-2 text-xs text-slate-500 uppercase tracking-wide font-semibold">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {detail.transactions.map(t => (
+                              <tr key={t.id} className="border-b border-slate-100 dark:border-slate-700">
+                                <td className="py-2 px-2 text-xs text-slate-500">{new Date(t.createdAt).toLocaleDateString()}</td>
+                                <td className="py-2 px-2 text-slate-700 dark:text-slate-300">{t.description}</td>
+                                <td className="py-2 px-2 font-semibold" style={{ color: t.credits > 0 ? '#10b981' : '#ef4444' }}>
+                                  {t.credits > 0 ? '+' : ''}{t.credits}
+                                </td>
+                                <td className="py-2 px-2 text-slate-700 dark:text-slate-300">{t.balanceAfter}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex gap-3">
+              <button
+                onClick={() => { setAdjustUserId(detailUserId); setDetailUserId(null) }}
+                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+              >
+                <CreditCard className="w-4 h-4" /> Adjust Credits
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Client list */}
+      <motion.div variants={fadeUp} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
+          <div className="flex-1 relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search clients…"
+              className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+            />
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="p-10 text-center text-slate-400">Loading wallets…</div>
+        ) : filtered.length === 0 ? (
+          <div className="p-10 text-center text-slate-400">
+            {wallets.length === 0 ? 'No mail wallets yet. They are created when a client visits their Mail Wallet page.' : 'No results'}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-700">
+                  {['Client', 'Email', 'Balance', 'Letters Sent', 'Last Activity', 'Actions'].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                {filtered.map(row => (
+                  <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-slate-900 dark:text-white">{row.user.firstName} {row.user.lastName}</div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">{row.user.email}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-sm font-bold ${row.balance > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                        {row.balance} credit{row.balance !== 1 ? 's' : ''}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{row.lettersCount}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500">
+                      {new Date(row.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setDetailUserId(row.userId)}
+                          className="text-xs px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1"
+                        >
+                          <Eye className="w-3 h-3" /> View
+                        </button>
+                        <button
+                          onClick={() => setAdjustUserId(row.userId)}
+                          className="text-xs px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg font-medium text-blue-700 dark:text-blue-300 flex items-center gap-1"
+                        >
+                          <CreditCard className="w-3 h-3" /> Adjust
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </motion.div>
     </motion.div>
   )

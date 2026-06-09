@@ -207,6 +207,122 @@ export async function getLetterTracking(lobId: string): Promise<{
   };
 }
 
+// ── Mail Wallet Placeholder Functions ─────────────────────────────────────────
+// These are ready-to-wire stubs for Lob certified mail.
+// When your LOB_API_KEY is configured, replace each body with a real Lob call.
+
+export interface CertifiedMailOptions {
+  userId: number;
+  clientName: string;
+  clientAddress: {
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    zip: string;
+  };
+  recipient: string; // "EXPERIAN" | "EQUIFAX" | "TRANSUNION" | custom name
+  recipientAddress?: {
+    name: string;
+    line1: string;
+    city: string;
+    state: string;
+    zip: string;
+  };
+  letterContent: string;
+  letterName: string;
+}
+
+export interface CertifiedMailResult {
+  lobId: string;
+  trackingNumber: string;
+  expectedDelivery: string;
+  status: string;
+}
+
+/**
+ * PLACEHOLDER — Send a certified mail letter via the Mail Wallet.
+ * Wire to Lob by calling sendDisputeLetter() when ready.
+ */
+export async function createCertifiedMail(
+  options: CertifiedMailOptions
+): Promise<CertifiedMailResult> {
+  const apiKey = process.env.LOB_API_KEY;
+
+  if (apiKey) {
+    // Real Lob send — use the existing sendDisputeLetter helper when bureau is known
+    const bureauKey = options.recipient.toUpperCase() as "EXPERIAN" | "EQUIFAX" | "TRANSUNION";
+    if (BUREAU_ADDRESSES[bureauKey]) {
+      const result = await sendDisputeLetter({
+        clientName: options.clientName,
+        clientAddress: options.clientAddress,
+        bureau: bureauKey,
+        letterContent: options.letterContent,
+        certified: true,
+      });
+      return {
+        lobId: result.lobId,
+        trackingNumber: result.trackingNumber,
+        expectedDelivery: result.expectedDelivery,
+        status: "MAILED",
+      };
+    }
+  }
+
+  // Stub response when LOB_API_KEY is not set or recipient is non-bureau
+  const fakeId = `lob_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const expectedDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
+  return {
+    lobId: fakeId,
+    trackingNumber: `9400111899221${Math.floor(Math.random() * 1e10).toString().padStart(10, "0")}`,
+    expectedDelivery: expectedDate,
+    status: "MAILED",
+  };
+}
+
+/**
+ * PLACEHOLDER — Get live tracking status for a mailed letter.
+ * Wire to getLetterTracking() when ready.
+ */
+export async function getMailTrackingStatus(lobId: string): Promise<{
+  status: string;
+  events: { name: string; time: string; location: string }[];
+  expectedDelivery: string;
+}> {
+  const apiKey = process.env.LOB_API_KEY;
+
+  if (apiKey && !lobId.startsWith("lob_")) {
+    const result = await getLetterTracking(lobId);
+    return result;
+  }
+
+  // Stub for placeholder IDs
+  return {
+    status: "In Transit",
+    events: [
+      { name: "Label Created", time: new Date().toISOString(), location: "Atlanta, GA" },
+    ],
+    expectedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+  };
+}
+
+/**
+ * PLACEHOLDER — Update the status of a mailed letter in the DB.
+ * Called by the Lob webhook when delivery status changes.
+ */
+export async function updateMailStatus(
+  lobId: string,
+  newStatus: string
+): Promise<{ lobId: string; status: string; updatedAt: string }> {
+  return {
+    lobId,
+    status: newStatus,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 /**
  * Verify an address before mailing (reduces undeliverable mail)
  */

@@ -9,7 +9,8 @@ import { db } from "./db";
 import { 
   aiConversations, studentLoans, loanNegotiations,
   supportConversations, supportMessages, supportTickets, supportKnowledgeBase,
-  subscriptionPlans, payments, invoices, usageTracking
+  subscriptionPlans, payments, invoices, usageTracking,
+  type MailedLetter,
 } from "@shared/schema";
 import { eq, desc, sql, or, and, gte, lt, isNotNull } from "drizzle-orm";
 import { aiService } from "./ai-service";
@@ -10804,6 +10805,309 @@ ${pdfText.slice(0, 8000)}`;
       res.json(docs);
     } catch {
       res.status(500).json({ error: "Failed to fetch documents" });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MAIL WALLET ROUTES
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Credit package definitions (price in cents)
+  const MAIL_CREDIT_PACKAGES = [
+    { id: "pack_1",  credits: 1,  priceCents: 1499,  label: "1 Credit",   priceDisplay: "$14.99" },
+    { id: "pack_5",  credits: 5,  priceCents: 6999,  label: "5 Credits",  priceDisplay: "$69.99", savings: "Save $5" },
+    { id: "pack_10", credits: 10, priceCents: 12999, label: "10 Credits", priceDisplay: "$129.99", savings: "Save $20" },
+    { id: "pack_25", credits: 25, priceCents: 29999, label: "25 Credits", priceDisplay: "$299.99", savings: "Save $75", popular: true },
+  ];
+
+  // GET /api/mail-wallet — current balance + recent transactions
+  app.get("/api/mail-wallet", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user.id;
+      const wallet = await storage.getOrCreateMailWallet(userId);
+      const transactions = await storage.getMailCreditTransactions(userId);
+      res.json({ wallet, transactions: transactions.slice(0, 20), packages: MAIL_CREDIT_PACKAGES });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to fetch mail wallet" });
+    }
+  });
+
+  // POST /api/mail-wallet/checkout — create Stripe checkout session for credit purchase
+  app.post("/api/mail-wallet/checkout", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user.id;
+      const { packageId } = req.body;
+
+      const pkg = MAIL_CREDIT_PACKAGES.find(p => p.id === packageId);
+      if (!pkg) return res.status(400).json({ error: "Invalid package ID" });
+
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2023-10-16" as any });
+
+      // Get or create Stripe customer
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: `${user.firstName} ${user.lastName}`,
+          metadata: { userId: String(userId) },
+        });
+        customerId = customer.id;
+        await storage.updateUser(userId, { stripeCustomerId: customerId });
+      }
+
+      const baseUrl = process.env.RAILWAY_BACKEND_URL || `${req.protocol}://${req.get("host")}`;
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ["card"],
+        line_items: [{
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `ScoreShift Mail — ${pkg.label}`,
+              description: `${pkg.credits} Certified Mail Credit${pkg.credits > 1 ? "s" : ""} for dispute letters`,
+            },
+            unit_amount: pkg.priceCents,
+          },
+          quantity: 1,
+        }],
+        mode: "payment",
+        success_url: `${baseUrl}/portal?page=mail-wallet&purchased=${pkg.credits}&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/portal?page=mail-wallet`,
+        metadata: {
+          userId: String(userId),
+          packageId: pkg.id,
+          credits: String(pkg.credits),
+        },
+      });
+
+      res.json({ url: session.url, sessionId: session.id });
+    } catch (err: any) {
+      console.error("Mail wallet checkout error:", err);
+      res.status(500).json({ error: err.message || "Failed to create checkout session" });
+    }
+  });
+
+  // POST /api/mail-wallet/confirm-purchase — verify session + add credits (called on return from Stripe)
+  app.post("/api/mail-wallet/confirm-purchase", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user.id;
+      const { sessionId } = req.body;
+      if (!sessionId) return res.status(400).json({ error: "sessionId required" });
+
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2023-10-16" as any });
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      if (session.payment_status !== "paid") {
+        return res.status(400).json({ error: "Payment not completed" });
+      }
+      if (String(session.metadata?.userId) !== String(userId)) {
+        return res.status(403).json({ error: "Session does not belong to this user" });
+      }
+
+      // Idempotency check — don't add credits twice for same session
+      const txns = await storage.getMailCreditTransactions(userId);
+      const alreadyApplied = txns.some(t => t.stripeSessionId === sessionId);
+      if (alreadyApplied) {
+        const wallet = await storage.getOrCreateMailWallet(userId);
+        return res.json({ wallet, alreadyApplied: true });
+      }
+
+      const credits = parseInt(session.metadata?.credits || "0");
+      const pkg = MAIL_CREDIT_PACKAGES.find(p => p.id === session.metadata?.packageId);
+      const wallet = await storage.addMailCredits(
+        userId,
+        credits,
+        `Purchased ${pkg?.label || `${credits} credits`}`,
+        {
+          stripeSessionId: sessionId,
+          stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : undefined,
+          amountCents: session.amount_total || 0,
+          type: "PURCHASE",
+        }
+      );
+
+      res.json({ wallet, credits });
+    } catch (err: any) {
+      console.error("Mail wallet confirm error:", err);
+      res.status(500).json({ error: err.message || "Failed to confirm purchase" });
+    }
+  });
+
+  // POST /api/mail-wallet/send — deduct credits + dispatch certified letters
+  app.post("/api/mail-wallet/send", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user.id;
+      const { letters } = req.body as {
+        letters: { letterName: string; recipient: string; letterContent?: string; disputeLetterIds?: string[] }[];
+      };
+
+      if (!Array.isArray(letters) || letters.length === 0) {
+        return res.status(400).json({ error: "At least one letter is required" });
+      }
+
+      const wallet = await storage.getOrCreateMailWallet(userId);
+      const creditsNeeded = letters.length;
+
+      if (wallet.balance < creditsNeeded) {
+        return res.status(402).json({
+          error: "Insufficient mail credits",
+          balance: wallet.balance,
+          needed: creditsNeeded,
+        });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const { createCertifiedMail } = await import("./lob-service.js");
+
+      const sent: MailedLetter[] = [];
+      for (const letter of letters) {
+        let lobResult = { lobId: "", trackingNumber: "", expectedDelivery: "", status: "QUEUED" };
+        try {
+          lobResult = await createCertifiedMail({
+            userId,
+            clientName: `${user.firstName} ${user.lastName}`,
+            clientAddress: {
+              line1: user.addressLine1 || "Unknown",
+              line2: user.addressLine2 || undefined,
+              city: user.city || "Unknown",
+              state: user.state || "GA",
+              zip: user.zipCode || "00000",
+            },
+            recipient: letter.recipient,
+            letterContent: letter.letterContent || letter.letterName,
+            letterName: letter.letterName,
+          });
+        } catch (lobErr) {
+          console.error("Lob send error (non-fatal):", lobErr);
+        }
+
+        const mailedLetter = await storage.createMailedLetter({
+          userId,
+          letterName: letter.letterName,
+          recipient: letter.recipient,
+          recipientType: ["EXPERIAN", "EQUIFAX", "TRANSUNION"].includes(letter.recipient.toUpperCase()) ? "BUREAU" : "CUSTOM",
+          creditsUsed: 1,
+          status: lobResult.status || "MAILED",
+          lobId: lobResult.lobId || null,
+          trackingNumber: lobResult.trackingNumber || null,
+          expectedDelivery: lobResult.expectedDelivery || null,
+          disputeLetterIds: letter.disputeLetterIds || null,
+          mailedAt: new Date(),
+        });
+        sent.push(mailedLetter);
+      }
+
+      const updatedWallet = await storage.deductMailCredits(
+        userId,
+        creditsNeeded,
+        `Mailed ${creditsNeeded} certified letter${creditsNeeded > 1 ? "s" : ""}`
+      );
+
+      res.json({ wallet: updatedWallet, sent });
+    } catch (err: any) {
+      console.error("Mail wallet send error:", err);
+      res.status(500).json({ error: err.message || "Failed to send letters" });
+    }
+  });
+
+  // GET /api/mail-wallet/history — mailed letters for current user
+  app.get("/api/mail-wallet/history", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user.id;
+      const letters = await storage.getMailedLetters(userId);
+      res.json(letters);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to fetch history" });
+    }
+  });
+
+  // GET /api/mail-wallet/tracking/:id — refresh tracking status for one letter
+  app.get("/api/mail-wallet/tracking/:id", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user.id;
+      const letterId = parseInt(req.params.id);
+      const letters = await storage.getMailedLetters(userId);
+      const letter = letters.find(l => l.id === letterId);
+      if (!letter) return res.status(404).json({ error: "Letter not found" });
+
+      if (!letter.lobId) return res.json({ status: letter.status, letter });
+
+      const { getMailTrackingStatus } = await import("./lob-service.js");
+      const tracking = await getMailTrackingStatus(letter.lobId);
+
+      // Update status in DB if changed
+      if (tracking.status !== letter.status) {
+        await storage.updateMailedLetter(letterId, { status: tracking.status });
+      }
+
+      res.json({ ...tracking, letter });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to get tracking" });
+    }
+  });
+
+  // ── Admin Mail Wallet Routes ─────────────────────────────────────────────────
+
+  // GET /api/admin/mail-wallet — all users with wallet data
+  app.get("/api/admin/mail-wallet", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const requestingUser = (req as any).user;
+      if (requestingUser.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin only" });
+      const wallets = await storage.getAllMailWalletsWithUsers();
+      res.json(wallets);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to fetch admin mail wallets" });
+    }
+  });
+
+  // GET /api/admin/mail-wallet/:userId — single user wallet + history
+  app.get("/api/admin/mail-wallet/:userId", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const requestingUser = (req as any).user;
+      if (requestingUser.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin only" });
+      const userId = parseInt(req.params.userId);
+      const wallet = await storage.getOrCreateMailWallet(userId);
+      const transactions = await storage.getMailCreditTransactions(userId);
+      const letters = await storage.getMailedLetters(userId);
+      res.json({ wallet, transactions, letters });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to fetch user mail wallet" });
+    }
+  });
+
+  // POST /api/admin/mail-wallet/:userId/adjust — manually add or deduct credits
+  app.post("/api/admin/mail-wallet/:userId/adjust", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const requestingUser = (req as any).user;
+      if (requestingUser.accessLevel !== "ADMIN") return res.status(403).json({ error: "Admin only" });
+
+      const userId = parseInt(req.params.userId);
+      const { credits, reason } = req.body as { credits: number; reason: string };
+
+      if (typeof credits !== "number" || credits === 0) {
+        return res.status(400).json({ error: "credits must be a non-zero number" });
+      }
+      if (!reason) return res.status(400).json({ error: "reason is required" });
+
+      let wallet: MailWallet;
+      if (credits > 0) {
+        wallet = await storage.addMailCredits(userId, credits, reason, {
+          adminUserId: requestingUser.id,
+          type: "ADJUSTMENT",
+        });
+      } else {
+        wallet = await storage.deductMailCredits(userId, Math.abs(credits), reason);
+      }
+
+      res.json({ wallet });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to adjust credits" });
     }
   });
 

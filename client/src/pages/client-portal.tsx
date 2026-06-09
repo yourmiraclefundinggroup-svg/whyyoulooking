@@ -7,6 +7,7 @@ import { useArrayToken } from "@/hooks/use-array-token";
 import { useFeatureAccess } from "@/hooks/use-feature-access";
 import { useArrayThemeInjector } from "@/hooks/use-array-theme-injector";
 import { useScoreShiftProfile, type PlanSuggestion, type ProfileDispute } from "@/hooks/use-score-shift-profile";
+import { apiRequest } from "@/lib/queryClient";
 import "@/styles/portal.css";
 import { DisputeIQPage as RealDisputeIQPage } from "@/pages/dispute-iq";
 
@@ -31,7 +32,7 @@ declare global {
 }
 
 /* ── Types ────────────────────────────────────────────────────────── */
-type PageId = "home" | "plan" | "dispute-iq" | "debt" | "subscriptions" | "student-loans" | "protection" | "report" | "progress" | "profile" | "payment-center";
+type PageId = "home" | "plan" | "dispute-iq" | "debt" | "subscriptions" | "student-loans" | "protection" | "report" | "progress" | "profile" | "payment-center" | "mail-wallet";
 
 type OnboardingGoal = "improve-score" | "remove-negatives" | "build-credit" | "reduce-debt";
 type OnboardingTimeline = "3-months" | "6-months" | "1-year" | "exploring";
@@ -2228,6 +2229,403 @@ function ProfilePage({ user, logout, featureAccess }: { user: any; logout: () =>
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   MAIL WALLET PAGE
+   ═══════════════════════════════════════════════════════════════════ */
+
+interface MailPackage {
+  id: string;
+  credits: number;
+  priceCents: number;
+  label: string;
+  priceDisplay: string;
+  savings?: string;
+  popular?: boolean;
+}
+
+interface MailWalletData {
+  wallet: { id: number; userId: number; balance: number; updatedAt: string };
+  transactions: {
+    id: number; type: string; credits: number; balanceAfter: number;
+    description: string; createdAt: string; amountCents?: number;
+  }[];
+  packages: MailPackage[];
+}
+
+interface MailedLetterItem {
+  id: number;
+  letterName: string;
+  recipient: string;
+  recipientType: string;
+  creditsUsed: number;
+  status: string;
+  trackingNumber: string | null;
+  expectedDelivery: string | null;
+  deliveryConfirmedAt: string | null;
+  mailedAt: string | null;
+  createdAt: string;
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  QUEUED: "#8b8fa8",
+  MAILED: "#4f6ef7",
+  IN_TRANSIT: "#f59e0b",
+  DELIVERED: "#10b981",
+  RETURNED: "#ef4444",
+  FAILED: "#ef4444",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  QUEUED: "Queued",
+  MAILED: "Mailed",
+  IN_TRANSIT: "In Transit",
+  DELIVERED: "Delivered",
+  RETURNED: "Returned",
+  FAILED: "Failed",
+};
+
+function MailStatusBadge({ status }: { status: string }) {
+  const color = STATUS_COLORS[status] || "#8b8fa8";
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+      background: color + "18", color,
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: color, display: "inline-block" }} />
+      {STATUS_LABELS[status] || status}
+    </span>
+  );
+}
+
+function MailWalletPage({ onNavigate }: { onNavigate: (page: PageId) => void }) {
+  const qc = useQueryClient();
+  const [tab, setTab] = useState<"wallet" | "history" | "transactions">("wallet");
+  const [purchaseLoading, setPurchaseLoading] = useState<string | null>(null);
+  const [successBanner, setSuccessBanner] = useState<string | null>(null);
+
+  // Handle Stripe return with purchased credits
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const purchased = params.get("purchased");
+    const sessionId = params.get("session_id");
+    if (purchased && sessionId) {
+      apiRequest("POST", "/api/mail-wallet/confirm-purchase", { sessionId })
+        .then(() => {
+          qc.invalidateQueries({ queryKey: ["/api/mail-wallet"] });
+          setSuccessBanner(`${purchased} certified mail credit${Number(purchased) > 1 ? "s" : ""} added to your wallet!`);
+          // Clean URL without reload
+          const clean = window.location.pathname;
+          window.history.replaceState({}, "", `${clean}?page=mail-wallet`);
+        })
+        .catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const { data, isLoading } = useQuery<MailWalletData>({
+    queryKey: ["/api/mail-wallet"],
+  });
+
+  const { data: history = [], isLoading: historyLoading } = useQuery<MailedLetterItem[]>({
+    queryKey: ["/api/mail-wallet/history"],
+    enabled: tab === "history",
+  });
+
+  async function handlePurchase(pkg: MailPackage) {
+    setPurchaseLoading(pkg.id);
+    try {
+      const res = await apiRequest("POST", "/api/mail-wallet/checkout", { packageId: pkg.id });
+      const json = await res.json();
+      if (json.url) {
+        window.location.href = json.url;
+      }
+    } catch {
+      setPurchaseLoading(null);
+    }
+  }
+
+  const balance = data?.wallet.balance ?? 0;
+  const packages = data?.packages ?? [];
+  const transactions = data?.transactions ?? [];
+
+  return (
+    <div style={{ padding: "0 0 40px", maxWidth: 860, margin: "0 auto" }}>
+      {/* Success banner */}
+      {successBanner && (
+        <div style={{
+          background: "linear-gradient(90deg, #10b98118, #10b98108)",
+          border: "1px solid #10b98140",
+          borderRadius: 12, padding: "14px 20px", marginBottom: 20,
+          display: "flex", alignItems: "center", gap: 12,
+          color: "#10b981", fontWeight: 600, fontSize: 14,
+        }}>
+          <span style={{ fontSize: 20 }}>✓</span>
+          {successBanner}
+          <button onClick={() => setSuccessBanner(null)}
+            style={{ marginLeft: "auto", background: "none", border: "none", color: "#10b981", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>×</button>
+        </div>
+      )}
+
+      {/* Balance hero card */}
+      <div className="cp-card" style={{
+        background: "linear-gradient(135deg, #1e2a5a 0%, #2d3b7a 60%, #3d4d9a 100%)",
+        border: "none", borderRadius: 18, padding: "28px 32px", marginBottom: 24,
+        position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+        <div style={{ position: "absolute", bottom: -60, left: -20, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.03)" }} />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+                Mail Wallet Balance
+              </div>
+              {isLoading ? (
+                <div style={{ height: 52, width: 80, background: "rgba(255,255,255,0.1)", borderRadius: 8 }} />
+              ) : (
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                  <span style={{ fontSize: 52, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{balance}</span>
+                  <span style={{ fontSize: 16, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>
+                    certified mail credit{balance !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              )}
+              <div style={{ marginTop: 10, fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
+                1 credit = 1 certified USPS letter to any bureau or recipient
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button
+                className="cp-btn"
+                style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", backdropFilter: "blur(4px)" }}
+                onClick={() => setTab("history")}
+              >
+                <Icon size={14}><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" /></Icon>
+                View History
+              </button>
+              <button
+                className="cp-btn cp-btn-primary"
+                style={{ background: "rgba(255,255,255,0.95)", color: "#1e2a5a", fontWeight: 700 }}
+                onClick={() => setTab("wallet")}
+              >
+                <Icon size={14}><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></Icon>
+                Buy Credits
+              </button>
+            </div>
+          </div>
+          {balance > 0 && (
+            <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.12)", display: "flex", gap: 20 }}>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
+                <span style={{ color: "#fff", fontWeight: 700 }}>{transactions.filter(t => t.type === "DEDUCTION").length}</span> letters sent
+              </div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
+                <span style={{ color: "#fff", fontWeight: 700 }}>{transactions.filter(t => t.type === "PURCHASE").length}</span> purchases
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <SubTabs
+        tabs={[
+          { id: "wallet", label: "Buy Credits" },
+          { id: "history", label: "Mail History" },
+          { id: "transactions", label: "Transaction Log" },
+        ]}
+        active={tab}
+        onChange={t => setTab(t as "wallet" | "history" | "transactions")}
+      />
+
+      {/* ── Buy Credits Tab ── */}
+      {tab === "wallet" && (
+        <div>
+          <div style={{ marginBottom: 16, fontSize: 14, color: "var(--cp-text-muted)", lineHeight: 1.6 }}>
+            Purchase certified mail credits to send your dispute letters directly to Experian, Equifax, and TransUnion via USPS Certified Mail with tracking.
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 16 }}>
+            {packages.map(pkg => (
+              <div key={pkg.id} className="cp-card" style={{
+                position: "relative", cursor: "pointer", transition: "transform 0.15s, box-shadow 0.15s",
+                border: pkg.popular ? "2px solid var(--cp-accent)" : undefined,
+                paddingTop: pkg.popular ? 36 : undefined,
+              }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ""; }}
+              >
+                {pkg.popular && (
+                  <div style={{
+                    position: "absolute", top: 0, left: "50%", transform: "translateX(-50%) translateY(-50%)",
+                    background: "var(--cp-accent)", color: "#fff", fontSize: 10, fontWeight: 700,
+                    padding: "3px 14px", borderRadius: 20, letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap",
+                  }}>Most Popular</div>
+                )}
+                <div style={{ fontSize: 32, fontWeight: 800, color: "var(--cp-text-primary)", lineHeight: 1.1 }}>
+                  {pkg.credits}
+                </div>
+                <div style={{ fontSize: 13, color: "var(--cp-text-muted)", marginTop: 2, marginBottom: 14 }}>
+                  Certified Mail Credit{pkg.credits > 1 ? "s" : ""}
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: "var(--cp-accent)", marginBottom: 4 }}>
+                  {pkg.priceDisplay}
+                </div>
+                {pkg.savings && (
+                  <div style={{ fontSize: 11, color: "#10b981", fontWeight: 600, marginBottom: 14 }}>{pkg.savings}</div>
+                )}
+                {!pkg.savings && <div style={{ marginBottom: 14 }} />}
+                <div style={{ fontSize: 11, color: "var(--cp-text-muted)", marginBottom: 16, lineHeight: 1.5 }}>
+                  ${(pkg.priceCents / 100 / pkg.credits).toFixed(2)} per letter
+                </div>
+                <button
+                  className="cp-btn cp-btn-primary"
+                  style={{ width: "100%", justifyContent: "center", fontSize: 13, opacity: purchaseLoading && purchaseLoading !== pkg.id ? 0.5 : 1 }}
+                  disabled={!!purchaseLoading}
+                  onClick={() => handlePurchase(pkg)}
+                >
+                  {purchaseLoading === pkg.id ? (
+                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span className="cp-array-spinner" style={{ width: 14, height: 14 }} />
+                      Redirecting…
+                    </span>
+                  ) : "Buy Now"}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="cp-card" style={{ marginTop: 20, background: "var(--cp-surface-alt, rgba(0,0,0,0.04))" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--cp-text-primary)", marginBottom: 12 }}>
+              How Certified Mail Credits Work
+            </div>
+            <div style={{ display: "grid", gap: 10 }}>
+              {[
+                ["1 Credit = 1 Letter", "Each certified mail credit sends one physical letter with USPS tracking."],
+                ["Bureau Disputes", "Sending to Experian, Equifax, and TransUnion at once uses 3 credits."],
+                ["Tracking Included", "Get a real USPS tracking number for every certified letter sent."],
+                ["Credits Never Expire", "Use your credits anytime — they stay in your wallet until used."],
+              ].map(([title, desc]) => (
+                <div key={title} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <div style={{ width: 20, height: 20, borderRadius: "50%", background: "var(--cp-accent)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+                    <Icon size={10}><polyline points="20 6 9 17 4 12" /></Icon>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--cp-text-primary)" }}>{title}</div>
+                    <div style={{ fontSize: 12, color: "var(--cp-text-muted)", marginTop: 2 }}>{desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Mail History Tab ── */}
+      {tab === "history" && (
+        <div>
+          {historyLoading ? (
+            <div className="cp-card" style={{ textAlign: "center", padding: 40 }}>
+              <div className="cp-array-spinner" style={{ margin: "0 auto 12px" }} />
+              <div style={{ color: "var(--cp-text-muted)", fontSize: 14 }}>Loading mail history…</div>
+            </div>
+          ) : history.length === 0 ? (
+            <div className="cp-card" style={{ textAlign: "center", padding: 48 }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>📬</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "var(--cp-text-primary)", marginBottom: 8 }}>No letters mailed yet</div>
+              <div style={{ fontSize: 13, color: "var(--cp-text-muted)", marginBottom: 20 }}>
+                Use your mail credits from Dispute IQ to send certified letters to the bureaus.
+              </div>
+              <button className="cp-btn cp-btn-primary" onClick={() => onNavigate("dispute-iq")}>
+                Go to Dispute IQ
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {history.map(letter => (
+                <div key={letter.id} className="cp-card" style={{ padding: "16px 20px" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 10,
+                      background: "linear-gradient(135deg, #1e2a5a20, #3d4d9a20)",
+                      display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                    }}>
+                      <Icon size={18}><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z" /><polyline points="22 6 12 13 2 6" /></Icon>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--cp-text-primary)" }}>{letter.letterName}</div>
+                        <MailStatusBadge status={letter.status} />
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--cp-text-muted)", marginTop: 4 }}>
+                        To: <strong style={{ color: "var(--cp-text-secondary)" }}>{letter.recipient}</strong>
+                        {" · "}
+                        {letter.creditsUsed} credit{letter.creditsUsed !== 1 ? "s" : ""}
+                        {letter.mailedAt && ` · Mailed ${new Date(letter.mailedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
+                      </div>
+                      {letter.trackingNumber && (
+                        <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                          <Icon size={12}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></Icon>
+                          <span style={{ fontSize: 11, color: "var(--cp-text-muted)" }}>Tracking: </span>
+                          <code style={{ fontSize: 11, color: "var(--cp-accent)", fontFamily: "monospace" }}>{letter.trackingNumber}</code>
+                        </div>
+                      )}
+                      {letter.expectedDelivery && (
+                        <div style={{ marginTop: 4, fontSize: 12, color: "var(--cp-text-muted)" }}>
+                          Expected delivery: {new Date(letter.expectedDelivery).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          {letter.deliveryConfirmedAt && (
+                            <span style={{ color: "#10b981", fontWeight: 600 }}> · Delivered {new Date(letter.deliveryConfirmedAt).toLocaleDateString()}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Transaction Log Tab ── */}
+      {tab === "transactions" && (
+        <div>
+          {transactions.length === 0 ? (
+            <div className="cp-card" style={{ textAlign: "center", padding: 40 }}>
+              <div style={{ fontSize: 14, color: "var(--cp-text-muted)" }}>No transactions yet.</div>
+            </div>
+          ) : (
+            <div className="cp-card" style={{ padding: 0, overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--cp-border)" }}>
+                    {["Date", "Description", "Credits", "Balance"].map(h => (
+                      <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "var(--cp-text-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.map((txn, i) => (
+                    <tr key={txn.id} style={{ borderBottom: i < transactions.length - 1 ? "1px solid var(--cp-border)" : "none" }}>
+                      <td style={{ padding: "12px 16px", fontSize: 12, color: "var(--cp-text-muted)", whiteSpace: "nowrap" }}>
+                        {new Date(txn.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </td>
+                      <td style={{ padding: "12px 16px", fontSize: 13, color: "var(--cp-text-primary)" }}>{txn.description}</td>
+                      <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 700, color: txn.credits > 0 ? "#10b981" : "#ef4444", whiteSpace: "nowrap" }}>
+                        {txn.credits > 0 ? "+" : ""}{txn.credits}
+                      </td>
+                      <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: "var(--cp-text-primary)" }}>{txn.balanceAfter}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Array component error boundary ─────────────────────────────── */
 class ArrayErrorBoundary extends React.Component<
   { fallback: React.ReactNode; children: React.ReactNode },
@@ -2251,7 +2649,14 @@ export default function ClientPortal({ initialPage }: { initialPage?: PageId } =
   const { loaded: scriptReady } = useArrayScript(appKey || undefined);
   useArrayThemeInjector();
 
-  const [activePage, setActivePage] = useState<PageId>(initialPage ?? "home");
+  const [activePage, setActivePage] = useState<PageId>(() => {
+    // Read ?page= from Stripe return URL or direct navigation
+    const params = new URLSearchParams(window.location.search);
+    const pageParam = params.get("page");
+    const validPages: PageId[] = ["home","plan","dispute-iq","debt","subscriptions","student-loans","protection","report","progress","profile","payment-center","mail-wallet"];
+    if (pageParam && validPages.includes(pageParam as PageId)) return pageParam as PageId;
+    return initialPage ?? "home";
+  });
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [suggestedSavings, setSuggestedSavings] = useState<number | null>(null);
 
@@ -2310,6 +2715,7 @@ export default function ClientPortal({ initialPage }: { initialPage?: PageId } =
     { id: "protection", label: "Protection Center", icon: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></> },
     { id: "report", label: "Credit Report", icon: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></> },
     { id: "progress", label: "Progress", icon: <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></> },
+    { id: "mail-wallet" as PageId, label: "Mail Wallet", icon: <><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z" /><polyline points="22 6 12 13 2 6" /></> as React.ReactNode },
     { id: "profile", label: "Profile", icon: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></> },
   ];
 
@@ -2325,6 +2731,7 @@ export default function ClientPortal({ initialPage }: { initialPage?: PageId } =
     progress: "Progress",
     profile: "Profile & Settings",
     "payment-center": "Payment Center",
+    "mail-wallet": "Mail Wallet",
   };
 
   /* ── Render ───────────────────────────────────────────────────── */
@@ -2423,6 +2830,7 @@ export default function ClientPortal({ initialPage }: { initialPage?: PageId } =
           {activePage === "protection" && <ProtectionPage {...arrayProps} />}
           {activePage === "report" && <ReportPage {...arrayProps} />}
           {activePage === "progress" && <ProgressPage />}
+          {activePage === "mail-wallet" && <MailWalletPage onNavigate={setActivePage} />}
           {activePage === "profile" && <ProfilePage user={user} logout={logout} featureAccess={featureAccess} />}
         </div>
       </div>

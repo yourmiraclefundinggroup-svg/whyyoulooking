@@ -11,6 +11,10 @@ import {
   creditReportPublicRecords, disputeItems, disputeLettersNew, disputeCalendarEvents,
   leads, affiliates, affiliateSignups, deletionEvents, creditScoreHistory, creditReportCache,
   managedClientPackages, clientCaseActivities, clientDocuments,
+  mailWallets, mailCreditTransactions, mailedLetters,
+  type MailWallet, type InsertMailWallet,
+  type MailCreditTransaction, type InsertMailCreditTransaction,
+  type MailedLetter, type InsertMailedLetter,
   type ManagedClientPackage, type InsertManagedClientPackage,
   type ClientCaseActivity, type InsertClientCaseActivity,
   type ClientDocument, type InsertClientDocument,
@@ -362,6 +366,17 @@ export interface IStorage {
     itemsResolved: number;
     identityProtectionActive: boolean;
   }>;
+
+  // Mail Wallet
+  getMailWallet(userId: number): Promise<MailWallet | undefined>;
+  getOrCreateMailWallet(userId: number): Promise<MailWallet>;
+  addMailCredits(userId: number, credits: number, description: string, meta?: { stripePaymentIntentId?: string; stripeSessionId?: string; amountCents?: number; adminUserId?: number; type?: string }): Promise<MailWallet>;
+  deductMailCredits(userId: number, credits: number, description: string): Promise<MailWallet>;
+  getMailCreditTransactions(userId: number): Promise<MailCreditTransaction[]>;
+  createMailedLetter(letter: InsertMailedLetter): Promise<MailedLetter>;
+  getMailedLetters(userId: number): Promise<MailedLetter[]>;
+  updateMailedLetter(id: number, updates: Partial<MailedLetter>): Promise<MailedLetter | undefined>;
+  getAllMailWalletsWithUsers(): Promise<(MailWallet & { user: User; lettersCount: number })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2756,6 +2771,104 @@ export class MemStorage implements IStorage {
   async updateClientDocument(id: number, updates: Partial<ClientDocument>): Promise<ClientDocument | undefined> {
     const [updated] = await db.update(clientDocuments).set(updates as any).where(eq(clientDocuments.id, id)).returning();
     return updated || undefined;
+  }
+
+  // ── Mail Wallet ──────────────────────────────────────────────────────────────
+
+  async getMailWallet(userId: number): Promise<MailWallet | undefined> {
+    const [wallet] = await db.select().from(mailWallets).where(eq(mailWallets.userId, userId));
+    return wallet || undefined;
+  }
+
+  async getOrCreateMailWallet(userId: number): Promise<MailWallet> {
+    const existing = await this.getMailWallet(userId);
+    if (existing) return existing;
+    const [created] = await db.insert(mailWallets).values({ userId, balance: 0 }).returning();
+    return created;
+  }
+
+  async addMailCredits(
+    userId: number,
+    credits: number,
+    description: string,
+    meta?: { stripePaymentIntentId?: string; stripeSessionId?: string; amountCents?: number; adminUserId?: number; type?: string }
+  ): Promise<MailWallet> {
+    const wallet = await this.getOrCreateMailWallet(userId);
+    const newBalance = wallet.balance + credits;
+    const [updated] = await db
+      .update(mailWallets)
+      .set({ balance: newBalance, updatedAt: new Date() })
+      .where(eq(mailWallets.userId, userId))
+      .returning();
+    await db.insert(mailCreditTransactions).values({
+      userId,
+      type: meta?.type ?? "PURCHASE",
+      credits,
+      balanceAfter: newBalance,
+      description,
+      stripePaymentIntentId: meta?.stripePaymentIntentId,
+      stripeSessionId: meta?.stripeSessionId,
+      amountCents: meta?.amountCents,
+      adminUserId: meta?.adminUserId,
+    });
+    return updated;
+  }
+
+  async deductMailCredits(userId: number, credits: number, description: string): Promise<MailWallet> {
+    const wallet = await this.getOrCreateMailWallet(userId);
+    if (wallet.balance < credits) throw new Error("Insufficient mail credits");
+    const newBalance = wallet.balance - credits;
+    const [updated] = await db
+      .update(mailWallets)
+      .set({ balance: newBalance, updatedAt: new Date() })
+      .where(eq(mailWallets.userId, userId))
+      .returning();
+    await db.insert(mailCreditTransactions).values({
+      userId,
+      type: "DEDUCTION",
+      credits: -credits,
+      balanceAfter: newBalance,
+      description,
+    });
+    return updated;
+  }
+
+  async getMailCreditTransactions(userId: number): Promise<MailCreditTransaction[]> {
+    return await db
+      .select()
+      .from(mailCreditTransactions)
+      .where(eq(mailCreditTransactions.userId, userId))
+      .orderBy(desc(mailCreditTransactions.createdAt));
+  }
+
+  async createMailedLetter(letter: InsertMailedLetter): Promise<MailedLetter> {
+    const [created] = await db.insert(mailedLetters).values(letter as any).returning();
+    return created;
+  }
+
+  async getMailedLetters(userId: number): Promise<MailedLetter[]> {
+    return await db
+      .select()
+      .from(mailedLetters)
+      .where(eq(mailedLetters.userId, userId))
+      .orderBy(desc(mailedLetters.createdAt));
+  }
+
+  async updateMailedLetter(id: number, updates: Partial<MailedLetter>): Promise<MailedLetter | undefined> {
+    const [updated] = await db.update(mailedLetters).set(updates as any).where(eq(mailedLetters.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async getAllMailWalletsWithUsers(): Promise<(MailWallet & { user: User; lettersCount: number })[]> {
+    const wallets = await db.select().from(mailWallets).orderBy(desc(mailWallets.updatedAt));
+    const result: (MailWallet & { user: User; lettersCount: number })[] = [];
+    for (const wallet of wallets) {
+      const user = await this.getUser(wallet.userId);
+      if (!user) continue;
+      const letters = await this.getMailedLetters(wallet.userId);
+      result.push({ ...wallet, user, lettersCount: letters.length });
+    }
+    return result;
   }
 }
 

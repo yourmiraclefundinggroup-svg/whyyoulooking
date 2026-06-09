@@ -1384,3 +1384,57 @@ export type ClientCaseActivity = typeof clientCaseActivities.$inferSelect;
 export type InsertClientCaseActivity = z.infer<typeof insertClientCaseActivitySchema>;
 export type ClientDocument = typeof clientDocuments.$inferSelect;
 export type InsertClientDocument = z.infer<typeof insertClientDocumentSchema>;
+
+// ─── Mail Wallet Tables ────────────────────────────────────────────────────────
+
+// Per-user certified mail credit balance
+export const mailWallets = pgTable("mail_wallets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  balance: integer("balance").notNull().default(0),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Log of every credit purchase and deduction
+export const mailCreditTransactions = pgTable("mail_credit_transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(), // PURCHASE | DEDUCTION | ADJUSTMENT
+  credits: integer("credits").notNull(), // positive = added, negative = deducted
+  balanceAfter: integer("balance_after").notNull(),
+  description: text("description").notNull(),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  stripeSessionId: text("stripe_session_id"),
+  amountCents: integer("amount_cents"), // price paid in cents (purchases only)
+  adminUserId: integer("admin_user_id"), // set when admin makes adjustment
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// History of every letter mailed using wallet credits
+export const mailedLetters = pgTable("mailed_letters", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  letterName: text("letter_name").notNull(),
+  recipient: text("recipient").notNull(), // bureau name or custom recipient
+  recipientType: text("recipient_type").notNull().default("BUREAU"), // BUREAU | CUSTOM
+  creditsUsed: integer("credits_used").notNull().default(1),
+  status: text("status").notNull().default("QUEUED"), // QUEUED | MAILED | IN_TRANSIT | DELIVERED | RETURNED | FAILED
+  lobId: text("lob_id"),
+  trackingNumber: text("tracking_number"),
+  expectedDelivery: text("expected_delivery"),
+  deliveryConfirmedAt: timestamp("delivery_confirmed_at"),
+  disputeLetterIds: text("dispute_letter_ids").array(), // linked dispute letter IDs
+  mailedAt: timestamp("mailed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertMailWalletSchema = createInsertSchema(mailWallets).omit({ id: true, updatedAt: true });
+export const insertMailCreditTransactionSchema = createInsertSchema(mailCreditTransactions).omit({ id: true, createdAt: true });
+export const insertMailedLetterSchema = createInsertSchema(mailedLetters).omit({ id: true, createdAt: true });
+
+export type MailWallet = typeof mailWallets.$inferSelect;
+export type InsertMailWallet = z.infer<typeof insertMailWalletSchema>;
+export type MailCreditTransaction = typeof mailCreditTransactions.$inferSelect;
+export type InsertMailCreditTransaction = z.infer<typeof insertMailCreditTransactionSchema>;
+export type MailedLetter = typeof mailedLetters.$inferSelect;
+export type InsertMailedLetter = z.infer<typeof insertMailedLetterSchema>;
