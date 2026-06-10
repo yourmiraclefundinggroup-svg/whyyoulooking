@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { CheckCircle, ArrowLeft, Mail } from "lucide-react";
-import { Footer } from "@/components/layout/Footer";
 import "../styles/landing.css";
 
 import splitPathImg    from "@assets/ChatGPT_Image_Jun_9,_2026,_04_26_54_PM_1781047045828.png";
@@ -553,7 +552,20 @@ function SelfServiceExperience({ onBack }: { onBack: () => void }) {
         href="/signup"
       />
 
-      <Footer />
+      <footer className="ss-footer">
+        <div className="ss-wrap ss-footer-inner">
+          <Link href="/" className="ss-footer-logo">
+            <img src="/images/scoreshift-logo-full.png" alt="ScoreShift" className="ss-footer-logo-img ss-footer-logo-bars" />
+          </Link>
+          <ul className="ss-footer-links">
+            <li><Link href="/privacy-policy">Privacy</Link></li>
+            <li><Link href="/terms">Terms</Link></li>
+            <li><Link href="/pricing">Pricing</Link></li>
+            <li><a href="mailto:hello@scoreshift.com">Contact</a></li>
+          </ul>
+          <span className="ss-footer-copy">© {new Date().getFullYear()} ScoreShift, Inc.</span>
+        </div>
+      </footer>
     </div>
   );
 }
@@ -665,7 +677,20 @@ function ConciergeExperience({ onBack }: { onBack: () => void }) {
         href="/concierge"
       />
 
-      <Footer />
+      <footer className="ss-footer">
+        <div className="ss-wrap ss-footer-inner">
+          <Link href="/" className="ss-footer-logo">
+            <img src="/images/scoreshift-logo-full.png" alt="ScoreShift" className="ss-footer-logo-img ss-footer-logo-bars" />
+          </Link>
+          <ul className="ss-footer-links">
+            <li><Link href="/privacy-policy">Privacy</Link></li>
+            <li><Link href="/terms">Terms</Link></li>
+            <li><Link href="/pricing">Pricing</Link></li>
+            <li><a href="mailto:hello@scoreshift.com">Contact</a></li>
+          </ul>
+          <span className="ss-footer-copy">© {new Date().getFullYear()} ScoreShift, Inc.</span>
+        </div>
+      </footer>
     </div>
   );
 }
@@ -859,7 +884,7 @@ export default function PricingPage() {
       <nav className="ss-nav">
         <div className="ss-wrap ss-nav-inner">
           <Link href="/" className="ss-nav-logo">
-            <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" className="ss-nav-logo-img" />
+            <img src="/images/scoreshift-logo-full.png" alt="ScoreShift" className="ss-nav-logo-img" />
           </Link>
           <ul className="ss-nav-links">
             <li><Link href="/#product">Product</Link></li>
