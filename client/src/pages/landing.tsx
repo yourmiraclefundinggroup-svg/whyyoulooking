@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
 import "../styles/landing.css";
+import { MarketingNav } from "@/components/marketing-nav";
 
 /* ── Scroll reveal ─────────────────────────────────────────── */
 function useScrollReveal() {
@@ -69,24 +70,7 @@ export default function LandingPage() {
     <div className="ss-land">
 
       {/* ── Glass Nav ──────────────────────────────────────────── */}
-      <nav className="ss-nav">
-        <div className="ss-wrap ss-nav-inner">
-          <Link href="/" className="ss-nav-logo">
-            <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" className="ss-nav-logo-img" />
-          </Link>
-          <ul className="ss-nav-links">
-            <li><a href="#product">Product</a></li>
-            <li><Link href="/pricing">Pricing</Link></li>
-            <li><a href="#trust">Results</a></li>
-          </ul>
-          <div className="ss-nav-actions">
-            <Link href="/login" className="ss-nav-ghost">Sign in</Link>
-            <Link href="/pricing" className="ss-btn-nav">
-              Start My Plan <ArrowRight size={13} />
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <MarketingNav />
 
       {/* ════════════════════════════════════════════════════════
           SCENE 1 — Believe
@@ -446,7 +430,7 @@ export default function LandingPage() {
             <li><Link href="/pricing">Pricing</Link></li>
             <li><Link href="/contact">Contact</Link></li>
           </ul>
-          <span className="ss-footer-copy">© {new Date().getFullYear()} ScoreShift, Inc.</span>
+          <span className="ss-footer-copy">© {new Date().getFullYear()} ScoreShift LLC</span>
         </div>
       </footer>
     </div>

@@ -28,6 +28,23 @@ if (!document.getElementById(STYLE_ID)) {
       border-color: rgba(99,102,241,0.65) !important;
       box-shadow: 0 0 0 3px rgba(99,102,241,0.14), inset 0 2px 4px rgba(255,255,255,0.30) !important;
     }
+    @media (max-width: 520px) {
+      .ss-login-scroll-container {
+        justify-content: center !important;
+        padding: 24px 18px !important;
+      }
+      .ss-login-glass {
+        max-width: 100% !important;
+        border-radius: 24px !important;
+        padding: 36px 24px 32px !important;
+      }
+    }
+    @media (max-width: 380px) {
+      .ss-login-glass {
+        padding: 28px 18px 26px !important;
+        border-radius: 20px !important;
+      }
+    }
   `;
   document.head.appendChild(s);
 }
@@ -101,20 +118,24 @@ export default function Login() {
       }} />
 
       {/* ── Scroll container ─────────────────────────────────────────────── */}
-      <div style={{
-        position: "absolute", inset: 0,
-        overflowY: "auto",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "flex-end",
-        padding: "40px 5.5vw 40px 0",
-      }}>
+      <div
+        className="ss-login-scroll-container"
+        style={{
+          position: "absolute", inset: 0,
+          overflowY: "auto",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          padding: "40px 5.5vw 40px 0",
+        }}>
 
         {/* ══════════════════════════════════════════════════════════════════
             GLASS CARD
             ══════════════════════════════════════════════════════════════════ */}
-        <div style={{
-          width: "100%",
+        <div
+          className="ss-login-glass"
+          style={{
+            width: "100%",
           maxWidth: "420px",
           /* Reduced tint opacity — environment shows through clearly */
           background: "rgba(72,68,168,0.12)",

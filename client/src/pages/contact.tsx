@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Link } from "wouter";
 import { MapPin, Mail, Phone, MessageCircle, Wrench, Users } from "lucide-react";
+import { MarketingNav } from "@/components/marketing-nav";
 import "../styles/landing.css";
 
 import creamEnvImg    from "@assets/ChatGPT_Image_Jun_9,_2026,_03_48_17_PM_1781054065070.png";
@@ -51,39 +52,15 @@ const contactOptions = [
 ];
 
 export default function ContactPage() {
-  const navRef = useRef<HTMLElement>(null);
-
   useEffect(() => {
     window.scrollTo(0, 0);
-    const nav = navRef.current;
-    if (!nav) return;
-    const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 60);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
     <div style={{ background: C.cream, minHeight: "100vh", fontFamily: "'Inter', system-ui, sans-serif" }}>
 
       {/* ── Navbar ─────────────────────────────────────────────────────────── */}
-      <nav className="ss-nav" ref={navRef}>
-        <div className="ss-wrap ss-nav-inner">
-          <Link href="/" className="ss-nav-logo">
-            <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" className="ss-nav-logo-img" />
-          </Link>
-          <ul className="ss-nav-links">
-            <li><Link href="/#product">Product</Link></li>
-            <li><Link href="/pricing">Pricing</Link></li>
-            <li><Link href="/#trust">Results</Link></li>
-          </ul>
-          <div className="ss-nav-actions">
-            <Link href="/login" className="ss-nav-ghost">Sign in</Link>
-            <Link href="/pricing" className="ss-btn-nav">
-              Start My Plan <ArrowRight size={13} />
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <MarketingNav />
 
       {/* ══════════════════════════════════════════════════════════════════════
           SECTION 1 — HERO

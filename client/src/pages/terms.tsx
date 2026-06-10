@@ -1,41 +1,17 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Link } from "wouter";
-import { ArrowRight } from "lucide-react";
 import "../styles/landing.css";
+import { MarketingNav } from "@/components/marketing-nav";
 
 export default function Terms() {
-  const navRef = useRef<HTMLElement>(null);
-
   useEffect(() => {
     window.scrollTo(0, 0);
-    const nav = navRef.current;
-    if (!nav) return;
-    const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 60);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
     <div style={{ background: "#F7F3EC", minHeight: "100vh", fontFamily: "'Inter', system-ui, sans-serif" }}>
 
-      <nav className="ss-nav" ref={navRef}>
-        <div className="ss-wrap ss-nav-inner">
-          <Link href="/" className="ss-nav-logo">
-            <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" className="ss-nav-logo-img" />
-          </Link>
-          <ul className="ss-nav-links">
-            <li><Link href="/#product">Product</Link></li>
-            <li><Link href="/pricing">Pricing</Link></li>
-            <li><Link href="/#trust">Results</Link></li>
-          </ul>
-          <div className="ss-nav-actions">
-            <Link href="/auth" className="ss-nav-ghost">Sign in</Link>
-            <Link href="/pricing" className="ss-btn-nav">
-              Start My Plan <ArrowRight size={13} />
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <MarketingNav />
 
       {/* Hero */}
       <div style={{
@@ -90,7 +66,7 @@ export default function Terms() {
           </p>
 
           <Section title="1. Introduction">
-            Welcome to ScoreShift, Inc. ("ScoreShift," "we," "us," or "our"). By accessing or using our credit repair and financial services platform, you ("User," "Client," or "you") agree to be bound by these Terms of Use ("Terms"). These Terms are governed by applicable federal and state laws, including the Fair Credit Reporting Act (FCRA), 15 U.S.C. § 1681 et seq., and the Credit Repair Organizations Act (CROA), 15 U.S.C. § 1679 et seq. If you do not agree to these Terms, you must immediately discontinue use of our platform.
+            Welcome to ScoreShift LLC ("ScoreShift," "we," "us," or "our"). By accessing or using our credit repair and financial services platform, you ("User," "Client," or "you") agree to be bound by these Terms of Use ("Terms"). These Terms are governed by applicable federal and state laws, including the Fair Credit Reporting Act (FCRA), 15 U.S.C. § 1681 et seq., and the Credit Repair Organizations Act (CROA), 15 U.S.C. § 1679 et seq. If you do not agree to these Terms, you must immediately discontinue use of our platform.
           </Section>
 
           <Section title="2. FCRA Consumer Rights">
@@ -149,7 +125,7 @@ export default function Terms() {
           </Section>
 
           <Section title="8. Limitation of Liability">
-            To the fullest extent permitted by applicable law, ScoreShift, Inc. and its officers, directors, employees, and agents shall not be liable for any indirect, incidental, consequential, or punitive damages arising out of or related to your use of the platform or services, including but not limited to changes to your credit score, denial of credit, or errors by credit bureaus. Our total cumulative liability to you for any claims arising under these Terms shall not exceed the total fees you paid to ScoreShift in the six (6) months preceding the claim. Nothing in these Terms limits our liability for fraud, gross negligence, or willful misconduct, or any liability that cannot be excluded under applicable law.
+            To the fullest extent permitted by applicable law, ScoreShift LLC and its officers, directors, employees, and agents shall not be liable for any indirect, incidental, consequential, or punitive damages arising out of or related to your use of the platform or services, including but not limited to changes to your credit score, denial of credit, or errors by credit bureaus. Our total cumulative liability to you for any claims arising under these Terms shall not exceed the total fees you paid to ScoreShift in the six (6) months preceding the claim. Nothing in these Terms limits our liability for fraud, gross negligence, or willful misconduct, or any liability that cannot be excluded under applicable law.
           </Section>
 
           <Section title="9. Changes to Terms">
@@ -159,7 +135,7 @@ export default function Terms() {
           <Section title="10. Contact Information" last>
             If you have questions about these Terms, wish to exercise your FCRA rights, or need to contact us for any reason, please reach out to us at:
             <ContactBox
-              name="ScoreShift, Inc."
+              name="ScoreShift LLC"
               email="support@scoreshift.io"
               location="Atlanta, Georgia, USA"
             />
@@ -178,7 +154,7 @@ export default function Terms() {
             <li><Link href="/pricing">Pricing</Link></li>
             <li><Link href="/contact">Contact</Link></li>
           </ul>
-          <span className="ss-footer-copy">© {new Date().getFullYear()} ScoreShift, Inc.</span>
+          <span className="ss-footer-copy">© {new Date().getFullYear()} ScoreShift LLC</span>
         </div>
       </footer>
     </div>

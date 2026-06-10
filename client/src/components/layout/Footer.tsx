@@ -84,7 +84,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-slate-500">
-            © 2026 ScoreShift, Inc. All rights reserved.
+            © 2026 ScoreShift LLC. All rights reserved.
           </p>
           <div className="flex items-center gap-6 text-sm text-slate-500">
             <Link href="/privacy-policy" className="hover:text-slate-300 transition-colors">Privacy</Link>

@@ -1,0 +1,209 @@
+ScoreShift Final Launch Fixes
+
+Please complete these final launch-readiness fixes in one pass.
+
+Do not redesign the site.
+
+Only fix the items below.
+
+---
+
+1. FIX LEGAL ENTITY REFERENCES
+
+---
+
+Search the entire codebase for:
+
+ScoreShift, Inc.
+ScoreShift Inc
+ScoreShift Incorporated
+
+Replace all public-facing references with:
+
+ScoreShift LLC
+
+Apply this to:
+
+* Privacy Policy
+* Terms & Conditions
+* CROA disclosure
+* Footer
+* Contact page
+* Signup disclosures
+* Any legal/compliance text
+
+Do not change internal variable names unless they are displayed to users.
+
+After updating, confirm there are no remaining public-facing references to “ScoreShift, Inc.”
+
+---
+
+2. ADD MOBILE HAMBURGER MENU
+
+---
+
+The landing page and public site navigation need a mobile menu.
+
+Apply to all public-facing pages using the marketing nav:
+
+* Landing
+* Pricing
+* Contact
+* Privacy
+* Terms
+* Sign In
+* Sign Up if applicable
+
+Mobile behavior:
+
+At tablet/mobile widths, collapse nav links into a hamburger icon.
+
+Hamburger opens a clean premium mobile menu with:
+
+* Product
+* Pricing
+* Results
+* Contact
+* Sign In
+* Start My Plan
+
+Design:
+
+* Match ScoreShift premium glass system
+* Cream glass background
+* Soft blur
+* Rounded corners
+* Indigo CTA
+* Smooth open/close animation
+* Tap outside or X closes menu
+
+Make sure:
+
+* No horizontal overflow
+* Logo remains visible
+* Start My Plan remains prominent
+* Menu works on 320px, 375px, 390px, 414px, 768px
+
+---
+
+3. FIX MOBILE PRICING TABLE
+
+---
+
+The pricing comparison table currently scrolls awkwardly on mobile.
+
+Fix mobile responsiveness for:
+
+* Self-Service comparison table
+* Concierge comparison table
+* Any feature matrix on pricing page
+
+Requirements:
+
+Desktop:
+
+* Keep current premium layout.
+
+Mobile:
+
+* Allow horizontal scroll only inside the table wrapper.
+* Do not allow the entire page to horizontally scroll.
+* Add subtle visual indication that the table is scrollable.
+* Keep first feature column readable if possible.
+* If sticky first column is safe, implement it.
+* Ensure column headings remain readable.
+* Add padding at left/right so content does not hit screen edges.
+* Test at 320px, 375px, 390px, 414px.
+
+Do not redesign the pricing page.
+
+Only improve mobile usability.
+
+---
+
+4. LOGIN MOBILE SPACING POLISH
+
+---
+
+The login page works but needs better spacing on very small screens.
+
+At mobile widths:
+
+* Reduce glass panel width to fit safely inside viewport.
+* Add horizontal padding of at least 18px.
+* Adjust vertical spacing so the form does not feel cramped.
+* Keep all fields readable.
+* Keep the background image visible but not distracting.
+* Ensure the panel does not overflow.
+* Ensure buttons are large enough to tap.
+* Preserve the premium glass style.
+
+Test:
+
+* 320px
+* 375px
+* 390px
+* 414px
+
+Do not change the desktop login design unless necessary.
+
+---
+
+5. RESTORE CONCIERGE PRICING
+
+---
+
+Set Concierge pricing back to the correct prices:
+
+Fast-Track:
+$800 one-time
+
+Fast-Track Rush:
+$1,500 one-time
+
+Fast-Track Elite:
+$2,500 one-time
+
+Make sure these prices are consistent everywhere:
+
+* Pricing cards
+* Concierge page
+* Feature comparison
+* Checkout links/buttons if shown
+* Any payment summary
+* Any “What’s Included” card
+* Any flexible payment display
+
+Correct flexible payment display:
+
+Fast-Track:
+Pay in Full: $800 today
+Flexible Pay: $400 today, $200 in 2 weeks, $200 in 4 weeks
+
+Fast-Track Rush:
+Pay in Full: $1,500 today
+Flexible Pay: $750 today, $375 in 2 weeks, $375 in 4 weeks
+
+Fast-Track Elite:
+Pay in Full: $2,500 today
+Flexible Pay: $1,250 today, $625 in 2 weeks, $625 in 4 weeks
+
+---
+
+6. FINAL VERIFICATION
+
+---
+
+After completing the fixes, run a final check and report:
+
+* Entity references corrected
+* Mobile hamburger working
+* Pricing table mobile fixed
+* Login mobile spacing fixed
+* Concierge pricing restored
+* No new console errors
+* No broken public routes
+* No horizontal page overflow on mobile
+* No visual regression on desktop
+
+This should be a surgical launch-readiness fix, not a redesign.

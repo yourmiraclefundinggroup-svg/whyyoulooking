@@ -1,41 +1,17 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Link } from "wouter";
-import { ArrowRight } from "lucide-react";
 import "../styles/landing.css";
+import { MarketingNav } from "@/components/marketing-nav";
 
 export default function PrivacyPolicy() {
-  const navRef = useRef<HTMLElement>(null);
-
   useEffect(() => {
     window.scrollTo(0, 0);
-    const nav = navRef.current;
-    if (!nav) return;
-    const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 60);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
     <div style={{ background: "#F7F3EC", minHeight: "100vh", fontFamily: "'Inter', system-ui, sans-serif" }}>
 
-      <nav className="ss-nav" ref={navRef}>
-        <div className="ss-wrap ss-nav-inner">
-          <Link href="/" className="ss-nav-logo">
-            <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" className="ss-nav-logo-img" />
-          </Link>
-          <ul className="ss-nav-links">
-            <li><Link href="/#product">Product</Link></li>
-            <li><Link href="/pricing">Pricing</Link></li>
-            <li><Link href="/#trust">Results</Link></li>
-          </ul>
-          <div className="ss-nav-actions">
-            <Link href="/auth" className="ss-nav-ghost">Sign in</Link>
-            <Link href="/pricing" className="ss-btn-nav">
-              Start My Plan <ArrowRight size={13} />
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <MarketingNav />
 
       {/* Hero */}
       <div style={{
@@ -90,7 +66,7 @@ export default function PrivacyPolicy() {
           </p>
 
           <Section title="1. Overview">
-            ScoreShift, Inc. ("ScoreShift," "we," "us," or "our") is committed to protecting your privacy and handling your personal and financial information in accordance with applicable federal and state laws, including the Fair Credit Reporting Act (FCRA), 15 U.S.C. § 1681 et seq., the Gramm-Leach-Bliley Act (GLBA), and applicable state privacy regulations. This Privacy Policy describes how we collect, use, share, and protect information obtained through your use of our credit repair and financial services platform. By using ScoreShift, you consent to the practices described in this Policy.
+            ScoreShift LLC ("ScoreShift," "we," "us," or "our") is committed to protecting your privacy and handling your personal and financial information in accordance with applicable federal and state laws, including the Fair Credit Reporting Act (FCRA), 15 U.S.C. § 1681 et seq., the Gramm-Leach-Bliley Act (GLBA), and applicable state privacy regulations. This Privacy Policy describes how we collect, use, share, and protect information obtained through your use of our credit repair and financial services platform. By using ScoreShift, you consent to the practices described in this Policy.
           </Section>
 
           <Section title="2. Information We Collect">
@@ -172,7 +148,7 @@ export default function PrivacyPolicy() {
           <Section title="11. Contact Information" last>
             If you have questions, concerns, or requests regarding this Privacy Policy, your personal information, or your FCRA rights, please contact us at:
             <ContactBox
-              name="ScoreShift, Inc."
+              name="ScoreShift LLC"
               email="privacy@scoreshift.io"
               location="Atlanta, Georgia, USA"
             />
@@ -191,7 +167,7 @@ export default function PrivacyPolicy() {
             <li><Link href="/pricing">Pricing</Link></li>
             <li><Link href="/contact">Contact</Link></li>
           </ul>
-          <span className="ss-footer-copy">© {new Date().getFullYear()} ScoreShift, Inc.</span>
+          <span className="ss-footer-copy">© {new Date().getFullYear()} ScoreShift LLC</span>
         </div>
       </footer>
     </div>

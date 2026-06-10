@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { CheckCircle, ArrowLeft, Mail } from "lucide-react";
 import "../styles/landing.css";
+import { MarketingNav } from "@/components/marketing-nav";
 
 import splitPathImg    from "@assets/ChatGPT_Image_Jun_9,_2026,_04_26_54_PM_1781047045828.png";
 import windingPathImg  from "@assets/ChatGPT_Image_Jun_9,_2026,_04_17_47_PM_1781047072844.png";
@@ -72,25 +73,25 @@ const selfServicePlans = [
 /* ─── Concierge plans ────────────────────────────────────────────────────── */
 const conciergePlans = [
   {
-    id: "fast-track", name: "Fast Track", price: 497, suffix: " flat",
+    id: "fast-track", name: "Fast-Track", price: 800, suffix: " flat",
     duration: "3-month program", badge: null as string | null,
     description: "Rapid results with focused execution",
-    featured: false, ctaText: "Start Fast Track", ctaHref: "/concierge?package=fast-track",
+    featured: false, ctaText: "Start Fast-Track", ctaHref: "/concierge?package=fast-track",
     features: ["Dedicated credit strategist","Bureau dispute execution","Monthly progress reports","3 certified mail sends","Client dashboard access"],
   },
   {
-    id: "rush", name: "Rush", price: 897, suffix: " flat",
+    id: "rush", name: "Fast-Track Rush", price: 1500, suffix: " flat",
     duration: "6-month program", badge: null as string | null,
     description: "Comprehensive strategy with full execution",
     featured: true, ctaText: "Start Rush", ctaHref: "/concierge?package=rush",
-    features: ["Everything in Fast Track","6 certified mail sends","Bi-weekly strategy calls","Debt negotiation guidance","Score Simulator access","Identity monitoring"],
+    features: ["Everything in Fast-Track","6 certified mail sends","Bi-weekly strategy calls","Debt negotiation guidance","Score Simulator access","Identity monitoring"],
   },
   {
-    id: "elite-concierge", name: "Elite", price: 1497, suffix: " flat",
+    id: "elite-concierge", name: "Fast-Track Elite", price: 2500, suffix: " flat",
     duration: "12-month program", badge: "Most Comprehensive",
     description: "Fully managed from first dispute to final goal",
     featured: false, ctaText: "Start Elite", ctaHref: "/concierge?package=elite",
-    features: ["Everything in Rush","Unlimited certified mail","Weekly strategy sessions","Full identity protect suite","Privacy Protect (data brokers)","Student Loan Aid","LoanBridge™ DSCR connection","Dedicated account manager"],
+    features: ["Everything in Fast-Track Rush","Unlimited certified mail","Weekly strategy sessions","Full identity protect suite","Privacy Protect (data brokers)","Student Loan Aid","LoanBridge™ DSCR connection","Dedicated account manager"],
   },
 ];
 
@@ -275,6 +276,33 @@ function PricingCard({ plan, isConcierge = false }: {
             Price locked forever at founding rate
           </div>
         )}
+        {isConcierge && (
+          <div style={{
+            marginTop: "14px",
+            padding: "12px 14px",
+            background: featured ? "rgba(255,255,255,0.06)" : "rgba(67,56,202,0.05)",
+            borderRadius: "12px",
+            border: featured ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(67,56,202,0.12)",
+          }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: featured ? "rgba(160,165,220,0.70)" : C.indigo, marginBottom: "8px" }}>
+              Flexible Pay Option
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: featured ? "rgba(255,252,245,0.70)" : C.muted }}>
+                <span>Today</span>
+                <span style={{ fontWeight: 600, color: featured ? "rgba(255,252,245,0.90)" : C.text }}>${(plan.price / 2).toLocaleString()}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: featured ? "rgba(255,252,245,0.70)" : C.muted }}>
+                <span>In 2 weeks</span>
+                <span style={{ fontWeight: 600, color: featured ? "rgba(255,252,245,0.90)" : C.text }}>${(plan.price / 4).toLocaleString()}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: featured ? "rgba(255,252,245,0.70)" : C.muted }}>
+                <span>In 4 weeks</span>
+                <span style={{ fontWeight: 600, color: featured ? "rgba(255,252,245,0.90)" : C.text }}>${(plan.price / 4).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px 0", flex: 1, display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -320,13 +348,34 @@ function ComparisonTable({ plans, rows }: {
   rows: { label: string; values: (boolean | string)[] }[];
 }) {
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "520px" }}>
+    <div style={{
+      overflowX: "auto",
+      WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"],
+      position: "relative",
+      padding: "0 2px",
+    }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "480px" }}>
         <thead>
           <tr>
-            <th style={{ padding: "18px 28px", textAlign: "left", fontSize: "12px", color: C.muted, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", borderBottom: "1px solid rgba(30,27,24,0.10)" }}>Feature</th>
+            <th style={{
+              padding: "16px 20px 16px 24px", textAlign: "left",
+              fontSize: "11px", color: C.muted, fontWeight: 600,
+              letterSpacing: "0.08em", textTransform: "uppercase",
+              borderBottom: "1px solid rgba(30,27,24,0.10)",
+              position: "sticky", left: 0,
+              background: "rgba(255,252,245,0.97)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              zIndex: 2,
+              whiteSpace: "nowrap",
+            }}>Feature</th>
             {plans.map((p) => (
-              <th key={p} style={{ padding: "18px 20px", textAlign: "center", fontSize: "13px", fontWeight: 700, color: C.text, borderBottom: "1px solid rgba(30,27,24,0.10)" }}>
+              <th key={p} style={{
+                padding: "16px 16px", textAlign: "center",
+                fontSize: "13px", fontWeight: 700, color: C.text,
+                borderBottom: "1px solid rgba(30,27,24,0.10)",
+                whiteSpace: "nowrap", minWidth: "100px",
+              }}>
                 {p}
               </th>
             ))}
@@ -335,9 +384,18 @@ function ComparisonTable({ plans, rows }: {
         <tbody>
           {rows.map((row, i) => (
             <tr key={row.label} style={{ background: i % 2 === 0 ? "rgba(247,243,236,0.60)" : "rgba(255,252,245,0.90)" }}>
-              <td style={{ padding: "14px 28px", fontSize: "13px", color: C.muted, borderBottom: "1px solid rgba(30,27,24,0.06)" }}>{row.label}</td>
+              <td style={{
+                padding: "13px 20px 13px 24px", fontSize: "13px", color: C.muted,
+                borderBottom: "1px solid rgba(30,27,24,0.06)",
+                position: "sticky", left: 0,
+                background: i % 2 === 0 ? "rgba(247,243,236,0.97)" : "rgba(255,252,245,0.97)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                zIndex: 1,
+                whiteSpace: "nowrap",
+              }}>{row.label}</td>
               {row.values.map((val, j) => (
-                <td key={j} style={{ padding: "14px 20px", textAlign: "center", fontSize: "13px", borderBottom: "1px solid rgba(30,27,24,0.06)" }}>
+                <td key={j} style={{ padding: "13px 16px", textAlign: "center", fontSize: "13px", borderBottom: "1px solid rgba(30,27,24,0.06)" }}>
                   {typeof val === "boolean"
                     ? val
                       ? <span style={{ color: C.indigo, fontSize: "16px", fontWeight: 700 }}>✓</span>
@@ -563,7 +621,7 @@ function SelfServiceExperience({ onBack }: { onBack: () => void }) {
             <li><Link href="/pricing">Pricing</Link></li>
             <li><Link href="/contact">Contact</Link></li>
           </ul>
-          <span className="ss-footer-copy">© {new Date().getFullYear()} ScoreShift, Inc.</span>
+          <span className="ss-footer-copy">© {new Date().getFullYear()} ScoreShift LLC</span>
         </div>
       </footer>
     </div>
@@ -688,7 +746,7 @@ function ConciergeExperience({ onBack }: { onBack: () => void }) {
             <li><Link href="/pricing">Pricing</Link></li>
             <li><Link href="/contact">Contact</Link></li>
           </ul>
-          <span className="ss-footer-copy">© {new Date().getFullYear()} ScoreShift, Inc.</span>
+          <span className="ss-footer-copy">© {new Date().getFullYear()} ScoreShift LLC</span>
         </div>
       </footer>
     </div>
@@ -880,25 +938,8 @@ export default function PricingPage() {
 
   return (
     <>
-      {/* ── Navbar — exact landing page markup ───────────────────────────── */}
-      <nav className="ss-nav">
-        <div className="ss-wrap ss-nav-inner">
-          <Link href="/" className="ss-nav-logo">
-            <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" className="ss-nav-logo-img" />
-          </Link>
-          <ul className="ss-nav-links">
-            <li><Link href="/#product">Product</Link></li>
-            <li><Link href="/pricing">Pricing</Link></li>
-            <li><Link href="/#trust">Results</Link></li>
-          </ul>
-          <div className="ss-nav-actions">
-            <Link href="/login" className="ss-nav-ghost">Sign in</Link>
-            <Link href="/pricing" className="ss-btn-nav">
-              Start My Plan <ArrowRight size={13} />
-            </Link>
-          </div>
-        </div>
-      </nav>
+      {/* ── Navbar ───────────────────────────────────────────────────────── */}
+      <MarketingNav />
 
       {/* ── Page content — fades between views ───────────────────────────── */}
       <div style={{ opacity: fading ? 0 : 1, transition: "opacity 0.26s ease" }}>
