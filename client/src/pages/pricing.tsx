@@ -596,13 +596,13 @@ function ConciergeExperience({ onBack }: { onBack: () => void }) {
             Concierge
           </p>
           <h1 style={{
-            color: C.text, fontSize: "clamp(38px, 6.5vw, 76px)",
+            color: "#FFFFFF", fontSize: "clamp(38px, 6.5vw, 76px)",
             fontWeight: 500, letterSpacing: "-2px", lineHeight: "1.05",
             maxWidth: "860px", marginBottom: "24px",
           }}>
             Professional guidance<br />from start to finish.
           </h1>
-          <p style={{ color: C.muted, fontSize: "18px", lineHeight: "1.7", maxWidth: "500px", margin: "0 auto" }}>
+          <p style={{ color: "rgba(255,255,255,0.78)", fontSize: "18px", lineHeight: "1.7", maxWidth: "500px", margin: "0 auto" }}>
             The ScoreShift team manages strategy and execution while you track every step through your private dashboard.
           </p>
         </div>
