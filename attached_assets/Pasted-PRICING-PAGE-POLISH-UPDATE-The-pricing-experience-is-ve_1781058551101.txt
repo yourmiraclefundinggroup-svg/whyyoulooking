@@ -1,0 +1,121 @@
+PRICING PAGE POLISH UPDATE
+
+The pricing experience is very close, but there are three important fixes needed.
+
+---
+
+1. HERO TYPOGRAPHY COLOR
+
+---
+
+SELF-SERVICE HERO
+
+Current issue:
+
+The headline and supporting copy are using dark text against a darkened image background.
+
+This reduces readability and makes the section feel inconsistent with the landing page.
+
+Required change:
+
+* Change all hero text to white.
+* Headline should be pure white.
+* Supporting copy should be white at approximately 85% opacity.
+* Keep the image unchanged.
+
+CONCIERGE HERO
+
+Current issue:
+
+Text is already white but needs stronger visual hierarchy.
+
+Required change:
+
+* Keep headline white.
+* Keep supporting copy white at 85% opacity.
+* Increase contrast slightly if necessary.
+
+---
+
+2. HERO TEXT POSITIONING
+
+---
+
+Both Self-Service and Concierge hero sections need the text block moved upward.
+
+Current issue:
+
+The content sits too low inside the image and feels vertically compressed.
+
+Required change:
+
+* Move the entire text container higher.
+* Position it similarly to the landing page hero.
+* Maintain perfect horizontal centering.
+* The hero should feel balanced and cinematic.
+
+Target feeling:
+
+Apple landing page.
+Large negative space.
+Text floating comfortably in the environment.
+
+Do NOT leave the text vertically centered inside the fog overlay.
+
+Move it noticeably higher.
+
+---
+
+3. START MY PLAN BUTTON
+
+---
+
+Current issue:
+
+The "Start My Plan" button does not consistently take the user into the pricing journey.
+
+Required change:
+
+The global header CTA should route directly to:
+
+/pricing
+
+Specifically:
+
+The first screen of the pricing experience.
+
+The "Choose Your Path" page.
+
+Flow should be:
+
+Landing Page
+↓
+Start My Plan
+↓
+Choose Your Path
+↓
+Self-Service OR Concierge
+
+The button should never lead to an unrelated page.
+
+---
+
+4. MAINTAIN CURRENT DESIGN
+
+---
+
+Do NOT redesign anything.
+
+Do NOT change imagery.
+
+Do NOT change spacing elsewhere.
+
+Do NOT change typography scale.
+
+Only make these targeted improvements:
+
+✓ White hero text
+✓ Hero text positioned higher
+✓ Header CTA routes to /pricing
+
+Everything else should remain exactly as it currently exists.

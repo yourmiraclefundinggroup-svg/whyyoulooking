@@ -461,22 +461,22 @@ function SelfServiceExperience({ onBack }: { onBack: () => void }) {
         <div style={{
           position: "relative", zIndex: 5,
           flex: 1, display: "flex", flexDirection: "column",
-          justifyContent: "flex-end", alignItems: "center",
+          justifyContent: "center", alignItems: "center",
           textAlign: "center",
-          padding: `${HEADER_H + 80}px 32px 100px`,
+          padding: `${HEADER_H + 40}px 32px 200px`,
           minHeight: "100vh",
         }}>
           <p style={{ color: "rgba(99,102,241,0.90)", fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "20px" }}>
             Self-Service
           </p>
           <h1 style={{
-            color: C.text, fontSize: "clamp(40px, 7vw, 80px)",
+            color: "#FFFFFF", fontSize: "clamp(40px, 7vw, 80px)",
             fontWeight: 500, letterSpacing: "-2px", lineHeight: "1.05",
-            maxWidth: "800px", marginBottom: "24px",
+            maxWidth: "800px", textAlign: "center", margin: "0 auto 24px",
           }}>
             Your path.<br />Your pace.
           </h1>
-          <p style={{ color: C.muted, fontSize: "18px", lineHeight: "1.7", maxWidth: "480px", margin: "0 auto" }}>
+          <p style={{ color: "rgba(255,255,255,0.85)", fontSize: "18px", lineHeight: "1.7", maxWidth: "480px", margin: "0 auto" }}>
             Tools, monitoring, and guidance designed to help you move forward with confidence — on your own timeline.
           </p>
         </div>
@@ -587,9 +587,9 @@ function ConciergeExperience({ onBack }: { onBack: () => void }) {
         <div style={{
           position: "relative", zIndex: 5,
           flex: 1, display: "flex", flexDirection: "column",
-          justifyContent: "flex-end", alignItems: "center",
+          justifyContent: "center", alignItems: "center",
           textAlign: "center",
-          padding: `${HEADER_H + 80}px 32px 100px`,
+          padding: `${HEADER_H + 40}px 32px 200px`,
           minHeight: "100vh",
         }}>
           <p style={{ color: "rgba(99,102,241,0.90)", fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "20px" }}>
@@ -598,12 +598,11 @@ function ConciergeExperience({ onBack }: { onBack: () => void }) {
           <h1 style={{
             color: "#FFFFFF", fontSize: "clamp(38px, 6.5vw, 76px)",
             fontWeight: 500, letterSpacing: "-2px", lineHeight: "1.05",
-            maxWidth: "860px", marginBottom: "24px",
-            textAlign: "center", margin: "0 auto 24px",
+            maxWidth: "860px", textAlign: "center", margin: "0 auto 24px",
           }}>
             Professional guidance<br />from start to finish.
           </h1>
-          <p style={{ color: "rgba(255,255,255,0.78)", fontSize: "18px", lineHeight: "1.7", maxWidth: "500px", margin: "0 auto" }}>
+          <p style={{ color: "rgba(255,255,255,0.85)", fontSize: "18px", lineHeight: "1.7", maxWidth: "500px", margin: "0 auto" }}>
             The ScoreShift team manages strategy and execution while you track every step through your private dashboard.
           </p>
         </div>
