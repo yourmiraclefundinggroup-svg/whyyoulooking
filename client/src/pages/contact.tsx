@@ -3,21 +3,21 @@ import { Link } from "wouter";
 import { MapPin, Mail, Phone, MessageCircle, Wrench, Users } from "lucide-react";
 import "../styles/landing.css";
 
-import creamEnvImg     from "@assets/ChatGPT_Image_Jun_9,_2026,_03_48_17_PM_1781054065070.png";
-import windingPathImg  from "@assets/ChatGPT_Image_Jun_9,_2026,_04_17_47_PM_1781047072844.png";
+import creamEnvImg    from "@assets/ChatGPT_Image_Jun_9,_2026,_03_48_17_PM_1781054065070.png";
+import windingPathImg from "@assets/ChatGPT_Image_Jun_9,_2026,_04_17_47_PM_1781047072844.png";
 
 const HEADER_H = 90;
 
 const C = {
-  cream:       "#F7F3EC",
-  bone:        "#EDE8DF",
-  surface:     "#FFFCF5",
-  indigo:      "#4338CA",
-  indigoDeep:  "#1E1B4B",
-  indigoMid:   "#6366F1",
-  indigoShadow:"rgba(67,56,202,0.32)",
-  text:        "#1E1B18",
-  muted:       "#8C7B6E",
+  cream:        "#F7F3EC",
+  bone:         "#EDE8DF",
+  surface:      "#FFFCF5",
+  indigo:       "#4338CA",
+  indigoDeep:   "#1E1B4B",
+  indigoMid:    "#6366F1",
+  indigoShadow: "rgba(67,56,202,0.22)",
+  text:         "#1E1B18",
+  muted:        "#8C7B6E",
 };
 
 const ArrowRight = ({ size = 13 }: { size?: number }) => (
@@ -31,21 +31,21 @@ const contactOptions = [
     icon: MessageCircle,
     title: "General Questions",
     description: "Questions about the platform, plans, or account setup.",
-    accent: "rgba(67,56,202,0.12)",
+    iconBg: "rgba(67,56,202,0.10)",
     iconColor: C.indigo,
   },
   {
     icon: Wrench,
     title: "Self-Service Support",
     description: "Help navigating tools, reports, monitoring, and guidance features.",
-    accent: "rgba(120,113,108,0.10)",
+    iconBg: "rgba(140,123,110,0.10)",
     iconColor: C.muted,
   },
   {
     icon: Users,
     title: "Concierge Services",
     description: "Speak with the ScoreShift team about hands-on support and implementation.",
-    accent: "rgba(99,102,241,0.10)",
+    iconBg: "rgba(99,102,241,0.10)",
     iconColor: C.indigoMid,
   },
 ];
@@ -90,7 +90,7 @@ export default function ContactPage() {
           ══════════════════════════════════════════════════════════════════════ */}
       <div style={{
         position: "relative",
-        minHeight: "72vh",
+        minHeight: "64vh",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
@@ -100,12 +100,12 @@ export default function ContactPage() {
           src={creamEnvImg} alt=""
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%" }}
         />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(10,8,5,0.58) 0%, rgba(10,8,5,0.32) 52%, rgba(247,243,236,1) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(10,8,5,0.60) 0%, rgba(10,8,5,0.28) 55%, rgba(247,243,236,1) 100%)" }} />
 
         <div style={{
           position: "relative", zIndex: 2,
           textAlign: "center",
-          padding: `${HEADER_H + 60}px 32px 120px`,
+          padding: `${HEADER_H + 56}px 32px 130px`,
         }}>
           <p style={{
             color: "rgba(180,172,220,0.85)", fontSize: "11px", fontWeight: 700,
@@ -132,91 +132,100 @@ export default function ContactPage() {
       </div>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 2 — CONTACT CARD
+          SECTION 2 — CARDS (HQ card + 3 option cards unified on env bg)
           ══════════════════════════════════════════════════════════════════════ */}
-      <div style={{ padding: "0 24px 100px", marginTop: "-32px", position: "relative", zIndex: 3 }}>
-        <div style={{ maxWidth: "680px", margin: "0 auto" }}>
+      <div style={{ position: "relative", overflow: "hidden" }}>
+        <img
+          src={creamEnvImg} alt=""
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+        />
+        {/* Soft cream wash over image so cards float above it */}
+        <div style={{ position: "absolute", inset: 0, background: "rgba(247,243,236,0.45)" }} />
 
-          {/* Main glass card — dark, Mail Wallet style */}
-          <div style={{
-            borderRadius: "32px",
-            overflow: "hidden",
-            position: "relative",
-            border: "1px solid rgba(255,252,245,0.12)",
-            boxShadow: `0 32px 80px rgba(10,8,5,0.22), 0 4px 24px rgba(10,8,5,0.14), 0 0 0 1px rgba(255,252,245,0.06), inset 0 1px 0 rgba(255,252,245,0.08)`,
-          }}>
-            {/* Card dark base */}
-            <div style={{ position: "absolute", inset: 0, background: "#1A1612" }} />
-            {/* Subtle environment image at low opacity */}
-            <img
-              src={creamEnvImg} alt=""
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 35%", opacity: 0.14 }}
-            />
-            {/* Indigo glow — top left corner */}
+        <div style={{ position: "relative", zIndex: 2, padding: "0 32px 110px", marginTop: "-48px" }}>
+
+          {/* ─── Headquarters glass card ───────────────────────────────────── */}
+          <div style={{ maxWidth: "760px", margin: "0 auto 80px" }}>
+            {/* Soft indigo aura behind the card */}
             <div style={{
-              position: "absolute", top: -60, left: -60,
-              width: 300, height: 300,
-              background: "radial-gradient(ellipse, rgba(99,102,241,0.22) 0%, transparent 70%)",
+              position: "absolute",
+              left: "50%", transform: "translateX(-50%)",
+              width: "600px", height: "400px",
+              background: "radial-gradient(ellipse, rgba(99,102,241,0.13) 0%, transparent 68%)",
               pointerEvents: "none",
+              zIndex: 1,
             }} />
 
-            <div style={{ position: "relative", zIndex: 2, padding: "44px 44px 40px" }}>
-
+            <div style={{
+              position: "relative", zIndex: 2,
+              background: "rgba(255,253,248,0.55)",
+              backdropFilter: "blur(22px)", WebkitBackdropFilter: "blur(22px)",
+              borderRadius: "36px",
+              border: "1px solid rgba(255,255,255,0.55)",
+              boxShadow: "0 30px 80px rgba(55,42,20,0.14), inset 0 1px 0 rgba(255,255,255,0.70)",
+              padding: "52px 52px 48px",
+            }}>
               {/* Card header */}
-              <div style={{ marginBottom: "40px" }}>
-                <div style={{ color: "rgba(255,252,245,0.95)", fontSize: "22px", fontWeight: 600, letterSpacing: "-0.4px", marginBottom: "4px" }}>
-                  ScoreShift LLC
+              <div style={{ marginBottom: "44px" }}>
+                <div style={{
+                  color: C.indigo, fontSize: "10px", fontWeight: 700,
+                  letterSpacing: "0.20em", textTransform: "uppercase", marginBottom: "12px",
+                }}>
+                  Headquarters
                 </div>
-                <div style={{ color: "rgba(255,252,245,0.32)", fontSize: "10px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase" }}>
-                  Credit Repair Platform
+                <div style={{ color: C.text, fontSize: "26px", fontWeight: 600, letterSpacing: "-0.5px" }}>
+                  ScoreShift Headquarters
                 </div>
               </div>
 
               {/* Contact rows */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
 
                 {/* Address */}
-                <div style={{ display: "flex", alignItems: "flex-start", gap: "18px" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "20px" }}>
                   <div style={{
-                    width: 44, height: 44, borderRadius: "14px", flexShrink: 0,
-                    background: "rgba(255,252,245,0.07)",
-                    border: "1px solid rgba(255,252,245,0.10)",
+                    width: 48, height: 48, borderRadius: "15px", flexShrink: 0,
+                    background: "rgba(67,56,202,0.08)",
+                    border: "1px solid rgba(67,56,202,0.14)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
-                    <MapPin size={18} style={{ color: "rgba(255,252,245,0.50)" }} />
+                    <MapPin size={19} style={{ color: C.indigo }} />
                   </div>
                   <div>
-                    <div style={{ color: "rgba(255,252,245,0.40)", fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "6px" }}>
+                    <div style={{ color: C.muted, fontSize: "10px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: "8px" }}>
                       Address
                     </div>
-                    <div style={{ color: "rgba(255,252,245,0.90)", fontSize: "16px", lineHeight: "1.6" }}>
-                      1201 West Peachtree St NW<br />Unit 2300<br />Atlanta, GA 30309
+                    <div style={{ color: C.text, fontSize: "16px", lineHeight: "1.65", fontWeight: 400 }}>
+                      ScoreShift LLC<br />
+                      1201 West Peachtree St NW<br />
+                      Unit 2300<br />
+                      Atlanta, GA 30309
                     </div>
                   </div>
                 </div>
 
                 {/* Divider */}
-                <div style={{ height: "1px", background: "rgba(255,252,245,0.07)" }} />
+                <div style={{ height: "1px", background: "rgba(30,27,24,0.08)" }} />
 
                 {/* Email */}
-                <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
                   <div style={{
-                    width: 44, height: 44, borderRadius: "14px", flexShrink: 0,
-                    background: "rgba(99,102,241,0.14)",
-                    border: "1px solid rgba(99,102,241,0.22)",
+                    width: 48, height: 48, borderRadius: "15px", flexShrink: 0,
+                    background: "rgba(67,56,202,0.08)",
+                    border: "1px solid rgba(67,56,202,0.14)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
-                    <Mail size={18} style={{ color: "rgba(130,136,210,0.90)" }} />
+                    <Mail size={19} style={{ color: C.indigo }} />
                   </div>
                   <div>
-                    <div style={{ color: "rgba(255,252,245,0.40)", fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "6px" }}>
+                    <div style={{ color: C.muted, fontSize: "10px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: "8px" }}>
                       Email
                     </div>
                     <a
                       href="mailto:info@scoreshiftcapital.com"
-                      style={{ color: "rgba(180,172,220,0.95)", fontSize: "16px", fontWeight: 500, textDecoration: "none", transition: "color 0.2s" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = "#A5B4FC")}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(180,172,220,0.95)")}
+                      style={{ color: C.indigo, fontSize: "16px", fontWeight: 500, textDecoration: "none", transition: "color 0.2s" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = C.indigoDeep)}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = C.indigo)}
                     >
                       info@scoreshiftcapital.com
                     </a>
@@ -224,27 +233,27 @@ export default function ContactPage() {
                 </div>
 
                 {/* Divider */}
-                <div style={{ height: "1px", background: "rgba(255,252,245,0.07)" }} />
+                <div style={{ height: "1px", background: "rgba(30,27,24,0.08)" }} />
 
                 {/* Phone */}
-                <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
                   <div style={{
-                    width: 44, height: 44, borderRadius: "14px", flexShrink: 0,
-                    background: "rgba(255,252,245,0.07)",
-                    border: "1px solid rgba(255,252,245,0.10)",
+                    width: 48, height: 48, borderRadius: "15px", flexShrink: 0,
+                    background: "rgba(140,123,110,0.08)",
+                    border: "1px solid rgba(140,123,110,0.14)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
-                    <Phone size={18} style={{ color: "rgba(255,252,245,0.50)" }} />
+                    <Phone size={19} style={{ color: C.muted }} />
                   </div>
                   <div>
-                    <div style={{ color: "rgba(255,252,245,0.40)", fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "6px" }}>
+                    <div style={{ color: C.muted, fontSize: "10px", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: "8px" }}>
                       Phone
                     </div>
                     <a
                       href="tel:7707126626"
-                      style={{ color: "rgba(255,252,245,0.90)", fontSize: "16px", fontWeight: 500, textDecoration: "none", transition: "color 0.2s" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = "#FFFCF5")}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.90)")}
+                      style={{ color: C.text, fontSize: "16px", fontWeight: 500, textDecoration: "none", transition: "color 0.2s" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = C.indigo)}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = C.text)}
                     >
                       770-712-6626
                     </a>
@@ -254,22 +263,9 @@ export default function ContactPage() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 3 — CONTACT OPTIONS
-          ══════════════════════════════════════════════════════════════════════ */}
-      <div style={{ position: "relative", overflow: "hidden", padding: "100px 32px" }}>
-        <img
-          src={creamEnvImg} alt=""
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
-        />
-        <div style={{ position: "absolute", inset: 0, background: "rgba(247,243,236,0.12)" }} />
-
-        <div style={{ position: "relative", zIndex: 2, maxWidth: "1020px", margin: "0 auto" }}>
-
-          <div style={{ textAlign: "center", marginBottom: "72px" }}>
+          {/* ─── Section label ─────────────────────────────────────────────── */}
+          <div style={{ textAlign: "center", marginBottom: "56px" }}>
             <p style={{
               color: C.indigo, fontSize: "11px", fontWeight: 700,
               letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "18px",
@@ -278,15 +274,17 @@ export default function ContactPage() {
             </p>
             <h2 style={{
               color: C.text,
-              fontSize: "clamp(36px, 5.5vw, 58px)",
-              fontWeight: 500, letterSpacing: "-1.5px", lineHeight: "1.06",
-              maxWidth: "600px", margin: "0 auto",
+              fontSize: "clamp(32px, 5vw, 52px)",
+              fontWeight: 500, letterSpacing: "-1.4px", lineHeight: "1.08",
+              maxWidth: "560px", margin: "0 auto",
             }}>
               What are you reaching out about?
             </h2>
           </div>
 
+          {/* ─── Three option glass tiles ──────────────────────────────────── */}
           <div style={{
+            maxWidth: "1020px", margin: "0 auto",
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             gap: "24px",
@@ -297,34 +295,42 @@ export default function ContactPage() {
                 <div
                   key={opt.title}
                   style={{
-                    background: "rgba(255,252,245,0.88)",
-                    backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)",
-                    borderRadius: "28px",
-                    border: "1px solid rgba(30,27,24,0.08)",
-                    boxShadow: "0 8px 48px rgba(10,8,5,0.08), 0 1px 0 rgba(255,255,255,0.80) inset",
-                    padding: "36px 32px",
-                    transition: "transform 0.28s cubic-bezier(0.23,1,0.32,1), box-shadow 0.28s",
+                    background: "rgba(255,253,248,0.52)",
+                    backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+                    borderRadius: "32px",
+                    border: "1px solid rgba(255,255,255,0.50)",
+                    boxShadow: "0 10px 48px rgba(55,42,20,0.10), inset 0 1px 0 rgba(255,255,255,0.65)",
+                    padding: "36px 32px 38px",
+                    transition: "transform 0.28s cubic-bezier(0.23,1,0.32,1), box-shadow 0.28s, border-color 0.28s",
                     cursor: "default",
                   }}
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)";
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = "0 20px 60px rgba(10,8,5,0.12), 0 1px 0 rgba(255,255,255,0.80) inset";
+                    const el = e.currentTarget as HTMLDivElement;
+                    el.style.transform = "translateY(-6px)";
+                    el.style.boxShadow = "0 24px 64px rgba(55,42,20,0.14), inset 0 1px 0 rgba(255,255,255,0.70)";
+                    el.style.borderColor = "rgba(255,255,255,0.70)";
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.transform = "none";
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 48px rgba(10,8,5,0.08), 0 1px 0 rgba(255,255,255,0.80) inset";
+                    const el = e.currentTarget as HTMLDivElement;
+                    el.style.transform = "none";
+                    el.style.boxShadow = "0 10px 48px rgba(55,42,20,0.10), inset 0 1px 0 rgba(255,255,255,0.65)";
+                    el.style.borderColor = "rgba(255,255,255,0.50)";
                   }}
                 >
+                  {/* Glass icon tile */}
                   <div style={{
-                    width: 52, height: 52, borderRadius: "16px",
-                    background: opt.accent,
+                    width: 50, height: 50, borderRadius: "15px",
+                    background: opt.iconBg,
+                    border: "1px solid rgba(255,255,255,0.45)",
+                    backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    marginBottom: "24px",
+                    marginBottom: "26px",
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.55)",
                   }}>
-                    <Icon size={22} style={{ color: opt.iconColor }} />
+                    <Icon size={21} style={{ color: opt.iconColor }} />
                   </div>
                   <h3 style={{
-                    color: C.text, fontSize: "20px", fontWeight: 600,
+                    color: C.text, fontSize: "19px", fontWeight: 600,
                     letterSpacing: "-0.3px", marginBottom: "10px",
                   }}>
                     {opt.title}
@@ -339,7 +345,7 @@ export default function ContactPage() {
             })}
           </div>
 
-          {/* Email nudge below cards */}
+          {/* Email nudge */}
           <div style={{ textAlign: "center", marginTop: "52px" }}>
             <p style={{ color: C.muted, fontSize: "14px", lineHeight: "1.6" }}>
               For any of the above, reach us at{" "}
@@ -351,11 +357,12 @@ export default function ContactPage() {
               </a>
             </p>
           </div>
+
         </div>
       </div>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          SECTION 4 — CLOSING CTA
+          SECTION 3 — CLOSING CTA
           ══════════════════════════════════════════════════════════════════════ */}
       <div style={{ position: "relative", overflow: "hidden" }}>
         <img
@@ -364,7 +371,7 @@ export default function ContactPage() {
         />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(10,8,5,0.68) 0%, rgba(10,8,5,0.60) 100%)" }} />
 
-        <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "100px 32px 110px" }}>
+        <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "110px 32px 120px" }}>
           <p style={{
             color: "rgba(160,165,220,0.80)", fontSize: "11px", fontWeight: 700,
             letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "24px",

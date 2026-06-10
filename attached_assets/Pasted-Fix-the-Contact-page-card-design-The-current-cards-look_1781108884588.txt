@@ -1,0 +1,67 @@
+Fix the Contact page card design. The current cards look too flat and plain. They should match the premium ScoreShift Mail Wallet / frosted glass tile style.
+
+Update the Contact page glass cards with this design direction:
+
+1. Main contact information card
+- Make it feel like a premium glass wallet card, not a white rectangle.
+- Use frosted cream glass:
+  background: rgba(255, 253, 248, 0.55)
+  backdrop-filter: blur(22px)
+  border: 1px solid rgba(255,255,255,0.55)
+  box-shadow: 0 30px 80px rgba(55, 42, 20, 0.14)
+  border-radius: 36px
+- Add a very subtle inner highlight:
+  inset 0 1px 0 rgba(255,255,255,0.7)
+- Add a soft Aura Indigo glow behind the card:
+  radial-gradient circle with low opacity, not neon.
+- The card should feel translucent and elevated over the cream/red-rock background.
+
+2. Contact option cards
+The three cards for:
+- General Questions
+- Self-Service Support
+- Concierge Services
+
+should also become glass tiles:
+- transparent cream glass background
+- blurred backdrop
+- soft white border
+- rounded 32px corners
+- subtle shadow
+- small glass icon tile in the upper left
+- gentle hover lift:
+  transform translateY(-6px)
+  shadow increases slightly
+  border becomes slightly more visible
+
+3. Layout improvements
+- Put the main “ScoreShift Headquarters” contact card above the three support cards.
+- The contact card should be centered and narrower than the page, max-width around 760px.
+- The three support cards should sit below in a clean grid.
+- Increase spacing so the page feels calm and premium.
+- Keep text readable with enough contrast.
+
+4. Visual hierarchy
+Main contact card title:
+ScoreShift Headquarters
+
+Inside:
+ScoreShift LLC
+1201 West Peachtree St NW
+Unit 2300
+Atlanta, GA 30309
+
+Email:
+info@scoreshiftcapital.com
+
+Phone:
+770-712-6626
+
+5. Important
+Do not make the cards pure white.
+Do not make them look like normal SaaS cards.
+Do not use heavy dark borders.
+Do not make the icons too colorful.
+Do not overpower the background image.
+
+The contact page should feel like the user is stepping into the same premium ScoreShift world as the pricing page.
