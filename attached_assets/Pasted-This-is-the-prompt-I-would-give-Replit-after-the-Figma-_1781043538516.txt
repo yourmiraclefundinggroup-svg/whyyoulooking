@@ -1,0 +1,412 @@
+This is the prompt I would give Replit after the Figma is complete.
+
+Not a normal Replit prompt.
+
+A **creative-director prompt** that forces it to read the Figma and implement instead of redesigning.
+
+---
+
+# REPLIT IMPLEMENTATION PROMPT
+
+You are implementing the ScoreShift Pricing Experience.
+
+The attached Figma file is the single source of truth.
+
+Your job is NOT to redesign, reinterpret, simplify, modernize, or improve the experience.
+
+Your job is to recreate the Figma as accurately as possible.
+
+---
+
+## Design Philosophy
+
+ScoreShift is not a credit monitoring company.
+
+ScoreShift is a financial guidance platform.
+
+The pricing experience should feel like choosing a path forward, not buying software.
+
+The emotional progression is:
+
+```text
+Clarity
+↓
+Choice
+↓
+Confidence
+↓
+Commitment
+```
+
+Not:
+
+```text
+Features
+↓
+Pricing
+↓
+Checkout
+```
+
+---
+
+## Global Visual Direction
+
+Use the existing ScoreShift design language already established throughout the landing page.
+
+Maintain:
+
+* Bone Ledger tones
+* Ceramic White surfaces
+* Warm cream environments
+* Aura Indigo accents
+* Soft shadows
+* Premium spacing
+* Museum-quality visual presentation
+
+The experience should feel like:
+
+```text
+Apple
++
+Linear
++
+Luxury Hospitality
++
+Private Banking
+```
+
+Never:
+
+```text
+Credit Karma
+Credit Repair Website
+Crypto Dashboard
+Traditional SaaS Pricing Table
+```
+
+---
+
+## IMPORTANT
+
+Do not replace imagery.
+
+Do not generate alternative graphics.
+
+Do not insert stock illustrations.
+
+Do not insert dashboard screenshots.
+
+Do not insert fake analytics.
+
+The images selected in Figma are intentional and are part of the storytelling system.
+
+---
+
+# PAGE STRUCTURE
+
+---
+
+## SECTION 1
+
+### Choose Your Path
+
+Use the Split Path image from Figma.
+
+This is the hero.
+
+The image should occupy most of the viewport.
+
+Create two floating Spline-inspired glass cards.
+
+### Card 1
+
+Self-Service
+
+Explore at your own pace.
+
+Guidance, monitoring, and tools designed to help you move forward on your own timeline.
+
+Button:
+
+Explore Self-Service →
+
+---
+
+### Card 2
+
+Concierge
+
+Work directly with our team.
+
+A managed experience where ScoreShift helps guide strategy, execution, and progress tracking from start to finish.
+
+Button:
+
+Explore Concierge →
+
+---
+
+### Glass Treatment
+
+This section uses the strongest glass treatment on the entire experience.
+
+Requirements:
+
+* Frosted glass
+* Soft transparency
+* Subtle blur
+* Subtle reflections
+* Gentle hover motion
+* Slight mouse tracking
+* Premium Apple Vision Pro feel
+
+Avoid exaggerated 3D effects.
+
+---
+
+# SELF-SERVICE EXPERIENCE
+
+When Self-Service is selected:
+
+Navigate to the dedicated Self-Service pricing experience.
+
+---
+
+## Self-Service Hero
+
+Use the Original Winding Path image from Figma.
+
+Headline:
+
+Your path. Your pace.
+
+Subheadline:
+
+Tools, monitoring, and guidance designed to help you move forward with confidence.
+
+---
+
+## Self-Service Pricing
+
+Use the cream environment as the background.
+
+The pricing cards should appear to float above the environment.
+
+Plans:
+
+Free
+
+Path
+
+Momentum
+
+Summit
+
+---
+
+### Momentum Card
+
+Momentum is the primary conversion target.
+
+Make Momentum:
+
+* Slightly larger
+* Slightly elevated
+* Soft Aura Indigo accent
+* Premium treatment
+
+Not flashy.
+
+Not salesy.
+
+---
+
+Badge:
+
+Founding Member
+
+$55/month forever
+
+First 122 Members
+
+---
+
+## Self-Service Comparison
+
+Create a clean comparison section.
+
+Use generous whitespace.
+
+No giant cluttered table.
+
+No excessive checkmarks.
+
+---
+
+## ScoreShift Mail Wallet
+
+Create an Apple Wallet-inspired component.
+
+Display:
+
+1 Credit — $14.99
+
+5 Credits — $69.99
+
+10 Credits — $129.99
+
+25 Credits — $299.99
+
+Copy:
+
+Create your Smart Letter, then send it certified through ScoreShift Mail without printing, envelopes, stamps, or post office trips.
+
+---
+
+## Self-Service CTA
+
+Headline:
+
+Start your guided plan.
+
+Primary CTA:
+
+Get Started
+
+---
+
+# CONCIERGE EXPERIENCE
+
+When Concierge is selected:
+
+Navigate to dedicated Concierge pricing experience.
+
+---
+
+## Concierge Hero
+
+Use the Concierge Gentleman image from Figma.
+
+Do not crop aggressively.
+
+Maintain the negative space.
+
+Maintain the engraved ScoreShift Concierge branding.
+
+Headline:
+
+Professional guidance from start to finish.
+
+Subheadline:
+
+The ScoreShift team manages the strategy and execution while you track progress through your dashboard.
+
+---
+
+## Concierge Pricing
+
+Use the cream environment background.
+
+Plans:
+
+Fast Track
+
+Rush
+
+Elite
+
+---
+
+### Elite Card
+
+Elite receives premium treatment.
+
+Requirements:
+
+* Slightly larger
+* More spacing
+* More elegant presentation
+
+Do NOT make Elite loud.
+
+Make Elite refined.
+
+---
+
+## Concierge Comparison
+
+Create clean comparison section.
+
+Maintain luxury spacing.
+
+Maintain simplicity.
+
+---
+
+## ScoreShift Mail Wallet
+
+Reuse the same component from Self-Service.
+
+---
+
+## Concierge CTA
+
+Headline:
+
+Let us help guide the process.
+
+Primary CTA:
+
+Start Concierge
+
+---
+
+# MOTION SYSTEM
+
+Motion should feel similar to:
+
+* Cleo
+* Apple
+* Linear
+
+NOT:
+
+* Framer templates
+* Startup websites
+* Over-animated landing pages
+
+Use:
+
+* Subtle fades
+* Soft parallax
+* Gentle reveal animations
+* Layered depth
+
+Avoid:
+
+* Flying objects
+* Aggressive scaling
+* Excessive motion
+
+---
+
+# FINAL RULE
+
+The attached Figma file is the source of truth.
+
+If a design decision in this prompt conflicts with the Figma:
+
+Follow the Figma.
+
+Build exactly what is designed.
+
+Do not redesign.
+
+Do not simplify.
+
+Do not add new sections.
+
+Do not remove sections.
+
+Implement the ScoreShift Pricing Experience exactly as shown.
