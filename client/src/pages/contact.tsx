@@ -208,7 +208,7 @@ export default function ContactPage() {
                 <div style={{ height: "1px", background: "rgba(30,27,24,0.08)" }} />
 
                 {/* Email */}
-                <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap" }}>
                   <div style={{
                     width: 48, height: 48, borderRadius: "15px", flexShrink: 0,
                     background: "rgba(67,56,202,0.08)",

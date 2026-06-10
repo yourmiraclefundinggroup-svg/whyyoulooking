@@ -43,6 +43,10 @@ if (!document.getElementById(STYLE_ID)) {
     .ss-su-scroll::-webkit-scrollbar-track { background: transparent; }
     .ss-su-scroll::-webkit-scrollbar-thumb { background: rgba(30,27,24,0.14); border-radius: 999px; }
     .ss-su-step-btn:hover { background: rgba(30,27,24,0.06) !important; }
+    @media (max-width: 600px) {
+      .ss-su-outer { justify-content: center !important; padding: 20px 16px !important; }
+      .ss-su-panel { max-width: 100% !important; max-height: calc(100vh - 40px) !important; border-radius: 24px !important; }
+    }
   `;
   document.head.appendChild(s);
 }
@@ -367,7 +371,7 @@ export default function Signup() {
       }} />
 
       {/* Scroll container — panel aligned LEFT */}
-      <div style={{
+      <div className="ss-su-outer" style={{
         position: "absolute", inset: 0,
         overflowY: "auto",
         display: "flex",
@@ -379,7 +383,7 @@ export default function Signup() {
         {/* ═══════════════════════════════════════════
             GLASS PANEL
             ═══════════════════════════════════════════ */}
-        <div style={{
+        <div className="ss-su-panel" style={{
           width: "100%",
           maxWidth: "500px",
           maxHeight: "calc(100vh - 80px)",

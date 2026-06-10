@@ -1,0 +1,211 @@
+ScoreShift Launch Readiness Audit
+
+Objective:
+
+Perform a complete launch-readiness audit covering:
+
+1. Feature Verification
+2. Mobile Responsiveness Verification
+3. Compliance Verification
+
+Create a report of all findings and automatically fix anything that can be safely corrected.
+
+---
+
+## PHASE 1 — FEATURE VERIFICATION
+
+Audit every page and workflow.
+
+Verify:
+
+Landing Page
+
+* All CTA buttons function
+* Product links function
+* Pricing links function
+* Contact links function
+* Sign In links function
+* Start My Plan links function
+
+Pricing Experience
+
+* Self-Service path works
+* Concierge path works
+* Momentum Founder pricing displays correctly
+* Concierge payment options display correctly
+* Mail Wallet displays correctly
+
+Contact Page
+
+* Address correct
+* Email correct
+* Phone correct
+* Links function
+
+Privacy Policy
+
+* Loads correctly
+* Navigation functions
+
+Terms & Conditions
+
+* Loads correctly
+* Navigation functions
+
+Authentication
+
+* Sign Up page functions
+* Sign In page functions
+* Password validation functions
+* Form validation functions
+
+Portal Navigation
+Verify every navigation item:
+
+* Home
+* My Plan
+* Credit Report
+* Dispute IQ
+* Debt Navigator
+* Student Loan Aid
+* Subscription Manager
+* Protection Center
+* Mail Wallet
+* Progress
+* Concierge
+* Profile
+
+Verify:
+
+* Page loads
+* No console errors
+* No broken routes
+* No blank states
+* No missing assets
+
+---
+
+## PHASE 2 — MOBILE AUDIT
+
+Test:
+
+320px
+375px
+390px
+414px
+768px
+1024px
+
+Verify:
+
+Landing Page
+Pricing
+Contact
+Privacy
+Terms
+Sign In
+Sign Up
+Portal
+
+Check:
+
+* Text clipping
+* Overflow
+* Horizontal scrolling
+* Broken cards
+* Button spacing
+* Navigation behavior
+* Form usability
+* Hero image scaling
+* Glass panel rendering
+
+Fix all mobile issues discovered.
+
+---
+
+## PHASE 3 — COMPLIANCE AUDIT
+
+Review:
+
+Privacy Policy
+Terms & Conditions
+Authentication Flow
+Credit Pull Flow
+Array Integration
+
+Verify presence of:
+
+* Privacy Policy link
+* Terms link
+* Consumer consent language
+* Credit report authorization language
+* FCRA disclosures where applicable
+* Account creation disclosures
+* Contact information
+* Business identity information
+
+Check:
+
+* Broken compliance links
+* Missing pages
+* Missing disclosures
+* Missing footer links
+
+Generate a list of anything requiring legal review.
+
+Do not invent compliance language.
+
+Only identify missing items.
+
+---
+
+## PHASE 4 — DESIGN CONSISTENCY AUDIT
+
+Verify:
+
+* Correct ScoreShift logo usage
+* Landing page logo consistency
+* Portal logo consistency
+* Sign In logo consistency
+* Sign Up logo consistency
+
+Verify:
+
+* Glass system consistency
+* Typography consistency
+* Color consistency
+* Button consistency
+* Border radius consistency
+
+Find any old styling remnants.
+
+Find any old Array-style containers.
+
+Find any old white cards.
+
+Find any old placeholder content.
+
+---
+
+## PHASE 5 — FINAL REPORT
+
+Provide:
+
+PASS
+WARNING
+FAIL
+
+for every section.
+
+List:
+
+Critical Issues
+High Priority Issues
+Medium Issues
+Low Priority Issues
+
+Provide exact file locations for all findings.
+
+Goal:
+
+Prepare ScoreShift for production launch and identify every remaining issue before marketing and user acquisition begin.

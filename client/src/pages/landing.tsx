@@ -80,7 +80,7 @@ export default function LandingPage() {
             <li><a href="#trust">Results</a></li>
           </ul>
           <div className="ss-nav-actions">
-            <Link href="/auth" className="ss-nav-ghost">Sign in</Link>
+            <Link href="/login" className="ss-nav-ghost">Sign in</Link>
             <Link href="/pricing" className="ss-btn-nav">
               Start My Plan <ArrowRight size={13} />
             </Link>

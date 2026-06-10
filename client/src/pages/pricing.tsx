@@ -750,7 +750,7 @@ function MailWalletScene() {
             </div>
 
             {/* Credit options grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", marginBottom: "28px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: "10px", marginBottom: "28px" }}>
               {mailCredits.map((c) => {
                 const isSel = c.qty === selected;
                 return (
