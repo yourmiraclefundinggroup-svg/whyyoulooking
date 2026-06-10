@@ -66,7 +66,7 @@ const BUREAU_CONFIG = {
   TransUnion: { color: "#662D8C", dot: "bg-[#662D8C]" },
 } as const;
 
-/* ── Tier upgrade card ───────────────────────────────────────────────────── */
+/* ── Tier upgrade card — ScoreShift Glass ────────────────────────────────── */
 function TierUpgradeCard({
   label,
   icon: Icon,
@@ -78,33 +78,58 @@ function TierUpgradeCard({
   description: string;
   requiredTier: SubscriptionTier;
 }) {
-  const colorMap: Record<SubscriptionTier, { bg: string; icon: string; border: string; btn: string }> = {
-    none:    { bg: "bg-amber-50 dark:bg-amber-950/20", icon: "bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400", border: "border-amber-200 dark:border-amber-500/25", btn: "bg-amber-500 hover:bg-amber-600 text-white" },
-    starter: { bg: "bg-amber-50 dark:bg-amber-950/20", icon: "bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400", border: "border-amber-200 dark:border-amber-500/25", btn: "bg-amber-500 hover:bg-amber-600 text-white" },
-    pro:     { bg: "bg-blue-50 dark:bg-blue-950/20",   icon: "bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400",    border: "border-blue-200 dark:border-blue-500/25",   btn: "bg-blue-600 hover:bg-blue-700 text-white" },
-    elite:   { bg: "bg-violet-50 dark:bg-violet-950/20", icon: "bg-violet-100 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400", border: "border-violet-200 dark:border-violet-500/25", btn: "bg-violet-600 hover:bg-violet-700 text-white" },
-  };
-
-  const c = colorMap[requiredTier] ?? colorMap.starter;
   const tierLabel = requiredTier === "pro" ? "Pro" : requiredTier === "elite" ? "Elite" : "Starter";
+  const accentColor = requiredTier === "elite" ? "rgba(124,58,237,0.22)" : requiredTier === "pro" ? "rgba(37,99,235,0.18)" : "rgba(245,158,11,0.18)";
+  const iconColor   = requiredTier === "elite" ? "#A78BFA" : requiredTier === "pro" ? "#60A5FA" : "#FCD34D";
+  const btnClass    = requiredTier === "elite" ? "bg-violet-600 hover:bg-violet-500" : requiredTier === "pro" ? "bg-blue-600 hover:bg-blue-500" : "bg-amber-500 hover:bg-amber-400";
 
   return (
-    <div className={`rounded-xl border p-5 ${c.bg} ${c.border}`}>
-      <div className="flex items-start gap-4">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${c.icon}`}>
-          <Icon className="h-5 w-5" />
+    <div style={{
+      background: "rgba(255,253,248,0.06)",
+      backdropFilter: "blur(24px)",
+      WebkitBackdropFilter: "blur(24px)",
+      border: "1px solid rgba(255,255,255,0.10)",
+      borderRadius: "28px",
+      boxShadow: `0 8px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.08)`,
+      padding: "22px 24px",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      {/* Ambient tier glow */}
+      <div style={{
+        position: "absolute", top: 0, right: 0,
+        width: 180, height: 180,
+        background: `radial-gradient(ellipse at top right, ${accentColor} 0%, transparent 70%)`,
+        pointerEvents: "none",
+      }} />
+      <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "flex-start", gap: "16px" }}>
+        <div style={{
+          width: 42, height: 42, borderRadius: "13px", flexShrink: 0,
+          background: "rgba(255,255,255,0.06)",
+          border: "1px solid rgba(255,255,255,0.10)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
+        }}>
+          <Icon className="h-4 w-4" style={{ color: iconColor } as React.CSSProperties} />
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h3 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">{label}</h3>
-            <Lock className="h-3.5 w-3.5 text-slate-400" />
-            <Badge variant="outline" className="text-xs ml-auto shrink-0">
-              Available in {tierLabel} plan
-            </Badge>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px", flexWrap: "wrap" }}>
+            <h3 style={{ color: "rgba(255,252,245,0.88)", fontSize: "14px", fontWeight: 600 }}>{label}</h3>
+            <Lock style={{ width: 12, height: 12, color: "rgba(255,252,245,0.30)" }} />
+            <span style={{
+              marginLeft: "auto", fontSize: "10px", fontWeight: 700,
+              letterSpacing: "0.12em", textTransform: "uppercase",
+              color: "rgba(255,252,245,0.35)",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: "100px", padding: "3px 9px",
+            }}>
+              {tierLabel} plan
+            </span>
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">{description}</p>
+          <p style={{ color: "rgba(255,252,245,0.45)", fontSize: "13px", lineHeight: "1.65", marginBottom: "16px" }}>{description}</p>
           <Link href="/pricing">
-            <Button size="sm" className={`gap-1.5 text-xs font-semibold ${c.btn}`}>
+            <Button size="sm" className={`gap-1.5 text-xs font-semibold text-white ${btnClass}`} style={{ borderRadius: "100px" }}>
               {TIER_UPGRADE_LABELS[requiredTier]}
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>
@@ -179,7 +204,7 @@ function CreditComponent({
   return <div ref={containerRef} className="w-full min-h-[200px]" />;
 }
 
-/* ── Branded Array card wrapper ──────────────────────────────────────────── */
+/* ── ScoreShift Glass Panel — Array card wrapper ─────────────────────────── */
 function ArrayCard({
   icon: Icon,
   title,
@@ -192,20 +217,56 @@ function ArrayCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-white/[0.07] bg-white dark:bg-[#0F1E35] overflow-hidden shadow-sm">
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-white/[0.05]">
-        <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center shrink-0">
-          <Icon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+    <div style={{
+      background: "rgba(255,253,248,0.055)",
+      backdropFilter: "blur(32px)",
+      WebkitBackdropFilter: "blur(32px)",
+      border: "1px solid rgba(255,255,255,0.11)",
+      borderRadius: "32px",
+      boxShadow: "0 24px 64px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.10)",
+      overflow: "hidden",
+      position: "relative",
+    }}>
+      {/* Indigo ambient glow — top-left */}
+      <div style={{
+        position: "absolute", top: -40, left: -40,
+        width: 260, height: 260,
+        background: "radial-gradient(ellipse, rgba(99,102,241,0.08) 0%, transparent 68%)",
+        pointerEvents: "none",
+      }} />
+
+      {/* Card header */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: "14px",
+        padding: "20px 24px 18px",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        position: "relative", zIndex: 1,
+      }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: "12px", flexShrink: 0,
+          background: "rgba(99,102,241,0.12)",
+          border: "1px solid rgba(99,102,241,0.18)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.14)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <Icon className="h-4 w-4" style={{ color: "#818CF8" } as React.CSSProperties} />
         </div>
         <div>
-          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{title}</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
+          <p style={{ color: "rgba(255,252,245,0.90)", fontSize: "14px", fontWeight: 600, letterSpacing: "-0.2px" }}>{title}</p>
+          <p style={{ color: "rgba(255,252,245,0.38)", fontSize: "12px", marginTop: "1px" }}>{description}</p>
         </div>
-        <span className="ml-auto text-[10px] text-slate-300 dark:text-slate-600 font-medium">
-          Powered by ScoreShift
+        <span style={{
+          marginLeft: "auto",
+          fontSize: "10px", fontWeight: 700,
+          letterSpacing: "0.12em", textTransform: "uppercase",
+          color: "rgba(255,252,245,0.18)",
+        }}>
+          ScoreShift
         </span>
       </div>
-      <div className="p-5">{children}</div>
+
+      {/* Content */}
+      <div style={{ padding: "24px", position: "relative", zIndex: 1 }}>{children}</div>
     </div>
   );
 }
@@ -276,40 +337,46 @@ export default function CreditMonitoring() {
 
   if (enrollLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div style={{ height: 48, overflow: "hidden", display: "flex", alignItems: "center" }}>
-            <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 160, width: "auto", objectFit: "contain" }} />
+      <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #0B0E1A 0%, #0F1628 55%, #0A0D1C 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px" }}>
+          <div style={{ height: 36, overflow: "hidden", display: "flex", alignItems: "center" }}>
+            <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 130, width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
           </div>
-          <div className="w-10 h-10 rounded-full border-2 border-amber-400 border-t-transparent ss-spinner" />
-          <p className="text-muted-foreground text-sm">Loading credit monitoring...</p>
+          <div className="w-8 h-8 rounded-full border-2 border-indigo-400 border-t-transparent ss-spinner" />
+          <p style={{ color: "rgba(255,252,245,0.35)", fontSize: "13px" }}>Loading credit monitoring…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #0B0E1A 0%, #0F1628 55%, #0A0D1C 100%)" }}>
 
-      {/* ── Page header ──────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-[#0F172A] to-[#1E3A5F] dark:from-[#050A14] dark:to-[#0A1628]">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+      {/* ── Page header — glass panel ─────────────────────────────────────── */}
+      <div style={{
+        background: "rgba(255,253,248,0.04)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        borderBottom: "1px solid rgba(255,255,255,0.07)",
+      }}>
+        {/* Subtle indigo wash behind header */}
+        <div style={{ background: "linear-gradient(135deg, rgba(67,56,202,0.12) 0%, transparent 60%)", position: "absolute", inset: 0, pointerEvents: "none" }} />
+        <div className="max-w-6xl mx-auto px-6 py-8" style={{ position: "relative", zIndex: 1 }}>
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-              <div className="flex items-center gap-3 mb-3">
+              <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "10px" }}>
                 <div style={{ height: 26, overflow: "hidden", display: "flex", alignItems: "center" }}>
                   <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 100, width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
                 </div>
-                <span className="w-px h-5 bg-white/20" />
-                <h1 className="text-xl font-bold text-white">Credit Monitoring</h1>
+                <span style={{ width: 1, height: 20, background: "rgba(255,255,255,0.15)" }} />
+                <h1 style={{ color: "rgba(255,252,245,0.90)", fontSize: "18px", fontWeight: 600, letterSpacing: "-0.3px" }}>Credit Monitoring</h1>
               </div>
-              <p className="text-blue-300/80 text-sm max-w-md">
+              <p style={{ color: "rgba(255,252,245,0.38)", fontSize: "13px", maxWidth: "420px", lineHeight: "1.55" }}>
                 Live bureau data, real-time alerts, and premium credit tools — all in one place.
               </p>
             </div>
 
-            <div className="flex flex-col sm:items-end gap-2 shrink-0">
-              {/* Tier badge */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px", flexShrink: 0 }}>
               {access.hasAnyPlan && (
                 <Badge className={`w-fit text-xs font-semibold ${TIER_BADGE_STYLES[access.tier]}`}>
                   {access.tierLabel} Plan
@@ -321,15 +388,13 @@ export default function CreditMonitoring() {
                   Monitoring Active
                 </Badge>
               )}
-
-              {/* All 3 Bureaus badge */}
-              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", marginTop: "2px" }}>
                 <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-xs gap-1">
                   <CheckCircle className="h-3 w-3" />
                   All 3 Bureaus
                 </Badge>
                 {(["Experian", "Equifax", "TransUnion"] as const).map((name) => (
-                  <span key={name} className="text-[10px] text-white/50 font-medium flex items-center gap-0.5">
+                  <span key={name} style={{ fontSize: "10px", color: "rgba(255,255,255,0.40)", fontWeight: 500, display: "flex", alignItems: "center", gap: "3px" }}>
                     <CheckCircle className="h-2.5 w-2.5 text-emerald-400" />
                     {name}
                   </span>
@@ -339,13 +404,18 @@ export default function CreditMonitoring() {
           </div>
 
           {displayName && !displayName.includes("Account") && (
-            <p className="text-white/50 text-xs mt-3">Viewing as: {displayName}</p>
+            <p style={{ color: "rgba(255,252,245,0.28)", fontSize: "11px", marginTop: "12px" }}>Viewing as: {displayName}</p>
           )}
         </div>
       </div>
 
-      {/* ── Tab bar ──────────────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-[#0A1628] border-b border-slate-200 dark:border-white/[0.07]">
+      {/* ── Tab bar — glass strip ─────────────────────────────────────────── */}
+      <div style={{
+        background: "rgba(255,253,248,0.03)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+      }}>
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex gap-0.5 overflow-x-auto scrollbar-hide">
             {TABS.map((tab) => {
@@ -355,16 +425,26 @@ export default function CreditMonitoring() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveSection(tab.id)}
-                  className={`group flex items-center gap-2 px-4 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors relative ${
-                    isActive
-                      ? "border-amber-500 text-amber-600 dark:text-amber-400"
-                      : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-white/20"
-                  }`}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "8px",
+                    padding: "16px",
+                    fontSize: "14px", fontWeight: 500, whiteSpace: "nowrap",
+                    borderBottom: isActive ? "2px solid #818CF8" : "2px solid transparent",
+                    color: isActive ? "#A5B4FC" : "rgba(255,252,245,0.38)",
+                    background: "none", border: "none",
+                    borderBottomWidth: "2px",
+                    borderBottomStyle: "solid",
+                    borderBottomColor: isActive ? "#818CF8" : "transparent",
+                    cursor: "pointer",
+                    transition: "color 0.2s, border-color 0.2s",
+                  }}
+                  onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = "rgba(255,252,245,0.65)"; }}
+                  onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = "rgba(255,252,245,0.38)"; }}
                 >
-                  <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-amber-500" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300"}`} />
-                  <span className="flex flex-col items-start">
+                  <Icon className="h-4 w-4 shrink-0" style={{ color: isActive ? "#818CF8" : "rgba(255,252,245,0.30)" } as React.CSSProperties} />
+                  <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
                     <span>{tab.label}</span>
-                    <span className={`text-[10px] font-normal hidden sm:block ${isActive ? "text-amber-500/70" : "text-slate-400 dark:text-slate-500"}`}>
+                    <span style={{ fontSize: "10px", fontWeight: 400, display: "none", color: isActive ? "rgba(165,180,252,0.60)" : "rgba(255,252,245,0.25)" }} className="sm:block">
                       {tab.subtitle}
                     </span>
                   </span>
@@ -378,62 +458,106 @@ export default function CreditMonitoring() {
       {/* ── Content ──────────────────────────────────────────────────────── */}
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
 
-        {/* Enrollment state */}
+        {/* Enrollment state — glass panel */}
         {!isEnrolled && (
-          <div className="rounded-2xl border border-blue-200 dark:border-blue-800/40 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/20 overflow-hidden">
-            <div className="p-6 sm:p-8">
+          <div style={{
+            background: "rgba(255,253,248,0.05)",
+            backdropFilter: "blur(32px)",
+            WebkitBackdropFilter: "blur(32px)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            borderRadius: "32px",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.08)",
+            overflow: "hidden",
+            position: "relative",
+          }}>
+            {/* Indigo enrollment glow */}
+            <div style={{
+              position: "absolute", top: -60, left: -60,
+              width: 320, height: 320,
+              background: "radial-gradient(ellipse, rgba(99,102,241,0.14) 0%, transparent 68%)",
+              pointerEvents: "none",
+            }} />
+            <div style={{ padding: "36px 40px", position: "relative", zIndex: 1 }}>
               <div className="flex flex-col sm:flex-row items-start gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-lg">
-                  <Shield className="h-7 w-7 text-white" />
+                {/* Icon */}
+                <div style={{
+                  width: 56, height: 56, borderRadius: "18px", flexShrink: 0,
+                  background: "linear-gradient(135deg, rgba(99,102,241,0.30) 0%, rgba(67,56,202,0.20) 100%)",
+                  border: "1px solid rgba(99,102,241,0.30)",
+                  boxShadow: "0 8px 24px rgba(67,56,202,0.20), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Shield style={{ width: 26, height: 26, color: "#A5B4FC" }} />
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <div style={{ height: 26, overflow: "hidden", display: "flex", alignItems: "center" }}>
-                      <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 100, width: "auto", objectFit: "contain" }} />
+
+                <div style={{ flex: 1 }}>
+                  {/* Eyebrow */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", flexWrap: "wrap" }}>
+                    <div style={{ height: 22, overflow: "hidden", display: "flex", alignItems: "center" }}>
+                      <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 85, width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
                     </div>
-                    <span className="text-slate-400 dark:text-slate-500 text-sm">·</span>
-                    <span className="text-slate-600 dark:text-slate-400 text-sm">Credit Profile Setup</span>
+                    <span style={{ color: "rgba(255,252,245,0.20)", fontSize: "13px" }}>·</span>
+                    <span style={{ color: "rgba(255,252,245,0.40)", fontSize: "13px" }}>Credit Profile Setup</span>
                   </div>
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white mt-2 mb-1">
+                  <h2 style={{ color: "rgba(255,252,245,0.92)", fontSize: "20px", fontWeight: 600, letterSpacing: "-0.4px", marginBottom: "8px" }}>
                     Set Up Your Credit Profile
                   </h2>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm mb-5 leading-relaxed max-w-lg">
+                  <p style={{ color: "rgba(255,252,245,0.42)", fontSize: "14px", lineHeight: "1.65", maxWidth: "500px", marginBottom: "24px" }}>
                     Connect your credit file to unlock real-time bureau data, score tracking, and intelligent alerts.
                     One-time setup — takes about 2 minutes.
                   </p>
 
-                  {/* 3-bureau badges */}
-                  <div className="flex items-center gap-2 mb-5 flex-wrap">
+                  {/* Bureau badges */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "24px", flexWrap: "wrap" }}>
                     {(Object.entries(BUREAU_CONFIG) as [keyof typeof BUREAU_CONFIG, typeof BUREAU_CONFIG[keyof typeof BUREAU_CONFIG]][]).map(([name, cfg]) => (
                       <span
                         key={name}
-                        className="text-[11px] font-bold px-2.5 py-1 rounded-full text-white"
-                        style={{ backgroundColor: cfg.color }}
+                        style={{
+                          fontSize: "11px", fontWeight: 700, padding: "4px 12px",
+                          borderRadius: "100px", color: "#fff",
+                          backgroundColor: cfg.color,
+                          boxShadow: `0 2px 8px ${cfg.color}55`,
+                        }}
                       >
                         {name}
                       </span>
                     ))}
-                    <span className="text-xs text-slate-500 dark:text-slate-400 ml-1">All 3 bureaus covered</span>
+                    <span style={{ color: "rgba(255,252,245,0.32)", fontSize: "12px", marginLeft: "4px" }}>All 3 bureaus covered</span>
                   </div>
 
                   {!access.hasAnyPlan ? (
-                    <div className="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-950/20 p-4 max-w-md">
-                      <p className="text-amber-800 dark:text-amber-300 text-sm font-medium mb-3">
+                    <div style={{
+                      borderRadius: "20px",
+                      background: "rgba(245,158,11,0.08)",
+                      border: "1px solid rgba(245,158,11,0.20)",
+                      padding: "18px 20px", maxWidth: "420px",
+                    }}>
+                      <p style={{ color: "rgba(252,211,77,0.85)", fontSize: "13px", fontWeight: 500, marginBottom: "14px" }}>
                         A subscription is required to access credit monitoring.
                       </p>
                       <Link href="/pricing">
-                        <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-black font-bold gap-1.5">
+                        <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-black font-bold gap-1.5" style={{ borderRadius: "100px" }}>
                           View Plans <ArrowRight className="h-3.5 w-3.5" />
                         </Button>
                       </Link>
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-blue-200 dark:border-blue-700/40 bg-white dark:bg-[#0F1E35] p-5 max-w-xl">
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
-                          <span className="text-white text-[9px] font-black">SS</span>
+                    <div style={{
+                      borderRadius: "20px",
+                      background: "rgba(255,253,248,0.04)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+                      padding: "20px", maxWidth: "540px",
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+                        <div style={{
+                          width: 22, height: 22, borderRadius: "100px",
+                          background: "linear-gradient(135deg, #F59E0B, #D97706)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          <span style={{ color: "#fff", fontSize: "8px", fontWeight: 900 }}>SS</span>
                         </div>
-                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+                        <span style={{ color: "rgba(255,252,245,0.38)", fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                           ScoreShift · Secure Enrollment
                         </span>
                       </div>
@@ -716,12 +840,17 @@ export default function CreditMonitoring() {
           </>
         ) : null}
 
-        {/* ── Not enrolled preview grid ─────────────────────────────────── */}
+        {/* ── Not enrolled preview grid — glass tiles ───────────────────── */}
         {!isEnrolled && (
-          <div className="mt-2">
-            <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">
+          <div style={{ marginTop: "8px" }}>
+            <p style={{
+              fontSize: "10px", fontWeight: 700,
+              letterSpacing: "0.16em", textTransform: "uppercase",
+              color: "rgba(255,252,245,0.22)",
+              marginBottom: "20px",
+            }}>
               Available after enrollment
-            </h3>
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {[
                 { id: "credit-overview",  label: "Credit Overview",       icon: BarChart3,      description: "Live 3-bureau credit scores and account summary" },
@@ -738,16 +867,31 @@ export default function CreditMonitoring() {
               ].map((comp) => (
                 <div
                   key={comp.id}
-                  className="rounded-xl border border-slate-200 dark:border-white/[0.06] bg-white dark:bg-[#0F1E35]/60 p-4 opacity-60 pointer-events-none"
+                  style={{
+                    background: "rgba(255,253,248,0.035)",
+                    backdropFilter: "blur(20px)",
+                    WebkitBackdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                    borderRadius: "20px",
+                    boxShadow: "0 4px 24px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.05)",
+                    padding: "18px 18px 16px",
+                    opacity: 0.55,
+                    pointerEvents: "none",
+                  }}
                 >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center">
-                      <comp.icon className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                    <div style={{
+                      width: 30, height: 30, borderRadius: "10px", flexShrink: 0,
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <comp.icon className="h-3.5 w-3.5" style={{ color: "rgba(255,252,245,0.30)" } as React.CSSProperties} />
                     </div>
-                    <span className="font-medium text-slate-600 dark:text-slate-400 text-sm">{comp.label}</span>
-                    <Lock className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600 ml-auto" />
+                    <span style={{ color: "rgba(255,252,245,0.55)", fontSize: "13px", fontWeight: 500 }}>{comp.label}</span>
+                    <Lock style={{ width: 12, height: 12, color: "rgba(255,252,245,0.18)", marginLeft: "auto" }} />
                   </div>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed">{comp.description}</p>
+                  <p style={{ color: "rgba(255,252,245,0.28)", fontSize: "12px", lineHeight: "1.55" }}>{comp.description}</p>
                 </div>
               ))}
             </div>
