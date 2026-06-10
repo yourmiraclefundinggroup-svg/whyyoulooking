@@ -1,0 +1,75 @@
+update-env
+[PM2] Applying action restartProcessId on app [all](ids: [ 0 ])
+[PM2] [scoreshift-array-backend](0) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ scoreshift-array-… │ fork     │ 6    │ online    │ 0%       │ 18.9mb   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+root@Scoreshift-Array-Backend:~/Scoreshift-array-backend# pm2 logs --lines 20
+[TAILING] Tailing last 20 lines for [all] processes (change the value with --lines option)
+/root/.pm2/pm2.log last 20 lines:
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] exited with code [1] via signal [SIGINT]
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] starting in -fork mode-
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] online
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] exited with code [1] via signal [SIGINT]
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] starting in -fork mode-
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] online
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] exited with code [1] via signal [SIGINT]
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] starting in -fork mode-
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] online
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] exited with code [1] via signal [SIGINT]
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] starting in -fork mode-
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] online
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] exited with code [1] via signal [SIGINT]
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] starting in -fork mode-
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] online
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] exited with code [1] via signal [SIGINT]
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] starting in -fork mode-
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] online
+PM2        | 2026-06-10T23:48:33: PM2 log: App [scoreshift-array-backend:0] exited with code [1] via signal [SIGINT]
+PM2        | 2026-06-10T23:48:33: PM2 log: Script /root/Scoreshift-array-backend/index.js had too many unstable restarts (16). Stopped. "errored"
+
+/root/.pm2/logs/scoreshift-array-backend-out.log last 20 lines:
+0|scoreshi | [Array] Requesting token for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU env=sandbox
+0|scoreshi | [Array] Token response status: 404
+0|scoreshi | [Array] Fetching credit report from https://sandbox.array.io/v2/user/credit-report
+0|scoreshi | [Array] Credit report status: 404, size: 74 bytes
+0|scoreshi | [Array] Requesting token for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU env=sandbox
+0|scoreshi | [Array] Token response status: 404
+0|scoreshi | [Array] Fetching credit report from https://sandbox.array.io/v2/user/credit-report
+0|scoreshi | [Array] Credit report status: 404, size: 74 bytes
+0|scoreshi | [Array] Requesting token for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU env=sandbox
+0|scoreshi | [Array] Token response status: 404
+0|scoreshi | [Array] Fetching credit report from https://sandbox.array.io/v2/user/credit-report
+0|scoreshi | [Array] Credit report status: 404, size: 74 bytes
+0|scoreshi | [Array] Requesting token for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU env=sandbox
+0|scoreshi | [Array] Token response status: 404
+0|scoreshi | [Array] Fetching credit report from https://sandbox.array.io/v2/user/credit-report
+0|scoreshi | [Array] Credit report status: 404, size: 74 bytes
+0|scoreshi | [Array] Requesting token for userId=1kQx9IV0dcBETJR1DWMvyg6dRPU env=sandbox
+0|scoreshi | [Array] Token response status: 404
+0|scoreshi | [Array] Fetching credit report from https://sandbox.array.io/v2/user/credit-report
+0|scoreshi | [Array] Credit report status: 404, size: 74 bytes
+
+/root/.pm2/logs/scoreshift-array-backend-error.log last 20 lines:
+0|scoreshi |     at Object.<anonymous> (/usr/lib/node_modules/pm2/lib/ProcessContainerFork.js:32:23)
+0|scoreshi |     at Module._compile (node:internal/modules/cjs/loader:1521:14)
+0|scoreshi |     at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+0|scoreshi |     at Module.load (node:internal/modules/cjs/loader:1266:32)
+0|scoreshi |     at Module._load (node:internal/modules/cjs/loader:1091:12)
+0|scoreshi | /root/Scoreshift-array-backend/index.js:127
+0|scoreshi |   }
+0|scoreshi |   ^
+0|scoreshi | 
+0|scoreshi | SyntaxError: missing ) after argument list
+0|scoreshi |     at wrapSafe (node:internal/modules/cjs/loader:1464:18)
+0|scoreshi |     at Module._compile (node:internal/modules/cjs/loader:1495:20)
+0|scoreshi |     at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+0|scoreshi |     at Module.load (node:internal/modules/cjs/loader:1266:32)
+0|scoreshi |     at Module._load (node:internal/modules/cjs/loader:1091:12)
+0|scoreshi |     at Object.<anonymous> (/usr/lib/node_modules/pm2/lib/ProcessContainerFork.js:32:23)
+0|scoreshi |     at Module._compile (node:internal/modules/cjs/loader:1521:14)
+0|scoreshi |     at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+0|scoreshi |     at Module.load (node:internal/modules/cjs/loader:1266:32)
+0|scoreshi |     at Module._load (node:internal/modules/cjs/loader:1091:12)
