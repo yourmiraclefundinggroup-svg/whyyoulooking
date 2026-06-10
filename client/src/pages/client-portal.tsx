@@ -5,7 +5,6 @@ import { useArrayScript } from "@/hooks/use-array-script";
 import { useArrayToken } from "@/hooks/use-array-token";
 import { STUDENT_LOAN_APP_KEY, STUDENT_LOAN_TOKEN, DEBT_NAVIGATOR_APP_KEY, DEBT_NAVIGATOR_TOKEN } from "@/hooks/use-array-script";
 import { useFeatureAccess } from "@/hooks/use-feature-access";
-import { useArrayThemeInjector } from "@/hooks/use-array-theme-injector";
 import { useScoreShiftProfile, type PlanSuggestion, type ProfileDispute } from "@/hooks/use-score-shift-profile";
 import { apiRequest } from "@/lib/queryClient";
 import "@/styles/portal.css";
@@ -3129,8 +3128,6 @@ export default function ClientPortal({ initialPage }: { initialPage?: PageId } =
   const featureAccess = useFeatureAccess();
   const { appKey, token: userToken, isReady: tokenReady, error: tokenError, apiUrl, sandboxMode } = useArrayToken();
   const { loaded: scriptReady } = useArrayScript(appKey || undefined);
-  useArrayThemeInjector();
-
   const [activePage, setActivePage] = useState<PageId>(() => {
     // Read ?page= from Stripe return URL or direct navigation
     const params = new URLSearchParams(window.location.search);
@@ -3172,10 +3169,7 @@ export default function ClientPortal({ initialPage }: { initialPage?: PageId } =
   }
 
   /* ── Sandbox props for Array components ───────────────────────── */
-  /* color-primary overrides Array's default indigo theme on all components */
-  const sbx: Record<string, string> = sandboxMode && apiUrl
-    ? { apiUrl, sandbox: "true", "color-primary": "#3D3A4E" }
-    : { "color-primary": "#3D3A4E" };
+  const sbx: Record<string, string> = sandboxMode && apiUrl ? { apiUrl, sandbox: "true" } : {};
 
   /* ── Array page props ─────────────────────────────────────────── */
   const arrayProps: ArrayPageProps = { appKey, userToken, sbx, scriptReady, tokenReady, tokenError };
