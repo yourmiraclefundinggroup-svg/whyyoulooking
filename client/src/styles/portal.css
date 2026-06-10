@@ -876,21 +876,25 @@
 
 /* ── Array web component theme tokens ────────────────────────── */
 /* CSS custom properties cross the shadow-DOM boundary, so these
-   cascade into every array-* element rendered inside .cp-portal  */
+   cascade into every array-* element rendered inside .cp-portal.
+   IMPORTANT: --array-color-primary controls Array's action bars
+   (Copy As HTML / Download PDF toolbar) AND primary buttons.
+   Keep it neutral-dark so bars render as charcoal, not purple.
+   ScoreShift brand (#8F7AFF) is only used for links/accents. */
 .cp-portal {
   /* Core Array theme vars */
-  --array-color-primary:           #8F7AFF;
-  --array-color-primary-light:     rgba(143,122,255,0.14);
-  --array-color-accent:            #8F7AFF;
-  --array-color-link:              #8F7AFF;
+  --array-color-primary:           #3D3A4E;    /* dark warm-neutral — action bars go charcoal */
+  --array-color-primary-light:     #F4F0E8;    /* cream — removes purple tint from score chips */
+  --array-color-accent:            #8F7AFF;    /* ScoreShift brand accent (hover rings etc.) */
+  --array-color-link:              #8F7AFF;    /* ScoreShift brand for links */
   --array-color-positive:          #6BAE8A;
   --array-color-negative:          #C07050;
   --array-color-warning:           #EFA26F;
-  --array-color-info:              #8F7AFF;
+  --array-color-info:              #4A7FA5;    /* neutral blue-teal, not purple */
   --array-color-background:        #F7F3EC;
-  --array-color-surface:           rgba(255,255,255,0.90);
-  --array-color-surface-secondary: rgba(244,240,235,0.88);
-  --array-color-card:              rgba(255,255,255,0.90);
+  --array-color-surface:           #FFFFFF;    /* solid white — prevents parent glow bleed */
+  --array-color-surface-secondary: #F4F0E8;    /* solid cream */
+  --array-color-card:              #FFFFFF;    /* solid white card surfaces */
   --array-color-text-primary:      #1E1B18;
   --array-color-text-secondary:    #4A4550;
   --array-color-text-muted:        #7A7670;
@@ -900,14 +904,14 @@
   --array-border-radius-sm:        10px;
   --array-font-family:             'Inter', -apple-system, sans-serif;
   /* Alias variants used by different Array versions */
-  --arr-color-primary:             #8F7AFF;
+  --arr-color-primary:             #3D3A4E;
   --arr-color-accent:              #8F7AFF;
   --arr-color-link:                #8F7AFF;
   --arr-color-positive:            #6BAE8A;
   --arr-color-negative:            #C07050;
   --arr-color-warning:             #EFA26F;
   --arr-color-background:          #F7F3EC;
-  --arr-color-surface:             rgba(255,255,255,0.90);
+  --arr-color-surface:             #FFFFFF;
   --arr-color-border:              #E8E2D8;
 }
 

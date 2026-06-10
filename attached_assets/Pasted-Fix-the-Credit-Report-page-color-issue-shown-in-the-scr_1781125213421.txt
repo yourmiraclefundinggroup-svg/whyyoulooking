@@ -1,0 +1,64 @@
+Fix the Credit Report page color issue shown in the screenshots.
+
+Specific issue:
+There are unwanted purple blocks/overlays appearing inside the Array credit report sections:
+- The “Copy As HTML” / “Download PDF” action bar area is purple.
+- The score number boxes inside the bureau score history area have a purple background.
+- The bureau score blocks in the report preview are being tinted purple.
+
+This purple is NOT part of the ScoreShift glass system and should be removed.
+
+Important:
+Do NOT recolor the Array bureau data itself.
+Do NOT change the actual bureau colors, score gauge colors, bureau logos, or score range bars.
+Only remove the extra purple overlay/background that our styling added on top of Array content.
+
+Fix requirements:
+1. Search the Credit Report page and related CSS/components for any styles applying:
+   - purple background
+   - indigo background
+   - violet background
+   - opacity overlay
+   - mix-blend-mode
+   - filter
+   - backdrop tint
+   - forced background color
+   to Array report inner content.
+
+2. Remove those styles from the Array inner report content.
+
+3. The “Copy As HTML” and “Download PDF” buttons should not sit on a solid purple bar.
+   Restyle them as subtle ScoreShift glass buttons:
+   - transparent cream glass
+   - dark readable text
+   - soft white border
+   - subtle indigo hover only
+   - no purple filled background unless it is the active primary CTA.
+
+4. Bureau score cards should have neutral transparent/cream backgrounds.
+   Keep the score numbers, logos, and colored score bars readable and unchanged.
+
+5. Keep ScoreShift glass only on the OUTER containers:
+   - page panels
+   - section wrappers
+   - cards that hold the Array content
+
+6. Do not apply purple tint directly to:
+   - score numbers
+   - score range bars
+   - bureau score blocks
+   - Array charts
+   - Array tables
+   - report preview content
+   - PDF/HTML export controls
+
+7. Final look:
+   The Credit Report page should have premium ScoreShift glass containers, but the Array report data inside should stay clean, neutral, readable, and untinted.
+
+After fixing, verify the Credit Report page specifically:
+- Review My Scores tab
+- Full Credit Report tab
+- Score Simulator tab
+- Export buttons
+- Score History section
+- Bureau score cards
