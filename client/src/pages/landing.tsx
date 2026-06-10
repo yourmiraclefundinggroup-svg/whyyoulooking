@@ -81,7 +81,7 @@ export default function LandingPage() {
           </ul>
           <div className="ss-nav-actions">
             <Link href="/auth" className="ss-nav-ghost">Sign in</Link>
-            <Link href="/auth" className="ss-btn-nav">
+            <Link href="/pricing" className="ss-btn-nav">
               Start My Plan <ArrowRight size={13} />
             </Link>
           </div>
@@ -109,7 +109,7 @@ export default function LandingPage() {
             action with guided tools designed to help you move forward.
           </p>
           <div className="ss-s1-ctas ss-reveal ss-d3">
-            <Link href="/auth" className="ss-btn-primary">
+            <Link href="/pricing" className="ss-btn-primary">
               Start My Plan <ArrowRight />
             </Link>
             <a href="#product" className="ss-btn-glass">
@@ -423,7 +423,7 @@ export default function LandingPage() {
             — and know exactly what to do about it.
           </p>
           <div className="ss-s7-ctas ss-reveal ss-d3">
-            <Link href="/auth" className="ss-btn-cta-primary">
+            <Link href="/pricing" className="ss-btn-cta-primary">
               Start My Plan <ArrowRight />
             </Link>
             <a href="#product" className="ss-btn-cta-ghost">
