@@ -34,7 +34,7 @@ const SS = {
   redTint:    "rgba(217,79,79,0.10)",
 } as const;
 
-const INJECTED_MARKER = "__ss_themed_v2__";
+const INJECTED_MARKER = "__ss_themed_v3__";
 
 function buildStyleSheet(): string {
   return `
@@ -131,13 +131,83 @@ function buildStyleSheet(): string {
 
 :host > * { font-family: 'Inter', -apple-system, sans-serif !important; }
 
-/* Backgrounds */
+/* Backgrounds — use solid white so parent indigo glow cannot bleed through */
 [class*="container"], [class*="wrapper"], [class*="card"], [class*="panel"],
 [class*="section"], [class*="box"], [class*="surface"],
 [class*="modal"], [class*="dialog"], [class*="drawer"],
-[class*="overview"], [class*="dashboard"], [class*="header"],
+[class*="overview"], [class*="dashboard"],
 [class*="content"], [class*="inner"], [class*="body"] {
+  background-color: ${SS.white} !important;
+}
+
+/* ── Score gauge / chip override ──────────────────────────────────────
+   Array's credit-score gauge boxes render with a solid primary-color
+   fill (either via CSS vars or hardcoded inline styles).  Force every
+   possible score-related container to cream/white with dark text so the
+   rainbow bar and score number are legible on a neutral background.     */
+
+/* Score containers — light fill */
+[class*="score-gauge"], [class*="scoreGauge"],
+[class*="score-card"], [class*="scoreCard"],
+[class*="score-container"], [class*="scoreContainer"],
+[class*="score-display"], [class*="scoreDisplay"],
+[class*="score-overview"], [class*="scoreOverview"],
+[class*="score-header"], [class*="scoreHeader"],
+[class*="score-panel"], [class*="scorePanel"],
+[class*="score-block"], [class*="scoreBlock"],
+[class*="score-box"], [class*="scoreBox"],
+[class*="score-chip"], [class*="scoreChip"],
+[class*="score-band"], [class*="scoreBand"],
+[class*="score-widget"], [class*="scoreWidget"],
+[class*="score-section"], [class*="scoreSection"],
+[class*="score-summary"], [class*="scoreSummary"],
+[class*="score-history"], [class*="scoreHistory"],
+[class*="gauge-container"], [class*="gaugeContainer"],
+[class*="gauge-wrapper"], [class*="gaugeWrapper"],
+[class*="gauge-display"], [class*="gaugeDisplay"],
+[class*="gauge-card"], [class*="gaugeCard"],
+[class*="credit-score"], [class*="creditScore"],
+[class*="vantage-score"], [class*="vantageScore"],
+[class*="fico-score"], [class*="ficoScore"],
+[class*="bureau-score"], [class*="bureauScore"],
+[class*="score-range"], [class*="scoreRange"] {
+  background: ${SS.creamDk} !important;
+  background-color: ${SS.creamDk} !important;
+  background-image: none !important;
+}
+
+/* Score value text — must be dark on cream background */
+[class*="score-value"], [class*="scoreValue"],
+[class*="score-number"], [class*="scoreNumber"],
+[class*="score-digit"], [class*="scoreDigit"],
+[class*="score-label"], [class*="scoreLabel"],
+[class*="score-rating"], [class*="scoreRating"],
+[class*="score-grade"], [class*="scoreGrade"],
+[class*="score-name"], [class*="scoreName"],
+[class*="score-text"]:not(p):not(span),
+[class*="gauge-value"], [class*="gaugeValue"],
+[class*="gauge-label"], [class*="gaugeLabel"],
+[class*="gauge-rating"], [class*="gaugeRating"] {
+  color: ${SS.textDark} !important;
   background-color: transparent !important;
+}
+
+/* Inline style overrides: catch elements where Array sets
+   background-color as an inline style with indigo/purple hex values */
+[style*="background-color: #6366f1"], [style*="background-color:#6366f1"],
+[style*="background-color: #4f46e5"], [style*="background-color:#4f46e5"],
+[style*="background-color: #7c3aed"], [style*="background-color:#7c3aed"],
+[style*="background-color: #818cf8"], [style*="background-color:#818cf8"],
+[style*="background-color: #8F7AFF"], [style*="background-color:#8F7AFF"],
+[style*="background-color: #8f7aff"], [style*="background-color:#8f7aff"],
+[style*="background: #6366f1"],       [style*="background:#6366f1"],
+[style*="background: #4f46e5"],       [style*="background:#4f46e5"],
+[style*="background: #8F7AFF"],       [style*="background:#8F7AFF"],
+[style*="background: #8f7aff"],       [style*="background:#8f7aff"] {
+  background: ${SS.creamDk} !important;
+  background-color: ${SS.creamDk} !important;
+  background-image: none !important;
+  color: ${SS.textDark} !important;
 }
 
 /* 3. Primary / blue → indigo overrides */
