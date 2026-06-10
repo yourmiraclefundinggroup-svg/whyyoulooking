@@ -1,28 +1,48 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
 
 import archImg from "@assets/ChatGPT_Image_Jun_10,_2026,_12_32_14_PM_1781109389839.png";
 
+/* ─── CSS keyframes injected once ───────────────────────────────────────── */
+const STYLE_ID = "ss-login-reflection";
+if (!document.getElementById(STYLE_ID)) {
+  const s = document.createElement("style");
+  s.id = STYLE_ID;
+  s.textContent = `
+    @keyframes ssReflect {
+      0%   { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+      8%   { opacity: 1; }
+      40%  { transform: translateX(220%) skewX(-18deg); opacity: 0; }
+      100% { transform: translateX(220%) skewX(-18deg); opacity: 0; }
+    }
+    .ss-reflect {
+      animation: ssReflect 9s ease-in-out infinite;
+      animation-delay: 2s;
+    }
+    .ss-glass-input::placeholder { color: rgba(30,27,24,0.35); }
+    .ss-glass-input:focus {
+      border-color: rgba(99,102,241,0.65) !important;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.14), inset 0 2px 4px rgba(255,255,255,0.30) !important;
+    }
+  `;
+  document.head.appendChild(s);
+}
+
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail]               = useState("");
+  const [password, setPassword]         = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loginType, setLoginType] = useState<"client" | "admin">("client");
-  const [, setLocation] = useLocation();
-  const { setCurrentUserId } = useUserContext();
+  const [loginType, setLoginType]       = useState<"client" | "admin">("client");
+  const { setCurrentUserId }            = useUserContext();
 
   const loginMutation = useMutation({
     mutationFn: async ({ email, password, type }: { email: string; password: string; type: string }) => {
-      const response = await apiRequest("POST", "/api/auth/login", {
-        email,
-        password,
-        loginType: type,
-      });
-      return response.json();
+      const res = await apiRequest("POST", "/api/auth/login", { email, password, loginType: type });
+      return res.json();
     },
     onSuccess: (data) => {
       localStorage.setItem("auth_token", data.token);
@@ -30,9 +50,6 @@ export default function Login() {
       setCurrentUserId(data.user.id);
       sessionStorage.setItem("ss_welcome_name", data.user?.firstName || "there");
       window.location.href = "/";
-    },
-    onError: (error: any) => {
-      console.error("Login failed:", error);
     },
   });
 
@@ -42,6 +59,23 @@ export default function Login() {
     loginMutation.mutate({ email, password, type: loginType });
   };
 
+  /* ── shared input style ─────────────────────────────────────────────── */
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "15px 18px",
+    borderRadius: "16px",
+    background: "rgba(255,255,255,0.72)",
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    border: "1px solid rgba(255,255,255,0.40)",
+    boxShadow: "inset 0 2px 6px rgba(255,255,255,0.50), 0 1px 0 rgba(255,255,255,0.30)",
+    color: "#1E1B18",
+    fontSize: "15px",
+    outline: "none",
+    transition: "border-color 0.2s, box-shadow 0.2s",
+    boxSizing: "border-box",
+  };
+
   return (
     <div style={{
       position: "fixed", inset: 0,
@@ -49,10 +83,9 @@ export default function Login() {
       overflow: "hidden",
     }}>
 
-      {/* ── Full-bleed background image ───────────────────────────────────── */}
+      {/* ── Full-bleed background ────────────────────────────────────────── */}
       <img
-        src={archImg}
-        alt=""
+        src={archImg} alt=""
         style={{
           position: "absolute", inset: 0,
           width: "100%", height: "100%",
@@ -61,10 +94,10 @@ export default function Login() {
         }}
       />
 
-      {/* ── Subtle directional overlay — darker on right for card legibility */}
+      {/* ── Directional overlay — barely-there on left, slightly deeper right */}
       <div style={{
         position: "absolute", inset: 0,
-        background: "linear-gradient(105deg, rgba(8,5,2,0.06) 0%, rgba(8,5,2,0.22) 55%, rgba(8,5,2,0.38) 100%)",
+        background: "linear-gradient(105deg, rgba(8,5,2,0.04) 0%, rgba(8,5,2,0.16) 52%, rgba(8,5,2,0.30) 100%)",
       }} />
 
       {/* ── Scroll container ─────────────────────────────────────────────── */}
@@ -74,36 +107,51 @@ export default function Login() {
         display: "flex",
         alignItems: "center",
         justifyContent: "flex-end",
-        padding: "40px 6vw 40px 0",
+        padding: "40px 5.5vw 40px 0",
       }}>
 
-        {/* ── Glass card ────────────────────────────────────────────────────
-            Positioned right-of-center so the arch + logo stays visible     */}
+        {/* ══════════════════════════════════════════════════════════════════
+            GLASS CARD
+            ══════════════════════════════════════════════════════════════════ */}
         <div style={{
           width: "100%",
           maxWidth: "420px",
-          background: "rgba(92,88,189,0.18)",
-          backdropFilter: "blur(28px)",
-          WebkitBackdropFilter: "blur(28px)",
+          /* Reduced tint opacity — environment shows through clearly */
+          background: "rgba(72,68,168,0.12)",
+          backdropFilter: "blur(36px)",
+          WebkitBackdropFilter: "blur(36px)",
           border: "1px solid rgba(255,255,255,0.25)",
-          boxShadow: "0 40px 120px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.30)",
+          boxShadow: "0 40px 120px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.28)",
           borderRadius: "36px",
           padding: "52px 44px 44px",
           position: "relative",
+          overflow: "hidden",
         }}>
 
-          {/* Inner highlight top edge */}
+          {/* ── Slow luxury reflection sweep ─────────────────────────────── */}
+          <div
+            className="ss-reflect"
+            style={{
+              position: "absolute", top: 0, left: 0,
+              width: "38%", height: "100%",
+              background: "linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.07) 50%, transparent 100%)",
+              pointerEvents: "none",
+              zIndex: 10,
+            }}
+          />
+
+          {/* Inner top-edge highlight */}
           <div style={{
-            position: "absolute", top: 0, left: "10%", right: "10%", height: "1px",
-            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.50), transparent)",
+            position: "absolute", top: 0, left: "12%", right: "12%", height: "1px",
+            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.48), transparent)",
             borderRadius: "100px",
           }} />
 
-          {/* ── Portal type toggle ──────────────────────────────────────── */}
+          {/* ── Portal toggle ────────────────────────────────────────────── */}
           <div style={{
             display: "flex",
-            background: "rgba(255,255,255,0.08)",
-            border: "1px solid rgba(255,255,255,0.15)",
+            background: "rgba(255,255,255,0.10)",
+            border: "1px solid rgba(255,255,255,0.18)",
             borderRadius: "100px",
             padding: "4px",
             marginBottom: "44px",
@@ -124,7 +172,7 @@ export default function Login() {
                   cursor: "pointer",
                   transition: "background 0.22s, color 0.22s",
                   background: loginType === t ? "rgba(255,255,255,0.88)" : "transparent",
-                  color: loginType === t ? "#1E1B4B" : "rgba(255,255,255,0.55)",
+                  color: loginType === t ? "#1E1B4B" : "rgba(255,255,255,0.50)",
                 }}
               >
                 {t === "client" ? "Client Portal" : "Admin Portal"}
@@ -132,37 +180,47 @@ export default function Login() {
             ))}
           </div>
 
-          {/* ── Header ─────────────────────────────────────────────────── */}
-          <div style={{ marginBottom: "40px" }}>
+          {/* ── Header ───────────────────────────────────────────────────── */}
+          <div style={{ marginBottom: "36px" }}>
             <h1 style={{
               color: "#FFFCF5",
               fontSize: "32px",
               fontWeight: 500,
               letterSpacing: "-0.8px",
               lineHeight: "1.1",
-              marginBottom: "10px",
+              marginBottom: "12px",
             }}>
               Welcome back.
             </h1>
             <p style={{
               color: "rgba(255,252,245,0.55)",
               fontSize: "15px",
-              lineHeight: "1.5",
+              lineHeight: "1.55",
+              marginBottom: "6px",
             }}>
               {loginType === "client"
                 ? "Continue your guided financial journey."
                 : "Access the ScoreShift admin portal."}
             </p>
+            {loginType === "client" && (
+              <p style={{
+                color: "rgba(255,252,245,0.35)",
+                fontSize: "13px",
+                lineHeight: "1.55",
+              }}>
+                Know what matters. Know what to do next.
+              </p>
+            )}
           </div>
 
-          {/* ── Form ───────────────────────────────────────────────────── */}
+          {/* ── Form ─────────────────────────────────────────────────────── */}
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
             {/* Email */}
             <div>
               <label style={{
                 display: "block",
-                color: "rgba(255,252,245,0.60)",
+                color: "rgba(255,252,245,0.55)",
                 fontSize: "11px",
                 fontWeight: 700,
                 letterSpacing: "0.14em",
@@ -178,28 +236,8 @@ export default function Login() {
                 placeholder="you@example.com"
                 required
                 autoComplete="email"
-                style={{
-                  width: "100%",
-                  padding: "15px 18px",
-                  borderRadius: "16px",
-                  background: "rgba(255,253,245,0.10)",
-                  backdropFilter: "blur(8px)",
-                  WebkitBackdropFilter: "blur(8px)",
-                  border: "1px solid rgba(255,255,255,0.18)",
-                  color: "#FFFCF5",
-                  fontSize: "15px",
-                  outline: "none",
-                  transition: "border-color 0.2s, box-shadow 0.2s",
-                  boxSizing: "border-box",
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = "rgba(99,102,241,0.70)";
-                  e.target.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.18)";
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = "rgba(255,255,255,0.18)";
-                  e.target.style.boxShadow = "none";
-                }}
+                className="ss-glass-input"
+                style={inputStyle}
               />
             </div>
 
@@ -207,7 +245,7 @@ export default function Login() {
             <div>
               <label style={{
                 display: "block",
-                color: "rgba(255,252,245,0.60)",
+                color: "rgba(255,252,245,0.55)",
                 fontSize: "11px",
                 fontWeight: 700,
                 letterSpacing: "0.14em",
@@ -224,28 +262,8 @@ export default function Login() {
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"
-                  style={{
-                    width: "100%",
-                    padding: "15px 52px 15px 18px",
-                    borderRadius: "16px",
-                    background: "rgba(255,253,245,0.10)",
-                    backdropFilter: "blur(8px)",
-                    WebkitBackdropFilter: "blur(8px)",
-                    border: "1px solid rgba(255,255,255,0.18)",
-                    color: "#FFFCF5",
-                    fontSize: "15px",
-                    outline: "none",
-                    transition: "border-color 0.2s, box-shadow 0.2s",
-                    boxSizing: "border-box",
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "rgba(99,102,241,0.70)";
-                    e.target.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.18)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = "rgba(255,255,255,0.18)";
-                    e.target.style.boxShadow = "none";
-                  }}
+                  className="ss-glass-input"
+                  style={{ ...inputStyle, paddingRight: "52px" }}
                 />
                 <button
                   type="button"
@@ -254,11 +272,11 @@ export default function Login() {
                     position: "absolute", right: "16px", top: "50%",
                     transform: "translateY(-50%)",
                     background: "none", border: "none", cursor: "pointer",
-                    color: "rgba(255,252,245,0.38)", padding: 0,
+                    color: "rgba(30,27,24,0.38)", padding: 0,
                     transition: "color 0.2s",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.70)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.38)")}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(30,27,24,0.65)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(30,27,24,0.38)")}
                 >
                   {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                 </button>
@@ -281,7 +299,7 @@ export default function Login() {
               </div>
             )}
 
-            {/* Submit */}
+            {/* Submit — Linear-style glossy indigo gradient */}
             <button
               type="submit"
               disabled={loginMutation.isPending || !email || !password}
@@ -292,25 +310,25 @@ export default function Login() {
                 borderRadius: "100px",
                 border: "none",
                 background: loginMutation.isPending || !email || !password
-                  ? "rgba(99,102,241,0.40)"
-                  : "linear-gradient(135deg, #6366F1 0%, #4338CA 100%)",
+                  ? "rgba(99,102,241,0.35)"
+                  : "linear-gradient(135deg, #818CF8 0%, #6366F1 38%, #4338CA 100%)",
                 color: "#FFFCF5",
                 fontSize: "15px",
                 fontWeight: 600,
                 letterSpacing: "0.02em",
                 cursor: loginMutation.isPending || !email || !password ? "not-allowed" : "pointer",
-                boxShadow: "0 8px 32px rgba(67,56,202,0.30)",
-                transition: "transform 0.2s, box-shadow 0.2s, background 0.2s",
+                boxShadow: "0 6px 30px rgba(67,56,202,0.35), inset 0 1px 0 rgba(255,255,255,0.22)",
+                transition: "transform 0.22s cubic-bezier(0.23,1,0.32,1), box-shadow 0.22s",
               }}
               onMouseEnter={(e) => {
                 if (!loginMutation.isPending && email && password) {
-                  e.currentTarget.style.transform = "translateY(-1px)";
-                  e.currentTarget.style.boxShadow = "0 12px 40px rgba(67,56,202,0.40)";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 10px 30px rgba(67,56,202,0.45), inset 0 1px 0 rgba(255,255,255,0.22)";
                 }
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "none";
-                e.currentTarget.style.boxShadow = "0 8px 32px rgba(67,56,202,0.30)";
+                e.currentTarget.style.boxShadow = "0 6px 30px rgba(67,56,202,0.35), inset 0 1px 0 rgba(255,255,255,0.22)";
               }}
             >
               {loginMutation.isPending ? "Signing in…" : "Continue →"}
@@ -318,35 +336,35 @@ export default function Login() {
 
           </form>
 
-          {/* ── Footer links ────────────────────────────────────────────── */}
+          {/* ── Footer ───────────────────────────────────────────────────── */}
           <div style={{ marginTop: "32px", textAlign: "center" }}>
             <Link href="/signup">
               <span style={{
-                color: "rgba(255,252,245,0.45)",
+                color: "rgba(255,252,245,0.40)",
                 fontSize: "13px",
                 cursor: "pointer",
                 transition: "color 0.2s",
               }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.75)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.45)")}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.70)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.40)")}
               >
                 New to ScoreShift?{" "}
-                <span style={{ color: "rgba(180,172,220,0.90)", fontWeight: 500 }}>
+                <span style={{ color: "rgba(180,172,220,0.85)", fontWeight: 500 }}>
                   Create an account
                 </span>
               </span>
             </Link>
           </div>
 
-          {/* Trust line */}
+          {/* Secure access line */}
           <p style={{
             textAlign: "center",
-            color: "rgba(255,252,245,0.22)",
+            color: "rgba(255,252,245,0.20)",
             fontSize: "11px",
-            letterSpacing: "0.08em",
-            marginTop: "24px",
+            letterSpacing: "0.06em",
+            marginTop: "22px",
           }}>
-            Protected by enterprise-grade security
+            Secure access to your ScoreShift dashboard.
           </p>
 
         </div>
@@ -356,17 +374,16 @@ export default function Login() {
       <Link href="/">
         <div style={{
           position: "fixed", bottom: "32px", left: "40px",
-          color: "rgba(255,252,245,0.38)",
+          color: "rgba(255,252,245,0.32)",
           fontSize: "12px",
           letterSpacing: "0.10em",
           textTransform: "uppercase",
           fontWeight: 600,
           cursor: "pointer",
           transition: "color 0.2s",
-          display: "flex", alignItems: "center", gap: "6px",
         }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.70)")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.38)")}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.65)")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.32)")}
         >
           ← Back to ScoreShift
         </div>
