@@ -30,6 +30,7 @@ import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import Terms from "@/pages/terms";
+import Contact from "@/pages/contact";
 import DenialDecoder from "@/pages/denial-decoder";
 import WhiteLabelOnboarding from "@/pages/white-label-onboarding";
 import CreditMonitoring from "@/pages/credit-monitoring";
@@ -99,6 +100,9 @@ function Router() {
   }
   if (location === "/terms") {
     return <Terms />;
+  }
+  if (location === "/contact") {
+    return <Contact />;
   }
   if (location === "/signup") {
     return <Signup />;

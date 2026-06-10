@@ -1,0 +1,122 @@
+Create a completely new Contact page using the same visual design language as the ScoreShift Mail Wallet section from the Pricing experience.
+
+Do NOT build a generic contact page.
+
+Design Goal:
+The page should feel calm, premium, trustworthy, and consistent with the rest of the ScoreShift experience.
+
+Use the warm cream desert environment background that is already part of the ScoreShift design system.
+
+Page Structure:
+
+SECTION 1 — HERO
+
+Headline:
+Let's talk about where you're trying to go.
+
+Subheadline:
+Whether you're exploring ScoreShift Self-Service, Concierge support, partnerships, or general questions, we're here to help.
+
+Centered layout.
+
+Large spacing.
+
+Minimal.
+
+Premium.
+
+SECTION 2 — CONTACT CARD
+
+Design this section similarly to the ScoreShift Mail Wallet card.
+
+Large centered glass card.
+
+Cream glass.
+
+Soft shadow.
+
+Rounded corners.
+
+Subtle indigo glow.
+
+Inside the card:
+
+ScoreShift LLC
+
+1201 West Peachtree St NW
+Unit 2300
+Atlanta, GA 30309
+
+Email
+
+[info@scoreshiftcapital.com](mailto:info@scoreshiftcapital.com)
+
+Phone
+
+770-712-6626
+
+Add clean icons for:
+
+Location
+
+Email
+
+Phone
+
+No loud colors.
+
+No generic contact-form styling.
+
+SECTION 3 — CONTACT OPTIONS
+
+Create three elegant cards beneath the main contact card.
+
+General Questions
+
+Questions about the platform, plans, or account setup.
+
+Self-Service Support
+
+Help navigating tools, reports, monitoring, and guidance features.
+
+Concierge Services
+
+Speak with the ScoreShift team about hands-on support and implementation.
+
+Use the same premium glass design language as the Pricing page.
+
+SECTION 4 — FINAL CTA
+
+Centered.
+
+Headline:
+
+Ready to move forward?
+
+Subheadline:
+
+Start your guided plan or explore Concierge support.
+
+Buttons:
+
+Start My Plan
+
+Explore Concierge
+
+Design Rules:
+
+Use the exact ScoreShift typography.
+
+Use the same header/navigation as the rest of the site.
+
+Use the same cream, sandstone, bone-ledger, and indigo color system.
+
+Keep spacing generous.
+
+Avoid traditional support-center aesthetics.
+
+Avoid generic stock photography.
+
+Avoid contact-page templates.
+
+The page should feel like an extension of the ScoreShift journey, not a separate website.

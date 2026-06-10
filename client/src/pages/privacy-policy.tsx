@@ -189,7 +189,7 @@ export default function PrivacyPolicy() {
             <li><Link href="/privacy-policy">Privacy</Link></li>
             <li><Link href="/terms">Terms</Link></li>
             <li><Link href="/pricing">Pricing</Link></li>
-            <li><a href="mailto:hello@scoreshift.com">Contact</a></li>
+            <li><Link href="/contact">Contact</Link></li>
           </ul>
           <span className="ss-footer-copy">© {new Date().getFullYear()} ScoreShift, Inc.</span>
         </div>
