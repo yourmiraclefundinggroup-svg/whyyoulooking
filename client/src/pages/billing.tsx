@@ -7,6 +7,7 @@ import { CreditCard } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
 import { PaymentCard3D } from "@/components/ui/payment-card-3d";
+import { trackSubscriptionCancelled } from "@/lib/analytics";
 
 interface SubscriptionPlan {
   id: number;
@@ -52,6 +53,7 @@ export default function Billing() {
   const handleCancelSubscription = async () => {
     try {
       await apiRequest("DELETE", "/api/stripe/subscription");
+      trackSubscriptionCancelled();
       toast({
         title: "Subscription Cancelled",
         description: "Your subscription will end at the current billing period.",

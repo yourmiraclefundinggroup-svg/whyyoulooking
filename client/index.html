@@ -9,6 +9,33 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800;9..40,900&family=Inter:wght@300;400;500;600;700;800;900&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
     <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <!-- Google Analytics GA4 — G-03RNSYCEDZ -->
+    <!-- send_page_view: false — SPA page_view events fired manually by React router -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-03RNSYCEDZ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-03RNSYCEDZ', {
+        send_page_view: false,
+        anonymize_ip: true
+      });
+    </script>
+
+    <!-- Microsoft Clarity — x52g2lsgd3 -->
+    <!-- Sensitive fields (SSN, account#, dispute data, Array consumer data) must carry
+         data-clarity-mask="True" attribute or the .clarity-mask CSS class.
+         Input masking is also enforced in the Clarity project dashboard settings. -->
+    <script type="text/javascript">
+      (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      })(window, document, "clarity", "script", "x52g2lsgd3");
+      // Mask all text input fields by default — financial PII protection
+      clarity("set", "maskAllInputs", "True");
+    </script>
   </head>
   <body>
     <div id="root"></div>

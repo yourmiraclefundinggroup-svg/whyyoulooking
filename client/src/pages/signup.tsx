@@ -9,6 +9,10 @@ import {
   CheckCircle, Shield, CreditCard, Zap, Star, Sparkles, AlertCircle
 } from "lucide-react";
 import {
+  trackSignupStarted, trackSignupCompleted,
+  trackCreditPullStarted, trackCreditPullCompleted,
+} from "@/lib/analytics";
+import {
   ARRAY_SANDBOX_APP_KEY,
   ARRAY_SANDBOX_API_URL,
   ARRAY_SANDBOX_TOKENS,
@@ -197,6 +201,7 @@ export default function Signup() {
   /* Mount enrollment component on step 3 */
   useEffect(() => {
     if (step !== 3 || !arrayEnrollRef.current || !enrollScriptReady) return;
+    trackCreditPullStarted();
     arrayEnrollRef.current.innerHTML = "";
     const el = document.createElement("array-account-enroll") as any;
     el.setAttribute("appKey",      ARRAY_SANDBOX_APP_KEY);
@@ -217,6 +222,7 @@ export default function Signup() {
       if (!firstNameRef.current && pii.firstName) setFirstName(pii.firstName);
       if (!lastNameRef.current  && pii.lastName)  setLastName(pii.lastName);
       if (!emailRef.current     && pii.email)     setEmail(pii.email);
+      trackCreditPullCompleted();
       setArrayEnrolled(true);
     };
     el.addEventListener("array-event", handleEvent);
@@ -268,7 +274,7 @@ export default function Signup() {
     setInviteCodeLoading(false);
   };
 
-  const handleNext = () => { if (!validateStep()) return; setStep(s => s + 1); };
+  const handleNext = () => { if (!validateStep()) return; if (step === 0) trackSignupStarted(); setStep(s => s + 1); };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -314,6 +320,7 @@ export default function Signup() {
         apiRequest("PATCH", `/api/users/${loginData.user.id}`, piiPatch).catch((e) => console.warn("[Array PII] Background profile update failed:", e));
       }
 
+      trackSignupCompleted();
       toast({ title: "Welcome to ScoreShift!", description: "Your account has been created successfully." });
       window.location.href = (inviteCodeApplied || selectedPlan === "free") ? "/portal" : "/billing";
     } catch (error: any) {

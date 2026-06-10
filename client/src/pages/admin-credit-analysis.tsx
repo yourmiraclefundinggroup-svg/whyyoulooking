@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { trackSmartLetterCreated } from "@/lib/analytics";
 import { AdminShell } from "@/components/admin";
 import {
   Upload,
@@ -95,6 +96,7 @@ export default function AdminCreditAnalysis() {
       return response.json();
     },
     onSuccess: (result) => {
+      trackSmartLetterCreated();
       setGeneratedLetter(result.letter);
       toast({
         title: "Letter Generated",

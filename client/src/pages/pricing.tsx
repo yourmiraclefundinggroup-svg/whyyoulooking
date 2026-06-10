@@ -3,6 +3,10 @@ import { Link } from "wouter";
 import { CheckCircle, ArrowLeft, Mail } from "lucide-react";
 import "../styles/landing.css";
 import { MarketingNav } from "@/components/marketing-nav";
+import {
+  trackPricingViewed, trackPlanSelected,
+  trackConciergeSelected, trackMailWalletPurchase,
+} from "@/lib/analytics";
 
 import splitPathImg    from "@assets/ChatGPT_Image_Jun_9,_2026,_04_26_54_PM_1781047045828.png";
 import windingPathImg  from "@assets/ChatGPT_Image_Jun_9,_2026,_04_17_47_PM_1781047072844.png";
@@ -316,6 +320,7 @@ function PricingCard({ plan, isConcierge = false }: {
 
       <Link href={plan.ctaHref}>
         <button
+          onClick={() => trackPlanSelected(plan.name, isConcierge ? "concierge" : "self-service")}
           style={{
             width: "100%", padding: "14px 0",
             borderRadius: "14px", fontSize: "13px", fontWeight: 600,
@@ -845,6 +850,7 @@ function MailWalletScene() {
             {/* CTA */}
             <Link href="/checkout?addon=mail">
               <button
+                onClick={() => trackMailWalletPurchase(credit.qty, credit.price)}
                 style={{
                   width: "100%", background: C.indigo, color: "#FFFCF5",
                   border: "none", borderRadius: "16px", padding: "16px 0",
@@ -919,6 +925,8 @@ export default function PricingPage() {
   const [view, setView] = useState<ViewType>("choose");
   const [fading, setFading] = useState(false);
 
+  useEffect(() => { trackPricingViewed(); }, []);
+
   useEffect(() => {
     const nav = document.querySelector(".ss-nav") as HTMLElement | null;
     const handler = () => nav?.classList.toggle("scrolled", window.scrollY > 60);
@@ -943,7 +951,7 @@ export default function PricingPage() {
 
       {/* ── Page content — fades between views ───────────────────────────── */}
       <div style={{ opacity: fading ? 0 : 1, transition: "opacity 0.26s ease" }}>
-        {view === "choose"       && <SceneChoosePath onSelect={(v) => navigateTo(v)} />}
+        {view === "choose"       && <SceneChoosePath onSelect={(v) => { if (v === "concierge") trackConciergeSelected(); navigateTo(v); }} />}
         {view === "self-service" && <SelfServiceExperience onBack={() => navigateTo("choose")} />}
         {view === "concierge"    && <ConciergeExperience   onBack={() => navigateTo("choose")} />}
       </div>

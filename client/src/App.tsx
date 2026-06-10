@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { Navigation } from "@/components/navigation";
+import { trackPageView } from "@/lib/analytics";
 import { UserProvider, useUserContext } from "@/hooks/use-user-context";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ArrayTokenProvider, useArrayToken } from "@/hooks/use-array-token";
@@ -40,6 +41,33 @@ import PortalDemo from "@/pages/portal-demo";
 import PortalIphone from "@/pages/portal-iphone";
 import NotFound from "@/pages/not-found";
 import { TrialUpgradeWall } from "@/components/trial-upgrade-wall";
+
+/* ── Analytics: fires page_view on every SPA route change ──────────────── */
+const PAGE_TITLES: Record<string, string> = {
+  "/":              "Landing",
+  "/pricing":       "Pricing",
+  "/login":         "Login",
+  "/auth":          "Login",
+  "/signup":        "Signup",
+  "/portal":        "Client Portal",
+  "/contact":       "Contact",
+  "/privacy-policy":"Privacy Policy",
+  "/terms":         "Terms",
+  "/dashboard":     "Dashboard",
+  "/credit-repair": "Credit Repair",
+  "/credit-monitoring": "Credit Monitoring",
+  "/billing":       "Billing",
+  "/demo":          "Demo",
+};
+
+function AnalyticsPageTracker() {
+  const [location] = useLocation();
+  useEffect(() => {
+    const title = PAGE_TITLES[location] ?? document.title;
+    trackPageView(location, title);
+  }, [location]);
+  return null;
+}
 
 // Shows a personalized welcome toast once after login
 function WelcomeToast() {
@@ -230,6 +258,7 @@ function App() {
         <UserProvider>
           <AuthenticatedArrayProvider>
             <TooltipProvider>
+              <AnalyticsPageTracker />
               <Toaster />
               <WelcomeToast />
               <Router />
