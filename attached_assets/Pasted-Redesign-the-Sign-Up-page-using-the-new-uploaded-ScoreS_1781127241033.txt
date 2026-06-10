@@ -1,0 +1,72 @@
+Redesign the Sign Up page using the new uploaded ScoreShift exterior entrance image as the primary full-screen background.
+
+This page should feel like the user is entering ScoreShift for the first time.
+
+Design goal:
+Premium, calm, readable, guided, and conversion-focused.
+
+Background:
+- Use the uploaded ScoreShift exterior entrance image full-screen.
+- Preserve the ScoreShift logo visible inside the building entrance.
+- Do not crop out the entrance, pathway, or logo.
+- Add a subtle warm overlay so the form stays readable.
+- Image should cover the screen without distortion.
+- On desktop, keep the architectural entrance visible on the right/center and position the sign-up form where it does not block the logo.
+
+Layout:
+- Desktop: place the sign-up glass panel slightly left of center OR right of center depending on where the logo remains visible.
+- The panel must not cover the ScoreShift logo in the image.
+- Mobile: center the form and darken/blur the background slightly for readability.
+
+Glass Sign-Up Panel:
+Make the form panel Apple-like premium glass, not a flat card.
+
+Use:
+background: rgba(255,253,248,0.48)
+backdrop-filter: blur(36px)
+border: 1px solid rgba(255,255,255,0.75)
+border-radius: 36px
+box-shadow:
+  0 30px 90px rgba(0,0,0,0.16),
+  inset 0 1px 0 rgba(255,255,255,0.85),
+  inset 0 -1px 0 rgba(255,255,255,0.12)
+
+Add a subtle ScoreShift Indigo ambient glow behind the panel, but do not tint the entire card purple.
+
+Content:
+Headline:
+Start your guided plan.
+
+Subheadline:
+Create your account and choose the level of guidance that fits where you are today.
+
+Fields:
+- Full Name
+- Email Address
+- Password
+- Confirm Password
+
+Primary button:
+Create My Account
+
+Secondary link:
+Already have an account? Sign in
+
+Add small trust line:
+Secure access to your ScoreShift dashboard.
+
+Input Styling:
+- Bone Ledger glass inputs
+- High contrast readable text
+- Placeholder text in muted warm gray
+- Focus state with subtle ScoreShift Indigo glow
+- No harsh white boxes
+- No generic SaaS form styling
+
+Important:
+Everything must be readable for consumers.
+Do not let the background reduce contrast.
+Do not cover the ScoreShift logo in the background.
+Do not make the glass too transparent.
+Do not use heavy purple panels.
+Keep the page consistent with the updated Sign In page.
