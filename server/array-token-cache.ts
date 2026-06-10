@@ -35,7 +35,7 @@ async function fetchTokenViaRailway(
   internalSecret: string,
 ): Promise<TokenResult> {
   const url = `${railwayUrl}/array/token`;
-  console.log(`[ArrayToken] Requesting token via Railway proxy for arrayUserId: ${arrayUserId}`);
+  console.log(`[ArrayToken] Requesting token via Railway proxy (DigitalOcean static IP) for arrayUserId: ${arrayUserId}`);
 
   try {
     const resp = await fetch(url, {
@@ -89,7 +89,7 @@ async function fetchTokenDirect(
   // If not yet provisioned, falls back to apiKey for legacy compat.
   const serverToken = (process.env.ARRAY_SERVER_TOKEN || apiKey).trim();
 
-  console.log(`[ArrayToken] Generating fresh token directly for user ${userId} (arrayUserId: ${arrayUserId}, serverTokenSource: ${process.env.ARRAY_SERVER_TOKEN ? "ARRAY_SERVER_TOKEN" : "ARRAY_API_KEY fallback"})`);
+  console.warn(`[ArrayToken] DIRECT token call (outbound IP = this server's egress, NOT DigitalOcean) for user ${userId} (arrayUserId: ${arrayUserId}, serverTokenSource: ${process.env.ARRAY_SERVER_TOKEN ? "ARRAY_SERVER_TOKEN" : "ARRAY_API_KEY fallback"})`);
 
   try {
     const resp = await fetch(tokenUrl, {
@@ -180,8 +180,9 @@ export function clearArrayTokenCache(userId: number): void {
 }
 
 /**
- * Fetch the full credit report via Railway proxy (when RAILWAY_BACKEND_URL is set)
- * or directly from Array (fallback). Returns the raw parsed JSON or an error string.
+ * Fetch the full credit report via Railway proxy (DigitalOcean static IP) when
+ * RAILWAY_BACKEND_URL is set, or directly from Array as a fallback.
+ * Returns the raw parsed JSON or an error string.
  */
 export async function fetchArrayCreditReport(
   userToken: string,
@@ -219,7 +220,7 @@ export async function fetchArrayCreditReport(
 
   // ── Direct Array call (no Railway configured) ─────────────────────────────
   const reportUrl = `${dataBaseUrl}/v2/user/credit-report`;
-  console.log(`[CreditFile] Fetching ${reportUrl} directly for user ${userId}`);
+  console.warn(`[CreditFile] DIRECT credit-report fetch (outbound IP = this server's egress, NOT DigitalOcean) for user ${userId}: ${reportUrl}`);
 
   try {
     const resp = await fetch(reportUrl, {

@@ -9286,51 +9286,29 @@ ${denialLetterText}`
       const isSandboxAdmin = process.env.ARRAY_PRODUCTION_MODE !== "true";
       const ARRAY_BASE_URL_ADMIN = isSandboxAdmin ? "https://sandbox.array.io" : "https://api.array.io";
       const SANDBOX_FALLBACK_TOKEN_ADMIN = "DFD90F1A-BB8F-4310-B921-8EC7A4BF7649";
+      const appKeyAdmin = process.env.ARRAY_APP_KEY || "EA23400D-C8B0-4D2D-834B-355C8D86BA0D";
 
-      // Step 1: Generate a server-side user token for this client — sandbox fallback on failure
-      let userToken: string = SANDBOX_FALLBACK_TOKEN_ADMIN;
-      try {
-        const tokenResponse = await fetch(`${ARRAY_BASE_URL_ADMIN}/api/authenticate/v2/usertoken`, {
-          method: "POST",
-          headers: {
-            "x-array-server-token": ARRAY_API_KEY,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ appKey: process.env.ARRAY_APP_KEY || "EA23400D-C8B0-4D2D-834B-355C8D86BA0D", userId: arrayUserId, ttlInMinutes: "55" }),
-        });
-        if (tokenResponse.ok) {
-          const tokenData = await tokenResponse.json() as ArrayTokenResponse;
-          userToken = tokenData.token || tokenData.userToken || tokenData.access_token || SANDBOX_FALLBACK_TOKEN_ADMIN;
-        } else {
-          const errText = await tokenResponse.text().catch(() => "");
-          console.warn(`[Array] Admin tradeline token failed (${tokenResponse.status}) for client ${clientId}${isSandboxAdmin ? ", using fallback" : ""}:`, errText.slice(0, 200));
-          if (!isSandboxAdmin) return res.status(502).json({ error: "Failed to generate credit monitoring token for client" });
+      // Step 1: Generate token via Railway-aware helper — routes through DigitalOcean static IP when RAILWAY_BACKEND_URL is set
+      const { token: rawAdminToken, error: adminTokErr } = await getOrRefreshArrayToken(
+        clientId, arrayUserId, ARRAY_API_KEY, appKeyAdmin, isSandboxAdmin,
+      );
+      let userToken: string = rawAdminToken;
+      if (adminTokErr || !userToken) {
+        if (!isSandboxAdmin) {
+          console.error(`[Array] Admin tradeline token failed for client ${clientId}:`, adminTokErr);
+          return res.status(502).json({ error: "Failed to generate credit monitoring token for client" });
         }
-      } catch (e: any) {
-        console.warn(`[Array] Admin tradeline token DNS/network error for client ${clientId}${isSandboxAdmin ? ", using fallback" : ""}:`, e.message);
-        if (!isSandboxAdmin) return res.status(502).json({ error: "Credit monitoring service unreachable" });
+        console.warn(`[Array] Admin tradeline token unavailable for client ${clientId} (${adminTokErr}) — using sandbox fallback`);
+        userToken = SANDBOX_FALLBACK_TOKEN_ADMIN;
       }
 
-      // Step 2: Fetch the credit report using the user token
-      let reportData: ArrayCreditReport | null = null;
-      try {
-        const reportResponse = await fetch(`${ARRAY_BASE_URL_ADMIN}/v2/user/credit-report`, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${userToken}`,
-            "Content-Type": "application/json",
-          },
-        });
-        if (!reportResponse.ok) {
-          const errData = await reportResponse.json().catch(() => ({})) as Record<string, unknown>;
-          console.error(`[Array] Credit report fetch failed (${reportResponse.status}) for client ${clientId}:`, errData);
-          return res.status(502).json({ error: "Failed to fetch credit report" });
-        }
-        reportData = await reportResponse.json() as ArrayCreditReport;
-      } catch (e: any) {
-        console.error(`[Array] Admin credit report DNS/network error for client ${clientId}:`, e.message);
-        return res.status(502).json({ error: "Credit monitoring service unreachable" });
+      // Step 2: Fetch credit report via Railway-aware helper — routes through DigitalOcean static IP when RAILWAY_BACKEND_URL is set
+      const adminReportResult = await fetchArrayCreditReport(userToken, clientId, appKeyAdmin, ARRAY_BASE_URL_ADMIN);
+      if (adminReportResult.error) {
+        console.error(`[Array] Admin credit report failed for client ${clientId}:`, adminReportResult.error);
+        return res.status(502).json({ error: "Failed to fetch credit report" });
       }
+      let reportData: ArrayCreditReport | null = adminReportResult.data as ArrayCreditReport;
       if (!reportData) return res.status(502).json({ error: "No report data received" });
 
       // Step 3: Format tradelines as pre-filled dispute letter inputs
