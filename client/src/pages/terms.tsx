@@ -40,12 +40,13 @@ export default function Terms() {
       {/* Hero */}
       <div style={{
         position: "relative",
-        height: "48vh",
-        minHeight: "300px",
+        height: "66vh",
+        minHeight: "420px",
         overflow: "hidden",
         display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-start",
         alignItems: "center",
-        justifyContent: "center",
         textAlign: "center",
       }}>
         <img
@@ -55,24 +56,24 @@ export default function Terms() {
             position: "absolute", inset: 0,
             width: "100%", height: "100%",
             objectFit: "cover", objectPosition: "center 40%",
-            filter: "blur(3px) saturate(0.85)",
-            transform: "scale(1.06)",
+            filter: "blur(1px) saturate(0.92)",
+            transform: "scale(1.03)",
           }}
         />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(247,243,236,0.55) 0%, rgba(247,243,236,0.78) 55%, rgba(247,243,236,1) 100%)" }} />
-        <div style={{ position: "relative", zIndex: 2, padding: "90px 24px 0" }}>
-          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(67,56,202,0.75)", marginBottom: "16px" }}>Legal</p>
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(247,243,236,0.30) 0%, rgba(247,243,236,0.55) 50%, rgba(247,243,236,1) 100%)" }} />
+        <div style={{ position: "relative", zIndex: 2, padding: "130px 24px 0", width: "100%" }}>
+          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(67,56,202,0.80)", marginBottom: "16px" }}>Legal</p>
           <h1 style={{ fontSize: "clamp(40px, 6vw, 68px)", fontWeight: 500, letterSpacing: "-2px", lineHeight: "1.04", color: "#1E1B18", margin: "0 0 20px" }}>
             Terms &amp; Conditions
           </h1>
-          <p style={{ fontSize: "17px", color: "rgba(30,27,24,0.52)", lineHeight: "1.7", maxWidth: "500px", margin: "0 auto" }}>
+          <p style={{ fontSize: "17px", color: "rgba(30,27,24,0.55)", lineHeight: "1.7", maxWidth: "500px", margin: "0 auto" }}>
             The terms that govern your use of ScoreShift products, tools, and services.
           </p>
         </div>
       </div>
 
       {/* Content card */}
-      <div style={{ padding: "0 20px 100px", marginTop: "-40px", position: "relative", zIndex: 3 }}>
+      <div style={{ padding: "0 20px 100px", marginTop: "-24px", position: "relative", zIndex: 3 }}>
         <div style={{
           maxWidth: "960px",
           margin: "0 auto",
