@@ -90,8 +90,8 @@ function TierUpgradeCard({
         <div style={{
           width: 40, height: 40, borderRadius: "13px", flexShrink: 0,
           background: iconBg,
-          border: "1px solid rgba(255,255,255,0.55)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.70)",
+          border: "1px solid rgba(255,255,255,0.80)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.90), inset 0 -1px 0 rgba(255,255,255,0.15), 0 4px 12px rgba(0,0,0,0.05)",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           <Icon className="h-4 w-4" style={{ color: iconColor } as React.CSSProperties} />
@@ -294,11 +294,11 @@ export default function CreditMonitoring() {
 
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div style={{
-        background: "rgba(255,253,248,0.72)",
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
-        borderBottom: "1px solid rgba(255,255,255,0.55)",
-        boxShadow: "0 1px 0 rgba(60,40,20,0.06)",
+        background: "rgba(255,253,248,0.68)",
+        backdropFilter: "blur(36px)",
+        WebkitBackdropFilter: "blur(36px)",
+        borderBottom: "1px solid rgba(255,255,255,0.75)",
+        boxShadow: "0 1px 0 rgba(0,0,0,0.04), inset 0 -1px 0 rgba(255,255,255,0.30)",
       }}>
         <div className="max-w-6xl mx-auto px-6 py-7">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -349,10 +349,11 @@ export default function CreditMonitoring() {
 
       {/* ── Tab bar ──────────────────────────────────────────────────────── */}
       <div style={{
-        background: "rgba(255,253,248,0.60)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(30,27,24,0.08)",
+        background: "rgba(255,253,248,0.55)",
+        backdropFilter: "blur(36px)",
+        WebkitBackdropFilter: "blur(36px)",
+        borderBottom: "1px solid rgba(255,255,255,0.60)",
+        boxShadow: "0 1px 0 rgba(0,0,0,0.03)",
       }}>
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex gap-0.5 overflow-x-auto scrollbar-hide">
@@ -390,33 +391,32 @@ export default function CreditMonitoring() {
         {/* Enrollment state — ScoreShift glass panel (cream) */}
         {!isEnrolled && (
           <div style={{
-            background: "rgba(255,253,248,0.58)",
-            backdropFilter: "blur(30px)",
-            WebkitBackdropFilter: "blur(30px)",
-            border: "1px solid rgba(255,255,255,0.55)",
-            borderRadius: "32px",
-            boxShadow: "0 30px 90px rgba(60,40,20,0.10), inset 0 1px 0 rgba(255,255,255,0.75)",
+            background: "rgba(255,253,248,0.52)",
+            backdropFilter: "blur(36px)",
+            WebkitBackdropFilter: "blur(36px)",
+            border: "1px solid rgba(255,255,255,0.75)",
+            borderRadius: "36px",
+            boxShadow: [
+              "0 25px 60px rgba(0,0,0,0.08)",
+              "0 10px 20px rgba(0,0,0,0.04)",
+              "inset 0 1px 0 rgba(255,255,255,0.85)",
+              "inset 0 -1px 0 rgba(255,255,255,0.15)",
+              "0 0 70px rgba(99,102,241,0.07)",
+            ].join(", "),
             overflow: "hidden",
             position: "relative",
           }}>
-            {/* Ambient indigo glow — top-left, < 8% */}
-            <div style={{
-              position: "absolute", top: -60, left: -60,
-              width: 320, height: 320,
-              background: "radial-gradient(ellipse, rgba(99,102,241,0.07) 0%, transparent 68%)",
-              pointerEvents: "none",
-            }} />
             <div style={{ padding: "36px 40px", position: "relative", zIndex: 1 }}>
               <div className="flex flex-col sm:flex-row items-start gap-5">
                 {/* Icon */}
                 <div style={{
                   width: 56, height: 56, borderRadius: "18px", flexShrink: 0,
-                  background: "rgba(99,102,241,0.08)",
-                  border: "1px solid rgba(99,102,241,0.16)",
-                  boxShadow: "0 4px 16px rgba(99,102,241,0.10), inset 0 1px 0 rgba(255,255,255,0.70)",
+                  background: "rgba(255,255,255,0.65)",
+                  border: "1px solid rgba(255,255,255,0.85)",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.90), inset 0 -1px 0 rgba(255,255,255,0.20)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  <Shield style={{ width: 26, height: 26, color: "#6366F1" }} />
+                  <Shield style={{ width: 26, height: 26, color: "#4338CA" }} />
                 </div>
 
                 <div style={{ flex: 1 }}>
@@ -472,10 +472,10 @@ export default function CreditMonitoring() {
                     </div>
                   ) : (
                     <div style={{
-                      borderRadius: "20px",
-                      background: "rgba(255,253,248,0.70)",
-                      border: "1px solid rgba(255,255,255,0.55)",
-                      boxShadow: "0 8px 32px rgba(60,40,20,0.07), inset 0 1px 0 rgba(255,255,255,0.80)",
+                      borderRadius: "24px",
+                      background: "rgba(255,253,248,0.60)",
+                      border: "1px solid rgba(255,255,255,0.75)",
+                      boxShadow: "0 12px 36px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -1px 0 rgba(255,255,255,0.15)",
                       padding: "20px", maxWidth: "540px",
                     }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>

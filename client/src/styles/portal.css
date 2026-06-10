@@ -316,19 +316,29 @@
 
 /* ── Cards ───────────────────────────────────────────────────── */
 .cp-card {
-  background: rgba(255,255,255,0.82);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.45);
-  border-radius: var(--cp-radius);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+  background: rgba(255,253,248,0.52);
+  backdrop-filter: blur(36px); -webkit-backdrop-filter: blur(36px);
+  border: 1px solid rgba(255,255,255,0.75);
+  border-radius: 36px;
+  box-shadow:
+    0 25px 60px rgba(0,0,0,0.08),
+    0 10px 20px rgba(0,0,0,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.85),
+    inset 0 -1px 0 rgba(255,255,255,0.15),
+    0 0 70px rgba(99,102,241,0.07);
   padding: 20px;
   transition: box-shadow 0.22s ease, transform 0.22s ease;
   perspective: 1000px;
 }
 
 .cp-card:hover {
-  box-shadow: var(--cp-shadow-md);
-  transform: perspective(1200px) translateY(-4px) rotateX(1.5deg);
+  box-shadow:
+    0 32px 72px rgba(0,0,0,0.11),
+    0 14px 28px rgba(0,0,0,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.90),
+    inset 0 -1px 0 rgba(255,255,255,0.20),
+    0 0 80px rgba(99,102,241,0.10);
+  transform: perspective(1200px) translateY(-5px) rotateX(1deg);
 }
 
 .cp-card-accent-top { border-top: 3px solid var(--cp-accent); }
@@ -356,14 +366,29 @@
 
 /* ── Stat cards ──────────────────────────────────────────────── */
 .cp-stat-card {
-  background: rgba(255,255,255,0.82); border: 1px solid rgba(255,255,255,0.45);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  border-radius: var(--cp-radius); box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+  background: rgba(255,253,248,0.52);
+  border: 1px solid rgba(255,255,255,0.75);
+  backdrop-filter: blur(36px); -webkit-backdrop-filter: blur(36px);
+  border-radius: 28px;
+  box-shadow:
+    0 12px 36px rgba(0,0,0,0.06),
+    0 4px 12px rgba(0,0,0,0.03),
+    inset 0 1px 0 rgba(255,255,255,0.85),
+    inset 0 -1px 0 rgba(255,255,255,0.15),
+    0 0 40px rgba(99,102,241,0.05);
   padding: 16px 18px; display: flex; align-items: center; gap: 13px;
   transition: box-shadow 0.22s ease, transform 0.22s ease;
 }
 
-.cp-stat-card:hover { box-shadow: var(--cp-shadow-md); transform: perspective(1200px) translateY(-4px) rotateX(1.5deg); }
+.cp-stat-card:hover {
+  box-shadow:
+    0 20px 48px rgba(0,0,0,0.09),
+    0 8px 18px rgba(0,0,0,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.90),
+    inset 0 -1px 0 rgba(255,255,255,0.20),
+    0 0 50px rgba(99,102,241,0.08);
+  transform: perspective(1200px) translateY(-5px) rotateX(1deg);
+}
 
 .cp-stat-icon {
   width: 42px; height: 42px; border-radius: 10px;
@@ -866,26 +891,29 @@
 
 /* ── Array wrapper ───────────────────────────────────────────── */
 .cp-array-wrapper {
-  background: rgba(255,253,248,0.58);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
-  border: 1px solid rgba(255,255,255,0.55);
-  border-radius: 32px;
-  box-shadow: 0 30px 90px rgba(60,40,20,0.10), inset 0 1px 0 rgba(255,255,255,0.75);
+  background: rgba(255,253,248,0.52);
+  backdrop-filter: blur(36px);
+  -webkit-backdrop-filter: blur(36px);
+  border: 1px solid rgba(255,255,255,0.75);
+  border-radius: 36px;
+  box-shadow:
+    0 25px 60px rgba(0,0,0,0.08),
+    0 10px 20px rgba(0,0,0,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.85),
+    inset 0 -1px 0 rgba(255,255,255,0.15),
+    0 0 70px rgba(99,102,241,0.07);
   overflow: hidden;
   transition: box-shadow 0.22s ease, transform 0.22s ease;
-  position: relative;
 }
-.cp-array-wrapper::before {
-  content: '';
-  position: absolute; top: -50px; left: -50px;
-  width: 280px; height: 280px;
-  background: radial-gradient(ellipse, rgba(99,102,241,0.07) 0%, transparent 68%);
-  pointer-events: none;
-  z-index: 0;
+.cp-array-wrapper:hover {
+  box-shadow:
+    0 32px 72px rgba(0,0,0,0.11),
+    0 14px 28px rgba(0,0,0,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.90),
+    inset 0 -1px 0 rgba(255,255,255,0.20),
+    0 0 80px rgba(99,102,241,0.10);
+  transform: translateY(-4px);
 }
-.cp-array-wrapper > * { position: relative; z-index: 1; }
-.cp-array-wrapper:hover { box-shadow: 0 40px 100px rgba(60,40,20,0.13), inset 0 1px 0 rgba(255,255,255,0.80); transform: translateY(-3px); }
 
 .cp-array-wrapper-header {
   display: flex; align-items: center; justify-content: space-between;

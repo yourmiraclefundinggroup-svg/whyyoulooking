@@ -1,24 +1,51 @@
 import { type ComponentType, type ReactNode, type CSSProperties } from "react";
 
 /**
- * ScoreShiftGlassPanel
+ * ScoreShiftGlassPanel — Glass System v2
  * ─────────────────────────────────────────────────────────────────────────
- * Reusable warm cream frosted-glass container.
+ * Apple Vision Pro–grade warm frosted glass.
  * Frames content — does NOT tint or overlay inner content.
  *
- * Usage:
- *   <ScoreShiftGlassPanel title="Credit Overview" icon={BarChart3}>
- *     <array-credit-overview ... />
- *   </ScoreShiftGlassPanel>
+ * Spec:
+ *   background:       rgba(255,253,248,0.52)
+ *   backdrop-filter:  blur(36px)
+ *   border:           1px solid rgba(255,255,255,0.75)
+ *   border-radius:    36px
+ *   box-shadow:       0 25px 60px rgba(0,0,0,0.08), 0 10px 20px rgba(0,0,0,0.04)
+ *   inner highlights: inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -1px 0 rgba(255,255,255,0.15)
+ *   ambient glow:     0 0 70px rgba(99,102,241,0.07)  [around card, never on content]
  */
 
-const GLASS: CSSProperties = {
-  background: "rgba(255,253,248,0.58)",
-  backdropFilter: "blur(30px)",
-  WebkitBackdropFilter: "blur(30px)",
-  border: "1px solid rgba(255,255,255,0.55)",
-  borderRadius: "32px",
-  boxShadow: "0 30px 90px rgba(60,40,20,0.10), inset 0 1px 0 rgba(255,255,255,0.75)",
+export const GLASS_V2: CSSProperties = {
+  background: "rgba(255,253,248,0.52)",
+  backdropFilter: "blur(36px)",
+  WebkitBackdropFilter: "blur(36px)",
+  border: "1px solid rgba(255,255,255,0.75)",
+  borderRadius: "36px",
+  boxShadow: [
+    "0 25px 60px rgba(0,0,0,0.08)",
+    "0 10px 20px rgba(0,0,0,0.04)",
+    "inset 0 1px 0 rgba(255,255,255,0.85)",
+    "inset 0 -1px 0 rgba(255,255,255,0.15)",
+    "0 0 70px rgba(99,102,241,0.07)",
+  ].join(", "),
+  overflow: "hidden",
+  position: "relative",
+};
+
+export const TILE_V2: CSSProperties = {
+  background: "rgba(255,253,248,0.48)",
+  backdropFilter: "blur(28px)",
+  WebkitBackdropFilter: "blur(28px)",
+  border: "1px solid rgba(255,255,255,0.70)",
+  borderRadius: "28px",
+  boxShadow: [
+    "0 12px 36px rgba(0,0,0,0.06)",
+    "0 4px 12px rgba(0,0,0,0.03)",
+    "inset 0 1px 0 rgba(255,255,255,0.80)",
+    "inset 0 -1px 0 rgba(255,255,255,0.12)",
+    "0 0 40px rgba(99,102,241,0.05)",
+  ].join(", "),
   overflow: "hidden",
   position: "relative",
 };
@@ -32,8 +59,6 @@ export interface ScoreShiftGlassPanelProps {
   description?: string;
   /** Right-side slot — badges, labels, etc. */
   action?: ReactNode;
-  /** Whether to show a very subtle indigo ambient glow (< 8% opacity) */
-  glow?: boolean;
   /** Panel body content */
   children: ReactNode;
   /** Extra inline styles on the outer wrapper */
@@ -49,7 +74,6 @@ export function ScoreShiftGlassPanel({
   title,
   description,
   action,
-  glow = true,
   children,
   style,
   className,
@@ -58,36 +82,25 @@ export function ScoreShiftGlassPanel({
   const hasHeader = !!(title || Icon || action);
 
   return (
-    <div style={{ ...GLASS, ...style }} className={className}>
-
-      {/* Ambient indigo glow — top-left, < 8% */}
-      {glow && (
-        <div style={{
-          position: "absolute", top: -50, left: -50,
-          width: 280, height: 280,
-          background: "radial-gradient(ellipse, rgba(99,102,241,0.07) 0%, transparent 68%)",
-          pointerEvents: "none",
-          zIndex: 0,
-        }} />
-      )}
+    <div style={{ ...GLASS_V2, ...style }} className={className}>
 
       {/* Header strip */}
       {hasHeader && (
         <div style={{
           display: "flex", alignItems: "center", gap: "12px",
           padding: "18px 24px 16px",
-          borderBottom: "1px solid rgba(30,27,24,0.07)",
-          position: "relative", zIndex: 1,
+          borderBottom: "1px solid rgba(255,255,255,0.40)",
+          background: "rgba(255,255,255,0.12)",
         }}>
           {Icon && (
             <div style={{
               width: 34, height: 34, borderRadius: "11px", flexShrink: 0,
-              background: "rgba(99,102,241,0.08)",
-              border: "1px solid rgba(99,102,241,0.14)",
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.60)",
+              background: "rgba(255,255,255,0.60)",
+              border: "1px solid rgba(255,255,255,0.80)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.90), 0 2px 8px rgba(0,0,0,0.06)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <Icon style={{ width: 16, height: 16, color: "#6366F1" }} />
+              <Icon style={{ width: 16, height: 16, color: "#4338CA" }} />
             </div>
           )}
           {(title || description) && (
@@ -109,26 +122,22 @@ export function ScoreShiftGlassPanel({
               )}
             </div>
           )}
-          {action && (
-            <div style={{ marginLeft: "auto", flexShrink: 0 }}>
-              {action}
-            </div>
-          )}
-          {!action && (
-            <span style={{
-              marginLeft: "auto",
-              fontSize: "10px", fontWeight: 700,
-              letterSpacing: "0.12em", textTransform: "uppercase",
-              color: "rgba(30,27,24,0.18)",
-            }}>
-              ScoreShift
-            </span>
-          )}
+          <div style={{ marginLeft: action ? undefined : "auto", flexShrink: 0 }}>
+            {action ?? (
+              <span style={{
+                fontSize: "10px", fontWeight: 700,
+                letterSpacing: "0.12em", textTransform: "uppercase",
+                color: "rgba(30,27,24,0.22)",
+              }}>
+                ScoreShift
+              </span>
+            )}
+          </div>
         </div>
       )}
 
       {/* Body */}
-      <div style={{ padding: bodyPadding, position: "relative", zIndex: 1 }}>
+      <div style={{ padding: bodyPadding }}>
         {children}
       </div>
     </div>
@@ -136,41 +145,20 @@ export function ScoreShiftGlassPanel({
 }
 
 /**
- * ScoreShiftGlassTile — borderless, frameless version for grid tiles
- * Use for preview/locked feature cards, stat tiles, etc.
+ * ScoreShiftGlassTile — compact variant for grid tiles, stat cards, etc.
  */
 export function ScoreShiftGlassTile({
   children,
   style,
   className,
-  glow = false,
 }: {
   children: ReactNode;
   style?: CSSProperties;
   className?: string;
-  glow?: boolean;
 }) {
   return (
-    <div style={{
-      background: "rgba(255,253,248,0.52)",
-      backdropFilter: "blur(22px)",
-      WebkitBackdropFilter: "blur(22px)",
-      border: "1px solid rgba(255,255,255,0.50)",
-      borderRadius: "24px",
-      boxShadow: "0 8px 36px rgba(60,40,20,0.08), inset 0 1px 0 rgba(255,255,255,0.65)",
-      position: "relative",
-      overflow: "hidden",
-      ...style,
-    }} className={className}>
-      {glow && (
-        <div style={{
-          position: "absolute", top: -30, left: -30,
-          width: 160, height: 160,
-          background: "radial-gradient(ellipse, rgba(99,102,241,0.06) 0%, transparent 68%)",
-          pointerEvents: "none",
-        }} />
-      )}
-      <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
+    <div style={{ ...TILE_V2, ...style }} className={className}>
+      {children}
     </div>
   );
 }
