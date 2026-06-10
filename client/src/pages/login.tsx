@@ -5,6 +5,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
 
+import archImg from "@assets/ChatGPT_Image_Jun_10,_2026,_12_32_14_PM_1781109389839.png";
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,7 +20,7 @@ export default function Login() {
       const response = await apiRequest("POST", "/api/auth/login", {
         email,
         password,
-        loginType: type
+        loginType: type,
       });
       return response.json();
     },
@@ -31,12 +33,6 @@ export default function Login() {
     },
     onError: (error: any) => {
       console.error("Login failed:", error);
-      if (error.message?.includes("Invalid credentials")) {
-        console.error("Credential validation failed - check email/password combination");
-      }
-      if (error.message?.includes("Access denied")) {
-        console.error("Access denied - check if you selected the correct portal type");
-      }
     },
   });
 
@@ -47,86 +43,132 @@ export default function Login() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center py-12 px-4 relative overflow-hidden"
-      style={{ background: "#F1E8DA" }}
-    >
-      {/* Ambient orbs */}
-      <div
-        className="absolute top-20 right-20 w-96 h-96 rounded-full blur-3xl pointer-events-none"
-        style={{ background: "rgba(124,107,203,0.08)" }}
-      />
-      <div
-        className="absolute bottom-20 left-20 w-80 h-80 rounded-full blur-3xl pointer-events-none"
-        style={{ background: "rgba(124,107,203,0.05)" }}
+    <div style={{
+      position: "fixed", inset: 0,
+      fontFamily: "'Inter', system-ui, sans-serif",
+      overflow: "hidden",
+    }}>
+
+      {/* ── Full-bleed background image ───────────────────────────────────── */}
+      <img
+        src={archImg}
+        alt=""
+        style={{
+          position: "absolute", inset: 0,
+          width: "100%", height: "100%",
+          objectFit: "cover",
+          objectPosition: "center center",
+        }}
       />
 
-      <div className="relative z-10 w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link href="/">
-            <div style={{ height: 48, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-              <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 160, width: "auto", objectFit: "contain" }} />
-            </div>
-          </Link>
-          <h1 className="text-2xl font-black mt-2" style={{ color: "#2A2725" }}>
-            {loginType === "client" ? "Welcome back" : "Admin Portal"}
-          </h1>
-          <p className="text-sm mt-1" style={{ color: "#5B5652" }}>
-            {loginType === "client"
-              ? "Sign in to your credit repair dashboard"
-              : "Empower clients to shift their credit scores"}
-          </p>
-        </div>
+      {/* ── Subtle directional overlay — darker on right for card legibility */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background: "linear-gradient(105deg, rgba(8,5,2,0.06) 0%, rgba(8,5,2,0.22) 55%, rgba(8,5,2,0.38) 100%)",
+      }} />
 
-        {/* Card */}
-        <div
-          className="p-8 rounded-2xl"
-          style={{
-            background: "#F3EEE6",
-            border: "1px solid rgba(42,39,37,0.12)",
-            boxShadow: "0 4px 24px rgba(42,39,37,0.08)",
-          }}
-        >
-          {/* Portal type selector */}
-          <div className="mb-6">
-            <div
-              className="flex rounded-full p-1"
-              style={{
-                background: "rgba(42,39,37,0.06)",
-                border: "1px solid rgba(42,39,37,0.10)",
-              }}
-            >
+      {/* ── Scroll container ─────────────────────────────────────────────── */}
+      <div style={{
+        position: "absolute", inset: 0,
+        overflowY: "auto",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-end",
+        padding: "40px 6vw 40px 0",
+      }}>
+
+        {/* ── Glass card ────────────────────────────────────────────────────
+            Positioned right-of-center so the arch + logo stays visible     */}
+        <div style={{
+          width: "100%",
+          maxWidth: "420px",
+          background: "rgba(92,88,189,0.18)",
+          backdropFilter: "blur(28px)",
+          WebkitBackdropFilter: "blur(28px)",
+          border: "1px solid rgba(255,255,255,0.25)",
+          boxShadow: "0 40px 120px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.30)",
+          borderRadius: "36px",
+          padding: "52px 44px 44px",
+          position: "relative",
+        }}>
+
+          {/* Inner highlight top edge */}
+          <div style={{
+            position: "absolute", top: 0, left: "10%", right: "10%", height: "1px",
+            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.50), transparent)",
+            borderRadius: "100px",
+          }} />
+
+          {/* ── Portal type toggle ──────────────────────────────────────── */}
+          <div style={{
+            display: "flex",
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: "100px",
+            padding: "4px",
+            marginBottom: "44px",
+          }}>
+            {(["client", "admin"] as const).map((t) => (
               <button
+                key={t}
                 type="button"
-                onClick={() => setLoginType("client")}
-                className="flex-1 py-2 rounded-full text-sm font-semibold transition-all"
-                style={
-                  loginType === "client"
-                    ? { background: "#7C6BCB", color: "#fff" }
-                    : { color: "#8B8480" }
-                }
+                onClick={() => setLoginType(t)}
+                style={{
+                  flex: 1,
+                  padding: "9px 0",
+                  borderRadius: "100px",
+                  border: "none",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  letterSpacing: "0.01em",
+                  cursor: "pointer",
+                  transition: "background 0.22s, color 0.22s",
+                  background: loginType === t ? "rgba(255,255,255,0.88)" : "transparent",
+                  color: loginType === t ? "#1E1B4B" : "rgba(255,255,255,0.55)",
+                }}
               >
-                Client Portal
+                {t === "client" ? "Client Portal" : "Admin Portal"}
               </button>
-              <button
-                type="button"
-                onClick={() => setLoginType("admin")}
-                className="flex-1 py-2 rounded-full text-sm font-semibold transition-all"
-                style={
-                  loginType === "admin"
-                    ? { background: "#7C6BCB", color: "#fff" }
-                    : { color: "#8B8480" }
-                }
-              >
-                Admin Portal
-              </button>
-            </div>
+            ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* ── Header ─────────────────────────────────────────────────── */}
+          <div style={{ marginBottom: "40px" }}>
+            <h1 style={{
+              color: "#FFFCF5",
+              fontSize: "32px",
+              fontWeight: 500,
+              letterSpacing: "-0.8px",
+              lineHeight: "1.1",
+              marginBottom: "10px",
+            }}>
+              Welcome back.
+            </h1>
+            <p style={{
+              color: "rgba(255,252,245,0.55)",
+              fontSize: "15px",
+              lineHeight: "1.5",
+            }}>
+              {loginType === "client"
+                ? "Continue your guided financial journey."
+                : "Access the ScoreShift admin portal."}
+            </p>
+          </div>
+
+          {/* ── Form ───────────────────────────────────────────────────── */}
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+
+            {/* Email */}
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: "#4A4541" }}>
+              <label style={{
+                display: "block",
+                color: "rgba(255,252,245,0.60)",
+                fontSize: "11px",
+                fontWeight: 700,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                marginBottom: "10px",
+              }}>
                 Email Address
               </label>
               <input
@@ -136,22 +178,45 @@ export default function Login() {
                 placeholder="you@example.com"
                 required
                 autoComplete="email"
-                className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
                 style={{
-                  background: "rgba(42,39,37,0.04)",
-                  border: "1px solid rgba(42,39,37,0.15)",
-                  color: "#2A2725",
+                  width: "100%",
+                  padding: "15px 18px",
+                  borderRadius: "16px",
+                  background: "rgba(255,253,245,0.10)",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  color: "#FFFCF5",
+                  fontSize: "15px",
+                  outline: "none",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
+                  boxSizing: "border-box",
                 }}
-                onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(124,107,203,0.20)")}
-                onBlur={(e) => (e.target.style.boxShadow = "none")}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "rgba(99,102,241,0.70)";
+                  e.target.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.18)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "rgba(255,255,255,0.18)";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </div>
 
+            {/* Password */}
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: "#4A4541" }}>
+              <label style={{
+                display: "block",
+                color: "rgba(255,252,245,0.60)",
+                fontSize: "11px",
+                fontWeight: 700,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                marginBottom: "10px",
+              }}>
                 Password
               </label>
-              <div className="relative">
+              <div style={{ position: "relative" }}>
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
@@ -159,68 +224,154 @@ export default function Login() {
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all pr-12"
                   style={{
-                    background: "rgba(42,39,37,0.04)",
-                    border: "1px solid rgba(42,39,37,0.15)",
-                    color: "#2A2725",
+                    width: "100%",
+                    padding: "15px 52px 15px 18px",
+                    borderRadius: "16px",
+                    background: "rgba(255,253,245,0.10)",
+                    backdropFilter: "blur(8px)",
+                    WebkitBackdropFilter: "blur(8px)",
+                    border: "1px solid rgba(255,255,255,0.18)",
+                    color: "#FFFCF5",
+                    fontSize: "15px",
+                    outline: "none",
+                    transition: "border-color 0.2s, box-shadow 0.2s",
+                    boxSizing: "border-box",
                   }}
-                  onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(124,107,203,0.20)")}
-                  onBlur={(e) => (e.target.style.boxShadow = "none")}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "rgba(99,102,241,0.70)";
+                    e.target.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.18)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = "rgba(255,255,255,0.18)";
+                    e.target.style.boxShadow = "none";
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-                  style={{ color: "#8B8480" }}
+                  style={{
+                    position: "absolute", right: "16px", top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none", border: "none", cursor: "pointer",
+                    color: "rgba(255,252,245,0.38)", padding: 0,
+                    transition: "color 0.2s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.70)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.38)")}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                 </button>
               </div>
             </div>
 
+            {/* Error */}
             {loginMutation.isError && (
-              <div
-                className="flex items-center gap-2 p-3 rounded-xl text-sm"
-                style={{
-                  background: "rgba(239,68,68,0.06)",
-                  border: "1px solid rgba(239,68,68,0.18)",
-                  color: "#dc2626",
-                }}
-              >
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <div style={{
+                display: "flex", alignItems: "center", gap: "10px",
+                padding: "13px 16px",
+                borderRadius: "14px",
+                background: "rgba(239,68,68,0.10)",
+                border: "1px solid rgba(239,68,68,0.25)",
+                color: "#FCA5A5",
+                fontSize: "13px",
+              }}>
+                <AlertCircle size={15} style={{ flexShrink: 0 }} />
                 Invalid email or password. Please try again.
               </div>
             )}
 
+            {/* Submit */}
             <button
               type="submit"
               disabled={loginMutation.isPending || !email || !password}
-              className="w-full py-3 rounded-xl font-bold text-white text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ background: "#7C6BCB" }}
-              onMouseEnter={(e) => { if (!loginMutation.isPending) (e.target as HTMLButtonElement).style.background = "#8D80D3"; }}
-              onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.background = "#7C6BCB"; }}
+              style={{
+                width: "100%",
+                padding: "17px",
+                marginTop: "4px",
+                borderRadius: "100px",
+                border: "none",
+                background: loginMutation.isPending || !email || !password
+                  ? "rgba(99,102,241,0.40)"
+                  : "linear-gradient(135deg, #6366F1 0%, #4338CA 100%)",
+                color: "#FFFCF5",
+                fontSize: "15px",
+                fontWeight: 600,
+                letterSpacing: "0.02em",
+                cursor: loginMutation.isPending || !email || !password ? "not-allowed" : "pointer",
+                boxShadow: "0 8px 32px rgba(67,56,202,0.30)",
+                transition: "transform 0.2s, box-shadow 0.2s, background 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                if (!loginMutation.isPending && email && password) {
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                  e.currentTarget.style.boxShadow = "0 12px 40px rgba(67,56,202,0.40)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "none";
+                e.currentTarget.style.boxShadow = "0 8px 32px rgba(67,56,202,0.30)";
+              }}
             >
-              {loginMutation.isPending ? "Signing in..." : "Sign In →"}
+              {loginMutation.isPending ? "Signing in…" : "Continue →"}
             </button>
+
           </form>
 
-          <div className="mt-6 text-center text-sm" style={{ color: "#8B8480" }}>
-            Don't have an account?{" "}
-            <a href="/signup" style={{ color: "#7C6BCB" }} className="font-medium transition-colors hover:opacity-80">
-              Sign up free
-            </a>
+          {/* ── Footer links ────────────────────────────────────────────── */}
+          <div style={{ marginTop: "32px", textAlign: "center" }}>
+            <Link href="/signup">
+              <span style={{
+                color: "rgba(255,252,245,0.45)",
+                fontSize: "13px",
+                cursor: "pointer",
+                transition: "color 0.2s",
+              }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.75)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.45)")}
+              >
+                New to ScoreShift?{" "}
+                <span style={{ color: "rgba(180,172,220,0.90)", fontWeight: 500 }}>
+                  Create an account
+                </span>
+              </span>
+            </Link>
           </div>
-        </div>
 
-        <p className="text-center text-xs mt-6" style={{ color: "#8B8480" }}>
-          Protected by enterprise-grade security
-        </p>
+          {/* Trust line */}
+          <p style={{
+            textAlign: "center",
+            color: "rgba(255,252,245,0.22)",
+            fontSize: "11px",
+            letterSpacing: "0.08em",
+            marginTop: "24px",
+          }}>
+            Protected by enterprise-grade security
+          </p>
+
+        </div>
       </div>
+
+      {/* ── Bottom-left back link ─────────────────────────────────────────── */}
+      <Link href="/">
+        <div style={{
+          position: "fixed", bottom: "32px", left: "40px",
+          color: "rgba(255,252,245,0.38)",
+          fontSize: "12px",
+          letterSpacing: "0.10em",
+          textTransform: "uppercase",
+          fontWeight: 600,
+          cursor: "pointer",
+          transition: "color 0.2s",
+          display: "flex", alignItems: "center", gap: "6px",
+        }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.70)")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,252,245,0.38)")}
+        >
+          ← Back to ScoreShift
+        </div>
+      </Link>
+
     </div>
   );
 }
