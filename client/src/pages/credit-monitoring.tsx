@@ -9,6 +9,7 @@ import {
   ARRAY_SANDBOX_TOKENS,
 } from "@/hooks/use-array-script";
 import { useFeatureAccess, FEATURES, type SubscriptionTier } from "@/hooks/use-feature-access";
+import { ScoreShiftGlassPanel, ScoreShiftGlassTile } from "@/components/ui/scoreshift-glass-panel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -66,7 +67,7 @@ const BUREAU_CONFIG = {
   TransUnion: { color: "#662D8C", dot: "bg-[#662D8C]" },
 } as const;
 
-/* ── Tier upgrade card — ScoreShift Glass ────────────────────────────────── */
+/* ── Tier upgrade card — ScoreShift Glass (cream) ───────────────────────── */
 function TierUpgradeCard({
   label,
   icon: Icon,
@@ -79,55 +80,38 @@ function TierUpgradeCard({
   requiredTier: SubscriptionTier;
 }) {
   const tierLabel = requiredTier === "pro" ? "Pro" : requiredTier === "elite" ? "Elite" : "Starter";
-  const accentColor = requiredTier === "elite" ? "rgba(124,58,237,0.22)" : requiredTier === "pro" ? "rgba(37,99,235,0.18)" : "rgba(245,158,11,0.18)";
-  const iconColor   = requiredTier === "elite" ? "#A78BFA" : requiredTier === "pro" ? "#60A5FA" : "#FCD34D";
-  const btnClass    = requiredTier === "elite" ? "bg-violet-600 hover:bg-violet-500" : requiredTier === "pro" ? "bg-blue-600 hover:bg-blue-500" : "bg-amber-500 hover:bg-amber-400";
+  const iconColor = requiredTier === "elite" ? "#7C3AED" : requiredTier === "pro" ? "#2563EB" : "#D97706";
+  const iconBg    = requiredTier === "elite" ? "rgba(124,58,237,0.08)" : requiredTier === "pro" ? "rgba(37,99,235,0.08)" : "rgba(245,158,11,0.08)";
+  const btnClass  = requiredTier === "elite" ? "bg-violet-600 hover:bg-violet-500" : requiredTier === "pro" ? "bg-blue-600 hover:bg-blue-500" : "bg-amber-500 hover:bg-amber-400";
 
   return (
-    <div style={{
-      background: "rgba(255,253,248,0.06)",
-      backdropFilter: "blur(24px)",
-      WebkitBackdropFilter: "blur(24px)",
-      border: "1px solid rgba(255,255,255,0.10)",
-      borderRadius: "28px",
-      boxShadow: `0 8px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.08)`,
-      padding: "22px 24px",
-      position: "relative",
-      overflow: "hidden",
-    }}>
-      {/* Ambient tier glow */}
-      <div style={{
-        position: "absolute", top: 0, right: 0,
-        width: 180, height: 180,
-        background: `radial-gradient(ellipse at top right, ${accentColor} 0%, transparent 70%)`,
-        pointerEvents: "none",
-      }} />
-      <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "flex-start", gap: "16px" }}>
+    <ScoreShiftGlassTile style={{ padding: "20px 22px" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
         <div style={{
-          width: 42, height: 42, borderRadius: "13px", flexShrink: 0,
-          background: "rgba(255,255,255,0.06)",
-          border: "1px solid rgba(255,255,255,0.10)",
+          width: 40, height: 40, borderRadius: "13px", flexShrink: 0,
+          background: iconBg,
+          border: "1px solid rgba(255,255,255,0.55)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.70)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
         }}>
           <Icon className="h-4 w-4" style={{ color: iconColor } as React.CSSProperties} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px", flexWrap: "wrap" }}>
-            <h3 style={{ color: "rgba(255,252,245,0.88)", fontSize: "14px", fontWeight: 600 }}>{label}</h3>
-            <Lock style={{ width: 12, height: 12, color: "rgba(255,252,245,0.30)" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "5px", flexWrap: "wrap" }}>
+            <h3 style={{ color: "#1E1B18", fontSize: "14px", fontWeight: 600 }}>{label}</h3>
+            <Lock style={{ width: 12, height: 12, color: "#8C7B6E" }} />
             <span style={{
               marginLeft: "auto", fontSize: "10px", fontWeight: 700,
               letterSpacing: "0.12em", textTransform: "uppercase",
-              color: "rgba(255,252,245,0.35)",
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.10)",
+              color: "#8C7B6E",
+              background: "rgba(30,27,24,0.06)",
+              border: "1px solid rgba(30,27,24,0.10)",
               borderRadius: "100px", padding: "3px 9px",
             }}>
               {tierLabel} plan
             </span>
           </div>
-          <p style={{ color: "rgba(255,252,245,0.45)", fontSize: "13px", lineHeight: "1.65", marginBottom: "16px" }}>{description}</p>
+          <p style={{ color: "#8C7B6E", fontSize: "13px", lineHeight: "1.65", marginBottom: "14px" }}>{description}</p>
           <Link href="/pricing">
             <Button size="sm" className={`gap-1.5 text-xs font-semibold text-white ${btnClass}`} style={{ borderRadius: "100px" }}>
               {TIER_UPGRADE_LABELS[requiredTier]}
@@ -136,7 +120,7 @@ function TierUpgradeCard({
           </Link>
         </div>
       </div>
-    </div>
+    </ScoreShiftGlassTile>
   );
 }
 
@@ -204,7 +188,7 @@ function CreditComponent({
   return <div ref={containerRef} className="w-full min-h-[200px]" />;
 }
 
-/* ── ScoreShift Glass Panel — Array card wrapper ─────────────────────────── */
+/* ── Array card — delegates to ScoreShiftGlassPanel ─────────────────────── */
 function ArrayCard({
   icon: Icon,
   title,
@@ -217,57 +201,13 @@ function ArrayCard({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{
-      background: "rgba(255,253,248,0.055)",
-      backdropFilter: "blur(32px)",
-      WebkitBackdropFilter: "blur(32px)",
-      border: "1px solid rgba(255,255,255,0.11)",
-      borderRadius: "32px",
-      boxShadow: "0 24px 64px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.10)",
-      overflow: "hidden",
-      position: "relative",
-    }}>
-      {/* Indigo ambient glow — top-left */}
-      <div style={{
-        position: "absolute", top: -40, left: -40,
-        width: 260, height: 260,
-        background: "radial-gradient(ellipse, rgba(99,102,241,0.08) 0%, transparent 68%)",
-        pointerEvents: "none",
-      }} />
-
-      {/* Card header */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: "14px",
-        padding: "20px 24px 18px",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-        position: "relative", zIndex: 1,
-      }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: "12px", flexShrink: 0,
-          background: "rgba(99,102,241,0.12)",
-          border: "1px solid rgba(99,102,241,0.18)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.14)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <Icon className="h-4 w-4" style={{ color: "#818CF8" } as React.CSSProperties} />
-        </div>
-        <div>
-          <p style={{ color: "rgba(255,252,245,0.90)", fontSize: "14px", fontWeight: 600, letterSpacing: "-0.2px" }}>{title}</p>
-          <p style={{ color: "rgba(255,252,245,0.38)", fontSize: "12px", marginTop: "1px" }}>{description}</p>
-        </div>
-        <span style={{
-          marginLeft: "auto",
-          fontSize: "10px", fontWeight: 700,
-          letterSpacing: "0.12em", textTransform: "uppercase",
-          color: "rgba(255,252,245,0.18)",
-        }}>
-          ScoreShift
-        </span>
-      </div>
-
-      {/* Content */}
-      <div style={{ padding: "24px", position: "relative", zIndex: 1 }}>{children}</div>
-    </div>
+    <ScoreShiftGlassPanel
+      icon={Icon as ComponentType<{ className?: string; style?: React.CSSProperties }>}
+      title={title}
+      description={description}
+    >
+      {children}
+    </ScoreShiftGlassPanel>
   );
 }
 
@@ -337,41 +277,40 @@ export default function CreditMonitoring() {
 
   if (enrollLoading) {
     return (
-      <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #0B0E1A 0%, #0F1628 55%, #0A0D1C 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ minHeight: "100vh", background: "#F4F0E8", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px" }}>
           <div style={{ height: 36, overflow: "hidden", display: "flex", alignItems: "center" }}>
-            <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 130, width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+            <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 130, width: "auto", objectFit: "contain" }} />
           </div>
           <div className="w-8 h-8 rounded-full border-2 border-indigo-400 border-t-transparent ss-spinner" />
-          <p style={{ color: "rgba(255,252,245,0.35)", fontSize: "13px" }}>Loading credit monitoring…</p>
+          <p style={{ color: "#8C7B6E", fontSize: "13px" }}>Loading credit monitoring…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #0B0E1A 0%, #0F1628 55%, #0A0D1C 100%)" }}>
+    <div style={{ minHeight: "100vh", background: "#F4F0E8" }}>
 
-      {/* ── Page header — glass panel ─────────────────────────────────────── */}
+      {/* ── Page header ──────────────────────────────────────────────────── */}
       <div style={{
-        background: "rgba(255,253,248,0.04)",
+        background: "rgba(255,253,248,0.72)",
         backdropFilter: "blur(24px)",
         WebkitBackdropFilter: "blur(24px)",
-        borderBottom: "1px solid rgba(255,255,255,0.07)",
+        borderBottom: "1px solid rgba(255,255,255,0.55)",
+        boxShadow: "0 1px 0 rgba(60,40,20,0.06)",
       }}>
-        {/* Subtle indigo wash behind header */}
-        <div style={{ background: "linear-gradient(135deg, rgba(67,56,202,0.12) 0%, transparent 60%)", position: "absolute", inset: 0, pointerEvents: "none" }} />
-        <div className="max-w-6xl mx-auto px-6 py-8" style={{ position: "relative", zIndex: 1 }}>
+        <div className="max-w-6xl mx-auto px-6 py-7">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "10px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "8px" }}>
                 <div style={{ height: 26, overflow: "hidden", display: "flex", alignItems: "center" }}>
-                  <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 100, width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+                  <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 100, width: "auto", objectFit: "contain" }} />
                 </div>
-                <span style={{ width: 1, height: 20, background: "rgba(255,255,255,0.15)" }} />
-                <h1 style={{ color: "rgba(255,252,245,0.90)", fontSize: "18px", fontWeight: 600, letterSpacing: "-0.3px" }}>Credit Monitoring</h1>
+                <span style={{ width: 1, height: 20, background: "rgba(30,27,24,0.12)" }} />
+                <h1 style={{ color: "#1E1B18", fontSize: "18px", fontWeight: 600, letterSpacing: "-0.3px" }}>Credit Monitoring</h1>
               </div>
-              <p style={{ color: "rgba(255,252,245,0.38)", fontSize: "13px", maxWidth: "420px", lineHeight: "1.55" }}>
+              <p style={{ color: "#8C7B6E", fontSize: "13px", maxWidth: "420px", lineHeight: "1.55" }}>
                 Live bureau data, real-time alerts, and premium credit tools — all in one place.
               </p>
             </div>
@@ -383,38 +322,37 @@ export default function CreditMonitoring() {
                 </Badge>
               )}
               {isEnrolled && (
-                <Badge className="w-fit bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-xs">
+                <Badge className="w-fit bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Monitoring Active
                 </Badge>
               )}
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", marginTop: "2px" }}>
-                <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-xs gap-1">
+                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs gap-1">
                   <CheckCircle className="h-3 w-3" />
                   All 3 Bureaus
                 </Badge>
                 {(["Experian", "Equifax", "TransUnion"] as const).map((name) => (
-                  <span key={name} style={{ fontSize: "10px", color: "rgba(255,255,255,0.40)", fontWeight: 500, display: "flex", alignItems: "center", gap: "3px" }}>
-                    <CheckCircle className="h-2.5 w-2.5 text-emerald-400" />
+                  <span key={name} style={{ fontSize: "10px", color: "#8C7B6E", fontWeight: 500, display: "flex", alignItems: "center", gap: "3px" }}>
+                    <CheckCircle className="h-2.5 w-2.5 text-emerald-500" />
                     {name}
                   </span>
                 ))}
               </div>
             </div>
           </div>
-
           {displayName && !displayName.includes("Account") && (
-            <p style={{ color: "rgba(255,252,245,0.28)", fontSize: "11px", marginTop: "12px" }}>Viewing as: {displayName}</p>
+            <p style={{ color: "#8C7B6E", fontSize: "11px", marginTop: "10px" }}>Viewing as: {displayName}</p>
           )}
         </div>
       </div>
 
-      {/* ── Tab bar — glass strip ─────────────────────────────────────────── */}
+      {/* ── Tab bar ──────────────────────────────────────────────────────── */}
       <div style={{
-        background: "rgba(255,253,248,0.03)",
+        background: "rgba(255,253,248,0.60)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: "1px solid rgba(30,27,24,0.08)",
       }}>
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex gap-0.5 overflow-x-auto scrollbar-hide">
@@ -425,26 +363,17 @@ export default function CreditMonitoring() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveSection(tab.id)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "8px",
-                    padding: "16px",
-                    fontSize: "14px", fontWeight: 500, whiteSpace: "nowrap",
-                    borderBottom: isActive ? "2px solid #818CF8" : "2px solid transparent",
-                    color: isActive ? "#A5B4FC" : "rgba(255,252,245,0.38)",
-                    background: "none", border: "none",
-                    borderBottomWidth: "2px",
-                    borderBottomStyle: "solid",
-                    borderBottomColor: isActive ? "#818CF8" : "transparent",
-                    cursor: "pointer",
-                    transition: "color 0.2s, border-color 0.2s",
-                  }}
-                  onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = "rgba(255,252,245,0.65)"; }}
-                  onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = "rgba(255,252,245,0.38)"; }}
+                  className={`group flex items-center gap-2 px-4 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                    isActive
+                      ? "border-indigo-500 text-indigo-600"
+                      : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+                  }`}
+                  style={{ background: "none", cursor: "pointer" }}
                 >
-                  <Icon className="h-4 w-4 shrink-0" style={{ color: isActive ? "#818CF8" : "rgba(255,252,245,0.30)" } as React.CSSProperties} />
-                  <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                  <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-indigo-500" : "text-slate-400 group-hover:text-slate-500"}`} />
+                  <span className="flex flex-col items-start">
                     <span>{tab.label}</span>
-                    <span style={{ fontSize: "10px", fontWeight: 400, display: "none", color: isActive ? "rgba(165,180,252,0.60)" : "rgba(255,252,245,0.25)" }} className="sm:block">
+                    <span className={`text-[10px] font-normal hidden sm:block ${isActive ? "text-indigo-400" : "text-slate-400"}`}>
                       {tab.subtitle}
                     </span>
                   </span>
@@ -458,23 +387,23 @@ export default function CreditMonitoring() {
       {/* ── Content ──────────────────────────────────────────────────────── */}
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
 
-        {/* Enrollment state — glass panel */}
+        {/* Enrollment state — ScoreShift glass panel (cream) */}
         {!isEnrolled && (
           <div style={{
-            background: "rgba(255,253,248,0.05)",
-            backdropFilter: "blur(32px)",
-            WebkitBackdropFilter: "blur(32px)",
-            border: "1px solid rgba(255,255,255,0.10)",
+            background: "rgba(255,253,248,0.58)",
+            backdropFilter: "blur(30px)",
+            WebkitBackdropFilter: "blur(30px)",
+            border: "1px solid rgba(255,255,255,0.55)",
             borderRadius: "32px",
-            boxShadow: "0 24px 64px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.08)",
+            boxShadow: "0 30px 90px rgba(60,40,20,0.10), inset 0 1px 0 rgba(255,255,255,0.75)",
             overflow: "hidden",
             position: "relative",
           }}>
-            {/* Indigo enrollment glow */}
+            {/* Ambient indigo glow — top-left, < 8% */}
             <div style={{
               position: "absolute", top: -60, left: -60,
               width: 320, height: 320,
-              background: "radial-gradient(ellipse, rgba(99,102,241,0.14) 0%, transparent 68%)",
+              background: "radial-gradient(ellipse, rgba(99,102,241,0.07) 0%, transparent 68%)",
               pointerEvents: "none",
             }} />
             <div style={{ padding: "36px 40px", position: "relative", zIndex: 1 }}>
@@ -482,27 +411,27 @@ export default function CreditMonitoring() {
                 {/* Icon */}
                 <div style={{
                   width: 56, height: 56, borderRadius: "18px", flexShrink: 0,
-                  background: "linear-gradient(135deg, rgba(99,102,241,0.30) 0%, rgba(67,56,202,0.20) 100%)",
-                  border: "1px solid rgba(99,102,241,0.30)",
-                  boxShadow: "0 8px 24px rgba(67,56,202,0.20), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  background: "rgba(99,102,241,0.08)",
+                  border: "1px solid rgba(99,102,241,0.16)",
+                  boxShadow: "0 4px 16px rgba(99,102,241,0.10), inset 0 1px 0 rgba(255,255,255,0.70)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  <Shield style={{ width: 26, height: 26, color: "#A5B4FC" }} />
+                  <Shield style={{ width: 26, height: 26, color: "#6366F1" }} />
                 </div>
 
                 <div style={{ flex: 1 }}>
                   {/* Eyebrow */}
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", flexWrap: "wrap" }}>
                     <div style={{ height: 22, overflow: "hidden", display: "flex", alignItems: "center" }}>
-                      <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 85, width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+                      <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 85, width: "auto", objectFit: "contain" }} />
                     </div>
-                    <span style={{ color: "rgba(255,252,245,0.20)", fontSize: "13px" }}>·</span>
-                    <span style={{ color: "rgba(255,252,245,0.40)", fontSize: "13px" }}>Credit Profile Setup</span>
+                    <span style={{ color: "rgba(30,27,24,0.25)", fontSize: "13px" }}>·</span>
+                    <span style={{ color: "#8C7B6E", fontSize: "13px" }}>Credit Profile Setup</span>
                   </div>
-                  <h2 style={{ color: "rgba(255,252,245,0.92)", fontSize: "20px", fontWeight: 600, letterSpacing: "-0.4px", marginBottom: "8px" }}>
+                  <h2 style={{ color: "#1E1B18", fontSize: "20px", fontWeight: 600, letterSpacing: "-0.4px", marginBottom: "8px" }}>
                     Set Up Your Credit Profile
                   </h2>
-                  <p style={{ color: "rgba(255,252,245,0.42)", fontSize: "14px", lineHeight: "1.65", maxWidth: "500px", marginBottom: "24px" }}>
+                  <p style={{ color: "#8C7B6E", fontSize: "14px", lineHeight: "1.65", maxWidth: "500px", marginBottom: "24px" }}>
                     Connect your credit file to unlock real-time bureau data, score tracking, and intelligent alerts.
                     One-time setup — takes about 2 minutes.
                   </p>
@@ -522,21 +451,21 @@ export default function CreditMonitoring() {
                         {name}
                       </span>
                     ))}
-                    <span style={{ color: "rgba(255,252,245,0.32)", fontSize: "12px", marginLeft: "4px" }}>All 3 bureaus covered</span>
+                    <span style={{ color: "#8C7B6E", fontSize: "12px", marginLeft: "4px" }}>All 3 bureaus covered</span>
                   </div>
 
                   {!access.hasAnyPlan ? (
                     <div style={{
                       borderRadius: "20px",
-                      background: "rgba(245,158,11,0.08)",
-                      border: "1px solid rgba(245,158,11,0.20)",
+                      background: "rgba(245,158,11,0.06)",
+                      border: "1px solid rgba(245,158,11,0.18)",
                       padding: "18px 20px", maxWidth: "420px",
                     }}>
-                      <p style={{ color: "rgba(252,211,77,0.85)", fontSize: "13px", fontWeight: 500, marginBottom: "14px" }}>
+                      <p style={{ color: "#92400E", fontSize: "13px", fontWeight: 500, marginBottom: "14px" }}>
                         A subscription is required to access credit monitoring.
                       </p>
                       <Link href="/pricing">
-                        <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-black font-bold gap-1.5" style={{ borderRadius: "100px" }}>
+                        <Button size="sm" className="bg-amber-500 hover:bg-amber-400 text-white font-bold gap-1.5" style={{ borderRadius: "100px" }}>
                           View Plans <ArrowRight className="h-3.5 w-3.5" />
                         </Button>
                       </Link>
@@ -544,20 +473,20 @@ export default function CreditMonitoring() {
                   ) : (
                     <div style={{
                       borderRadius: "20px",
-                      background: "rgba(255,253,248,0.04)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+                      background: "rgba(255,253,248,0.70)",
+                      border: "1px solid rgba(255,255,255,0.55)",
+                      boxShadow: "0 8px 32px rgba(60,40,20,0.07), inset 0 1px 0 rgba(255,255,255,0.80)",
                       padding: "20px", maxWidth: "540px",
                     }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
                         <div style={{
                           width: 22, height: 22, borderRadius: "100px",
-                          background: "linear-gradient(135deg, #F59E0B, #D97706)",
+                          background: "linear-gradient(135deg, #6366F1, #4338CA)",
                           display: "flex", alignItems: "center", justifyContent: "center",
                         }}>
                           <span style={{ color: "#fff", fontSize: "8px", fontWeight: 900 }}>SS</span>
                         </div>
-                        <span style={{ color: "rgba(255,252,245,0.38)", fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                        <span style={{ color: "#8C7B6E", fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                           ScoreShift · Secure Enrollment
                         </span>
                       </div>
@@ -840,13 +769,13 @@ export default function CreditMonitoring() {
           </>
         ) : null}
 
-        {/* ── Not enrolled preview grid — glass tiles ───────────────────── */}
+        {/* ── Not enrolled preview grid — cream glass tiles ─────────────── */}
         {!isEnrolled && (
           <div style={{ marginTop: "8px" }}>
             <p style={{
               fontSize: "10px", fontWeight: 700,
               letterSpacing: "0.16em", textTransform: "uppercase",
-              color: "rgba(255,252,245,0.22)",
+              color: "#8C7B6E",
               marginBottom: "20px",
             }}>
               Available after enrollment
@@ -865,34 +794,25 @@ export default function CreditMonitoring() {
                 { id: "student-loans",    label: "Student Loan Aid",      icon: GraduationCap,  description: "Navigate student loan options and forgiveness" },
                 { id: "subscriptions",    label: "Subscription Manager",  icon: CreditCard,     description: "Manage your recurring credit product subscriptions" },
               ].map((comp) => (
-                <div
+                <ScoreShiftGlassTile
                   key={comp.id}
-                  style={{
-                    background: "rgba(255,253,248,0.035)",
-                    backdropFilter: "blur(20px)",
-                    WebkitBackdropFilter: "blur(20px)",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                    borderRadius: "20px",
-                    boxShadow: "0 4px 24px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.05)",
-                    padding: "18px 18px 16px",
-                    opacity: 0.55,
-                    pointerEvents: "none",
-                  }}
+                  style={{ padding: "16px 18px", opacity: 0.65, pointerEvents: "none" }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "7px" }}>
                     <div style={{
                       width: 30, height: 30, borderRadius: "10px", flexShrink: 0,
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: "rgba(99,102,241,0.06)",
+                      border: "1px solid rgba(99,102,241,0.12)",
+                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.65)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}>
-                      <comp.icon className="h-3.5 w-3.5" style={{ color: "rgba(255,252,245,0.30)" } as React.CSSProperties} />
+                      <comp.icon className="h-3.5 w-3.5" style={{ color: "#6366F1", opacity: 0.6 } as React.CSSProperties} />
                     </div>
-                    <span style={{ color: "rgba(255,252,245,0.55)", fontSize: "13px", fontWeight: 500 }}>{comp.label}</span>
-                    <Lock style={{ width: 12, height: 12, color: "rgba(255,252,245,0.18)", marginLeft: "auto" }} />
+                    <span style={{ color: "#4A4550", fontSize: "13px", fontWeight: 500 }}>{comp.label}</span>
+                    <Lock style={{ width: 12, height: 12, color: "#8C7B6E", marginLeft: "auto" }} />
                   </div>
-                  <p style={{ color: "rgba(255,252,245,0.28)", fontSize: "12px", lineHeight: "1.55" }}>{comp.description}</p>
-                </div>
+                  <p style={{ color: "#8C7B6E", fontSize: "12px", lineHeight: "1.55" }}>{comp.description}</p>
+                </ScoreShiftGlassTile>
               ))}
             </div>
           </div>
