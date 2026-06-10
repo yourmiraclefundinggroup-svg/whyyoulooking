@@ -12,13 +12,15 @@ import mountainPersonImg from "@assets/ChatGPT_Image_Jun_9,_2026,_08_13_49_PM_17
 
 type ViewType = "choose" | "self-service" | "concierge";
 
+/* ─── The fixed header is: 36px announcement bar + 64px nav = 100px total ── */
+const HEADER_H = 100;
+
 /* ─── color tokens ───────────────────────────────────────────────────────── */
 const C = {
   cream: "#F5EEE0",
   bone: "#EDE0CC",
   surface: "#FFFCF5",
   indigo: "#4a4e8c",
-  indigoLight: "rgba(74,78,140,0.15)",
   indigoShadow: "rgba(74,78,140,0.45)",
   text: "#2A2725",
   muted: "#5B5652",
@@ -26,7 +28,6 @@ const C = {
   glass: "rgba(255,252,245,0.13)",
   glassBorder: "rgba(255,252,245,0.28)",
   glassShadow: "rgba(20,15,10,0.35)",
-  overlay: "rgba(20,15,10,0.42)",
 };
 
 /* ─── self-service plans ─────────────────────────────────────────────────── */
@@ -36,7 +37,8 @@ const selfServicePlans = [
     name: "Free",
     price: 0,
     suffix: "/month",
-    badge: null,
+    badge: null as string | null,
+    badgeSub: null as string | null,
     description: "Start seeing your credit picture",
     featured: false,
     ctaText: "Get Started Free",
@@ -53,7 +55,8 @@ const selfServicePlans = [
     name: "Path",
     price: 29,
     suffix: "/month",
-    badge: null,
+    badge: null as string | null,
+    badgeSub: null as string | null,
     description: "Guided tools for confident next steps",
     featured: false,
     ctaText: "Choose Path →",
@@ -93,7 +96,8 @@ const selfServicePlans = [
     name: "Summit",
     price: 149,
     suffix: "/month",
-    badge: null,
+    badge: null as string | null,
+    badgeSub: null as string | null,
     description: "Complete credit readiness & identity shield",
     featured: false,
     ctaText: "Choose Summit →",
@@ -117,7 +121,7 @@ const conciergePlans = [
     price: 497,
     suffix: " flat",
     duration: "3-month program",
-    badge: null,
+    badge: null as string | null,
     description: "Rapid results with focused execution",
     featured: false,
     ctaText: "Start Fast Track →",
@@ -136,7 +140,7 @@ const conciergePlans = [
     price: 897,
     suffix: " flat",
     duration: "6-month program",
-    badge: null,
+    badge: null as string | null,
     description: "Comprehensive strategy with full execution",
     featured: false,
     ctaText: "Start Rush →",
@@ -182,7 +186,7 @@ const mailCredits = [
   { qty: 25, label: "25 Credits", price: "$299.99" },
 ];
 
-/* ─── self-service comparison rows ──────────────────────────────────────── */
+/* ─── comparison rows ────────────────────────────────────────────────────── */
 const ssCompare = [
   { label: "Credit overview & tracker", values: [true, true, true, true] },
   { label: "Dispute letters", values: ["1/mo", "3/mo", "Unlimited", "Unlimited"] },
@@ -196,7 +200,6 @@ const ssCompare = [
   { label: "Dedicated advisor", values: [false, false, false, true] },
 ];
 
-/* ─── concierge comparison rows ─────────────────────────────────────────── */
 const ccCompare = [
   { label: "Program length", values: ["3 months", "6 months", "12 months"] },
   { label: "Dedicated strategist", values: [true, true, true] },
@@ -214,17 +217,9 @@ const ccCompare = [
    GLASS CARD — mouse-tracking hero cards
    ════════════════════════════════════════════════════════════════════════════ */
 function HeroGlassCard({
-  title,
-  tagline,
-  description,
-  ctaText,
-  onClick,
+  title, tagline, description, ctaText, onClick,
 }: {
-  title: string;
-  tagline: string;
-  description: string;
-  ctaText: string;
-  onClick: () => void;
+  title: string; tagline: string; description: string; ctaText: string; onClick: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -235,10 +230,9 @@ function HeroGlassCard({
     const y = (e.clientY - r.top) / r.height - 0.5;
     ref.current.style.transform = `perspective(900px) rotateY(${x * 5}deg) rotateX(${-y * 5}deg) translateY(-6px)`;
   };
-
   const onLeave = () => {
     if (!ref.current) return;
-    ref.current.style.transform = "perspective(900px) rotateY(0deg) rotateX(0deg) translateY(0)";
+    ref.current.style.transform = "perspective(900px) rotateY(0) rotateX(0) translateY(0)";
   };
 
   return (
@@ -246,6 +240,7 @@ function HeroGlassCard({
       ref={ref}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
+      onClick={onClick}
       style={{
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
@@ -255,13 +250,12 @@ function HeroGlassCard({
         borderRadius: "24px",
         padding: "36px 32px",
         width: "380px",
+        maxWidth: "calc(100vw - 48px)",
         transition: "transform 0.35s cubic-bezier(0.23,1,0.32,1)",
         cursor: "pointer",
         display: "flex",
         flexDirection: "column",
-        gap: "0",
       }}
-      onClick={onClick}
     >
       <h2 style={{ color: "#FFFCF5", fontSize: "28px", fontWeight: 500, letterSpacing: "-0.14px", marginBottom: "16px" }}>
         {title}
@@ -297,25 +291,23 @@ function HeroGlassCard({
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   PRICING CARD — self-service and concierge
+   PRICING CARD
    ════════════════════════════════════════════════════════════════════════════ */
-function PricingCard({
-  plan,
-  isConcierge = false,
-}: {
-  plan: (typeof selfServicePlans)[number] | (typeof conciergePlans)[number];
+function PricingCard({ plan, isConcierge = false }: {
+  plan: typeof selfServicePlans[number] | typeof conciergePlans[number];
   isConcierge?: boolean;
 }) {
-  const featured = plan.featured;
-  const hasBadgeSub = "badgeSub" in plan && plan.badgeSub;
+  const { featured } = plan;
+  const badgeSub = "badgeSub" in plan ? plan.badgeSub : null;
+  const duration = "duration" in plan ? plan.duration : null;
 
   return (
     <div
       style={{
         background: featured ? "#2A2725" : C.surface,
-        border: featured ? `1px solid rgba(74,78,140,0.30)` : "1px solid rgba(42,39,37,0.12)",
+        border: featured ? "1px solid rgba(74,78,140,0.30)" : "1px solid rgba(42,39,37,0.12)",
         borderRadius: "20px",
-        padding: featured ? "36px 32px" : "28px 28px",
+        padding: featured ? "36px 30px" : "28px 26px",
         display: "flex",
         flexDirection: "column",
         position: "relative",
@@ -323,56 +315,49 @@ function PricingCard({
         boxShadow: featured
           ? "0 24px 48px rgba(20,15,10,0.18), 0 0 0 1px rgba(74,78,140,0.20)"
           : "0 2px 16px rgba(42,39,37,0.06)",
-        transition: "box-shadow 0.2s, transform 0.2s",
-        flex: featured ? "0 0 auto" : "1",
+        transition: "box-shadow 0.2s",
         minWidth: 0,
       }}
     >
-      {/* Badge */}
       {plan.badge && (
-        <div style={{ marginBottom: "16px", display: "flex", flexDirection: "column", gap: "4px" }}>
-          <span
-            style={{
-              display: "inline-block",
-              background: C.indigo,
-              color: "#FFFCF5",
-              fontSize: "11px",
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              padding: "4px 12px",
-              borderRadius: "100px",
-            }}
-          >
+        <div style={{ marginBottom: "16px" }}>
+          <span style={{
+            display: "inline-block",
+            background: C.indigo,
+            color: "#FFFCF5",
+            fontSize: "10px",
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            padding: "4px 12px",
+            borderRadius: "100px",
+          }}>
             {plan.badge}
           </span>
-          {hasBadgeSub && (
-            <span style={{ color: "rgba(245,230,205,0.5)", fontSize: "11px" }}>
-              {(plan as typeof selfServicePlans[number]).badgeSub}
-            </span>
+          {badgeSub && (
+            <div style={{ color: "rgba(245,230,205,0.5)", fontSize: "11px", marginTop: "4px" }}>
+              {badgeSub}
+            </div>
           )}
         </div>
       )}
 
-      {/* Name + description */}
-      <div style={{ marginBottom: "20px" }}>
-        <h3 style={{ color: featured ? "#FFFCF5" : C.text, fontSize: "22px", fontWeight: 600, marginBottom: "6px" }}>
+      <div style={{ marginBottom: "18px" }}>
+        <h3 style={{ color: featured ? "#FFFCF5" : C.text, fontSize: "21px", fontWeight: 600, marginBottom: "6px" }}>
           {plan.name}
         </h3>
-        {"duration" in plan && (
-          <div
-            style={{
-              display: "inline-block",
-              background: "rgba(74,78,140,0.12)",
-              color: C.indigo,
-              fontSize: "11px",
-              fontWeight: 500,
-              padding: "3px 10px",
-              borderRadius: "100px",
-              marginBottom: "6px",
-            }}
-          >
-            {(plan as typeof conciergePlans[number]).duration}
+        {duration && (
+          <div style={{
+            display: "inline-block",
+            background: "rgba(74,78,140,0.12)",
+            color: C.indigo,
+            fontSize: "11px",
+            fontWeight: 500,
+            padding: "3px 10px",
+            borderRadius: "100px",
+            marginBottom: "6px",
+          }}>
+            {duration}
           </div>
         )}
         <p style={{ color: featured ? "rgba(255,252,245,0.55)" : C.muted, fontSize: "13px", lineHeight: "1.5" }}>
@@ -380,42 +365,38 @@ function PricingCard({
         </p>
       </div>
 
-      {/* Price */}
-      <div style={{ marginBottom: "24px" }}>
+      <div style={{ marginBottom: "22px" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
-          <span style={{ color: featured ? "#FFFCF5" : C.text, fontSize: "42px", fontWeight: 700, letterSpacing: "-1px" }}>
+          <span style={{ color: featured ? "#FFFCF5" : C.text, fontSize: "40px", fontWeight: 700, letterSpacing: "-1px" }}>
             ${plan.price}
           </span>
-          <span style={{ color: featured ? "rgba(255,252,245,0.45)" : C.faint, fontSize: "14px" }}>{plan.suffix}</span>
+          <span style={{ color: featured ? "rgba(255,252,245,0.45)" : C.faint, fontSize: "13px" }}>
+            {plan.suffix}
+          </span>
         </div>
         {featured && !isConcierge && (
-          <div style={{ color: "rgba(74,78,140,0.85)", fontSize: "12px", marginTop: "4px", fontWeight: 500 }}>
+          <div style={{ color: "rgba(110,116,196,0.9)", fontSize: "11px", marginTop: "4px", fontWeight: 500 }}>
             Price locked forever at founding rate
           </div>
         )}
       </div>
 
-      {/* Features */}
-      <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px 0", flex: 1, display: "flex", flexDirection: "column", gap: "10px" }}>
+      <ul style={{ listStyle: "none", padding: 0, margin: "0 0 24px 0", flex: 1, display: "flex", flexDirection: "column", gap: "9px" }}>
         {plan.features.map((f) => (
           <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "13px", color: featured ? "rgba(255,252,245,0.82)" : "#4A4541" }}>
-            <CheckCircle
-              size={15}
-              style={{ color: featured ? "rgba(149,154,210,0.9)" : C.indigo, flexShrink: 0, marginTop: "1px" }}
-            />
+            <CheckCircle size={14} style={{ color: featured ? "rgba(149,154,210,0.9)" : C.indigo, flexShrink: 0, marginTop: "2px" }} />
             {f}
           </li>
         ))}
       </ul>
 
-      {/* CTA */}
       <Link href={plan.ctaHref}>
         <button
           style={{
             width: "100%",
-            padding: "13px 0",
+            padding: "12px 0",
             borderRadius: "12px",
-            fontSize: "14px",
+            fontSize: "13px",
             fontWeight: 600,
             cursor: "pointer",
             transition: "all 0.2s",
@@ -443,79 +424,75 @@ function PricingCard({
    MAIL WALLET
    ════════════════════════════════════════════════════════════════════════════ */
 function MailWallet() {
-  const [selected, setSelected] = useState(1);
-
-  const selectedCredit = mailCredits.find((c) => c.qty === selected) ?? mailCredits[1];
+  const [selected, setSelected] = useState(5);
+  const credit = mailCredits.find((c) => c.qty === selected)!;
+  const stackColors = ["#c9bea6", "#d5cab3", "#dfd5be", "#e8dfc9"];
 
   return (
-    <section
-      style={{
-        background: C.surface,
-        borderRadius: "28px",
-        padding: "56px 48px",
-        maxWidth: "860px",
-        margin: "0 auto",
-        border: "1px solid rgba(42,39,37,0.09)",
-        boxShadow: "0 4px 32px rgba(42,39,37,0.06)",
-      }}
-    >
+    <section style={{
+      background: C.surface,
+      borderRadius: "28px",
+      padding: "52px 44px",
+      maxWidth: "820px",
+      margin: "0 auto",
+      border: "1px solid rgba(42,39,37,0.09)",
+      boxShadow: "0 4px 32px rgba(42,39,37,0.06)",
+    }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "28px" }}>
-        <Mail size={28} style={{ color: C.indigo, flexShrink: 0, marginTop: "2px" }} />
+        <Mail size={26} style={{ color: C.indigo, flexShrink: 0, marginTop: "3px" }} />
         <div>
-          <h3 style={{ color: C.text, fontSize: "26px", fontWeight: 600, marginBottom: "6px" }}>ScoreShift Mail</h3>
-          <p style={{ color: C.muted, fontSize: "14px", lineHeight: "1.6", maxWidth: "520px" }}>
-            Create your Smart Letter, then send it certified through ScoreShift Mail — no printing, envelopes, stamps, or post office trips.
+          <h3 style={{ color: C.text, fontSize: "24px", fontWeight: 600, marginBottom: "6px" }}>ScoreShift Mail</h3>
+          <p style={{ color: C.muted, fontSize: "14px", lineHeight: "1.6", maxWidth: "480px" }}>
+            Create your Smart Letter, then send it certified — no printing, envelopes, stamps, or post office trips.
           </p>
         </div>
       </div>
 
-      {/* Wallet card stack */}
-      <div style={{ position: "relative", height: "180px", marginBottom: "32px" }}>
-        {[...mailCredits].reverse().map((credit, i) => {
-          const isSelected = credit.qty === selected;
-          const idx = mailCredits.length - 1 - i;
-          const baseOffset = idx * 12;
-          const hues = ["#e8dfc9", "#dfd5be", "#d5cab3", "#c9bea6"];
-
+      {/* Stacked wallet cards */}
+      <div style={{ position: "relative", height: "176px", marginBottom: "28px" }}>
+        {mailCredits.map((c, idx) => {
+          const isSelected = c.qty === selected;
+          const offset = idx * 10;
           return (
             <div
-              key={credit.qty}
-              onClick={() => setSelected(credit.qty)}
+              key={c.qty}
+              onClick={() => setSelected(c.qty)}
               style={{
                 position: "absolute",
-                left: "50%",
-                transform: `translateX(-50%) translateY(${isSelected ? -8 : baseOffset}px) scale(${isSelected ? 1 : 0.96 - (mailCredits.length - 1 - idx) * 0.015})`,
-                width: "100%",
-                maxWidth: "520px",
-                background: isSelected ? C.indigo : hues[idx],
-                borderRadius: "18px",
+                left: 0, right: 0,
+                top: 0,
+                background: isSelected ? C.indigo : stackColors[idx],
+                borderRadius: "16px",
                 padding: "22px 28px",
                 cursor: "pointer",
-                transition: "all 0.38s cubic-bezier(0.23,1,0.32,1)",
+                zIndex: isSelected ? 10 : idx + 1,
+                transform: isSelected
+                  ? "translateY(-8px)"
+                  : `translateY(${offset}px) scale(${1 - (3 - idx) * 0.018})`,
                 boxShadow: isSelected
                   ? "0 16px 40px rgba(74,78,140,0.35)"
-                  : `0 4px 12px rgba(42,39,37,0.10)`,
-                zIndex: isSelected ? 10 : idx,
+                  : "0 4px 12px rgba(42,39,37,0.10)",
+                transition: "all 0.38s cubic-bezier(0.23,1,0.32,1)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
               }}
             >
               <div>
-                <div style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.08em", color: isSelected ? "rgba(255,252,245,0.6)" : C.faint, textTransform: "uppercase", marginBottom: "4px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", color: isSelected ? "rgba(255,252,245,0.55)" : C.faint, textTransform: "uppercase", marginBottom: "6px" }}>
                   ScoreShift Mail
                 </div>
-                <div style={{ fontSize: "22px", fontWeight: 700, color: isSelected ? "#FFFCF5" : C.text }}>
-                  {credit.label}
+                <div style={{ fontSize: "20px", fontWeight: 700, color: isSelected ? "#FFFCF5" : C.text }}>
+                  {c.label}
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: "28px", fontWeight: 700, color: isSelected ? "#FFFCF5" : C.text }}>
-                  {credit.price}
+                <div style={{ fontSize: "26px", fontWeight: 700, color: isSelected ? "#FFFCF5" : C.text }}>
+                  {c.price}
                 </div>
-                {credit.qty > 1 && (
+                {c.qty > 1 && (
                   <div style={{ fontSize: "11px", color: isSelected ? "rgba(255,252,245,0.55)" : C.faint }}>
-                    ${(parseFloat(credit.price.replace("$", "")) / credit.qty).toFixed(2)} / letter
+                    ${(parseFloat(c.price.replace("$", "")) / c.qty).toFixed(2)} / letter
                   </div>
                 )}
               </div>
@@ -524,8 +501,8 @@ function MailWallet() {
         })}
       </div>
 
-      {/* Selector tabs */}
-      <div style={{ display: "flex", gap: "8px", justifyContent: "center", marginBottom: "28px" }}>
+      {/* Selector */}
+      <div style={{ display: "flex", gap: "8px", justifyContent: "center", marginBottom: "24px", flexWrap: "wrap" }}>
         {mailCredits.map((c) => (
           <button
             key={c.qty}
@@ -551,21 +528,16 @@ function MailWallet() {
         <Link href="/checkout?addon=mail">
           <button
             style={{
-              background: C.indigo,
-              color: "#FFFCF5",
-              border: "none",
-              borderRadius: "12px",
-              padding: "13px 36px",
-              fontSize: "14px",
-              fontWeight: 600,
-              cursor: "pointer",
+              background: C.indigo, color: "#FFFCF5", border: "none",
+              borderRadius: "12px", padding: "13px 36px", fontSize: "14px",
+              fontWeight: 600, cursor: "pointer",
               boxShadow: `0 8px 24px -4px ${C.indigoShadow}`,
               transition: "background 0.2s",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "#5a5ea8")}
             onMouseLeave={(e) => (e.currentTarget.style.background = C.indigo)}
           >
-            Purchase {selectedCredit.label} — {selectedCredit.price}
+            Purchase {credit.label} — {credit.price}
           </button>
         </Link>
       </div>
@@ -576,10 +548,7 @@ function MailWallet() {
 /* ════════════════════════════════════════════════════════════════════════════
    COMPARISON TABLE
    ════════════════════════════════════════════════════════════════════════════ */
-function ComparisonTable({
-  plans,
-  rows,
-}: {
+function ComparisonTable({ plans, rows }: {
   plans: string[];
   rows: { label: string; values: (boolean | string)[] }[];
 }) {
@@ -588,21 +557,9 @@ function ComparisonTable({
       <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "480px" }}>
         <thead>
           <tr style={{ background: C.bone }}>
-            <th style={{ padding: "14px 20px", textAlign: "left", fontSize: "13px", color: C.muted, fontWeight: 500, borderRadius: "12px 0 0 0" }}>
-              Feature
-            </th>
-            {plans.map((p, i) => (
-              <th
-                key={p}
-                style={{
-                  padding: "14px 20px",
-                  textAlign: "center",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  color: C.text,
-                  borderRadius: i === plans.length - 1 ? "0 12px 0 0" : undefined,
-                }}
-              >
+            <th style={{ padding: "14px 20px", textAlign: "left", fontSize: "13px", color: C.muted, fontWeight: 500 }}>Feature</th>
+            {plans.map((p) => (
+              <th key={p} style={{ padding: "14px 20px", textAlign: "center", fontSize: "13px", fontWeight: 700, color: C.text }}>
                 {p}
               </th>
             ))}
@@ -610,22 +567,15 @@ function ComparisonTable({
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr
-              key={row.label}
-              style={{ background: i % 2 === 0 ? "rgba(42,39,37,0.02)" : C.surface, borderTop: "1px solid rgba(42,39,37,0.07)" }}
-            >
-              <td style={{ padding: "13px 20px", fontSize: "13px", color: C.muted }}>{row.label}</td>
+            <tr key={row.label} style={{ background: i % 2 === 0 ? "rgba(42,39,37,0.02)" : C.surface, borderTop: "1px solid rgba(42,39,37,0.07)" }}>
+              <td style={{ padding: "12px 20px", fontSize: "13px", color: C.muted }}>{row.label}</td>
               {row.values.map((val, j) => (
-                <td key={j} style={{ padding: "13px 20px", textAlign: "center", fontSize: "13px" }}>
-                  {typeof val === "boolean" ? (
-                    val ? (
-                      <span style={{ color: C.indigo, fontSize: "16px", fontWeight: 700 }}>✓</span>
-                    ) : (
-                      <span style={{ color: "#C5BDB6" }}>—</span>
-                    )
-                  ) : (
-                    <span style={{ color: C.text }}>{val}</span>
-                  )}
+                <td key={j} style={{ padding: "12px 20px", textAlign: "center", fontSize: "13px" }}>
+                  {typeof val === "boolean"
+                    ? val
+                      ? <span style={{ color: C.indigo, fontSize: "15px", fontWeight: 700 }}>✓</span>
+                      : <span style={{ color: "#C5BDB6" }}>—</span>
+                    : <span style={{ color: C.text }}>{val}</span>}
                 </td>
               ))}
             </tr>
@@ -637,69 +587,56 @@ function ComparisonTable({
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   SECTION 1 — CHOOSE YOUR PATH
+   SECTION 1 — CHOOSE YOUR PATH  (no Navbar rendered here)
    ════════════════════════════════════════════════════════════════════════════ */
 function ChooseYourPath({ onSelect }: { onSelect: (v: "self-service" | "concierge") => void }) {
   return (
     <div style={{ position: "relative", minHeight: "100vh", overflow: "hidden" }}>
-      {/* Background image */}
+      {/* Full-bleed background — goes behind fixed navbar */}
       <img
         src={splitPathImg}
-        alt="Two paths diverging"
+        alt="Two paths"
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
       />
-      {/* Gradient overlay */}
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(20,15,10,0.45) 0%, rgba(20,15,10,0.15) 60%)" }} />
+      {/* Gradient */}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(8,12,20,0.55) 0%, rgba(20,15,10,0.12) 60%)" }} />
 
-      {/* Navbar */}
-      <div style={{ position: "relative", zIndex: 10 }}>
-        <Navbar variant="dark" />
-      </div>
-
-      {/* Content */}
-      <div
-        style={{
-          position: "relative",
-          zIndex: 5,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          paddingTop: "120px",
-          paddingBottom: "80px",
-          paddingLeft: "24px",
-          paddingRight: "24px",
-        }}
-      >
-        {/* Headline */}
-        <h1
-          style={{
-            color: "#FFFCF5",
-            fontSize: "clamp(34px, 5vw, 52px)",
-            fontWeight: 500,
-            textAlign: "center",
-            letterSpacing: "-0.78px",
-            lineHeight: "1.15",
-            maxWidth: "680px",
-            marginBottom: "24px",
-          }}
-        >
+      {/* Content — pushed below the 100px fixed header */}
+      <div style={{
+        position: "relative",
+        zIndex: 5,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        paddingTop: `${HEADER_H + 64}px`,
+        paddingBottom: "80px",
+        paddingLeft: "24px",
+        paddingRight: "24px",
+      }}>
+        <h1 style={{
+          color: "#FFFCF5",
+          fontSize: "clamp(32px, 5vw, 52px)",
+          fontWeight: 500,
+          textAlign: "center",
+          letterSpacing: "-0.78px",
+          lineHeight: "1.15",
+          maxWidth: "700px",
+          marginBottom: "22px",
+        }}>
           Choose how you'd like to move forward.
         </h1>
-        <p
-          style={{
-            color: "rgba(245,235,215,0.85)",
-            fontSize: "17px",
-            lineHeight: "28px",
-            textAlign: "center",
-            maxWidth: "560px",
-            marginBottom: "72px",
-          }}
-        >
+        <p style={{
+          color: "rgba(245,235,215,0.85)",
+          fontSize: "17px",
+          lineHeight: "28px",
+          textAlign: "center",
+          maxWidth: "560px",
+          marginBottom: "64px",
+        }}>
           Whether you prefer guided tools or hands-on support, ScoreShift helps you understand what matters, know what to do next, and move forward with confidence.
         </p>
 
-        {/* Two glass cards */}
-        <div style={{ display: "flex", gap: "32px", justifyContent: "center", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "28px", justifyContent: "center", flexWrap: "wrap" }}>
           <HeroGlassCard
             title="Self-Service"
             tagline="Explore at your own pace."
@@ -716,182 +653,121 @@ function ChooseYourPath({ onSelect }: { onSelect: (v: "self-service" | "concierg
           />
         </div>
 
-        {/* Down arrow */}
-        <div style={{ marginTop: "60px", color: "rgba(255,252,245,0.4)", fontSize: "20px", animation: "float 2.5s ease-in-out infinite" }}>
+        <div style={{ marginTop: "56px", color: "rgba(255,252,245,0.38)", fontSize: "20px", animation: "floatArrow 2.5s ease-in-out infinite" }}>
           ↓
         </div>
       </div>
 
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(8px); }
-        }
-      `}</style>
+      <style>{`@keyframes floatArrow { 0%,100%{transform:translateY(0)} 50%{transform:translateY(8px)} }`}</style>
     </div>
   );
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   SELF-SERVICE EXPERIENCE
+   SELF-SERVICE EXPERIENCE  (no Navbar rendered here)
    ════════════════════════════════════════════════════════════════════════════ */
 function SelfServiceExperience({ onBack }: { onBack: () => void }) {
   return (
     <div style={{ background: C.cream, minHeight: "100vh" }}>
-      <div style={{ position: "relative", zIndex: 10 }}>
-        <Navbar variant="light" />
-      </div>
 
-      {/* Hero */}
-      <div style={{ position: "relative", height: "65vh", minHeight: "420px", overflow: "hidden" }}>
+      {/* Hero — full bleed image sits behind fixed navbar, content starts at HEADER_H */}
+      <div style={{ position: "relative", height: "68vh", minHeight: "440px", overflow: "hidden" }}>
         <img
           src={windingPathImg}
-          alt="Winding path forward"
+          alt="Winding path"
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
         />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(20,15,10,0.28) 0%, rgba(245,238,224,1) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(20,15,10,0.20) 0%, rgba(245,238,224,1) 100%)" }} />
 
-        {/* Back button */}
+        {/* Back button — sits just below the fixed navbar */}
         <button
           onClick={onBack}
           style={{
             position: "absolute",
-            top: "28px",
+            top: `${HEADER_H + 16}px`,
             left: "40px",
             display: "flex",
             alignItems: "center",
             gap: "6px",
             background: "rgba(255,252,245,0.18)",
             backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
             border: "1px solid rgba(255,252,245,0.3)",
             borderRadius: "100px",
             color: "#FFFCF5",
             fontSize: "13px",
             padding: "8px 16px",
             cursor: "pointer",
-            zIndex: 10,
+            zIndex: 5,
           }}
         >
           <ArrowLeft size={14} /> Back
         </button>
 
-        <div style={{ position: "absolute", bottom: "60px", left: "50%", transform: "translateX(-50%)", textAlign: "center", width: "100%", padding: "0 24px" }}>
-          <p style={{ color: "rgba(74,78,140,0.85)", fontSize: "12px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "12px" }}>
+        {/* Hero copy */}
+        <div style={{
+          position: "absolute",
+          bottom: "64px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          textAlign: "center",
+          width: "100%",
+          padding: "0 24px",
+          zIndex: 2,
+        }}>
+          <p style={{ color: "rgba(74,78,140,0.9)", fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "12px" }}>
             Self-Service
           </p>
-          <h1
-            style={{
-              color: C.text,
-              fontSize: "clamp(32px, 5vw, 48px)",
-              fontWeight: 600,
-              letterSpacing: "-0.6px",
-              marginBottom: "16px",
-              lineHeight: "1.1",
-            }}
-          >
+          <h1 style={{ color: C.text, fontSize: "clamp(30px, 5vw, 46px)", fontWeight: 600, letterSpacing: "-0.5px", marginBottom: "14px", lineHeight: "1.1" }}>
             Your path. Your pace.
           </h1>
-          <p style={{ color: C.muted, fontSize: "17px", lineHeight: "1.6", maxWidth: "480px", margin: "0 auto" }}>
+          <p style={{ color: C.muted, fontSize: "16px", lineHeight: "1.6", maxWidth: "460px", margin: "0 auto" }}>
             Tools, monitoring, and guidance designed to help you move forward with confidence.
           </p>
         </div>
       </div>
 
-      {/* Pricing cards on cream env background */}
-      <div style={{ position: "relative", overflow: "hidden", paddingTop: "48px", paddingBottom: "80px" }}>
-        <img
-          src={creamEnvImg}
-          alt=""
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            opacity: 0.35,
-          }}
-        />
+      {/* Pricing cards */}
+      <div style={{ position: "relative", overflow: "hidden", paddingTop: "56px", paddingBottom: "80px" }}>
+        <img src={creamEnvImg} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.35 }} />
         <div style={{ position: "relative", zIndex: 2, maxWidth: "1100px", margin: "0 auto", padding: "0 24px" }}>
-          <div style={{ textAlign: "center", marginBottom: "48px" }}>
-            <h2 style={{ color: C.text, fontSize: "32px", fontWeight: 600, marginBottom: "10px" }}>
-              Choose your plan
-            </h2>
-            <p style={{ color: C.muted, fontSize: "15px" }}>
-              Start free. Upgrade when you're ready. Founding Member pricing locked forever.
-            </p>
+          <div style={{ textAlign: "center", marginBottom: "44px" }}>
+            <h2 style={{ color: C.text, fontSize: "30px", fontWeight: 600, marginBottom: "10px" }}>Choose your plan</h2>
+            <p style={{ color: C.muted, fontSize: "15px" }}>Start free. Upgrade when ready. Founding Member pricing locked forever.</p>
           </div>
-
-          {/* 4-card grid */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: "16px",
-              alignItems: "start",
-            }}
-          >
-            {selfServicePlans.map((plan) => (
-              <PricingCard key={plan.id} plan={plan} />
-            ))}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", alignItems: "start" }}>
+            {selfServicePlans.map((plan) => <PricingCard key={plan.id} plan={plan} />)}
           </div>
         </div>
       </div>
 
       {/* Comparison */}
-      <div style={{ maxWidth: "900px", margin: "0 auto", padding: "0 24px 80px" }}>
-        <h2 style={{ color: C.text, fontSize: "24px", fontWeight: 600, textAlign: "center", marginBottom: "32px" }}>
-          Compare plans
-        </h2>
-        <div
-          style={{
-            background: C.surface,
-            borderRadius: "20px",
-            overflow: "hidden",
-            border: "1px solid rgba(42,39,37,0.09)",
-            boxShadow: "0 4px 24px rgba(42,39,37,0.06)",
-          }}
-        >
-          <ComparisonTable
-            plans={selfServicePlans.map((p) => p.name)}
-            rows={ssCompare}
-          />
+      <div style={{ maxWidth: "880px", margin: "0 auto", padding: "0 24px 80px" }}>
+        <h2 style={{ color: C.text, fontSize: "24px", fontWeight: 600, textAlign: "center", marginBottom: "28px" }}>Compare plans</h2>
+        <div style={{ background: C.surface, borderRadius: "20px", overflow: "hidden", border: "1px solid rgba(42,39,37,0.09)", boxShadow: "0 4px 24px rgba(42,39,37,0.06)" }}>
+          <ComparisonTable plans={selfServicePlans.map((p) => p.name)} rows={ssCompare} />
         </div>
       </div>
 
       {/* Mail Wallet */}
-      <div style={{ padding: "0 24px 80px" }}>
-        <MailWallet />
-      </div>
+      <div style={{ padding: "0 24px 80px" }}><MailWallet /></div>
 
-      {/* Mountain person visual */}
-      <div style={{ maxWidth: "900px", margin: "0 auto 80px", padding: "0 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: "32px" }}>
-        <div style={{ borderRadius: "28px", overflow: "hidden", width: "360px", maxWidth: "100%", boxShadow: "0 24px 64px rgba(42,39,37,0.12)" }}>
+      {/* Mountain person */}
+      <div style={{ maxWidth: "900px", margin: "0 auto 72px", padding: "0 24px", display: "flex", justifyContent: "center" }}>
+        <div style={{ borderRadius: "28px", overflow: "hidden", width: "340px", maxWidth: "100%", boxShadow: "0 24px 64px rgba(42,39,37,0.12)" }}>
           <img src={mountainPersonImg} alt="Working from anywhere" style={{ width: "100%", display: "block" }} />
         </div>
       </div>
 
       {/* CTA */}
       <div style={{ background: C.bone, padding: "80px 24px", textAlign: "center" }}>
-        <h2 style={{ color: C.text, fontSize: "36px", fontWeight: 600, marginBottom: "16px" }}>
-          Start your guided plan.
-        </h2>
-        <p style={{ color: C.muted, fontSize: "16px", maxWidth: "400px", margin: "0 auto 36px" }}>
+        <h2 style={{ color: C.text, fontSize: "34px", fontWeight: 600, marginBottom: "14px" }}>Start your guided plan.</h2>
+        <p style={{ color: C.muted, fontSize: "16px", maxWidth: "380px", margin: "0 auto 32px" }}>
           Join the founding members who moved forward before everyone else.
         </p>
         <Link href="/signup">
           <button
-            style={{
-              background: C.indigo,
-              color: "#FFFCF5",
-              border: "none",
-              borderRadius: "14px",
-              padding: "16px 48px",
-              fontSize: "16px",
-              fontWeight: 600,
-              cursor: "pointer",
-              boxShadow: `0 12px 32px -4px ${C.indigoShadow}`,
-              transition: "background 0.2s",
-            }}
+            style={{ background: C.indigo, color: "#FFFCF5", border: "none", borderRadius: "14px", padding: "15px 48px", fontSize: "16px", fontWeight: 600, cursor: "pointer", boxShadow: `0 12px 32px -4px ${C.indigoShadow}`, transition: "background 0.2s" }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "#5a5ea8")}
             onMouseLeave={(e) => (e.currentTarget.style.background = C.indigo)}
           >
@@ -906,14 +782,11 @@ function SelfServiceExperience({ onBack }: { onBack: () => void }) {
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   CONCIERGE EXPERIENCE
+   CONCIERGE EXPERIENCE  (no Navbar rendered here)
    ════════════════════════════════════════════════════════════════════════════ */
 function ConciergeExperience({ onBack }: { onBack: () => void }) {
   return (
     <div style={{ background: C.cream, minHeight: "100vh" }}>
-      <div style={{ position: "relative", zIndex: 10 }}>
-        <Navbar variant="light" />
-      </div>
 
       {/* Hero */}
       <div style={{ position: "relative", height: "70vh", minHeight: "480px", overflow: "hidden" }}>
@@ -922,46 +795,48 @@ function ConciergeExperience({ onBack }: { onBack: () => void }) {
           alt="ScoreShift Concierge path"
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
         />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(20,15,10,0.22) 0%, rgba(245,238,224,1) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(20,15,10,0.18) 0%, rgba(245,238,224,1) 100%)" }} />
 
         {/* Back button */}
         <button
           onClick={onBack}
           style={{
             position: "absolute",
-            top: "28px",
+            top: `${HEADER_H + 16}px`,
             left: "40px",
             display: "flex",
             alignItems: "center",
             gap: "6px",
             background: "rgba(255,252,245,0.18)",
             backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
             border: "1px solid rgba(255,252,245,0.3)",
             borderRadius: "100px",
             color: "#FFFCF5",
             fontSize: "13px",
             padding: "8px 16px",
             cursor: "pointer",
-            zIndex: 10,
+            zIndex: 5,
           }}
         >
           <ArrowLeft size={14} /> Back
         </button>
 
-        <div style={{ position: "absolute", bottom: "60px", left: "50%", transform: "translateX(-50%)", textAlign: "center", width: "100%", padding: "0 24px" }}>
-          <p style={{ color: "rgba(74,78,140,0.85)", fontSize: "12px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "12px" }}>
+        {/* Hero copy */}
+        <div style={{
+          position: "absolute",
+          bottom: "64px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          textAlign: "center",
+          width: "100%",
+          padding: "0 24px",
+          zIndex: 2,
+        }}>
+          <p style={{ color: "rgba(74,78,140,0.9)", fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "12px" }}>
             Concierge
           </p>
-          <h1
-            style={{
-              color: C.text,
-              fontSize: "clamp(30px, 4.5vw, 44px)",
-              fontWeight: 600,
-              letterSpacing: "-0.5px",
-              marginBottom: "16px",
-              lineHeight: "1.1",
-            }}
-          >
+          <h1 style={{ color: C.text, fontSize: "clamp(28px, 4.5vw, 42px)", fontWeight: 600, letterSpacing: "-0.5px", marginBottom: "14px", lineHeight: "1.1" }}>
             Professional guidance from start to finish.
           </h1>
           <p style={{ color: C.muted, fontSize: "16px", lineHeight: "1.6", maxWidth: "500px", margin: "0 auto" }}>
@@ -971,86 +846,39 @@ function ConciergeExperience({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Pricing cards */}
-      <div style={{ position: "relative", overflow: "hidden", paddingTop: "48px", paddingBottom: "80px" }}>
-        <img
-          src={creamEnvImg}
-          alt=""
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.35 }}
-        />
-        <div style={{ position: "relative", zIndex: 2, maxWidth: "1000px", margin: "0 auto", padding: "0 24px" }}>
-          <div style={{ textAlign: "center", marginBottom: "48px" }}>
-            <h2 style={{ color: C.text, fontSize: "32px", fontWeight: 600, marginBottom: "10px" }}>
-              Managed programs
-            </h2>
-            <p style={{ color: C.muted, fontSize: "15px" }}>
-              One flat investment. No monthly recurring fees. We handle the execution.
-            </p>
+      <div style={{ position: "relative", overflow: "hidden", paddingTop: "56px", paddingBottom: "80px" }}>
+        <img src={creamEnvImg} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.35 }} />
+        <div style={{ position: "relative", zIndex: 2, maxWidth: "960px", margin: "0 auto", padding: "0 24px" }}>
+          <div style={{ textAlign: "center", marginBottom: "44px" }}>
+            <h2 style={{ color: C.text, fontSize: "30px", fontWeight: 600, marginBottom: "10px" }}>Managed programs</h2>
+            <p style={{ color: C.muted, fontSize: "15px" }}>One flat investment. No recurring fees. We handle the execution.</p>
           </div>
-
-          {/* 3-card grid */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-              gap: "20px",
-              alignItems: "start",
-            }}
-          >
-            {conciergePlans.map((plan) => (
-              <PricingCard key={plan.id} plan={plan} isConcierge />
-            ))}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "20px", alignItems: "start" }}>
+            {conciergePlans.map((plan) => <PricingCard key={plan.id} plan={plan} isConcierge />)}
           </div>
         </div>
       </div>
 
       {/* Comparison */}
-      <div style={{ maxWidth: "820px", margin: "0 auto", padding: "0 24px 80px" }}>
-        <h2 style={{ color: C.text, fontSize: "24px", fontWeight: 600, textAlign: "center", marginBottom: "32px" }}>
-          What's included
-        </h2>
-        <div
-          style={{
-            background: C.surface,
-            borderRadius: "20px",
-            overflow: "hidden",
-            border: "1px solid rgba(42,39,37,0.09)",
-            boxShadow: "0 4px 24px rgba(42,39,37,0.06)",
-          }}
-        >
-          <ComparisonTable
-            plans={conciergePlans.map((p) => p.name)}
-            rows={ccCompare}
-          />
+      <div style={{ maxWidth: "800px", margin: "0 auto", padding: "0 24px 80px" }}>
+        <h2 style={{ color: C.text, fontSize: "24px", fontWeight: 600, textAlign: "center", marginBottom: "28px" }}>What's included</h2>
+        <div style={{ background: C.surface, borderRadius: "20px", overflow: "hidden", border: "1px solid rgba(42,39,37,0.09)", boxShadow: "0 4px 24px rgba(42,39,37,0.06)" }}>
+          <ComparisonTable plans={conciergePlans.map((p) => p.name)} rows={ccCompare} />
         </div>
       </div>
 
       {/* Mail Wallet */}
-      <div style={{ padding: "0 24px 80px" }}>
-        <MailWallet />
-      </div>
+      <div style={{ padding: "0 24px 80px" }}><MailWallet /></div>
 
       {/* CTA */}
       <div style={{ background: C.bone, padding: "80px 24px", textAlign: "center" }}>
-        <h2 style={{ color: C.text, fontSize: "36px", fontWeight: 600, marginBottom: "16px" }}>
-          Let us help guide the process.
-        </h2>
-        <p style={{ color: C.muted, fontSize: "16px", maxWidth: "440px", margin: "0 auto 36px" }}>
+        <h2 style={{ color: C.text, fontSize: "34px", fontWeight: 600, marginBottom: "14px" }}>Let us help guide the process.</h2>
+        <p style={{ color: C.muted, fontSize: "16px", maxWidth: "420px", margin: "0 auto 32px" }}>
           Speak with a ScoreShift specialist to find the right program for your goals.
         </p>
         <Link href="/concierge">
           <button
-            style={{
-              background: C.indigo,
-              color: "#FFFCF5",
-              border: "none",
-              borderRadius: "14px",
-              padding: "16px 48px",
-              fontSize: "16px",
-              fontWeight: 600,
-              cursor: "pointer",
-              boxShadow: `0 12px 32px -4px ${C.indigoShadow}`,
-              transition: "background 0.2s",
-            }}
+            style={{ background: C.indigo, color: "#FFFCF5", border: "none", borderRadius: "14px", padding: "15px 48px", fontSize: "16px", fontWeight: 600, cursor: "pointer", boxShadow: `0 12px 32px -4px ${C.indigoShadow}`, transition: "background 0.2s" }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "#5a5ea8")}
             onMouseLeave={(e) => (e.currentTarget.style.background = C.indigo)}
           >
@@ -1065,11 +893,13 @@ function ConciergeExperience({ onBack }: { onBack: () => void }) {
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   ROOT — orchestrates view transitions
+   ROOT — single Navbar instance, variant switches per view
    ════════════════════════════════════════════════════════════════════════════ */
 export default function PricingPage() {
   const [view, setView] = useState<ViewType>("choose");
   const [fading, setFading] = useState(false);
+
+  const navVariant: "dark" | "light" = view === "choose" ? "dark" : "light";
 
   const navigateTo = (next: ViewType) => {
     setFading(true);
@@ -1081,21 +911,15 @@ export default function PricingPage() {
   };
 
   return (
-    <div
-      style={{
-        opacity: fading ? 0 : 1,
-        transition: "opacity 0.28s ease",
-      }}
-    >
-      {view === "choose" && (
-        <ChooseYourPath onSelect={(v) => navigateTo(v)} />
-      )}
-      {view === "self-service" && (
-        <SelfServiceExperience onBack={() => navigateTo("choose")} />
-      )}
-      {view === "concierge" && (
-        <ConciergeExperience onBack={() => navigateTo("choose")} />
-      )}
-    </div>
+    <>
+      {/* Single fixed Navbar — variant switches with the view */}
+      <Navbar variant={navVariant} />
+
+      <div style={{ opacity: fading ? 0 : 1, transition: "opacity 0.28s ease" }}>
+        {view === "choose" && <ChooseYourPath onSelect={(v) => navigateTo(v)} />}
+        {view === "self-service" && <SelfServiceExperience onBack={() => navigateTo("choose")} />}
+        {view === "concierge" && <ConciergeExperience onBack={() => navigateTo("choose")} />}
+      </div>
+    </>
   );
 }
