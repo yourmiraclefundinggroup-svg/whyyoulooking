@@ -8,17 +8,21 @@ import { useEffect } from "react";
    ────────────────────────────────────────────────────────────────── */
 
 const SS = {
+  /* ScoreShift brand — used ONLY for links/accents, not filled backgrounds */
   indigo:     "#8F7AFF",
   indigoHov:  "#7B6AE8",
   indigoDeep: "#6B5BD4",
   indigoTint: "rgba(143,122,255,0.12)",
   indigoTint2:"rgba(143,122,255,0.20)",
+  /* Neutral dark — used as Array's "primary" so toolbars/action bars are charcoal, not purple */
+  primaryDark: "#3D3A4E",
+  primaryLight: "#F4F0E8",
   apricot:    "#EFA26F",
   terra:      "#C07050",
   cream:      "#F7F3EC",
   creamDk:    "#EDE8E0",
   white:      "#FFFFFF",
-  card:       "rgba(255,255,255,0.94)",
+  card:       "#FFFFFF",
   textDark:   "#1E1B18",
   textMid:    "#4A4550",
   textMuted:  "#7A7670",
@@ -30,7 +34,7 @@ const SS = {
   redTint:    "rgba(217,79,79,0.10)",
 } as const;
 
-const INJECTED_MARKER = "__ss_themed__";
+const INJECTED_MARKER = "__ss_themed_v2__";
 
 function buildStyleSheet(): string {
   return `
@@ -38,23 +42,24 @@ function buildStyleSheet(): string {
 
 /* 1. Re-declare ALL Array CSS custom-property variants at :host */
 :host {
-  /* Primary / accent */
-  --primary:                      ${SS.indigo} !important;
-  --primary-color:                ${SS.indigo} !important;
-  --primary-dark:                 ${SS.indigoHov} !important;
-  --primary-light:                ${SS.indigoTint} !important;
-  --color-primary:                ${SS.indigo} !important;
-  --color-primary-dark:           ${SS.indigoHov} !important;
-  --color-primary-light:          ${SS.indigoTint} !important;
+  /* Primary — set to neutral dark so Array's action bars / toolbars are
+     charcoal, not purple. Links/accents stay ScoreShift brand. */
+  --primary:                      ${SS.primaryDark} !important;
+  --primary-color:                ${SS.primaryDark} !important;
+  --primary-dark:                 ${SS.primaryDark} !important;
+  --primary-light:                ${SS.primaryLight} !important;
+  --color-primary:                ${SS.primaryDark} !important;
+  --color-primary-dark:           ${SS.primaryDark} !important;
+  --color-primary-light:          ${SS.primaryLight} !important;
   --color-accent:                 ${SS.indigo} !important;
   --color-link:                   ${SS.indigo} !important;
-  --color-info:                   ${SS.indigo} !important;
-  --array-color-primary:          ${SS.indigo} !important;
-  --array-color-primary-light:    ${SS.indigoTint} !important;
+  --color-info:                   #4A7FA5 !important;
+  --array-color-primary:          ${SS.primaryDark} !important;
+  --array-color-primary-light:    ${SS.primaryLight} !important;
   --array-color-accent:           ${SS.indigo} !important;
   --array-color-link:             ${SS.indigo} !important;
-  --array-color-info:             ${SS.indigo} !important;
-  --arr-color-primary:            ${SS.indigo} !important;
+  --array-color-info:             #4A7FA5 !important;
+  --arr-color-primary:            ${SS.primaryDark} !important;
   --arr-color-accent:             ${SS.indigo} !important;
   --arr-color-link:               ${SS.indigo} !important;
 
@@ -73,20 +78,22 @@ function buildStyleSheet(): string {
   --danger-color:                 ${SS.red} !important;
   --warning-color:                ${SS.apricot} !important;
 
-  /* Background / surface */
+  /* Background / surface — solid values prevent parent glow bleed */
   --background:                   ${SS.cream} !important;
   --background-color:             ${SS.cream} !important;
-  --surface:                      ${SS.card} !important;
-  --surface-color:                ${SS.card} !important;
+  --surface:                      ${SS.white} !important;
+  --surface-color:                ${SS.white} !important;
   --surface-secondary:            ${SS.creamDk} !important;
-  --card-background:              ${SS.card} !important;
+  --card-background:              ${SS.white} !important;
   --color-background:             ${SS.cream} !important;
-  --color-surface:                ${SS.card} !important;
+  --color-surface:                ${SS.white} !important;
   --color-surface-secondary:      ${SS.creamDk} !important;
   --array-color-background:       ${SS.cream} !important;
-  --array-color-surface:          ${SS.card} !important;
+  --array-color-surface:          ${SS.white} !important;
+  --array-color-surface-secondary: ${SS.creamDk} !important;
+  --array-color-card:             ${SS.white} !important;
   --arr-color-background:         ${SS.cream} !important;
-  --arr-color-surface:            ${SS.card} !important;
+  --arr-color-surface:            ${SS.white} !important;
 
   /* Text */
   --text-primary:                 ${SS.textDark} !important;
@@ -139,9 +146,9 @@ a, [class*="link"], [class*="Link"] {
 }
 a:hover, [class*="link"]:hover { color: ${SS.indigoHov} !important; }
 
-/* Buttons — primary */
+/* Buttons — primary (do NOT include [class*="action"] — that catches export toolbars) */
 button[class*="primary"], [class*="btn-primary"], [class*="button-primary"],
-[class*="cta"], [class*="submit"], [class*="action"],
+[class*="cta"], [class*="submit"],
 button[type="submit"] {
   background: linear-gradient(135deg, ${SS.indigo} 0%, ${SS.indigoDeep} 100%) !important;
   background-color: ${SS.indigo} !important;
@@ -321,6 +328,8 @@ function injectIntoShadow(el: Element): void {
   if (!shadow) return;
   if ((shadow as any)[INJECTED_MARKER]) return;
   (shadow as any)[INJECTED_MARKER] = true;
+  /* Remove any stale style from a previous version before injecting */
+  shadow.querySelectorAll("style[data-scoreshift]").forEach(s => s.remove());
   const style = document.createElement("style");
   style.setAttribute("data-scoreshift", "1");
   style.textContent = buildStyleSheet();
