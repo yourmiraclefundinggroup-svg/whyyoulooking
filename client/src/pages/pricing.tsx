@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { CheckCircle, ArrowLeft, Mail } from "lucide-react";
-import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import "../styles/landing.css";
 
 import splitPathImg from "@assets/ChatGPT_Image_Jun_9,_2026,_04_26_54_PM_1781047045828.png";
 import windingPathImg from "@assets/ChatGPT_Image_Jun_9,_2026,_04_17_47_PM_1781047072844.png";
@@ -12,8 +12,14 @@ import mountainPersonImg from "@assets/ChatGPT_Image_Jun_9,_2026,_08_13_49_PM_17
 
 type ViewType = "choose" | "self-service" | "concierge";
 
-/* ─── The fixed header is: 36px announcement bar + 64px nav = 100px total ── */
-const HEADER_H = 100;
+/* ─── Landing nav height: 90px, no announcement bar ─────────────────────── */
+const HEADER_H = 90;
+
+const ArrowRight = ({ size = 13 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+  </svg>
+);
 
 /* ─── color tokens ───────────────────────────────────────────────────────── */
 const C = {
@@ -893,13 +899,20 @@ function ConciergeExperience({ onBack }: { onBack: () => void }) {
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   ROOT — single Navbar instance, variant switches per view
+   ROOT — single nav instance matching the landing page exactly
    ════════════════════════════════════════════════════════════════════════════ */
 export default function PricingPage() {
   const [view, setView] = useState<ViewType>("choose");
   const [fading, setFading] = useState(false);
 
-  const navVariant: "dark" | "light" = view === "choose" ? "dark" : "light";
+  /* Attach the same scroll-class toggle as landing.tsx */
+  useEffect(() => {
+    const nav = document.querySelector(".ss-nav") as HTMLElement | null;
+    const handler = () => nav?.classList.toggle("scrolled", window.scrollY > 60);
+    window.addEventListener("scroll", handler, { passive: true });
+    handler();
+    return () => window.removeEventListener("scroll", handler);
+  }, [view]);
 
   const navigateTo = (next: ViewType) => {
     setFading(true);
@@ -912,8 +925,29 @@ export default function PricingPage() {
 
   return (
     <>
-      {/* Single fixed Navbar — variant switches with the view */}
-      <Navbar variant={navVariant} />
+      {/* ── Nav — exact landing page markup ─────────────────────── */}
+      <nav className="ss-nav">
+        <div className="ss-wrap ss-nav-inner">
+          <Link href="/" className="ss-nav-logo">
+            <img
+              src="/images/scoreshift-wordmark-transparent.png"
+              alt="ScoreShift"
+              className="ss-nav-logo-img"
+            />
+          </Link>
+          <ul className="ss-nav-links">
+            <li><Link href="/#product">Product</Link></li>
+            <li><Link href="/pricing">Pricing</Link></li>
+            <li><Link href="/#trust">Results</Link></li>
+          </ul>
+          <div className="ss-nav-actions">
+            <Link href="/login" className="ss-nav-ghost">Sign in</Link>
+            <Link href="/signup" className="ss-btn-nav">
+              Start My Plan <ArrowRight size={13} />
+            </Link>
+          </div>
+        </div>
+      </nav>
 
       <div style={{ opacity: fading ? 0 : 1, transition: "opacity 0.28s ease" }}>
         {view === "choose" && <ChooseYourPath onSelect={(v) => navigateTo(v)} />}
