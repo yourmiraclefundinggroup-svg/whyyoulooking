@@ -15,7 +15,7 @@ import {
 } from "@/hooks/use-array-script";
 import { extractArrayEventPII } from "@/lib/array-enrollment-event";
 
-import entranceImg from "@assets/ChatGPT_Image_Jun_10,_2026,_05_21_08_PM_1781127246934.png";
+import entranceImg from "@assets/ChatGPT_Image_Jun_10,_2026,_05_51_10_PM_1781128284149.png";
 
 /* ── CSS injected once ────────────────────────────────────────────────── */
 const STYLE_ID = "ss-signup-styles";
