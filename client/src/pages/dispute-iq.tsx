@@ -1142,13 +1142,15 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
           <button
             onClick={() => { setSource("array"); }}
             style={{
-              background: "#fff", border: "2px solid #e5e7eb", borderRadius: 16,
+              background: "rgba(255,253,248,0.52)", backdropFilter: "blur(36px)", WebkitBackdropFilter: "blur(36px)",
+              border: "1px solid rgba(255,255,255,0.75)", borderRadius: 24,
+              boxShadow: "0 20px 50px rgba(0,0,0,0.07), 0 8px 16px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.85)",
               padding: "36px 24px", textAlign: "center", cursor: "pointer",
               transition: "all 0.15s", display: "flex", flexDirection: "column",
               alignItems: "center", gap: 12,
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#EFA26F"; (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 3px rgba(217,119,6,0.1)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#e5e7eb"; (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#EFA26F"; (e.currentTarget as HTMLElement).style.boxShadow = "0 24px 60px rgba(0,0,0,0.10), 0 0 0 3px rgba(239,162,111,0.12), inset 0 1px 0 rgba(255,255,255,0.85)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.75)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 20px 50px rgba(0,0,0,0.07), 0 8px 16px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.85)"; }}
           >
             <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(239,162,111,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#EFA26F" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -1165,13 +1167,15 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
           <button
             onClick={() => setSource("upload")}
             style={{
-              background: "#fff", border: "2px solid #e5e7eb", borderRadius: 16,
+              background: "rgba(255,253,248,0.52)", backdropFilter: "blur(36px)", WebkitBackdropFilter: "blur(36px)",
+              border: "1px solid rgba(255,255,255,0.75)", borderRadius: 24,
+              boxShadow: "0 20px 50px rgba(0,0,0,0.07), 0 8px 16px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.85)",
               padding: "36px 24px", textAlign: "center", cursor: "pointer",
               transition: "all 0.15s", display: "flex", flexDirection: "column",
               alignItems: "center", gap: 12,
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#8F7AFF"; (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 3px rgba(99,102,241,0.1)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#e5e7eb"; (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#8F7AFF"; (e.currentTarget as HTMLElement).style.boxShadow = "0 24px 60px rgba(0,0,0,0.10), 0 0 0 3px rgba(143,122,255,0.12), inset 0 1px 0 rgba(255,255,255,0.85)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.75)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 20px 50px rgba(0,0,0,0.07), 0 8px 16px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.85)"; }}
           >
             <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(143,122,255,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#8F7AFF" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -1443,7 +1447,7 @@ export function DisputeIQPage({ onGenerateLetters, clientId }: { onGenerateLette
                       </div>
                     ))}
                     {source === "array" && activeData?.fromCache && (
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 18px", background: "rgba(143,122,255,0.08)", borderTop: "1px solid #dbeafe" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 18px", background: "rgba(143,122,255,0.08)", borderTop: "1px solid rgba(143,122,255,0.15)" }}>
                         <span style={{ fontSize: 12, color: "#8F7AFF", display: "flex", alignItems: "center", gap: 5 }}>
                           <span style={{ fontSize: 14 }}>⚡</span>
                           Loaded from cache

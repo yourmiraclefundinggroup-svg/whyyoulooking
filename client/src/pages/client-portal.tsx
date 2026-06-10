@@ -2849,36 +2849,39 @@ function MailWalletPage({ onNavigate }: { onNavigate: (page: PageId) => void }) 
 
       {/* Balance hero card */}
       <div className="cp-card" style={{
-        background: "linear-gradient(135deg, #1e2a5a 0%, #2d3b7a 60%, #3d4d9a 100%)",
-        border: "none", borderRadius: 18, padding: "28px 32px", marginBottom: 24,
+        background: "rgba(255,253,248,0.52)",
+        backdropFilter: "blur(36px)", WebkitBackdropFilter: "blur(36px)",
+        border: "1px solid rgba(255,255,255,0.75)",
+        borderTop: "4px solid var(--cp-accent)",
+        borderRadius: 36, padding: "28px 32px", marginBottom: 24,
+        boxShadow: "0 25px 60px rgba(0,0,0,0.08), 0 10px 20px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -1px 0 rgba(255,255,255,0.15), 0 0 70px rgba(99,102,241,0.07)",
         position: "relative", overflow: "hidden",
       }}>
-        <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
-        <div style={{ position: "absolute", bottom: -60, left: -20, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.03)" }} />
+        <div style={{ position: "absolute", top: -60, right: -40, width: 220, height: 220, borderRadius: "50%", background: "radial-gradient(circle, rgba(143,122,255,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
         <div style={{ position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+              <div style={{ fontSize: 10.5, color: "var(--cp-accent)", fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 8 }}>
                 Mail Wallet Balance
               </div>
               {isLoading ? (
-                <div style={{ height: 52, width: 80, background: "rgba(255,255,255,0.1)", borderRadius: 8 }} />
+                <div style={{ height: 52, width: 80, background: "rgba(143,122,255,0.08)", borderRadius: 8 }} />
               ) : (
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                  <span style={{ fontSize: 52, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{balance}</span>
-                  <span style={{ fontSize: 16, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>
+                  <span style={{ fontSize: 52, fontWeight: 800, color: "var(--cp-accent)", lineHeight: 1, fontFamily: "'Sora', sans-serif" }}>{balance}</span>
+                  <span style={{ fontSize: 16, color: "var(--cp-text-muted)", fontWeight: 500 }}>
                     certified mail credit{balance !== 1 ? "s" : ""}
                   </span>
                 </div>
               )}
-              <div style={{ marginTop: 10, fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
+              <div style={{ marginTop: 10, fontSize: 13, color: "var(--cp-text-muted)" }}>
                 1 credit = 1 certified USPS letter to any bureau or recipient
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <button
                 className="cp-btn"
-                style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", backdropFilter: "blur(4px)" }}
+                style={{ background: "rgba(143,122,255,0.08)", color: "var(--cp-accent)", border: "1px solid rgba(143,122,255,0.20)" }}
                 onClick={() => setTab("history")}
               >
                 <Icon size={14}><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" /></Icon>
@@ -2886,7 +2889,6 @@ function MailWalletPage({ onNavigate }: { onNavigate: (page: PageId) => void }) 
               </button>
               <button
                 className="cp-btn cp-btn-primary"
-                style={{ background: "rgba(255,255,255,0.95)", color: "#1e2a5a", fontWeight: 700 }}
                 onClick={() => setTab("wallet")}
               >
                 <Icon size={14}><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></Icon>
@@ -2895,12 +2897,12 @@ function MailWalletPage({ onNavigate }: { onNavigate: (page: PageId) => void }) 
             </div>
           </div>
           {balance > 0 && (
-            <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.12)", display: "flex", gap: 20 }}>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
-                <span style={{ color: "#fff", fontWeight: 700 }}>{transactions.filter(t => t.type === "DEDUCTION").length}</span> letters sent
+            <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid rgba(143,122,255,0.12)", display: "flex", gap: 20 }}>
+              <div style={{ fontSize: 13, color: "var(--cp-text-muted)" }}>
+                <span style={{ color: "var(--cp-text-primary)", fontWeight: 700 }}>{transactions.filter(t => t.type === "DEDUCTION").length}</span> letters sent
               </div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
-                <span style={{ color: "#fff", fontWeight: 700 }}>{transactions.filter(t => t.type === "PURCHASE").length}</span> purchases
+              <div style={{ fontSize: 13, color: "var(--cp-text-muted)" }}>
+                <span style={{ color: "var(--cp-text-primary)", fontWeight: 700 }}>{transactions.filter(t => t.type === "PURCHASE").length}</span> purchases
               </div>
             </div>
           )}
@@ -3026,7 +3028,7 @@ function MailWalletPage({ onNavigate }: { onNavigate: (page: PageId) => void }) 
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
                     <div style={{
                       width: 40, height: 40, borderRadius: 10,
-                      background: "linear-gradient(135deg, #1e2a5a20, #3d4d9a20)",
+                      background: "rgba(143,122,255,0.10)",
                       display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                     }}>
                       <Icon size={18}><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z" /><polyline points="22 6 12 13 2 6" /></Icon>
