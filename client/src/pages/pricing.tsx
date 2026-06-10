@@ -708,10 +708,10 @@ function MailWalletScene() {
           border: "1px solid rgba(30,27,24,0.12)",
           boxShadow: "0 32px 80px rgba(10,8,5,0.18), 0 4px 24px rgba(10,8,5,0.10)",
         }}>
-          {/* Card background: mountain person image */}
-          <img src={mountainPersonImg} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 30%" }} />
-          {/* Gray filter overlay on top of the image */}
-          <div style={{ position: "absolute", inset: 0, background: "rgba(30,25,20,0.68)", backdropFilter: "blur(1px)", WebkitBackdropFilter: "blur(1px)" }} />
+          {/* Card base color */}
+          <div style={{ position: "absolute", inset: 0, background: "#1A1612" }} />
+          {/* Mountain person image at ~20% opacity */}
+          <img src={mountainPersonImg} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 30%", opacity: 0.20 }} />
           <div style={{ position: "relative", zIndex: 2, padding: "36px 36px 32px" }}>
             {/* Card branding */}
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "36px" }}>
