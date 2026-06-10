@@ -1,5 +1,4 @@
 import { useState, createContext, useContext } from "react";
-import scoreshiftLogo from "@assets/scoreshift-logo.png";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -189,14 +188,15 @@ export function AdminShell({ children }: AdminShellProps) {
             )}>
               <Link href="/admin-portal">
                 <div className="flex items-center gap-3 cursor-pointer">
-                  <img src={scoreshiftLogo} alt="ScoreShift" className="w-10 h-10 object-contain shrink-0" />
+                  <div style={{ height: 36, overflow: "hidden", display: "flex", alignItems: "center" }}>
+                    <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 130, width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+                  </div>
                   {!sidebarCollapsed && (
                     <motion.div
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -10 }}
                     >
-                      <span className="font-bold text-lg text-white">{brandName}</span>
                       <span className="block text-[10px] font-medium text-[hsl(var(--admin-accent))] tracking-wider">ADMIN</span>
                     </motion.div>
                   )}
@@ -344,11 +344,10 @@ export function AdminShell({ children }: AdminShellProps) {
               >
                 <div className="flex items-center justify-between h-16 px-4 border-b border-[hsl(var(--admin-border))]">
                   <div className="flex items-center gap-3">
-                    <img src={scoreshiftLogo} alt="ScoreShift" className="w-10 h-10 object-contain shrink-0" />
-                    <div>
-                      <span className="font-bold text-lg text-white">{brandName}</span>
-                      <span className="block text-[10px] font-medium text-[hsl(var(--admin-accent))] tracking-wider">ADMIN</span>
+                    <div style={{ height: 36, overflow: "hidden", display: "flex", alignItems: "center" }}>
+                      <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 130, width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
                     </div>
+                    <span className="text-[10px] font-medium text-[hsl(var(--admin-accent))] tracking-wider">ADMIN</span>
                   </div>
                   <Button
                     variant="ghost"

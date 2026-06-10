@@ -4,7 +4,6 @@ import { useUserContext } from "@/hooks/use-user-context";
 import { apiRequest } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
-import scoreshiftLogo from "@assets/scoreshift-logo.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -66,9 +65,8 @@ export default function Login() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/">
-            <div className="inline-flex items-center gap-2 cursor-pointer mb-4">
-              <img src={scoreshiftLogo} alt="ScoreShift" className="w-10 h-10 object-contain" />
-              <span className="font-black text-2xl tracking-tight" style={{ color: "#2A2725" }}>ScoreShift</span>
+            <div style={{ height: 48, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+              <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 160, width: "auto", objectFit: "contain" }} />
             </div>
           </Link>
           <h1 className="text-2xl font-black mt-2" style={{ color: "#2A2725" }}>

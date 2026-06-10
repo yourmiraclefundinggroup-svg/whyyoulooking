@@ -1,0 +1,41 @@
+Audit and fix ScoreShift logo usage across the entire app.
+
+Logo rule:
+The logo itself should be the clickable home link. Do not add extra typed “ScoreShift” text beside it unless the actual logo asset already includes the wordmark.
+
+We have two logo assets:
+1. Full brand logo with the bars + ScoreShift wordmark.
+2. Wordmark-only / writing logo.
+
+Use this rule across the site:
+
+Landing page nav:
+- Use the same clean ScoreShift logo currently shown in the landing page nav.
+- Logo should link to the homepage.
+- Do not add a separate text label beside it.
+
+Portal nav / dashboard nav:
+- Replace any old icon + typed “ScoreShift” text with the new clean ScoreShift logo/wordmark style.
+- The logo should be the home/dashboard link.
+- No extra written “ScoreShift” next to the logo.
+- Keep it visually aligned, premium, and not oversized.
+
+Pricing / Terms / Privacy / Contact / Sign In / Sign Up:
+- Use the same logo system consistently.
+- Logo should always be clickable.
+- Remove duplicate or mismatched logo/text combinations.
+- If a page has a minimal header, use the clean wordmark/logo only.
+- If a page has a fuller marketing header, use the full logo asset with bars only if it matches the landing page style.
+
+Design rules:
+- Keep logo sizing consistent across pages.
+- Desktop nav logo height should feel around 28–36px depending on asset.
+- Mobile logo should stay readable but not dominate the header.
+- No stretched, blurry, cropped, or low-resolution logos.
+- No mixed old logos.
+- No separate typed brand name next to logo if the logo already includes the wordmark.
+- The logo should always act as the navigation anchor back to the correct home page:
+  - Public pages → /
+  - Portal/dashboard pages → /dashboard or the main portal home route.
+
+After updating, search the codebase for all logo usages, old logo files, old brand text wrappers, and duplicate ScoreShift text in nav components. Replace them so the branding is consistent everywhere.

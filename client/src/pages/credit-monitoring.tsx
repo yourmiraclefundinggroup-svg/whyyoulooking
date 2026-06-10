@@ -17,7 +17,6 @@ import {
   BarChart3, Zap, Star, FileSearch
 } from "lucide-react";
 import { Link } from "wouter";
-import { ScoreShiftLogo } from "@/components/scoreshift-logo";
 
 declare global {
   namespace JSX {
@@ -279,7 +278,9 @@ export default function CreditMonitoring() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <ScoreShiftLogo size="lg" />
+          <div style={{ height: 48, overflow: "hidden", display: "flex", alignItems: "center" }}>
+            <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 160, width: "auto", objectFit: "contain" }} />
+          </div>
           <div className="w-10 h-10 rounded-full border-2 border-amber-400 border-t-transparent ss-spinner" />
           <p className="text-muted-foreground text-sm">Loading credit monitoring...</p>
         </div>
@@ -296,7 +297,9 @@ export default function CreditMonitoring() {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <ScoreShiftLogo size="sm" variant="light" />
+                <div style={{ height: 26, overflow: "hidden", display: "flex", alignItems: "center" }}>
+                  <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 100, width: "auto", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+                </div>
                 <span className="w-px h-5 bg-white/20" />
                 <h1 className="text-xl font-bold text-white">Credit Monitoring</h1>
               </div>
@@ -385,7 +388,9 @@ export default function CreditMonitoring() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <ScoreShiftLogo size="sm" />
+                    <div style={{ height: 26, overflow: "hidden", display: "flex", alignItems: "center" }}>
+                      <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 100, width: "auto", objectFit: "contain" }} />
+                    </div>
                     <span className="text-slate-400 dark:text-slate-500 text-sm">·</span>
                     <span className="text-slate-600 dark:text-slate-400 text-sm">Credit Profile Setup</span>
                   </div>

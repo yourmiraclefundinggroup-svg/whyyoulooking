@@ -17,7 +17,6 @@ import { Link, useLocation } from "wouter";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useFeatureAccess } from "@/hooks/use-feature-access";
 import { useTheme } from "@/components/theme-provider";
-import { ScoreShiftLogo } from "@/components/scoreshift-logo";
 
 interface DashboardHeaderProps {
   clientName: string;
@@ -61,7 +60,9 @@ export function DashboardHeader({ clientName }: DashboardHeaderProps) {
 
           {/* Logo */}
           <div className="flex items-center gap-6">
-            <ScoreShiftLogo size="md" />
+            <div style={{ height: 36, overflow: "hidden", display: "flex", alignItems: "center" }}>
+              <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 130, width: "auto", objectFit: "contain" }} className="dark:[filter:brightness(0)_invert(1)]" />
+            </div>
 
             {/* Desktop nav links */}
             <nav className="hidden md:flex items-center gap-1">

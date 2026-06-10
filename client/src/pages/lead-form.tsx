@@ -8,7 +8,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
-import scoreshiftLogo from "@assets/scoreshift-logo.png";
 import { useToast } from "@/hooks/use-toast";
 
 export default function LeadForm() {
@@ -137,8 +136,9 @@ export default function LeadForm() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <img src={scoreshiftLogo} alt="ScoreShift" className="w-10 h-10 object-contain" />
-              <h1 className="text-2xl font-bold" style={{ color: "#2A2725" }}>ScoreShift</h1>
+              <div style={{ height: 36, overflow: "hidden", display: "flex", alignItems: "center" }}>
+                <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 130, width: "auto", objectFit: "contain" }} />
+              </div>
               <Badge
                 variant="secondary"
                 style={{ background: "rgba(123,138,122,0.15)", color: "#6A7769" }}

@@ -4,7 +4,6 @@
  * Donald Blair's live tri-bureau credit data as a product showcase.
  */
 import { useState, useEffect, useRef } from "react";
-import scoreshiftLogo from "@assets/scoreshift-logo.png";
 import { useArrayScript, ARRAY_SANDBOX_APP_KEY, ARRAY_SANDBOX_API_URL, ARRAY_SANDBOX_TOKENS } from "@/hooks/use-array-script";
 import "@/styles/portal.css";
 
@@ -790,8 +789,9 @@ export default function Demo() {
         {/* ── Sidebar ──────────────────────────────────────────────────── */}
         <aside className="cp-sidebar" style={{ top: 38, height: "calc(100vh - 38px)" }}>
           <a className="cp-sidebar-logo" href="/" style={{ textDecoration: "none" }}>
-            <img src={scoreshiftLogo} alt="ScoreShift" style={{ width: 36, height: 36, objectFit: "contain", flexShrink: 0 }} />
-            <span className="cp-logo-text">ScoreShift</span>
+            <div style={{ height: 32, overflow: "hidden", display: "flex", alignItems: "center" }}>
+              <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 120, width: "auto", objectFit: "contain" }} />
+            </div>
           </a>
 
           <nav className="cp-sidebar-nav">

@@ -20,7 +20,6 @@ import {
 import {
   extractArrayEventPII,
 } from "@/lib/array-enrollment-event";
-import scoreshiftLogo from "@assets/scoreshift-logo.png";
 
 const STEPS = [
   { label: "Your Rights", icon: Shield },
@@ -389,9 +388,8 @@ export default function Signup() {
       >
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/">
-            <div className="flex items-center gap-2 cursor-pointer">
-              <img src={scoreshiftLogo} alt="ScoreShift" className="h-9 w-9 object-contain" />
-              <span className="font-bold text-xl" style={{ color: "#2A2725" }}>ScoreShift</span>
+            <div style={{ height: 36, overflow: "hidden", display: "flex", alignItems: "center" }}>
+              <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 130, width: "auto", objectFit: "contain" }} />
             </div>
           </Link>
           <div className="text-sm" style={{ color: "#5B5652" }}>

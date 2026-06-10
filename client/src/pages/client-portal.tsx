@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import scoreshiftLogo from "@assets/scoreshift-logo.png";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUserContext } from "@/hooks/use-user-context";
 import { useArrayScript } from "@/hooks/use-array-script";
@@ -221,8 +220,9 @@ function OnboardingScreen({ onDone }: { onDone: (goal: OnboardingGoal, timeline:
     <div className="cp-onboarding-overlay">
       <div className="cp-onboarding-card">
         <div className="cp-onboarding-logo">
-          <img src={scoreshiftLogo} alt="ScoreShift" style={{ width: 36, height: 36, objectFit: "contain" }} />
-          <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: 16, color: "var(--cp-text-primary)" }}>ScoreShift</span>
+          <div style={{ height: 36, overflow: "hidden", display: "flex", alignItems: "center" }}>
+            <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 130, width: "auto", objectFit: "contain" }} />
+          </div>
         </div>
 
         {step === 1 && (
@@ -3244,8 +3244,9 @@ export default function ClientPortal({ initialPage }: { initialPage?: PageId } =
       {/* ── Sidebar ─────────────────────────────────────────────── */}
       <aside className={`cp-sidebar${mobileNavOpen ? " open" : ""}`}>
         <a className="cp-sidebar-logo" href="#" onClick={(e) => { e.preventDefault(); setActivePage("home"); setMobileNavOpen(false); }}>
-          <img src={scoreshiftLogo} alt="ScoreShift" style={{ width: 38, height: 38, objectFit: "contain", flexShrink: 0 }} />
-          <span className="cp-logo-text">ScoreShift</span>
+          <div style={{ height: 32, overflow: "hidden", display: "flex", alignItems: "center" }}>
+            <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" style={{ height: 120, width: "auto", objectFit: "contain" }} />
+          </div>
         </a>
 
         <nav className="cp-sidebar-nav">
