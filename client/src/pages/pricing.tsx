@@ -6,7 +6,7 @@ import "../styles/landing.css";
 
 import splitPathImg from "@assets/ChatGPT_Image_Jun_9,_2026,_04_26_54_PM_1781047045828.png";
 import windingPathImg from "@assets/ChatGPT_Image_Jun_9,_2026,_04_17_47_PM_1781047072844.png";
-import creamEnvImg from "@assets/ChatGPT_Image_Jun_9,_2026,_03_48_17_PM_1781047080235.png";
+import creamEnvImg from "@assets/ChatGPT_Image_Jun_9,_2026,_03_48_17_PM_1781054065070.png";
 import conciergePathImg from "@assets/ChatGPT_Image_Jun_9,_2026,_07_56_28_PM_1781051920048.png";
 import mountainPersonImg from "@assets/ChatGPT_Image_Jun_9,_2026,_08_13_49_PM_1781051953003.png";
 
@@ -432,120 +432,117 @@ function PricingCard({ plan, isConcierge = false }: {
 function MailWallet() {
   const [selected, setSelected] = useState(5);
   const credit = mailCredits.find((c) => c.qty === selected)!;
-  const stackColors = ["#c9bea6", "#d5cab3", "#dfd5be", "#e8dfc9"];
 
   return (
-    <section style={{
-      background: C.surface,
-      borderRadius: "28px",
-      padding: "52px 44px",
-      maxWidth: "820px",
-      margin: "0 auto",
-      border: "1px solid rgba(42,39,37,0.09)",
-      boxShadow: "0 4px 32px rgba(42,39,37,0.06)",
-    }}>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "28px" }}>
-        <Mail size={26} style={{ color: C.indigo, flexShrink: 0, marginTop: "3px" }} />
-        <div>
-          <h3 style={{ color: C.text, fontSize: "24px", fontWeight: 600, marginBottom: "6px" }}>ScoreShift Mail</h3>
-          <p style={{ color: C.muted, fontSize: "14px", lineHeight: "1.6", maxWidth: "480px" }}>
-            Create your Smart Letter, then send it certified — no printing, envelopes, stamps, or post office trips.
-          </p>
-        </div>
-      </div>
+    <section style={{ position: "relative", overflow: "hidden", padding: "80px 24px 100px" }}>
+      {/* Full-bleed cream background */}
+      <img
+        src={creamEnvImg}
+        alt=""
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+      />
+      <div style={{ position: "absolute", inset: 0, background: "rgba(247,243,236,0.35)" }} />
 
-      {/* Stacked wallet cards */}
-      <div style={{ position: "relative", height: "176px", marginBottom: "28px" }}>
-        {mailCredits.map((c, idx) => {
-          const isSelected = c.qty === selected;
-          const offset = idx * 10;
-          return (
-            <div
-              key={c.qty}
-              onClick={() => setSelected(c.qty)}
-              style={{
-                position: "absolute",
-                left: 0, right: 0,
-                top: 0,
-                background: isSelected ? C.indigo : stackColors[idx],
-                borderRadius: "16px",
-                padding: "22px 28px",
-                cursor: "pointer",
-                zIndex: isSelected ? 10 : idx + 1,
-                transform: isSelected
-                  ? "translateY(-8px)"
-                  : `translateY(${offset}px) scale(${1 - (3 - idx) * 0.018})`,
-                boxShadow: isSelected
-                  ? "0 16px 40px rgba(74,78,140,0.35)"
-                  : "0 4px 12px rgba(42,39,37,0.10)",
-                transition: "all 0.38s cubic-bezier(0.23,1,0.32,1)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <div>
-                <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", color: isSelected ? "rgba(255,252,245,0.55)" : C.faint, textTransform: "uppercase", marginBottom: "6px" }}>
-                  ScoreShift Mail
-                </div>
-                <div style={{ fontSize: "20px", fontWeight: 700, color: isSelected ? "#FFFCF5" : C.text }}>
-                  {c.label}
-                </div>
+      <div style={{ position: "relative", zIndex: 2, maxWidth: "700px", margin: "0 auto", textAlign: "center" }}>
+        {/* Heading */}
+        <p style={{ color: C.indigo, fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "14px" }}>
+          Add-On Service
+        </p>
+        <h2 style={{ color: C.text, fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 600, letterSpacing: "-0.5px", marginBottom: "16px" }}>
+          ScoreShift Mail Wallet
+        </h2>
+        <p style={{ color: C.muted, fontSize: "15px", lineHeight: "1.7", maxWidth: "520px", margin: "0 auto 44px" }}>
+          Create your Smart Letter, then send it certified through ScoreShift Mail without printing, envelopes, stamps, or post office trips.
+        </p>
+
+        {/* Wallet card */}
+        <div style={{
+          borderRadius: "24px",
+          overflow: "hidden",
+          boxShadow: "0 20px 60px rgba(42,39,37,0.16)",
+          position: "relative",
+        }}>
+          {/* Card background image */}
+          <img
+            src={mountainPersonImg}
+            alt=""
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
+          />
+          {/* Glass overlay */}
+          <div style={{ position: "absolute", inset: 0, background: "rgba(20,15,10,0.55)", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)" }} />
+
+          <div style={{ position: "relative", zIndex: 2, padding: "28px 28px 24px" }}>
+            {/* Branding row */}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "28px" }}>
+              <div style={{ textAlign: "left" }}>
+                <div style={{ color: "rgba(255,252,245,0.9)", fontSize: "17px", fontWeight: 600, letterSpacing: "-0.2px" }}>ScoreShift</div>
+                <div style={{ color: "rgba(255,252,245,0.45)", fontSize: "9px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", marginTop: "2px" }}>Mail Wallet</div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: "26px", fontWeight: 700, color: isSelected ? "#FFFCF5" : C.text }}>
-                  {c.price}
-                </div>
-                {c.qty > 1 && (
-                  <div style={{ fontSize: "11px", color: isSelected ? "rgba(255,252,245,0.55)" : C.faint }}>
-                    ${(parseFloat(c.price.replace("$", "")) / c.qty).toFixed(2)} / letter
-                  </div>
-                )}
-              </div>
+              <Mail size={22} style={{ color: "rgba(255,252,245,0.5)", marginTop: "2px" }} />
             </div>
-          );
-        })}
-      </div>
 
-      {/* Selector */}
-      <div style={{ display: "flex", gap: "8px", justifyContent: "center", marginBottom: "24px", flexWrap: "wrap" }}>
-        {mailCredits.map((c) => (
-          <button
-            key={c.qty}
-            onClick={() => setSelected(c.qty)}
-            style={{
-              padding: "7px 18px",
-              borderRadius: "100px",
-              fontSize: "13px",
-              fontWeight: 500,
-              cursor: "pointer",
-              transition: "all 0.2s",
-              border: "none",
-              background: selected === c.qty ? C.indigo : C.bone,
-              color: selected === c.qty ? "#FFFCF5" : C.muted,
-            }}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
+            {/* Credit options — horizontal row */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "24px" }}>
+              {mailCredits.map((c) => {
+                const isSelected = c.qty === selected;
+                return (
+                  <button
+                    key={c.qty}
+                    onClick={() => setSelected(c.qty)}
+                    style={{
+                      background: isSelected ? "rgba(99,102,241,0.85)" : "rgba(255,252,245,0.12)",
+                      border: isSelected ? "1px solid rgba(99,102,241,0.6)" : "1px solid rgba(255,252,245,0.18)",
+                      borderRadius: "12px",
+                      padding: "14px 8px",
+                      cursor: "pointer",
+                      transition: "all 0.25s cubic-bezier(0.23,1,0.32,1)",
+                      backdropFilter: "blur(12px)",
+                      WebkitBackdropFilter: "blur(12px)",
+                      boxShadow: isSelected ? "0 8px 24px rgba(74,78,140,0.4)" : "none",
+                      transform: isSelected ? "translateY(-2px)" : "none",
+                    }}
+                  >
+                    <div style={{ color: isSelected ? "rgba(255,252,245,0.65)" : "rgba(255,252,245,0.45)", fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "6px" }}>
+                      {c.label}
+                    </div>
+                    <div style={{ color: isSelected ? "#FFFCF5" : "rgba(255,252,245,0.85)", fontSize: "18px", fontWeight: 700, letterSpacing: "-0.3px" }}>
+                      {c.price}
+                    </div>
+                    {c.qty > 1 && (
+                      <div style={{ color: isSelected ? "rgba(255,252,245,0.5)" : "rgba(255,252,245,0.35)", fontSize: "10px", marginTop: "3px" }}>
+                        ${(parseFloat(c.price.replace("$", "")) / c.qty).toFixed(2)}/ea
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
-      <div style={{ textAlign: "center" }}>
-        <Link href="/checkout?addon=mail">
-          <button
-            style={{
-              background: C.indigo, color: "#FFFCF5", border: "none",
-              borderRadius: "12px", padding: "13px 36px", fontSize: "14px",
-              fontWeight: 600, cursor: "pointer",
-              boxShadow: `0 8px 24px -4px ${C.indigoShadow}`,
-              transition: "background 0.2s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#5a5ea8")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = C.indigo)}
-          >
-            Purchase {credit.label} — {credit.price}
-          </button>
-        </Link>
+            {/* CTA inside card */}
+            <Link href="/checkout?addon=mail">
+              <button
+                style={{
+                  width: "100%",
+                  background: C.indigo,
+                  color: "#FFFCF5",
+                  border: "none",
+                  borderRadius: "12px",
+                  padding: "14px 0",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  boxShadow: `0 8px 28px ${C.indigoShadow}`,
+                  transition: "background 0.2s, transform 0.2s",
+                  letterSpacing: "0.01em",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "#5a5ea8"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = C.indigo; e.currentTarget.style.transform = "none"; }}
+              >
+                Purchase {credit.label} — {credit.price}
+              </button>
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -734,12 +731,14 @@ function SelfServiceExperience({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Pricing cards */}
-      <div style={{ position: "relative", overflow: "hidden", paddingTop: "56px", paddingBottom: "80px" }}>
-        <img src={creamEnvImg} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.35 }} />
+      <div style={{ position: "relative", overflow: "hidden", paddingTop: "72px", paddingBottom: "88px" }}>
+        <img src={creamEnvImg} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }} />
+        <div style={{ position: "absolute", inset: 0, background: "rgba(247,243,236,0.18)" }} />
         <div style={{ position: "relative", zIndex: 2, maxWidth: "1100px", margin: "0 auto", padding: "0 24px" }}>
-          <div style={{ textAlign: "center", marginBottom: "44px" }}>
-            <h2 style={{ color: C.text, fontSize: "30px", fontWeight: 600, marginBottom: "10px" }}>Choose your plan</h2>
-            <p style={{ color: C.muted, fontSize: "15px" }}>Start free. Upgrade when ready. Founding Member pricing locked forever.</p>
+          <div style={{ textAlign: "center", marginBottom: "52px" }}>
+            <p style={{ color: C.indigo, fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "14px" }}>Self-Service Plans</p>
+            <h2 style={{ color: C.text, fontSize: "clamp(36px, 5vw, 54px)", fontWeight: 600, letterSpacing: "-0.8px", marginBottom: "14px", lineHeight: 1.1 }}>Choose your plan.</h2>
+            <p style={{ color: C.muted, fontSize: "16px" }}>Start free. Upgrade when you're ready.</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", alignItems: "start" }}>
             {selfServicePlans.map((plan) => <PricingCard key={plan.id} plan={plan} />)}
@@ -756,7 +755,7 @@ function SelfServiceExperience({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Mail Wallet */}
-      <div style={{ padding: "0 24px 80px" }}><MailWallet /></div>
+      <MailWallet />
 
       {/* Mountain person */}
       <div style={{ maxWidth: "900px", margin: "0 auto 72px", padding: "0 24px", display: "flex", justifyContent: "center" }}>
@@ -852,12 +851,14 @@ function ConciergeExperience({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Pricing cards */}
-      <div style={{ position: "relative", overflow: "hidden", paddingTop: "56px", paddingBottom: "80px" }}>
-        <img src={creamEnvImg} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.35 }} />
+      <div style={{ position: "relative", overflow: "hidden", paddingTop: "72px", paddingBottom: "88px" }}>
+        <img src={creamEnvImg} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }} />
+        <div style={{ position: "absolute", inset: 0, background: "rgba(247,243,236,0.18)" }} />
         <div style={{ position: "relative", zIndex: 2, maxWidth: "960px", margin: "0 auto", padding: "0 24px" }}>
-          <div style={{ textAlign: "center", marginBottom: "44px" }}>
-            <h2 style={{ color: C.text, fontSize: "30px", fontWeight: 600, marginBottom: "10px" }}>Managed programs</h2>
-            <p style={{ color: C.muted, fontSize: "15px" }}>One flat investment. No recurring fees. We handle the execution.</p>
+          <div style={{ textAlign: "center", marginBottom: "52px" }}>
+            <p style={{ color: C.indigo, fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "14px" }}>Concierge Programs</p>
+            <h2 style={{ color: C.text, fontSize: "clamp(36px, 5vw, 54px)", fontWeight: 600, letterSpacing: "-0.8px", marginBottom: "14px", lineHeight: 1.1 }}>Choose your program.</h2>
+            <p style={{ color: C.muted, fontSize: "16px" }}>One flat investment. No recurring fees. We handle the execution.</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "20px", alignItems: "start" }}>
             {conciergePlans.map((plan) => <PricingCard key={plan.id} plan={plan} isConcierge />)}
@@ -874,7 +875,7 @@ function ConciergeExperience({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Mail Wallet */}
-      <div style={{ padding: "0 24px 80px" }}><MailWallet /></div>
+      <MailWallet />
 
       {/* CTA */}
       <div style={{ background: C.bone, padding: "80px 24px", textAlign: "center" }}>
