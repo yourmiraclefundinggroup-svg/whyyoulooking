@@ -515,8 +515,11 @@ function SelfServiceExperience({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* ── SCENE 04A — Comparison ────────────────────────────────────────── */}
-      <div style={{ background: C.cream, padding: "120px 32px" }}>
-        <div style={{ maxWidth: "960px", margin: "0 auto" }}>
+      <div style={{ position: "relative", overflow: "hidden", padding: "120px 32px" }}>
+        <img src={creamEnvImg} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }} />
+        <div style={{ position: "absolute", inset: 0, background: "rgba(247,243,236,0.10)" }} />
+      
+        <div style={{ position: "relative", zIndex: 2, maxWidth: "960px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "64px" }}>
             <p style={{ color: C.indigo, fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "16px" }}>
               Compare
@@ -625,8 +628,10 @@ function ConciergeExperience({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* ── SCENE 04B — Concierge Comparison ──────────────────────────────── */}
-      <div style={{ background: C.cream, padding: "120px 32px" }}>
-        <div style={{ maxWidth: "880px", margin: "0 auto" }}>
+      <div style={{ position: "relative", overflow: "hidden", padding: "120px 32px" }}>
+        <img src={creamEnvImg} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }} />
+        <div style={{ position: "absolute", inset: 0, background: "rgba(247,243,236,0.10)" }} />
+        <div style={{ position: "relative", zIndex: 2, maxWidth: "880px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "64px" }}>
             <p style={{ color: C.indigo, fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "16px" }}>
               What's Included
@@ -674,39 +679,40 @@ function MailWalletScene() {
 
   return (
     <div style={{ position: "relative", minHeight: "100vh", overflow: "hidden", display: "flex", alignItems: "center" }}>
-      {/* Background: mountain person image */}
-      <img src={mountainPersonImg} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 30%" }} />
-      {/* Dark gradient veil */}
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(10,8,5,0.82) 0%, rgba(10,8,5,0.60) 50%, rgba(10,8,5,0.72) 100%)" }} />
+      {/* Background: cream stone image (same as pricing + compare scenes) */}
+      <img src={creamEnvImg} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }} />
+      <div style={{ position: "absolute", inset: 0, background: "rgba(247,243,236,0.10)" }} />
 
       <div style={{ position: "relative", zIndex: 2, width: "100%", padding: "100px 32px", display: "flex", flexDirection: "column", alignItems: "center" }}>
 
-        {/* Section label + heading */}
-        <p style={{ color: "rgba(160,165,220,0.80)", fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "20px" }}>
+        {/* Section label + heading — dark text since background is light */}
+        <p style={{ color: C.indigo, fontSize: "11px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: "20px" }}>
           Add-On Service
         </p>
         <h2 style={{
-          color: "#FFFCF5", fontSize: "clamp(36px, 6vw, 68px)",
+          color: C.text, fontSize: "clamp(36px, 6vw, 68px)",
           fontWeight: 500, letterSpacing: "-1.5px", lineHeight: "1.06",
           textAlign: "center", marginBottom: "20px", maxWidth: "700px",
         }}>
           ScoreShift<br />Mail Wallet
         </h2>
-        <p style={{ color: "rgba(245,235,218,0.65)", fontSize: "17px", lineHeight: "1.7", textAlign: "center", maxWidth: "480px", marginBottom: "72px" }}>
+        <p style={{ color: C.muted, fontSize: "17px", lineHeight: "1.7", textAlign: "center", maxWidth: "480px", marginBottom: "72px" }}>
           Create your Smart Letter, then send it certified through ScoreShift Mail — no printing, envelopes, stamps, or post office trips.
         </p>
 
-        {/* Wallet card — centered, generous width */}
+        {/* Wallet card — mountain person image inside the card, with gray filter */}
         <div style={{
           width: "100%", maxWidth: "680px",
           borderRadius: "28px", overflow: "hidden",
-          border: "1px solid rgba(255,252,245,0.14)",
-          boxShadow: "0 32px 80px rgba(5,4,2,0.50), inset 0 1px 0 rgba(255,252,245,0.10)",
-          backdropFilter: "blur(40px) saturate(1.2)",
-          WebkitBackdropFilter: "blur(40px) saturate(1.2)",
-          background: "rgba(20,16,12,0.72)",
+          position: "relative",
+          border: "1px solid rgba(30,27,24,0.12)",
+          boxShadow: "0 32px 80px rgba(10,8,5,0.18), 0 4px 24px rgba(10,8,5,0.10)",
         }}>
-          <div style={{ padding: "36px 36px 32px" }}>
+          {/* Card background: mountain person image */}
+          <img src={mountainPersonImg} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 30%" }} />
+          {/* Gray filter overlay on top of the image */}
+          <div style={{ position: "absolute", inset: 0, background: "rgba(30,25,20,0.68)", backdropFilter: "blur(1px)", WebkitBackdropFilter: "blur(1px)" }} />
+          <div style={{ position: "relative", zIndex: 2, padding: "36px 36px 32px" }}>
             {/* Card branding */}
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "36px" }}>
               <div>
