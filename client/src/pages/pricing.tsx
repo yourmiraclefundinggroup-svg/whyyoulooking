@@ -884,7 +884,7 @@ export default function PricingPage() {
       <nav className="ss-nav">
         <div className="ss-wrap ss-nav-inner">
           <Link href="/" className="ss-nav-logo">
-            <img src="/images/scoreshift-logo-full.png" alt="ScoreShift" className="ss-nav-logo-img" />
+            <img src="/images/scoreshift-wordmark-transparent.png" alt="ScoreShift" className="ss-nav-logo-img" />
           </Link>
           <ul className="ss-nav-links">
             <li><Link href="/#product">Product</Link></li>
