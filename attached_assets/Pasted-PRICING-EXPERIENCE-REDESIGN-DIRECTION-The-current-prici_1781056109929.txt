@@ -1,0 +1,90 @@
+PRICING EXPERIENCE REDESIGN DIRECTION
+
+The current pricing implementation is technically correct, but it feels like a traditional pricing page.
+
+That is NOT the design direction.
+
+The ScoreShift pricing experience should feel like an extension of the landing page, not a utility page attached to it.
+
+The landing page currently feels premium, spacious, cinematic, and intentional. The pricing experience should maintain that same feeling from beginning to end.
+
+DO NOT build pricing as a collection of small sections stacked on a page.
+
+DO NOT make pricing feel like a SaaS checkout page.
+
+DO NOT compress sections vertically.
+
+DO NOT make the pricing cards the entire experience.
+
+Instead:
+
+Treat each stage of the pricing journey as a full-screen experience similar to the landing page.
+
+The user should feel like they are moving through a guided story.
+
+The structure should be:
+
+01 — Choose Your Path
+Full-screen hero section using the Split Path image.
+Large typography.
+Glass cards.
+Plenty of breathing room.
+
+02A — Self-Service Hero
+Full-screen section using the Winding Path image.
+
+03A — Self-Service Pricing
+Full-screen section using the Cream Environment image as the background.
+Pricing cards float within the environment.
+
+04A — Self-Service Comparison
+Full-width premium comparison section.
+
+05A — ScoreShift Mail Wallet
+Full-screen premium section.
+Not a small component.
+
+06A — Self-Service CTA
+Large cinematic closing section.
+
+The Concierge experience follows the same structure:
+
+02B — Concierge Hero
+Full-screen hero using the Concierge image.
+
+03B — Concierge Pricing
+Full-screen pricing environment.
+
+04B — Concierge Comparison
+
+05B — ScoreShift Mail Wallet
+
+06B — Concierge CTA
+
+Every major section should feel like a landing-page scene.
+
+The user should never feel like they have left the ScoreShift world.
+
+Spacing should be generous.
+
+Typography should be large.
+
+Images should have room to breathe.
+
+Cards should float inside environments rather than sit inside generic containers.
+
+The visual goal is:
+
+Apple
+Linear
+Luxury Hospitality
+Private Banking
+
+NOT:
+
+Traditional SaaS pricing pages
+Credit repair websites
+Checkout pages
+Comparison websites
+
+The pricing experience should feel like a premium guided journey that helps the user confidently choose the path that fits them best.
