@@ -599,6 +599,7 @@ function ConciergeExperience({ onBack }: { onBack: () => void }) {
             color: "#FFFFFF", fontSize: "clamp(38px, 6.5vw, 76px)",
             fontWeight: 500, letterSpacing: "-2px", lineHeight: "1.05",
             maxWidth: "860px", marginBottom: "24px",
+            textAlign: "center", margin: "0 auto 24px",
           }}>
             Professional guidance<br />from start to finish.
           </h1>
@@ -893,7 +894,7 @@ export default function PricingPage() {
           </ul>
           <div className="ss-nav-actions">
             <Link href="/login" className="ss-nav-ghost">Sign in</Link>
-            <Link href="/signup" className="ss-btn-nav">
+            <Link href="/pricing" className="ss-btn-nav">
               Start My Plan <ArrowRight size={13} />
             </Link>
           </div>
