@@ -3172,7 +3172,10 @@ export default function ClientPortal({ initialPage }: { initialPage?: PageId } =
   }
 
   /* ── Sandbox props for Array components ───────────────────────── */
-  const sbx: Record<string, string> = sandboxMode && apiUrl ? { apiUrl, sandbox: "true" } : {};
+  /* color-primary overrides Array's default indigo theme on all components */
+  const sbx: Record<string, string> = sandboxMode && apiUrl
+    ? { apiUrl, sandbox: "true", "color-primary": "#3D3A4E" }
+    : { "color-primary": "#3D3A4E" };
 
   /* ── Array page props ─────────────────────────────────────────── */
   const arrayProps: ArrayPageProps = { appKey, userToken, sbx, scriptReady, tokenReady, tokenError };

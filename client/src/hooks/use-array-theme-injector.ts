@@ -34,7 +34,7 @@ const SS = {
   redTint:    "rgba(217,79,79,0.10)",
 } as const;
 
-const INJECTED_MARKER = "__ss_themed_v3__";
+const INJECTED_MARKER = "__ss_themed_v4__";
 
 function buildStyleSheet(): string {
   return `
@@ -405,14 +405,19 @@ function injectIntoShadow(el: Element): void {
   style.textContent = buildStyleSheet();
   shadow.prepend(style);
 
-  /* Re-watch for nested custom elements inside this shadow root */
+  /* Re-watch for nested custom elements inside this shadow root.
+     Inject into ANY element that gains a shadowRoot — nested score
+     gauge components may not use array-* tag names. */
   const inner = new MutationObserver((mutations) => {
     mutations.forEach((m) => {
       m.addedNodes.forEach((node) => {
         if (node.nodeType === Node.ELEMENT_NODE) {
           const elem = node as Element;
-          if (elem.tagName?.toLowerCase().startsWith("array-")) injectIntoShadow(elem);
-          elem.querySelectorAll?.("[class]").forEach(() => {});
+          if ((elem as any).shadowRoot) injectIntoShadow(elem);
+          /* Also scan children of the added node */
+          elem.querySelectorAll?.("*").forEach((child) => {
+            if ((child as any).shadowRoot) injectIntoShadow(child);
+          });
         }
       });
     });
@@ -422,7 +427,10 @@ function injectIntoShadow(el: Element): void {
 
 function scanAndInject(root: Document | Element): void {
   root.querySelectorAll("*").forEach((el) => {
-    if (el.tagName?.toLowerCase().startsWith("array-")) injectIntoShadow(el);
+    /* Inject into any element that has a shadow root — not just array-* prefixed
+       ones, because nested components (e.g. score gauges inside array-credit-report)
+       may use different tag names like "array-score-gauge-wc" or internal ones */
+    if ((el as any).shadowRoot) injectIntoShadow(el);
   });
 }
 
